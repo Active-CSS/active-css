@@ -1,0 +1,19 @@
+{
+	"name": "activecss",
+	"version": "2.0.0",
+	"description": "A cross-browser plugin that adds UI actions to CSS",
+	"main": "index.js",
+	"repository": "https://github.com/Active-CSS/active-css",
+	"author": "River Zend Dynamics Ltd.",
+	"license": "MIT",
+	"private": true,
+	"devDependencies": {
+		"babel-core": "^6.26.3",
+		"babel-preset-env": "^1.7.0",
+		"grunt": "^1.0.4",
+		"grunt-babel": "^7.0.0",
+		"grunt-contrib-concat": "^1.0.1",
+		"grunt-contrib-jshint": "^2.1.0",
+		"grunt-terser": "^1.0.0"
+	}
+}
