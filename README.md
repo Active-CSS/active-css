@@ -28,7 +28,7 @@ Active CSS works on all modern browsers that are [ES6-compliant](http://kangax.g
 
 Active CSS has been designed for gradual adoption from the start, and **you can use as little or as much Active CSS as you need, like CSS**.
 
-The Active CSS installation instructions are [on the website](https://activecss.org).
+The Active CSS installation instructions are [on the website](https://activecss.org/manual/installation.html).
 
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
