@@ -17,7 +17,7 @@ Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 * **Extendable:** Write your own Active CSS in native JavaScript on-the-fly in your code. Prototype new commands so you can try out your own styling and action concepts as one-liner commands.
 * **Write more stuff:** With your code leaving a smaller footprint, you don't have to worry any more about adding more functionality to websites. You can tweak more to make it look and do awesome things. It's like tweaking CSS.
 * **Dynamic CSS & future-proof:** Include your regular CSS in with Active CSS commands. Active CSS is future-proofed so that even if browsers replicated and altered Active CSS commands, your websites will still work as they used to.
-* **Truly event-driven:** Active CSS is a pure event-driven programming style. It is the missing language in the browser's object-oriented programming platform. Now you can add "methods" to objects directly.
+* **Truly event-driven:** Active CSS is a pure event-driven programming style. It is the missing language in the browser's object-oriented programming platform. Now you can add "methods" to objects directly. All DOM events and CSS selectors are supported.
 * **Simple by design:** Active CSS was built as a true antidote to modern framework over-engineering.
 
 For best results, start building a website with no plugins or JavaScript and see how far you can get by only using HTML, CSS and Active CSS.
