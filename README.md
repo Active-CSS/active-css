@@ -10,7 +10,7 @@ Power-up your CSS with actions!
 Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 
 * **Fast to learn:** Active CSS is quick to learn, as it looks like CSS. Just learn some new commands like "add-class", "remove-class", etc., plus a few new concepts that turn CSS into a proper programming language.
-* **Fast, intuitive to write:** Active CSS converts common JavaScript actions to a higher-level one-liner CSS syntax. Over 70 pre-built commands for all common website building tasks.
+* **Fast, intuitive to write:** Active CSS converts common JavaScript actions to a higher-level one-liner CSS syntax. Around 100 new commands and pseudo-selectors for all common website building tasks.
 * **Easy to debug:** Active CSS is easy to debug, even easier than CSS. All declarations are cumulative which means that there are no cascading commands - no heirarchical rules to slow you down trying to get things to work.
 * **Supports modern web components:** As well as supporting the regular DOM, you can more easily build web components with native shadow DOMs having isolated events and variables.
 * **Build SPAs:** Active CSS includes an easy front-end method of single page application routing (with tutorial) to make your site faster, more scalable, and more friendly to use. No more clunk-fest website! Now you can have that radio station on your site that you always wanted without melting your brain trying to work out how to keep it on the page.
@@ -54,11 +54,11 @@ Here's a taster:
 }
 ```
 
-It's pretty obvious what that does. It needs an element with an id of "clickMe" to work.
+Want to see it work? Go to [the website](https://activecss.org).
 
-You'll notice that it looks a lot like CSS. That's the point. There are around 100 commands, and lots of features in Active CSS. It is truly epic.
+You'll notice that it looks a lot like CSS. There are lots of features in Active CSS. It is truly epic!
 
-It's possibly the best thing since the universe was written and became open-source.
+It brings back the fun in functionality! Yeah, sorry about that.
 
 ### License
 
