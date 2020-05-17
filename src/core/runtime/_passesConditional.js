@@ -14,34 +14,50 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, shadowR
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.
 			let commandName = cond.substr(0, parenthesisPos);
+			actionBoolState = false;
 			if (commandName.substr(0, 4) == 'not-') {
-				actionBoolState = false;
 				func = commandName.substr(4);
 			} else if (commandName.substr(0, 1) == '!') {
-				actionBoolState = false;
 				func = commandName.substr(1);
 			} else {
 				actionBoolState = true;
 				func = commandName;
 			}
+
 			func = func._ACSSConvFunc();
-			if (_c[func]({
-				'func': func,
-				'actName': commandName,
-				'secSel': 'conditional',
-				'secSelObj': el,
-				'actVal': cond.slice(parenthesisPos + 1, -1).trim(),
-				'primSel': sel,
-				'rules': cond,
-				'obj': el,
-				'e': eve,
-				'doc': doc,
-				'ajaxObj': otherEl,
-				'component': component,
-				'shadowDoc': shadowDoc,
-				'shadowRef': shadowRef
-			}, scopedVars) !== actionBoolState) {
-				return false;	// Barf out immediately if it fails a condition.
+			if (typeof _c[func] === 'function') {
+				// Comma delimit for multiple checks in the same function.
+				let aV = cond.slice(parenthesisPos + 1, -1).trim().replace(/"[^"]*"|(\,)/g, function(m, c) {
+					// Split conditionals by comma.
+				    if (!c) return m;
+				    return '_ACSSComma';
+				});
+
+				aV = _replaceAttrs(el, aV, null, null, null, shadowRef);	// Using the document of the primary selector is what we want.
+				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
+
+				condVals = aV.split('_ACSSComma');
+				condValsLen = condVals.length;
+				for (n = 0; n < condValsLen; n++) {
+					if (_c[func]({
+						'func': func,
+						'actName': commandName,
+						'secSel': 'conditional',
+						'secSelObj': el,
+						'actVal': condVals[n].trim(),
+						'primSel': sel,
+						'rules': cond,
+						'obj': el,
+						'e': eve,
+						'doc': doc,
+						'ajaxObj': otherEl,
+						'component': component,
+						'shadowDoc': shadowDoc,
+						'shadowRef': shadowRef
+					}, scopedVars) !== actionBoolState) {
+						return false;	// Barf out immediately if it fails a condition.
+					}
+				}
 			}
 			continue;
 		}

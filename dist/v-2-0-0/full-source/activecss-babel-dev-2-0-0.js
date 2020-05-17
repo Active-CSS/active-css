@@ -39,7 +39,8 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 	};
 
 	window.ActiveCSS = {};
-	if (typeof module !== 'undefined') module.exports = ActiveCSS;
+
+	if (typeof module !== 'undefined') module.exports = ActiveCSS; // This is for NPM.
 
 	var coreVersionExtension = '2-0-0',
 	    // Used by the extensions to maintain backward-compatibility - this doesn't reflect minor core version changes.
@@ -72,8 +73,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 	    mimicClones = [],
 	    // Used by the clone and restore-clones commands.
 	currDocTitle = document.title,
-	    // Note: Getting the document.title can take longer than multiple events, which messes up mimic, so we set it as a var so we can get it from there instantly later for setting a default.
-	debugMode = '',
+	    debugMode = '',
 	    conditionals = [],
 	    components = [],
 	    mediaQueries = [],
@@ -2217,34 +2217,50 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 				if (parenthesisPos !== -1) {
 					// This is a direct reference to a command. See if it is there.
 					var commandName = cond.substr(0, parenthesisPos);
+					actionBoolState = false;
 					if (commandName.substr(0, 4) == 'not-') {
-						actionBoolState = false;
 						func = commandName.substr(4);
 					} else if (commandName.substr(0, 1) == '!') {
-						actionBoolState = false;
 						func = commandName.substr(1);
 					} else {
 						actionBoolState = true;
 						func = commandName;
 					}
+
 					func = func._ACSSConvFunc();
-					if (_c[func]({
-						'func': func,
-						'actName': commandName,
-						'secSel': 'conditional',
-						'secSelObj': el,
-						'actVal': cond.slice(parenthesisPos + 1, -1).trim(),
-						'primSel': sel,
-						'rules': cond,
-						'obj': el,
-						'e': eve,
-						'doc': doc,
-						'ajaxObj': otherEl,
-						'component': component,
-						'shadowDoc': shadowDoc,
-						'shadowRef': shadowRef
-					}, scopedVars) !== actionBoolState) {
-						return false; // Barf out immediately if it fails a condition.
+					if (typeof _c[func] === 'function') {
+						// Comma delimit for multiple checks in the same function.
+						var _aV = cond.slice(parenthesisPos + 1, -1).trim().replace(/"[^"]*"|(\,)/g, function (m, c) {
+							// Split conditionals by comma.
+							if (!c) return m;
+							return '_ACSSComma';
+						});
+
+						_aV = _replaceAttrs(el, _aV, null, null, null, shadowRef); // Using the document of the primary selector is what we want.
+						_aV = otherEl && otherEl.loopRef != '0' ? _replaceLoopingVars(_aV, otherEl.loopVars) : _aV;
+
+						condVals = _aV.split('_ACSSComma');
+						condValsLen = condVals.length;
+						for (n = 0; n < condValsLen; n++) {
+							if (_c[func]({
+								'func': func,
+								'actName': commandName,
+								'secSel': 'conditional',
+								'secSelObj': el,
+								'actVal': condVals[n].trim(),
+								'primSel': sel,
+								'rules': cond,
+								'obj': el,
+								'e': eve,
+								'doc': doc,
+								'ajaxObj': otherEl,
+								'component': component,
+								'shadowDoc': shadowDoc,
+								'shadowRef': shadowRef
+							}, scopedVars) !== actionBoolState) {
+								return false; // Barf out immediately if it fails a condition.
+							}
+						}
 					}
 					continue;
 				}
@@ -2273,16 +2289,16 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 							// Call the conditional function is as close a way as possible to regular functions.
 
 							// Comma delimit for multiple checks on the same statement.
-							var _aV = obj.value.replace(/"[^"]*"|(\,)/g, function (m, c) {
+							var _aV2 = obj.value.replace(/"[^"]*"|(\,)/g, function (m, c) {
 								// Split conditionals by comma.
 								if (!c) return m;
 								return '_ACSSComma';
 							});
 
-							_aV = _replaceAttrs(el, _aV, null, null, null, shadowRef); // Using the document of the primary selector is what we want.
-							_aV = otherEl && otherEl.loopRef != '0' ? _replaceLoopingVars(_aV, otherEl.loopVars) : _aV;
+							_aV2 = _replaceAttrs(el, _aV2, null, null, null, shadowRef); // Using the document of the primary selector is what we want.
+							_aV2 = otherEl && otherEl.loopRef != '0' ? _replaceLoopingVars(_aV2, otherEl.loopVars) : _aV2;
 
-							condVals = _aV.split('_ACSSComma');
+							condVals = _aV2.split('_ACSSComma');
 							condValsLen = condVals.length;
 							for (n = 0; n < condValsLen; n++) {
 								if (_c[func]({
@@ -6708,7 +6724,11 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 	var _getObj = function _getObj(str) {
 		var targArr = _splitIframeEls(str);
 		if (!targArr) return false; // invalid target.
-		return targArr[0].querySelector(targArr[1]) || null;
+		try {
+			return targArr[0].querySelector(targArr[1]);
+		} catch (err) {
+			return false;
+		}
 	};
 
 	var _getRealEvent = function _getRealEvent(ev) {
