@@ -22,7 +22,9 @@ Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 
 For best results, start building a website with no plugins or JavaScript and see how far you can get by only using HTML, CSS and Active CSS.
 
-Active CSS works on all modern browsers that are [ES6-compliant](http://kangax.github.io/compat-table/es6/) (IE is not supported).
+Active CSS works on modern browsers that are [ES6-compliant](http://kangax.github.io/compat-table/es6/) and support shadow DOM.
+
+Active CSS should work fine on desktop Firefox, Chrome, Opera and Safari; iOs Safari and Chrome, Android Chrome and Firefox. IE support is not planned. An Edge supported release will be coming soon. A more complete list of supported browser versions will be compiled at some point.
 
 ## Installation
 
