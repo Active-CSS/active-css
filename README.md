@@ -60,7 +60,7 @@ Want to see it work? Go to [the website](https://activecss.org).
 
 You'll notice that it looks a lot like CSS. There are lots of features in Active CSS. It is truly epic!
 
-It brings back the fun in functionality! Yeah, sorry about that.
+It puts back the fun in functionality! Yeah, sorry about that.
 
 ### License
 
