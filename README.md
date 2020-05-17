@@ -28,7 +28,7 @@ Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the la
 
 ## Installation
 
-Active CSS has been designed for gradual adoption from the start, and **you can use as little or as much Active CSS as you need, like CSS**.
+Active CSS has been designed for gradual adoption from the start, and **you can use as little or as much Active CSS as you need, like CSS**. Although practically speaking, you should be aiming to get as much done with Active CSS as you can. You will save on bloated plugin overhead.
 
 The Active CSS installation instructions are [on the website](https://activecss.org/manual/installation.html).
 
