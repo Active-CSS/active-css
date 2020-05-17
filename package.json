@@ -1,7 +1,7 @@
 {
 	"name": "activecss",
 	"version": "2.0.0",
-	"description": "A cross-browser plugin that adds UI actions to CSS",
+	"description": "Power-up your CSS with actions!",
 	"main": "index.js",
 	"repository": "https://github.com/Active-CSS/active-css",
 	"author": "River Zend Dynamics Ltd.",
