@@ -1,4 +1,4 @@
-<p align="center"><a href="https://activecss.org" target="_blank" rel="noopener noreferrer">![Active CSS logo]("/logo/activecss-250.jpg")</a></p>
+<p align="center"><a href="https://activecss.org" target="_blank" rel="noopener noreferrer">![Active CSS logo]("./logo/activecss-250.jpg")</a></p>
 <p align="center">
   <a href="https://github.com/Active-CSS/active-css/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/vue.svg?sanitize=true" alt="License"></a>
 </p>
