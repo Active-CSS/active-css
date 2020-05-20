@@ -4,10 +4,9 @@ const _startMainListen = () => {
 	window.addEventListener('message', function(e) {
 		if (e.origin !== window.location.origin || e.data.source == 'causejs-devtools-extension') return;
 		var m = e.data;
-		var typ = m.type.replace('cjs-', '');
-		switch (typ) {
-			case 'unloading':
-			case 'loaded':
+		switch (m.type) {
+			case 'activecss-unloading':
+			case 'activecss-loaded':
 				// Run an unloading or a loaded event through the config for the iframe.
 				let el = document.getElementById(m.el);
 				_handleEvents({ obj: el, evType: typ });
@@ -39,10 +38,10 @@ const _startMainListen = () => {
 		// page, so we can get an unload event on the parent iframe. Also 
 		window.addEventListener('beforeunload', function(e) {
 			// Don't clash names with a native DOM event.
-			parent.postMessage({ 'type': 'cjs-unloading', 'el': window.frameElement.id}, window.location.origin);
+			parent.postMessage({ 'type': 'activecss-unloading', 'el': window.frameElement.id}, window.location.origin);
 		});
 		// CJS has finished loading, set message to parent saying the page has loaded.
-		parent.postMessage({ 'type': 'cjs-loaded', 'el': window.frameElement.id}, window.location.origin);
+		parent.postMessage({ 'type': 'activecss-loaded', 'el': window.frameElement.id}, window.location.origin);
 	}
 
 	// Get and set the page we are starting on.
