@@ -5,7 +5,7 @@
 
 # [Active CSS](https://activecss.org/)
 
-Power-up your CSS with actions!
+Power-up your CSS with actions! Turn CSS into a full-on programming language!
 
 Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 
