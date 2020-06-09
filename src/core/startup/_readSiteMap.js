@@ -44,7 +44,7 @@ const _readSiteMap = () => {
 
 		_wrapUpStart();
 
-		// Lazy loaded config.
+		// Lazy load config.
 		if (lazyConfig !== '') {
 			setTimeout(function() {
 				let arr = lazyConfig.split(','), configFile;

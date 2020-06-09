@@ -52,6 +52,8 @@
 		cancelIDArr = [],				//	[data-activeid][func];		// for cancel-delay
 		cancelCustomArr = [],			//	[~(custom event)][func];	// for cancel-delay
 		selectors = [],
+		userSetupStarted = false,
+		autoStartInit = false,
 		setupEnded = false,
 		clickOutsideSet = false,
 		clickOutsideSels = [],
@@ -95,7 +97,8 @@
 		doesPassive = false,
 		preSetupEvents = [],
 		nonPassiveEvents = [],
-		passiveEvents = true;
+		passiveEvents = true,
+		inlineConfigTags = null;
 
 	ActiveCSS.customHTMLElements = {};
 
