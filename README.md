@@ -35,10 +35,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
 The production (live) version will look like this:<br>
-activecss-2-0-1.min.js
+activecss-2-1-0.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-0-1.min.js
+activecss-dev-2-1-0.min.js
 
 ## Documentation
 
@@ -46,7 +46,7 @@ You can find comprehensive documentation [on the website](https://activecss.org)
 
 ## Examples
 
-There are loads of examples [on the practical examples page](https://activecss.org/manual/practical-examples.html).
+There are loads of examples [on the concept examples page](https://activecss.org/manual/concept-examples.html).
 
 Here's a taster:
 
