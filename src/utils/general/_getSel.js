@@ -9,7 +9,7 @@ const _getSel = (o, sel) => {
 				// The host is already being used as the target selector with these events.
 				return o.secSelObj;
 			}
-			return o.secSelObj.getRootNode().host;
+			return _getRootNode(o.secSelObj).host;
 		default:
 			// Grab the element or the first in the group specified.
 			return _getObj(sel);

@@ -1,6 +1,4 @@
 const _sendMessage = (obj, typ, where, orderNum='') => {
-	let threshold = 160;
-	// Detect if DevTools is open. This is very hacky, but I can't find any other solution.
 	// This is either a string or an object.
 	let str;
 	if (typeof obj == 'object') {

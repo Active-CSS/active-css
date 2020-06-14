@@ -98,7 +98,8 @@
 		preSetupEvents = [],
 		nonPassiveEvents = [],
 		passiveEvents = true,
-		inlineConfigTags = null;
+		inlineConfigTags = null,
+		supportsShadow = true;
 
 	ActiveCSS.customHTMLElements = {};
 

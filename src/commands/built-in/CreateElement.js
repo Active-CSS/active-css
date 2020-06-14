@@ -43,7 +43,7 @@ _a.CreateElement = o => {
 				'if (!oldVal) return;' +	// skip if this is the first time in, as it's an addition not an update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
 				'let ref = this.getAttribute(\'data-activeid\').replace(\'d-\', \'\') + \'HOST\' + name;' +
-				'ActiveCSS._varUpdateDom([{currentPath: ref, newValue: newVal}]);' +
+				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'_handleEvents({ obj: this, evType: \'attrChange-\' + name });' +
 			'}';
 	}

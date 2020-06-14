@@ -25,7 +25,7 @@ const _performSecSel = (loopObj) => {
 		if (!targs) continue;	// invalid target.
 		doc = targs[0];
 		passTargSel = targs[1];
-		shadowRef = (doc instanceof ShadowRoot) ? '_' + doc.host.getAttribute('data-activeid').replace(/id\-/, '') : (evObj.shadowRef) ? evObj.shadowRef : null;
+		shadowRef = (supportsShadow && doc instanceof ShadowRoot) ? '_' + doc.host.getAttribute('data-activeid').replace(/id\-/, '') : (evObj.shadowRef) ? evObj.shadowRef : null;
 
 		// passTargSel is the string of the target selector that now goes through some changes.
 		if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
@@ -49,7 +49,7 @@ const _performSecSel = (loopObj) => {
 				}
 			}
 		} else if (passTargSel == 'host') {
-			passTargSel = obj.getRootNode().host;
+			passTargSel = _getRootNode(obj).host;
 		}
 		let act;
 		for (m in chilsObj[secSelLoops][targetSelector]) {

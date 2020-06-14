@@ -1,13 +1,25 @@
 const _resolveAjaxVars = o => {
 	if (typeof o.res === 'object') {
-		// Loop the items in o.res and assign to variables.
-		let v;
 		let shadScope = ((o.shadowRef) ? o.shadowRef : 'main');
-		for (v in o.res) {
-			if (typeof scopedVars[shadScope] === 'undefined') {
-				scopedVars[shadScope] = {};	// This is definitely needed, otherwise it will only trigger the scope if the scope is undefined.
-			}
-			_set(scopedVars, shadScope + '.' + v, o.res[v]);
+		if (shadScope == 'main') {
+			_resolveAjaxVarsDecl(o.res, shadScope);
+		} else {
+			// There could be a potential clash in rendering vars if ajax is called before the shadow DOM is drawn. This gets around that.
+			setTimeout(function() {
+				_resolveAjaxVarsDecl(o.res, shadScope);
+			}, 0);	// jshint ignore:line
 		}
+	}
+};
+
+const _resolveAjaxVarsDecl = (res, shadScope) => {
+	// Loop the items in res and assign to variables.
+	let v;
+	for (v in res) {
+		// This is needed here, otherwise when updating 
+		if (typeof scopedVars[shadScope] === 'undefined') {
+			scopedVars[shadScope] = {};	// This is definitely needed, otherwise it will only trigger the scope if the scope is undefined.
+		}
+		_set(scopedVars, shadScope + '.' + v, res[v]);
 	}
 };

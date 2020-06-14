@@ -1,8 +1,8 @@
 /***
  * Called from _observable-slim.js after a change has been made to a scoped variable.
  *
- * How variable data-binding is handled in Active CSS. (Various notes written prior to implementation.)
- * ----------------------------------------------------------------------------------------------------
+ * How variable data-binding is handled in Active CSS. (Various notes written prior to implementation, so this isn't gospel.)
+ * --------------------------------------------------------------------------------------------------------------------------
  * Direct changes to attributes are not covered here - this is just what happens when variables change, not attributes. See the create-element command for that code.
  *
  * All scoped variables that are set are contained to a IIFE limited variable "scoped", and changed via the notifier Proxy "scopedVars".
@@ -39,7 +39,7 @@
 ActiveCSS._varUpdateDom = (changes) => {
 	/**
 	 * changes contains eg.:
-	 * change.type = add/update/delete
+	 * change.type = add/update/delete	- used here
 	 * change.target = ["X","O","X","O","O","X","","",""]
 	 * change.property = "3"
 	 * change.newValue = "O"
@@ -49,105 +49,136 @@ ActiveCSS._varUpdateDom = (changes) => {
 	 * change.proxy = ["X","O","X","O","O","X","","",""]
 	*/
 
-	let change, dataObj, refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos;
+	let change, dataObj, changeDiff, innerChange;
 	for (change of changes) {
-		dataObj = _get(scopedData, change.currentPath);
-		if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
-		// Get the reference object for this variable path if it exists.
-		refObj = change.newValue;
-
-		// Handle content wrapped in comments.
-		// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
-		colonPos = change.currentPath.indexOf('HOST');
-		theHost = null;
-		theDoc = document;
-
-		if (colonPos !== -1) {
-			theHost = document.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
-			theDoc = theHost.shadowRoot;
+		if (change.currentPath.indexOf('.') === -1 && change.currentPath.indexOf('HOST') === -1) continue;	// Skip all actions on the root scoped variable.
+		if (typeof change.previousValue == 'object' || typeof change.newValue == 'object') {
+			// This is an object or an array, or some sort of type change. Get a diff and apply the applicable change to each item.
+			// The reason we've got here in the code is that a whole array is being redeclared or something, and there may be individually rendered sub-elements
+			// we need to handle. If you redeclare a whole array, observableslim doesn't send multiple inner changes - so we need to simulate this instead so that
+			// we can update the DOM. We're only making the specific changes needed - that's why we use a diff.
+			change.previousValue = (!change.previousValue) ? [] : change.previousValue;
+			// Sometimes previousValue is returned as a proxy from observableslim. Dunno why. Reference the non-scoped var if so, as it will have the same value.
+			change.previousValue = (change.previousValue.__isProxy === true) ? change.previousValue.__getTarget : change.previousValue;
+			// This next line brings back a complex object diff that indicates type of change.
+			changeDiff = recursiveDiff.getDiff(change.previousValue, change.newValue);	// https://github.com/cosmicanant/recursive-diff
+			for (innerChange of changeDiff) {
+				innerChange.path = change.currentPath + ((!innerChange.path) ? '' : '.' + innerChange.path.join('.'));
+				dataObj = _get(scopedData, innerChange.path);
+				if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+				innerChange.val = (!innerChange.val) ? '' : innerChange.val;
+				_varUpdateDomDo({
+					currentPath: innerChange.path,
+					newValue: innerChange.val,
+					type: innerChange.op
+				}, dataObj);	// We need this - we may have a complex object.
+			}
 		} else {
-			// Is this a scoped shadow DOM variable? If so, it will look something like this: _3.varname.
-			if (change.currentPath.substr(0, 1) == '_') {
-				let shadScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
-				if (change.type == 'delete' && shadScope == '') {
-					// The whole scope has been deleted. Clean up.
-					delete shadowDoms[change.currentPath];
-					delete scopedData[change.currentPath];
-					continue;
-				}
-				theDoc = shadowDoms[shadScope];
-				if (typeof theDoc === 'undefined') {
-					// Shadow not there, skip it.
-					continue;
-				} else {
-					theHost = theDoc.host;
-				}
+			dataObj = _get(scopedData, change.currentPath);
+			if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+			_varUpdateDomDo(change, dataObj);
+		}
+	}
+};
+
+const _varUpdateDomDo = (change, dataObj) => {
+	let refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos;
+
+	// Get the reference object for this variable path if it exists.
+	refObj = change.newValue;
+
+	// Handle content wrapped in comments.
+	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
+	colonPos = change.currentPath.indexOf('HOST');
+	theHost = null;
+	theDoc = document;
+
+	if (colonPos !== -1) {
+		theHost = document.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+		theDoc = theHost.shadowRoot;
+	} else {
+		// Is this a scoped shadow DOM variable? If so, it will look something like this: _3.varname.
+		if (change.currentPath.substr(0, 1) == '_') {
+			let shadScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
+			if (change.type == 'delete' && shadScope == '') {
+				// The whole scope has been deleted. Clean up.
+				delete shadowDoms[change.currentPath];
+				delete scopedData[change.currentPath];
+				return;
+			}
+			theDoc = shadowDoms[shadScope];
+			if (typeof theDoc === 'undefined') {
+				// Shadow not there at all, skip it.
+//				console.log('shadow isn\'t there');
+				return;
+			} else {
+				theHost = theDoc.host;
 			}
 		}
-		for (cid in dataObj.cids) {
-			// Locate and update inside comments.
-			// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
-			el = theDoc.querySelector('[data-activeid="' + cid + '"]');
-			if (!el) {
-				// The node is no longer there at all. Clean it up so we don't bother looking for it again.
-				delete dataObj.cids[cid];
-				continue;
-			}
+	}
+	for (cid in dataObj.cids) {
+		// Locate and update inside comments.
+		// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
+		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
+		if (!el) {
+			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
+			delete dataObj.cids[cid];
+			continue;
+		}
 
-			treeWalker = document.createTreeWalker(
-				el,
-				NodeFilter.SHOW_COMMENT
-			);
-			// Iterate tree and find unique ref enclosures and update within with newValue.
-			frag = document.createTextNode(refObj);
-			while (treeWalker.nextNode()) {
-				thisNode = treeWalker.currentNode;
-				if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isEqualNode(el)) {
-					treeWalker.nextNode();
-					continue;	// If this isn't the same parent node or var change, skip it. We got all the appropriate nodes covered with el.
-				}
-				// Replace the text content of the fragment with new text.
-				if (thisNode.nextSibling.data == '/active-var') {
-					// There is no content there. Insert a text node.
-					let newNode = document.createTextNode(frag.textContent);
-					// Yeah, there is no insertAfter() and after() is not supported on Safari according to MDN...
-					thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
-				} else {
-					thisNode.nextSibling.textContent = frag.textContent;
-				}
-				// Move to the last tag. We know it won't match the first loop condition.
+		treeWalker = document.createTreeWalker(
+			el,
+			NodeFilter.SHOW_COMMENT
+		);
+		// Iterate tree and find unique ref enclosures and update within with newValue.
+		frag = document.createTextNode(refObj);
+		while (treeWalker.nextNode()) {
+			thisNode = treeWalker.currentNode;
+			if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isEqualNode(el)) {
 				treeWalker.nextNode();
+				continue;	// If this isn't the same parent node or var change, skip it. We got all the appropriate nodes covered with el.
 			}
-
-			// If this element is an inline-style tag, replace this variable if it is there.
-			if (el.tagName == 'STYLE') {
-				let regex = new RegExp('\\/\\*active\\-var\\-' + change.currentPath + '\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
-				let str = el.textContent;
-				str = str.replace(regex, function(_, wot) {	// jshint ignore:line
-					return '/*active-var-' + change.currentPath + '*/' + frag.textContent + '/*/active-var*/';
-				});
-				el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+			// Replace the text content of the fragment with new text.
+			if (thisNode.nextSibling.data == '/active-var') {
+				// There is no content there. Insert a text node.
+				let newNode = document.createTextNode(frag.textContent);
+				// Yeah, there is no insertAfter() and after() is not supported on Safari according to MDN...
+				thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
+			} else {
+				thisNode.nextSibling.textContent = frag.textContent;
 			}
+			// Move to the last tag. We know it won't match the first loop condition.
+			treeWalker.nextNode();
 		}
 
-		// Handle content in attributes.
-		for (cid in dataObj.attrs) {
-			el = theDoc.querySelector('[data-activeid="' + cid + '"]');
-			if (!el) {
-				// The node is no longer there at all. Clean it up so we don't bother looking for it again.
-				// Note the current method won't work if the same binding variable is in the attribute twice.
-				// If anyone comes up with a sensible use case, we'll change this method, otherwise it's a bit too niche to put in provisions for
-				// that scenario at this point.
-				delete dataObj.attrs[cid];
-				continue;
-			}
-			for ([attr, attrOrig] of Object.entries(dataObj.attrs[cid])) {
-				if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
-				// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
-				// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
-				attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost);
-				el.setAttribute(attr, attrContent);
-			}
+		// If this element is an inline-style tag, replace this variable if it is there.
+		if (el.tagName == 'STYLE') {
+			let regex = new RegExp('\\/\\*active\\-var\\-' + change.currentPath + '\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
+			let str = el.textContent;
+			str = str.replace(regex, function(_, wot) {	// jshint ignore:line
+				return '/*active-var-' + change.currentPath + '*/' + frag.textContent + '/*/active-var*/';
+			});
+			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+		}
+	}
+
+	// Handle content in attributes.
+	for (cid in dataObj.attrs) {
+		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
+		if (!el) {
+			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
+			// Note the current method won't work if the same binding variable is in the attribute twice.
+			// If anyone comes up with a sensible use case, we'll change this method, otherwise it's a bit too niche to put in provisions for
+			// that scenario at this point.
+			delete dataObj.attrs[cid];
+			continue;
+		}
+		for ([attr, attrOrig] of Object.entries(dataObj.attrs[cid])) {
+			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
+			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
+			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
+			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost);
+			el.setAttribute(attr, attrContent);
 		}
 	}
 };

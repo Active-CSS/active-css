@@ -32,13 +32,14 @@ const _mainEventLoop = (typ, e, component, shadowDoc, shadowRef) => {
 	}
 
 	let composedPath;
-	composedPath = e.composedPath();
+
+	composedPath = _composedPath(e);
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
 	// to get a bit creative with the handling. Event listeners occur in the order of registration, which will always give us a bubble down effect, so we have to
 	// do a manual bubble up and skip the first events if they are not related to the document or shadow DOM of the real target.
 	let realItem = composedPath[0];
-	if (realItem.getRootNode().isEqualNode(document) || e.target.isEqualNode(realItem)) {
+	if (_getRootNode(realItem).isEqualNode(document) || e.target.isEqualNode(realItem)) {
 		// We do not run parent events of shadow DOM nodes - we only process the final events that run on the actual target, and then bubble up through
 		// composedPath(). *Fully* cloning the event object (with preventDefault() still functional) is not currently supported in browsers, understandably, so
 		// re-ordering of real events is not possible, so we have to skip these. The reason being that preventDefault will break on events that have already bubbled,
@@ -52,8 +53,8 @@ const _mainEventLoop = (typ, e, component, shadowDoc, shadowRef) => {
 				_setUpNavAttrs(el);
 			}
 			// Is this in the document root or a shadow DOM root?
-			let rootNode = el.getRootNode();
-			if (rootNode instanceof ShadowRoot) {
+			let rootNode = _getRootNode(el);
+			if (supportsShadow && rootNode instanceof ShadowRoot) {
 				// Get the component variables so we can run this element's events in context.
 				component = rootNode.host._acssComponent;
 				shadowDoc = rootNode;

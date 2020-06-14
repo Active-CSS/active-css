@@ -1,8 +1,8 @@
 const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
 	let targSel, iframeID;
-	let root = (relatedObj && typeof relatedObj == 'object') ? relatedObj.getRootNode() : null;
+	let root = (relatedObj && typeof relatedObj == 'object') ? _getRootNode(relatedObj) : null;
 	let doc = document, hostIsShadow = false, splitSel = false;
-	if (root instanceof ShadowRoot) {
+	if (supportsShadow && root instanceof ShadowRoot) {
 		// This was called from within a shadowRoot object. The doc defaults to the shadowRoot.
 		doc = root;
 		hostIsShadow = true;
@@ -20,7 +20,7 @@ const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
 				doc = document;
 			} else if (ref == 'parent') {
 				if (hostIsShadow) {
-					root = root.host.getRootNode();
+					root = _getRootNode(root.host);
 					doc = root;
 				} else if (window.parent.document) {
 					// Reference to an iframe host.
@@ -47,7 +47,7 @@ const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
 		targSel = sel;
 	}
 	if (targSel == 'host') {
-		root = root.host.getRootNode();
+		root = _getRootNode(root.host);
 		doc = root;
 	} else if (shadowDoc && !splitSel) {
 		// Use the default shadow doc. This could be a shadowOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
