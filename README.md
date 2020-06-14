@@ -24,21 +24,19 @@ For best results, start building a website with no plugins or JavaScript and see
 
 Active CSS works on modern browsers that are [ES6-compliant](http://kangax.github.io/compat-table/es6/) and support shadow DOM.
 
-Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the latest Edge; iOs Safari and Chrome, Android Chrome and Firefox. IE and old Edge support is not planned. A more complete list of supported browser versions will be compiled at some point.
+Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the latest Edge; iOs Safari and Chrome, Android Chrome and Firefox. IE support is not planned. There is basic support for the original Edge in the main production core, but the shadow DOM and shadow web component features in Active CSS won't work (being a native implementation). Just avoid using the shadow DOM if you want to support the old Edge.
 
 ## Installation
-
-Active CSS has been designed for gradual adoption from the start, and **you can use as little or as much Active CSS as you need, like CSS**. Although practically speaking, you should be aiming to get as much done with Active CSS as you can. You will save on bloated plugin overhead.
 
 The Active CSS installation instructions are [on the website](https://activecss.org/manual/installation.html).
 
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
 The production (live) version will look like this:<br>
-activecss-2-1-0.min.js
+activecss-2-1-1.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-1-0.min.js
+activecss-dev-2-1-1.min.js
 
 ## Documentation
 
@@ -52,13 +50,15 @@ Here's a taster:
 
 ```
 #clickMe:click {
-    alert: "Hello world!";
+    body {
+        add-class: .hello;
+    }
 }
 ```
 
 Want to see it work? Go to [the website](https://activecss.org).
 
-You'll notice that it looks a lot like CSS. There are lots of features in Active CSS. It is truly epic!
+You'll notice that the syntax looks like CSS. There are lots of features in Active CSS. It is truly epic!
 
 It puts back the fun in functionality! Yeah, sorry about that.
 
