@@ -16,10 +16,6 @@ const _resolveAjaxVarsDecl = (res, shadScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
-		// This is needed here, otherwise when updating 
-		if (typeof scopedVars[shadScope] === 'undefined') {
-			scopedVars[shadScope] = {};	// This is definitely needed, otherwise it will only trigger the scope if the scope is undefined.
-		}
 		_set(scopedVars, shadScope + '.' + v, res[v]);
 	}
 };

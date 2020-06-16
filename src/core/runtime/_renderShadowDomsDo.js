@@ -16,6 +16,12 @@ const _renderShadowDomsDo = (o, obj) => {
 
 	shadowID = _getActiveID(shadowParent).replace('id-', '_');
 
+	// Set the varianle scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
+	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
+	if (typeof scopedVars[shadowID] === 'undefined') {
+		scopedVars[shadowID] = {};
+	}
+
 	// Run a beforeShadowOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
@@ -53,18 +59,20 @@ const _renderShadowDomsDo = (o, obj) => {
 	// Attach the shadow.
 	shadow.appendChild(template.content);
 
-	// Run a shadowOpen custom event after the shadow is attached with content. This is run on the host object.
-	setTimeout(function() {_handleEvents({ obj: shadowParent, evType: 'shadowOpen', shadowRef: shadowID, shadowDoc: shadow, component: componentName }); }, 0);
+	// Run a shadowOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
+	setTimeout(function() {
+		_handleEvents({ obj: shadowParent, evType: 'shadowOpen', shadowRef: shadowID, shadowDoc: shadow, component: componentName });
 
-	// Run draw events on all new elements in this shadow.
-	shadow.querySelectorAll('*').forEach(function(obj) {
-		if (obj.tagName == 'DATA-SHADOW') {
-			// Handle any shadow DOMs now pending within this shadow DOM.
-			_renderShadowDomsDo(o, obj);
-			return;
-		}
-		_handleEvents({ obj: obj, evType: 'draw', otherObj: o.ajaxObj, shadowRef: shadowID, shadowDoc: shadow, component: componentName });
-	});
+		shadow.querySelectorAll('*').forEach(function(obj) {
+			if (obj.tagName == 'DATA-SHADOW') {
+				// Handle any shadow DOMs now pending within this shadow DOM.
+				_renderShadowDomsDo(o, obj);
+				return;
+			}
+			// Run draw events on all new elements in this shadow. This needs to occur after shadowOpen.
+			_handleEvents({ obj: obj, evType: 'draw', otherObj: o.ajaxObj, shadowRef: shadowID, shadowDoc: shadow, component: componentName });
+		});
+	}, 0);
 
 	// Now add all possible window events to this shadow, so we can get some proper bubbling order going on when we handle events that don't have any real event
 	// in the shadow. We have to do this - it's to do with future potential events being added during runtime and the necessity of being able to trap them in the

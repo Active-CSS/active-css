@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.1.1',
-			fileVersion: '2-1-1',
+			realVersion: '2.1.2',
+			fileVersion: '2-1-2',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -68,7 +68,7 @@
 					strict: true
 				}
 			},
-
+/*
 			babel: {
 				options: {
 					presets: ['env']
@@ -80,7 +80,7 @@
 					}
 				},
 			},
-
+*/
 			// Terse the different versions after lint-check and put them into the version directory.
 			terser: {
 				regular: {
@@ -94,7 +94,7 @@
 					}
 				},
 				// Comment out for no babel.
-				/**/
+				/*
 				babel: {
 					options: {
 						ie8: true,
@@ -106,7 +106,7 @@
 						'dist/v-<%= fileVersion %>/activecss-babel-dev-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/full-source/activecss-babel-dev-<%= fileVersion %>.js']
 					}
 				}
-				/**/
+				*/
 			},
 		});
 
@@ -116,8 +116,8 @@
 		grunt.loadNpmTasks('grunt-babel');
 		grunt.loadNpmTasks('grunt-terser');
 		// Uncomment/comment for/for no babel.
-		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser' ]);
-//		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
+//		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser' ]);
+		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
 	};
 
 }());
