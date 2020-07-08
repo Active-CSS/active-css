@@ -6,7 +6,7 @@ const _selCompare = (o, opt) => {
 		// There can be only one (parameter).
 		if (!actVal) return true;	// No point going further - this could be a variable substitution that equates to empty.
 		if (actVal && actVal == '__object') return false;	// No point going further - this is not empty - it is an array or a variable object.
-		spl = actVal;
+		spl = actVal._ACSSSpaceQuoOut();
 	} else {
 		// There are two parameters with this conditional.
 		spl = actVal.split(' ');

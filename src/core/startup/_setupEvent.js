@@ -9,7 +9,7 @@ const _setupEvent = (ev, sel, component) => {
 		}
 		// Let it through - this could be a load-config with a prevent-default now changing the passive "true" state to false. We need to replace the event listener.
 		// This will only happen on a document level - not a shadow DOM level. Events in the shadow DOM can only be added when it is created - _attachListener() is
-		// called directly from _renderShadowDomsDo().
+		// called directly from _renderCompDomsDo().
 	} else {
 		selectors[ev].push(sel);
 	}

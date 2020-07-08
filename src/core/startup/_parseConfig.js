@@ -1,7 +1,9 @@
 const _parseConfig = str => {
 	// Keep the parsing regex for the config arrays as simple as practical.
+	// The purpose of this script is to escape characters that may get in the way of evaluating the config sanely during _makeVirtualConfig.
+	// There may be edge cases that cause this to fail, if so let us know, but it's usually pretty solid for practical use.
 	// External debugging tools can be set up for line syntax checking - keep the engine at optimum speed.
-	// If someone wants to thrash test it, please let support know of any exceptional cases that should pass but don't. It's quite solid in practice.
+	// If someone wants to thrash test it, please let support know of any exceptional cases that should pass but don't.
 	// There are quite possibly unnecessary bits in the regexes. If anyone wants to rewrite any so they are more accurate, that is welcome.
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
@@ -11,6 +13,11 @@ const _parseConfig = str => {
 	str = str.replace(/[\r\n\t]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
+	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
+		return 'body:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + ((typ !== 'conditional') ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+	});
 	// Sort out raw JavaScript in the config so it doesn't clash with the rest of the config. The raw javascript needs to get put back to normal at evaluation time,
 	// and not before, otherwise things go weird with the extensions.
 	// With the extensions, there is a similar routine to put these escaped characters back in after a modification from there - it's not the same thing though,
@@ -28,10 +35,6 @@ const _parseConfig = str => {
 	});
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gim, function(_, innards) {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
-	});
-	// Sort out var action command syntax, as that could be pretty much anything. This might need tweaking.
-	str = str.replace(/[\s]*var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
-		return 'var: ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
 	});
 	// Replace variable substitutations, ie. ${myVariableName}, etc.
 	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
@@ -85,13 +88,20 @@ const _parseConfig = str => {
 		';': '_ACSS_semi_colon',
 		':': '_ACSS_colon',
 		'/': '_ACSS_slash',
+		'@': '_ACSS_at',
 	};
 	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
+	// Convert @conditional into ?, so we don't have to bother with handling that in the parser.
+	str = str.replace(/@conditional[\s]+/g, '?');
 	// Do a similar thing for parentheses. Handles pars({#formID}&mypar=y) syntax.
 	str = str.replace(/([\(]([^\(\)]|\(\))*[\)])/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
+	});
+	// Sort out var action command syntax, as that could be pretty much anything. This might need tweaking.
+	str = str.replace(/[\s]*var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
+		return 'var: ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
 	});
 
 	// Infinite loop failsafe variable. Without this, unbalanced curlies may call an infinite loop later.

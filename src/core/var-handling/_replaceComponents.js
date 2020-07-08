@@ -24,18 +24,18 @@ const _replaceComponents = (o, str, loopI) => {
 			ret = ActiveCSS._sortOutFlowEscapeChars(ret);
 			// Handle any looping variable replacement in the component.
 			ret = (o.loopRef != '0') ? _replaceLoopingVars(ret, o.loopVars) : ret;
-			if (components[c].shadow) {
+			if (components[c].shadow || components[c].scoped) {
 				// This is supposed to be added to its container after the container has rendered. We shouldn't add it now.
 				// Add it to memory and attach after the container has rendered. Return a placeholder for this component.
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
 				// removed from the pending array once drawn.
-				shadowCo++;
-				let shadowRef = '<data-shadow data-name="' + c + '" data-ref="' + shadowCo + '" data-mode="' + components[c].mode + '"></data-shadow>';
-				shadowPending[shadowCo] = ret;
-				// Replace the fully rendered component instance with the shadowRef placeholder.
-				ret = shadowRef;
+				compCount++;
+				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
+				compPending[compCount] = ret;
+				// Replace the fully rendered component instance with the compRef placeholder.
+				ret = compRef;
 			} else {
-				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.shadowRef);
+				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.compRef);
 				ret = (ret.indexOf('{$') !== -1) ? _replaceStringVars(o.ajaxObj, ret) : ret;
 			}
 			return (ret) ? ret : '';

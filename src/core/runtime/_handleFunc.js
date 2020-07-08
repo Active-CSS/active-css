@@ -34,7 +34,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
 			splitArr = _delaySplit(o2.actVal, aftEv);
-			scope = (o.shadowRef) ? o.shadowRef : 'main';
+			scope = (o.compRef) ? o.compRef : 'main';
 			splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
@@ -84,7 +84,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	}
 
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.shadowRef);
+	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.compRef);
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -96,7 +96,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.secSelObj.style[o.actName] = o.actVal;
 	} else {
 		// Run the function.
-		_a[o.func](o, scopedVars);
+		_a[o.func](o, scopedVars, privateScopes);
 	}
 
 	if (!o.interval) {
@@ -106,7 +106,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (Object.keys(o.secSelObj).length === 0 && ['LoadConfig', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, shadowRef: o.shadowRef, shadowDoc: o.shadowDoc, component: o.component });
+		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
 
 };

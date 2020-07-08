@@ -7,7 +7,7 @@ ActiveCSS._returnTree = el => {
 	// selectors[thisAction]
 	let act, itemConfig = {}, stopProp, arr, origEl = el, co, realEvent, mainElRoot, elRoot, origComponent;
 	mainElRoot = _getRootNode(el);
-	if (supportsShadow && mainElRoot instanceof ShadowRoot) {
+	if (!mainElRoot.isEqualNode(document)) {
 		origComponent = mainElRoot.host._acssComponent;
 		if (!origComponent) origComponent = null;		// Shadow found, but it wasn't set up by Active CSS - so ignore this element, as events won't work on those.
 	}
@@ -74,7 +74,7 @@ ActiveCSS._returnTree = el => {
 					}
 					el = el.parentNode;
 					if (el) {
-						if (supportsShadow && el instanceof ShadowRoot) {
+						if (el instanceof ShadowRoot) {
 							// Reached the top of the shadow and we are in the shadow. Get the host.
 							if (!doesBubbleOutOfShadow) {
 								// The original element is in a shadow DOM, this parent node is not in the same shadow DOM and we are not supposed to bubble out. So...

@@ -1,1 +1,1 @@
-_a.FocusOnPreviousCycle = o => { _a.FocusOn(o, 'pc'); };	//	Previous selector in list, then cycles
+_a.FocusOnPreviousCycle = o => { _focusOn(o, 'pc'); };	//	Previous selector in list, then cycles

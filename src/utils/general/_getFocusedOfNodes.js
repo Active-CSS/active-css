@@ -1,7 +1,7 @@
-const _getFocusedOfNodes = sel => {
+const _getFocusedOfNodes = (sel, o) => {
 	// Find the current focused node in the list, if there is one.
 	let targArr, nodes, obj, i = -1, useI = -1;
-	targArr = _splitIframeEls(sel);
+	targArr = _splitIframeEls(sel, o.obj, o.compDoc);
 	if (!targArr) return false;	// invalid target.
 	if (targArr[0].activeElement === null) return -1;
 	nodes = targArr[0].querySelectorAll(targArr[1]) || null;

@@ -6,6 +6,7 @@ const _sortOutEscapeChars = (str) => {
 		_ACSS_semi_colon: ';',
 		_ACSS_colon: ':',
 		_ACSS_slash: '/',
+		_ACSS_at: '@',
 		_ACSS_subst_equal_brace_start: '{=',
 		_ACSS_subst_equal_brace_end: '=}',
 		_ACSS_subst_dollar_brace_start: '{$',

@@ -1,4 +1,4 @@
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, shadRef=null) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, compRef=null) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
@@ -10,7 +10,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			}
 			if (wot[0] == '@') {
 				// This is an attribute not handled earlier. It's hopefully a shadow DOM host attribute as regular bound attribute vars are not yet supported.
-				if (!shadHost) return _;	// Shouldn't handle this yet. Only handle it when called from _renderShadowDoms.
+				if (!shadHost) return _;	// Shouldn't handle this yet. Only handle it when called from _renderCompDoms.
 				isAttribute = true;
 				wot = wot.slice(1);
 				let hostColon = 'host:';
@@ -22,11 +22,11 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 						let hostCID = shadHost.getAttribute('data-activeid').replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
-						console.log('Shadow host attribute ' + wot + ' not found.');
+						console.log('Component host attribute ' + wot + ' not found.');
 						return _;
 					}
 				} else {
-					console.log('Non shadow-host attribution substitution is not yet supported! Let us know that you want it.');
+					console.log('Non component attribution substitution is not yet supported.');
 					return _;
 				}
 			} else {
@@ -44,8 +44,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 						wot = wot.replace(/^scopedVars\./, '');
 					}
 				}
-				// Prefix with sub-scope (main or _ShadowRef).
-				wot = (shadRef) ? shadRef + '.' + wot : 'main.' + wot;
+				// Prefix with sub-scope (main or _CompRef).
+				wot = (compRef && privateScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
 				res = _get(scopedVars, wot);
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
@@ -54,7 +54,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched, config.
-				_addScopedCID(realWot, obj);
+				_addScopedCID(realWot, obj, compRef);
 				let retLT, retGT;
 				if (obj.tagName == 'STYLE') {
 					retLT = (walker) ? '_cj_s_lts_' : '/*';
@@ -67,7 +67,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					_addScopedAttr(realWot, o, originalStr, walker);
+					_addScopedAttr(realWot, o, originalStr, walker, compRef);
 				}
 				// Send the regular scoped variable back.
 				return res;

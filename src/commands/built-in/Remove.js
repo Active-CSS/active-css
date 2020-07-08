@@ -1,5 +1,5 @@
 _a.Remove = o => {
-	let targArr = _splitIframeEls(o.actVal);
+	let targArr = _splitIframeEls(o.actVal, o.obj, o.compDoc);
 	if (!targArr) return false;	// invalid target.
 	targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
 		ActiveCSS._removeObj(obj);

@@ -1,4 +1,4 @@
-const _prefixScopedVars = function(str, shadRef=null) {
+const _prefixScopedVars = function(str, compRef=null) {
 	/**
 	 * "str" is a string that could contain scoped variables that need proper set up before evaluating.
 	 * It finds each word, which may include a period (.), and see if this needs scoping. It may already have a scoped prefix. If it doesn't, it gets
@@ -17,7 +17,7 @@ const _prefixScopedVars = function(str, shadRef=null) {
 			// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use scopedVars, but just in case ignore that too.
 			if (firstVar == 'window' || firstVar == 'scopedVars') return wot;
 		}
-		scopedVar = ((shadRef) ? shadRef : 'main') + '.' + wot;
+		scopedVar = ((compRef && privateScopes[compRef]) ? compRef : 'main') + '.' + wot;
 		varEval = _get(scopedVars, scopedVar);
 		// Only return the variable if it actually exists.
 		return (varEval) ? 'scopedVars.' + scopedVar : wot;

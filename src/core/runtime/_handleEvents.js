@@ -7,10 +7,10 @@ const _handleEvents = evObj => {
 	let afterEv = evObj.afterEv;
 	let origObj = evObj.origObj;
 	let runButElNotThere = evObj.runButElNotThere;
-	let shadowRef, thisDoc;
-	let shadowDoc = evObj.shadowDoc;
-	thisDoc = (shadowDoc) ? shadowDoc : document;
-	let topShadowRef = evObj.shadowRef;
+	let compRef, thisDoc;
+	let compDoc = evObj.compDoc;
+	thisDoc = (compDoc) ? compDoc : document;
+	let topCompRef = evObj.compRef;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || typeof evType === 'undefined') return false;	// No selectors set for this event.
@@ -83,7 +83,7 @@ const _handleEvents = evObj => {
 			if (onlyCheck) return true;	// Just checking something is there. Now we have established this, go back.
 			for (clause in config[selectorList[sel]][evType]) {
 				clauseCo++;
-				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topShadowRef, component, eve, shadowDoc)) {
+				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topCompRef, component, eve, compDoc)) {
 					// This condition passed. Remember it for the next bit.
 					clauseArr[clauseCo] = clause;
 				}
@@ -111,9 +111,9 @@ const _handleEvents = evObj => {
 							originalLoops: secSelLoops,
 							secSelLoops,
 							obj,
-							shadowDoc,
+							compDoc,
 							evType,
-							shadowRef: topShadowRef,
+							compRef: topCompRef,
 							evObj,
 							otherObj,
 							passCond,
