@@ -1,5 +1,4 @@
-// Edge hack - just get it vaguely working on old Edge. Web components are not supported. This is a temporary measure to give basic version 1 core support
-// until a better solution is found.
+// Edge hack - just get it vaguely working on old Edge. Shadow DOM components are not supported in Edge, so they won't work in Active CSS either.
 if (!document.head.attachShadow) {
 	supportsShadow = false;
 	if (!('isConnected' in Node.prototype)) {

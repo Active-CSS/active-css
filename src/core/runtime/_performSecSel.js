@@ -2,9 +2,9 @@ const _performSecSel = (loopObj) => {
 	let chilsObj = loopObj.chilsObj;
 	let secSelLoops = loopObj.secSelLoops;
 	let obj = loopObj.obj;
-	let shadowDoc = loopObj.shadowDoc;
+	let compDoc = loopObj.compDoc || document;
 	let evType = loopObj.evType;
-	let shadowRef = loopObj.shadowRef;
+	let compRef = loopObj.compRef;
 	let evObj = loopObj.evObj;
 	let otherObj = loopObj.otherObj;
 	let passCond = loopObj.passCond;
@@ -16,23 +16,33 @@ const _performSecSel = (loopObj) => {
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 	let runButElNotThere = loopObj.runButElNotThere;
 
+	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
+	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
+	if (supportsShadow && compDoc instanceof ShadowRoot) {
+		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
+	} else if (!compDoc.isEqualNode(document) && compDoc.hasAttribute('data-active-scoped')) {
+		// This must be a scoped component.
+		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
+	} else {
+		compRef = (evObj.compRef) ? evObj.compRef : null;
+	}
+
 	// Get the selectors this event is going to apply to.
 	let targetSelector, targs, doc, passTargSel, meMap = [ '&', 'self', 'this' ], activeTrackObj = '', m, tmpSecondaryFunc, actionValue;
 	for (targetSelector in chilsObj[secSelLoops]) {
 		if (targetSelector == 'conds') continue;	// skip the conditions.
 		// Get the correct document/iframe/shadow for this target.
-		targs = _splitIframeEls(targetSelector, obj, shadowDoc, evType);
+		targs = _splitIframeEls(targetSelector, obj, compDoc);	// Note - here it is compDoc as we are doing this in relation to the 
 		if (!targs) continue;	// invalid target.
 		doc = targs[0];
 		passTargSel = targs[1];
-		shadowRef = (supportsShadow && doc instanceof ShadowRoot) ? '_' + doc.host.getAttribute('data-activeid').replace(/id\-/, '') : (evObj.shadowRef) ? evObj.shadowRef : null;
 
 		// passTargSel is the string of the target selector that now goes through some changes.
 		if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
 
-		passTargSel = _replaceAttrs(obj, passTargSel);
+		passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, compRef);
 		// See if there are any left that can be populated by the passed otherObj.
-		passTargSel = _replaceAttrs(otherObj, passTargSel);
+		passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, compRef);
 		// Handle functions being run on self.
 		if (meMap.includes(passTargSel)) {
 			// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
@@ -49,7 +59,8 @@ const _performSecSel = (loopObj) => {
 				}
 			}
 		} else if (passTargSel == 'host') {
-			passTargSel = _getRootNode(obj).host;
+			let rootNode = _getRootNode(obj);
+			passTargSel = (rootNode._acssScoped) ? rootNode : rootNode.host;
 		}
 		let act;
 		for (m in chilsObj[secSelLoops][targetSelector]) {
@@ -76,8 +87,8 @@ const _performSecSel = (loopObj) => {
 				file: chilsObj[secSelLoops][targetSelector][m].file,
 				line: chilsObj[secSelLoops][targetSelector][m].line,
 				activeID: activeTrackObj,
-				shadowRef: shadowRef,	// unique counter of the shadow element rendered - used for variable scoping.
-				shadowDoc: shadowDoc,
+				compRef: compRef,	// unique counter of the shadow element rendered - used for variable scoping.
+				compDoc: compDoc,
 				component: component,
 				loopVars: loopVars,
 				loopRef: loopRef

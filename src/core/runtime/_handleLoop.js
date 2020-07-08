@@ -1,6 +1,6 @@
 const _handleLoop = (loopObj) => {
 	let secSelLoops = loopObj.secSelLoops;
-	let shadowRef = loopObj.shadowRef;
+	let compRef = loopObj.compRef;
 
 	// Which type of loop is it?
 	// This is here for when we start adding different types of loops. For now we don't need the check.
@@ -20,7 +20,7 @@ const _handleLoop = (loopObj) => {
 		}
 		let rightVar = secSelLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let rightVarReal = (shadowRef) ? shadowRef + '.' + rightVar : 'main.' + rightVar;
+		let rightVarReal = (compRef && privateScopes[compRef]) ? compRef + '.' + rightVar : 'main.' + rightVar;
 
 		let rightVarVal = _get(scopedVars, rightVarReal);
 

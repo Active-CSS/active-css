@@ -1,5 +1,5 @@
 const _ifFocus = (o, first=true) => {
-	let arr = _getFocusedOfNodes(o.actVal);
+	let arr = _getFocusedOfNodes(o.actVal, o);
 	if (first) {
 		return (arr[1] === 0) ? true : false;
 	} else {

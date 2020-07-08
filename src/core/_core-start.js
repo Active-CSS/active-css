@@ -85,11 +85,12 @@
 		labelData = [],
 		labelByIDs = [],
 		customTags = [],
-		// The next two keep track of pending shadow DOM components to render.
-		shadowCo = 0,
-		shadowPending = {},
+		// The next two keep track of pending shadow DOM and scoped components to render.
+		compCount = 0,
+		compPending = {},
 		shadowSels = [],
 		shadowDoms = {},
+		actualDoms = {},
 		preGetMax = 6,
 		preGetMid = 0,
 		reverseShadowEvs = {},
@@ -99,7 +100,8 @@
 		nonPassiveEvents = [],
 		passiveEvents = true,
 		inlineConfigTags = null,
-		supportsShadow = true;
+		supportsShadow = true,
+		privateScopes = [];
 
 	ActiveCSS.customHTMLElements = {};
 

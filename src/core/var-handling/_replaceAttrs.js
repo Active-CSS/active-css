@@ -1,6 +1,6 @@
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
 // config on different objects as they are needed. Also replace JavaScript expressions {= expression}.
-const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', shadRef=null) => {
+const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', compRef=null) => {
 	// Note, obj could sometimes be a string with no attributes if this is a trigger.
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
@@ -10,7 +10,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', shadRef=null) 
 	}
 	if (sel.indexOf('{=') !== -1 && !(o && ['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func))) {	// skip restoration and eval now if it needs to run dynamically.
 		sel = ActiveCSS._sortOutFlowEscapeChars(sel);
-		sel = _replaceJSExpression(sel);
+		sel = _replaceJSExpression(sel, null, null, compRef);
 	}
 	if (sel.indexOf('{@') !== -1) {
 		sel = sel.replace(/\{\@([^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
@@ -27,7 +27,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', shadRef=null) 
 				if (colon !== -1) {
 					// This should be an id followed by an attribute, or innerText, or it's a shadow DOM host attribute.
 					let elRef = wot.substr(0, colon), el;
-					if (elRef == 'host' && (!o || ['beforeShadowOpen', 'shadowOpen'].indexOf(o.event) === -1)) {
+					if (elRef == 'host' && (!o || ['beforeComponentOpen', 'componentOpen'].indexOf(o.event) === -1)) {
 						if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
 						el = obj.shadowRoot;
 					} else {
@@ -69,5 +69,5 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', shadRef=null) 
 	}
 	// Replace regular scoped variables with their content, and if content-based put internal wrappers around the bound variables so they can be formatted later.
 	// We can only do this after attributes have been substituted, in order to handle variable binding in an attribute that also has an attribute substituted.
-	return _replaceScopedVars(sel, secSelObj, func, o, null, null, shadRef);
+	return _replaceScopedVars(sel, secSelObj, func, o, null, null, compRef);
 };

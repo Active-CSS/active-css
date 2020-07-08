@@ -1,11 +1,11 @@
 _a.CancelTimer = o => {
 	// Delay action on a secSel by action or label.
-	// This is scoped by document or specific shadow DOM.
+	// This is scoped by document or specific shadow DOM or component.
 	let val = o.actVal.trim();
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, delayRef, loopref;
-	let scope = (o.shadowRef) ? o.shadowRef : 'main';
+	let scope = (o.compRef) ? o.compRef : 'main';
 	// It could be a label cancel. If the label exists, remove the delay.
 	if (labelData[scope + val]) {
 		// This is a label cancel. We know it is tied to a specific action value.

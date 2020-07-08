@@ -2,11 +2,12 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 	// Loop through the config, splitting up multi selectors and giving them their own entry. Put this into the config.
 	var pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	var str, strLength, i, strTrimmed, strTrimCheck, isComponent;
-	var selectorName, selectorProps, evSplit, ev, sel;
+	var selectorName, selectorProps, evSplit, ev, sel, isConditional;
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
 		selectorProps = pConfig[key].value;
+		isConditional = false;
 		// Split by comma, but not any that are in parentheses, as those are in selector functions.
 		str = selectorName.split(/,(?![^\(\[]*[\]\)])/);
 		strLength = str.length;
@@ -14,18 +15,22 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 			strTrimmed = str[i].trim();
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
 			isComponent = (strTrimmed.substr(0, 11) == '@component ') ? true : false;
-			strTrimCheck = (!isComponent || isComponent && str[i].indexOf(':') === -1) ? strTrimmed.slice(0, 1) : '';
+			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
+			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
+			let noQuestionMark;
+			strTrimCheck = (isConditional && (noQuestionMark = strTrimmed.indexOf('?') === -1)) ? '?' : (!isComponent || isComponent && str[i].indexOf(':') === -1) ? strTrimmed.slice(0, 1) : '';
 			switch (strTrimCheck) {
 				case '?':
 					// This is a conditional. This puts the conditional in memory for later use.
 					// When it comes to trapping the use of the conditional, the reference to it is set in the config
 					// for the event, so that is also part of setting up the config.
-					let condName = strTrimmed.substr(1);
+					let condName = (noQuestionMark) ? strTrimmed : strTrimmed.substr(1);
 					if (componentName) {
 						condName = '|' + componentName + '|' + condName;
 					}
 					conditionals[condName] = (typeof conditionals[condName] === 'undefined') ? [] : conditionals[condName];
 					conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
+					isConditional = true;
 					break;
 
 				case '@':
@@ -37,12 +42,20 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						let compName = strTrimmed.split(' ')[1].trim();
 						if (!components[compName]) components[compName] = {};
 						// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
-						if (strTrimmed.indexOf(' shadow') !== -1) {
+						components[compName].mode = null;
+						components[compName].shadow = false;
+						components[compName].scoped = false;
+						components[compName].priv = false;
+						if ((strTrimmed + ' ').indexOf(' shadow ') !== -1) {
 							components[compName].shadow = true;
 							components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
-						} else {
-							components[compName].shadow = false;
-							components[compName].mode = null;
+						}
+						if ((strTrimmed + ' ').indexOf(' private ') !== -1) {
+							components[compName].priv = true;
+							// Private variable areas are always scoped, as they need their own area.
+							// We get a performance hit with scoped areas, so we try and limit this to where needed.
+							// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
+							components[compName].scoped = true;
 						}
 						// Recurse and set up componentness.
 						_makeVirtualConfig(pConfig[key].value, '', compName);
@@ -116,7 +129,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							sel = '|' + componentName + ':' + sel;
 							shadowSels[componentName] = (typeof shadowSels[componentName] === 'undefined') ? [] : shadowSels[componentName];
 							shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
-							// Events get set up only when the shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
+							// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
+							// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
+							components[componentName].scoped = true;
 						}
 						config[sel] = (typeof config[sel] === 'undefined') ? {} : config[sel];
 						config[sel][ev] = (typeof config[sel][ev] === 'undefined') ? {} : config[sel][ev];

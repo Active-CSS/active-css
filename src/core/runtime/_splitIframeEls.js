@@ -1,11 +1,15 @@
-const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
+const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 	let targSel, iframeID;
 	let root = (relatedObj && typeof relatedObj == 'object') ? _getRootNode(relatedObj) : null;
-	let doc = document, hostIsShadow = false, splitSel = false;
-	if (supportsShadow && root instanceof ShadowRoot) {
-		// This was called from within a shadowRoot object. The doc defaults to the shadowRoot.
+	let doc = document, hostIsShadow = false, hostIsScoped = false, splitSel = false;
+	if (root && !root.isEqualNode(document)) {
+		// This was called from within a shadow or scoped component object. The doc defaults to the shadowRoot or the scoped host.
 		doc = root;
-		hostIsShadow = true;
+		if (supportsShadow && root instanceof ShadowRoot) {
+			hostIsShadow = true;
+		} else {
+			hostIsScoped = true;
+		}
 	}
 	if (sel.indexOf(' -> ') !== -1) {
 		// Handle any doc reference first.
@@ -22,6 +26,8 @@ const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
 				if (hostIsShadow) {
 					root = _getRootNode(root.host);
 					doc = root;
+				} else if (!hostIsScoped) {
+					// The parent is the host is the root in a scoped component, and doc is already set to the root.
 				} else if (window.parent.document) {
 					// Reference to an iframe host.
 					doc = window.parent.document;
@@ -42,16 +48,19 @@ const _splitIframeEls = (sel, relatedObj=null, shadowDoc=null, evType=null) => {
 			}
 		}
 		targSel = refSplit[refSplit.length - 1];
-
 	} else {
 		targSel = sel;
 	}
 	if (targSel == 'host') {
-		root = _getRootNode(root.host);
-		doc = root;
-	} else if (shadowDoc && !splitSel) {
-		// Use the default shadow doc. This could be a shadowOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
-		doc = shadowDoc;
+		if (!hostIsScoped) {
+			root = _getRootNode(root.host);
+			doc = root;
+		} else {
+			doc = _getRootNode(root);
+		}
+	} else if (compDoc && !splitSel) {
+		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
+		doc = compDoc;
 	}
 
 	return [doc, targSel, iframeID];

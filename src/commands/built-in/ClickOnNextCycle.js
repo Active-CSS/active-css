@@ -1,1 +1,1 @@
-_a.ClickOnNextCycle = o => { _a.FocusOn(o, 'nc'); };		//	Next selector in list, then cycles
+_a.ClickOnNextCycle = o => { _focusOn(o, 'nc'); };		//	Next selector in list, then cycles

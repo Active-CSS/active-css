@@ -4,7 +4,7 @@ _a.Run = o => {
 		inn = _handleVarsInJS(ActiveCSS._sortOutFlowEscapeChars(wot));
 		return inn;
 	});
-	let _activeVarScope = (o.shadowRef) ? o.shadowRef : "main";
+	let _activeVarScope = (o.compRef && privateScopes[o.compRef]) ? o.compRef : 'main';
 	scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === 'undefined') ? {} : scopedVars[_activeVarScope];
 	try {
 		Function('scopedVars, _activeVarScope', funky)(scopedVars, _activeVarScope);		// jshint ignore:line

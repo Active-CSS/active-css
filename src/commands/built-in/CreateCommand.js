@@ -34,16 +34,16 @@ _a.CreateCommand = o => {
 		'configLine = o.line,' +					// The line in the config file where you can find the function call.
 		'rulesArray = o.rules,' +					// An array of all the action commands and un-evaluated values in the target selector declaration.
 		'selectorRef = o.secSel,' +					// The target selector reference string.
-		'shadowDoc = o.shadowDoc,' +				// The document of the shadow DOM, if applicable.
+		'compDoc = o.compDoc,' +				// The document of the shadow DOM, if applicable.
 		'component = o.component,' +				// The name of the component, if applicable.
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
-		'_activeVarScope = (o.shadowRef) ? o.shadowRef : "main";' +
+		'_activeVarScope = (o.compRef && privateScopes[o.compRef]) ? o.compRef : "main";' +
 		'scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === \'undefined\') ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
 	// It would be nice to have it recreated on a realtime edit in the extension. This would need to be set up in the extension area to detect and remove
 	// the function if it is edited, but that code has no place in here.
-	_a[funcName] = new Function('o', 'scopedVars', funcContent);		// jshint ignore:line
+	_a[funcName] = new Function('o', 'scopedVars', 'privateScopes', funcContent);		// jshint ignore:line
 };

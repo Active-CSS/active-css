@@ -1,1 +1,1 @@
-_a.FocusOnLast = o => { _a.FocusOn(o, 'l'); };			//	Last selector in list
+_a.FocusOnLast = o => { _focusOn(o, 'l'); };			//	Last selector in list

@@ -1,4 +1,4 @@
-const _mainEventLoop = (typ, e, component, shadowDoc, shadowRef) => {
+const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	if (e.target.id == 'cause-js-elements-ext') return;	// Internally triggered by extension to get bubble state. Don't run anything.
 	let el;
 	let bod = (e.target == self || e.target.body) ? true : false;
@@ -54,17 +54,22 @@ const _mainEventLoop = (typ, e, component, shadowDoc, shadowRef) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			let rootNode = _getRootNode(el);
-			if (supportsShadow && rootNode instanceof ShadowRoot) {
+//			if (supportsShadow && rootNode instanceof ShadowRoot) {
+			if (!rootNode.isEqualNode(document)) {
 				// Get the component variables so we can run this element's events in context.
-				component = rootNode.host._acssComponent;
-				shadowDoc = rootNode;
-				shadowRef = rootNode.host._acssShadowRef;
+				let rootNodeHost = rootNode;
+				if (supportsShadow && rootNode instanceof ShadowRoot) {
+					rootNodeHost = rootNode.host;
+				}
+				component = rootNodeHost._acssComponent;
+				compDoc = rootNode;
+				compRef = rootNodeHost._acssCompRef;
 			} else {
 				component = null;
-				shadowDoc = null;
-				shadowRef = null;
+				compDoc = null;
+				compRef = null;
 			}
-			_handleEvents({ obj: el, evType: typ, eve: e, component: component, shadowDoc: shadowDoc, shadowRef: shadowRef });
+			_handleEvents({ obj: el, evType: typ, eve: e, component: component, compDoc: compDoc, compRef: compRef });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || el.activeStopProp) break;		// el can be deleted during the handleEvent.
 		}
 		if (el && el.activeStopProp) {

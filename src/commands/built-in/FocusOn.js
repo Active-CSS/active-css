@@ -1,4 +1,6 @@
-_a.FocusOn = (o, wot, justObj=false) => {
+_a.FocusOn = o => { _focusOn(o); };
+
+const _focusOn = (o, wot, justObj=false) => {
 	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl;
 	// For previousCycle and nextCycle, as well as a selector, it also takes in the following parameters:
 	// 2, 3 - this says how far to go forward or back.
@@ -18,7 +20,7 @@ _a.FocusOn = (o, wot, justObj=false) => {
 	let map = [ 'l', 'n', 'p', 'nc', 'pc', 'ncc', 'pcc' ];
 	if (map.indexOf(wot) !== -1) {
 		if (wot != 'l') {
-			arr = _getFocusedOfNodes(val);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
+			arr = _getFocusedOfNodes(val, o);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
 			nodes = arr[0];
 			useI = arr[1];
 			if (wot == 'pcc' || wot == 'ncc') {
@@ -81,7 +83,7 @@ _a.FocusOn = (o, wot, justObj=false) => {
 		if (o.func.substr(0, 5) == 'Click') {
 			ActiveCSS.trigger(targEl, 'click');
 		} else {
-			targEl.focus();
+			el.focus();
 		}
 	}
 	return targEl;

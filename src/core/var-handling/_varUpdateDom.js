@@ -82,7 +82,7 @@ ActiveCSS._varUpdateDom = (changes) => {
 };
 
 const _varUpdateDomDo = (change, dataObj) => {
-	let refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos;
+	let refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos, obj, scopeRef;
 
 	// Get the reference object for this variable path if it exists.
 	refObj = change.newValue;
@@ -92,34 +92,37 @@ const _varUpdateDomDo = (change, dataObj) => {
 	colonPos = change.currentPath.indexOf('HOST');
 	theHost = null;
 	theDoc = document;
-	let shadScope = null;
+	let compScope = null;
 
-	if (colonPos !== -1) {
-		theHost = document.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
-		theDoc = theHost.shadowRoot;
-	} else {
-		// Is this a scoped shadow DOM variable? If so, it will look something like this: _3.varname.
-		if (change.currentPath.substr(0, 1) == '_') {
-			shadScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
-			if (change.type == 'delete' && shadScope == '') {
-				// The whole scope has been deleted. Clean up.
-				delete shadowDoms[change.currentPath];
-				delete scopedData[change.currentPath];
-				return;
-			}
-			theDoc = shadowDoms[shadScope];
-			if (typeof theDoc === 'undefined') {
-				// Shadow not there at all, skip it.
-//				console.log('shadow isn\'t there');
-				return;
-			} else {
-				theHost = theDoc.host;
-			}
+	// There has been a recent change whereby the scope of the document may have nothing to with the scope of the variable. Ie. you can have nested shadow DOM
+	// components in the document variable scope, or you could have a non-private component within a shadow DOM area.
+
+	// dataObj contains the correct variable information. That contains the top host of the variable scope.
+	// theDoc needs to contain the correct display root on a per item basis - so it cannot be worked out in advance.
+	// Same for theHost. It can no longer be worked out in advance now that variable scoping spreads beyond component boundaries.
+
+	// Is this a scoped component variable? If so, it will look something like this: _3.varname.
+	if (change.currentPath.substr(0, 1) == '_') {
+		compScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
+		if (change.type == 'delete' && compScope == '') {
+			// The whole scope has been deleted. Clean up.
+			delete shadowDoms[change.currentPath];
+			delete scopedData[change.currentPath];
+			delete actualDoms[change.currentPath];
+			return;
 		}
 	}
-	for (cid in dataObj.cids) {
+	for (obj in dataObj.cids) {
 		// Locate and update inside comments.
 		// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
+		cid = dataObj.cids[obj].cid;
+		scopeRef = dataObj.cids[obj].scopeRef;	// Scope ref is the *display* area - not the variable area!
+		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
+		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
+
+		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
+		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+
 		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
 		if (!el) {
 			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
@@ -165,6 +168,14 @@ const _varUpdateDomDo = (change, dataObj) => {
 
 	// Handle content in attributes.
 	for (cid in dataObj.attrs) {
+		cid = dataObj.cids[obj].cid;
+		scopeRef = dataObj.cids[obj].scopeRef;	// Scope ref is the *display* area - not the variable area!
+		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
+		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
+
+		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
+		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+
 		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
 		if (!el) {
 			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
@@ -178,7 +189,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
 			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
 			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
-			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost, shadScope);
+			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost, compScope);
 			el.setAttribute(attr, attrContent);
 		}
 	}

@@ -1,13 +1,13 @@
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, compRef=null) => {
 	let res;
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
-		wot = _replaceScopedVarsExpr(wot);
+		wot = _replaceScopedVarsExpr(wot, compRef);
 		try {
 			res = Function('scopedVars', '"use strict";return (' + wot + ');')(scopedVars);		// jshint ignore:line
 		} catch (err) {
-			console.log('JavaScript expression syntax error: ' + sel);
+			console.log('JavaScript expression error (' + err + '): ' + sel);
 			console.log('Actual expression evaluated: ' + wot);
 		}
 		if (!realVal) {		// If realVal is set to true, we want to return the actual expression result in this case, so do nothing here.

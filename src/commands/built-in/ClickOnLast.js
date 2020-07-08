@@ -1,1 +1,1 @@
-_a.ClickOnLast = o => { _a.FocusOn(o, 'l'); };			//	Last selector in list
+_a.ClickOnLast = o => { _focusOn(o, 'l'); };			//	Last selector in list
