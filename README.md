@@ -12,7 +12,7 @@ Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 * **Fast to learn:** Active CSS is quick to learn, as it looks like CSS. Just learn some new commands like "add-class", "remove-class", etc., plus a few new concepts that turn CSS into a proper programming language.
 * **Fast, intuitive to write:** Active CSS converts common JavaScript actions to a higher-level one-liner CSS syntax. Around 100 new commands and pseudo-selectors for all common website building tasks.
 * **Easy to debug:** Active CSS is easy to debug, even easier than CSS. All declarations are cumulative which means that there are no cascading commands - no heirarchical rules to slow you down trying to get things to work.
-* **Supports modern web components:** As well as supporting the regular DOM, you can more easily build web components with native shadow DOMs having isolated events and variables. Using state is majorly simplified, as variables are automatically scoped to a specific DOM area. State isn't a big deal in Active CSS, like it isn't a big deal in CSS.
+* **Supports modern web components:** As well as supporting the regular DOM, you can more easily build web components with shadow DOMs containers or non-shadow DOM areas having private or shared variables. Events can be isolated to any component. Using state is majorly simplified, as Active cSS variables are automatically shared within a specific component area. State isn't a big deal in Active CSS, like it isn't a big deal in CSS.
 * **Build SPAs:** Active CSS includes an easy front-end method of single page application routing (with tutorial) to make your site faster, more scalable, and more friendly to use. No more clunk-fest website! Now you can have that radio station on your site that you always wanted without melting your brain trying to work out how to keep it on the page.
 * **Extendable:** Write your own Active CSS in native JavaScript on-the-fly in your code. Prototype new commands so you can try out your own styling and action concepts as one-liner commands.
 * **Write more stuff:** With your code leaving a smaller footprint, you don't have to worry any more about adding more functionality to websites. You can tweak more to make it look and do awesome things. It's like tweaking CSS.
@@ -33,10 +33,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
 The production (live) version will look like this:<br>
-activecss-2-1-2.min.js
+activecss-2-2-0.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-1-2.min.js
+activecss-dev-2-2-0.min.js
 
 ## Documentation
 
