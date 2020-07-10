@@ -40,7 +40,7 @@ const _renderCompDomsDo = (o, obj) => {
 	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, compRef);
 
 	// Lastly, handle any {$STRING} value from ajax content if it exists. This must be done last, otherwise we risk var replacement changing content of the $STRING.
-	compPending[shadRef] = (compPending[shadRef].indexOf('{$') !== -1) ? _replaceStringVars(o.ajaxObj, compPending[shadRef]) : compPending[shadRef];
+	compPending[shadRef] = _replaceStringVars(o.ajaxObj, compPending[shadRef]);
 
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];

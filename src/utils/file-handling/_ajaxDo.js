@@ -15,7 +15,7 @@ const _ajaxDo = o => {
 	let intVars = (o.nocache ? '_=' + Date.now() + '&' : '') + '_ACSS=1' + (o.formPreview ? '&_ACSSFORMPREVIEW=1' : '') + (o.formSubmit ? '&_ACSSFORMSUBMIT=1' : '') + '&_ACSSTYPE=' + o.dataType;
 	o.pars = intVars;
 	let url = o.url;
-	if (url === '') return;	// Don't try to pre-get or ajax call empty values.
+	if (o.preGet && url === '') return;	// Don't try to pre-get empty values. It's ok for a regular ajax call.
 	if (o.formSubmit) {
 		// Send the form.
 		o.pars += '&' + _checkForm(o.secSelObj, 'pars');

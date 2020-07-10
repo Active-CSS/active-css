@@ -8,7 +8,7 @@ _c.IfVar = o => {
 	let spl = actVal.split(' ');
 	if (spl.length == 1) {
 		// Run if-var-true.
-		return _ifVarTrue(actVal. o.compRef);
+		return _ifVarTrue(o.actVal, o.compRef);
 	} else {
 		let varName = spl.shift();	// Remove the first element from the array.
 		let compareVal = spl.join(' ')._ACSSSpaceQuoOut();

@@ -5,6 +5,6 @@ _a.Render = o => {
 	// Second handle any components.
 	content = _replaceComponents(o, content);
 	// Lastly, handle any ajax strings.
-	content = (content.indexOf('{$') !== -1) ? _replaceStringVars(o.ajaxObj, content) : content;
+	content = _replaceStringVars(o.ajaxObj, content);
 	_renderIt(o, content);
 };

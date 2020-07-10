@@ -11,5 +11,5 @@ const _ifVarTrue = (val, compRef) => {
 		// If the value wasn't a variable, check if it's a window variable. If not, then just set it to its original value.
 		res = window[val];
 	}
-	return (!res) ? false : res;
+	return (!res) ? false : true;
 };
