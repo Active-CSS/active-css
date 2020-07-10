@@ -19,6 +19,7 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
+		// Convert escaped new lines from json into real new lines because you can't pass new lines through json. I'm not saying anything.
 		_set(scopedVars, compScope + '.' + v, res[v]);
 	}
 };

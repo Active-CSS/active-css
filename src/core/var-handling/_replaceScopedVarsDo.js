@@ -18,7 +18,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					isHost = true;
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot));
+						res = _escapeItem(shadHost.getAttribute(wot), func);
 						let hostCID = shadHost.getAttribute('data-activeid').replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
@@ -48,7 +48,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				wot = (compRef && privateScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
 				res = _get(scopedVars, wot);
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res, func) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = wot;
 			}
 			if (isBound && func.indexOf('Render') !== -1) {

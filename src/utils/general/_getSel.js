@@ -1,4 +1,4 @@
-const _getSel = (o, sel) => {
+const _getSel = (o, sel, priorToGrabAll) => {
 	switch (sel) {
 		case 'me':
 		case 'self':
@@ -13,6 +13,6 @@ const _getSel = (o, sel) => {
 			return (rootNode._acssScoped) ? rootNode : rootNode.host;
 		default:
 			// Grab the element or the first in the group specified.
-			return _getObj(sel);
+			return (priorToGrabAll !== true) ? _getObj(sel) : false;
 	}
 };

@@ -1,6 +1,4 @@
-// Credit goes to to https://github.com/aramk/CSSJSON for the initial regex parser technique that started this whole project.
-// If it wasn't for the initial successes regarding it, the project may not have gotten to where it is today.
-// I owe you a pint, or if you don't drink then a large sandwich.
+// Credit goes to to https://github.com/aramk/CSSJSON for the initial regex parser technique that started this whole project off.
 const _convConfig = (cssString, totOpenCurlies, co=0) => {
 	// Note: By this point in initialisation the config should be compatible for parsing in a similar fashion to CSS.
 	let node = { children: {}, attributes: {} }, match = null, count = 0, bits, sel, name, value, obj, newNode, commSplit;

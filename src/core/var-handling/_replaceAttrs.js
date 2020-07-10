@@ -67,6 +67,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', compRef=null) 
 			return '';	// More useful to return an empty string. '{@' + wot + '>';
 		});
 	}
+	sel = _replaceStringVars(o, sel, compRef);
 	// Replace regular scoped variables with their content, and if content-based put internal wrappers around the bound variables so they can be formatted later.
 	// We can only do this after attributes have been substituted, in order to handle variable binding in an attribute that also has an attribute substituted.
 	return _replaceScopedVars(sel, secSelObj, func, o, null, null, compRef);

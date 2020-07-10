@@ -36,7 +36,7 @@ const _replaceComponents = (o, str, loopI) => {
 				ret = compRef;
 			} else {
 				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.compRef);
-				ret = (ret.indexOf('{$') !== -1) ? _replaceStringVars(o.ajaxObj, ret) : ret;
+				ret = _replaceStringVars(o.ajaxObj, ret);
 			}
 			return (ret) ? ret : '';
 		});
