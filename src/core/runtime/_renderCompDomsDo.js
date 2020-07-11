@@ -5,7 +5,7 @@ const _renderCompDomsDo = (o, obj) => {
 	shadRef = obj.getAttribute('data-ref');
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
-	shadowParent.removeChild(obj);	// Remove the shadow DOM reference tag.
+	obj.remove();	// Remove the shadow DOM reference tag.
 	shadowMode = components[componentName].mode;
 
 	if (shadowMode && shadowParent.shadowRoot || !shadowMode && shadowParent._acssScoped) {
