@@ -168,8 +168,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 
 	// Handle content in attributes.
 	for (cid in dataObj.attrs) {
-		cid = dataObj.cids[obj].cid;
-		scopeRef = dataObj.cids[obj].scopeRef;	// Scope ref is the *display* area - not the variable area!
+		scopeRef = dataObj.attrs[cid].scopeRef;	// Scope ref is the *display* area - not the variable area!
 		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
 		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
 
@@ -185,7 +184,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete dataObj.attrs[cid];
 			continue;
 		}
-		for ([attr, attrOrig] of Object.entries(dataObj.attrs[cid])) {
+		for (attr in dataObj.attrs[cid]) {
+			attrOrig = dataObj.attrs[cid][attr].orig;
 			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
 			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
 			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
