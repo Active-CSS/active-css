@@ -44,7 +44,7 @@ You can find comprehensive documentation [on the website](https://activecss.org)
 
 ## Examples
 
-There are loads of examples [on the concept examples page](https://activecss.org/manual/concept-examples.html).
+There are loads of examples [on the concept examples page](https://activecss.org/manual/examples.html).
 
 Here's a taster:
 
