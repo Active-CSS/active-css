@@ -4,5 +4,5 @@ const _addScopedAttr = (wot, o, originalStr, walker, scopeRef) => {
 	let cid = _addScopedCID(wot, o.secSelObj, scopeRef);
 	let attrName = o.actVal.split(' ')[0];
 	let str = (!walker) ? originalStr.substr(originalStr.indexOf(' ') + 1)._ACSSRepQuo() : originalStr;
-	_set(scopedData, wot + '.attrs[' + cid + ']' + attrName, str);
+	_set(scopedData, wot + '.attrs[' + cid + '][' + attrName + ']', { orig: str, scopeRef });
 };
