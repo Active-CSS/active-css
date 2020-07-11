@@ -1,6 +1,6 @@
 const _debugOutput = oCopy => {
 	// Do some checks to put into oCopy at this point, so we don't have to come back.
-	oCopy.feedbackRes = [];
+//	oCopy.feedbackRes = [];	// this line errors with popstate event - when coming back to this code, sort it out.
 
 /* Part of a future release. Delete if it gets too old.
 	// Check the action function actually exists.
