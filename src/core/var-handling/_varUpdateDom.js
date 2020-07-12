@@ -167,24 +167,29 @@ const _varUpdateDomDo = (change, dataObj) => {
 	}
 
 	// Handle content in attributes.
+	let found;
 	for (cid in dataObj.attrs) {
-		scopeRef = dataObj.attrs[cid].scopeRef;	// Scope ref is the *display* area - not the variable area!
-		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
-
-		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
-
-		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
-		if (!el) {
-			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
-			// Note the current method won't work if the same binding variable is in the attribute twice.
-			// If anyone comes up with a sensible use case, we'll change this method, otherwise it's a bit too niche to put in provisions for
-			// that scenario at this point.
-			delete dataObj.attrs[cid];
-			continue;
-		}
+		found = false;
 		for (attr in dataObj.attrs[cid]) {
+			if (!found) {
+				found = true;	// Only need to do this once per element to get the correct scope.
+				scopeRef = dataObj.attrs[cid][attr].scopeRef;	// Scope ref is the *display* area - not the variable area!
+				theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
+				if (typeof theDoc == 'undefined') break;	// Not there, skip it. It might not be drawn yet.
+
+				// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
+				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+
+				el = theDoc.querySelector('[data-activeid="' + cid + '"]');
+				if (!el) {
+					// The node is no longer there at all. Clean it up so we don't bother looking for it again.
+					// Note the current method won't work if the same binding variable is in the attribute twice.
+					// If anyone comes up with a sensible use case, we'll change this method, otherwise it's a bit too niche to put in provisions for
+					// that scenario at this point.
+					delete dataObj.attrs[cid];
+					break;
+				}
+			}
 			attrOrig = dataObj.attrs[cid][attr].orig;
 			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
 			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
