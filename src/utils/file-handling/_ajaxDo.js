@@ -40,7 +40,6 @@ const _ajaxDo = o => {
 			// Display it. Copy the result from the cached object over to the primary selector.
 			o.res = ajaxResLocations[o.finalURL];
 			_resolveAjaxVars(o);
-			_ajaxDisplay(o);
 		}
 	} else {
 		_ajax(o.formMethod, o.dataType, url, o.pars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
