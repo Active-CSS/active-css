@@ -1,4 +1,4 @@
-const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue, ruleFile, ruleLine, eachLoop=null) => {
+const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue, ruleFile, ruleLine, ruleIntID, eachLoop=null) => {
 	let rulePos;
 
 	// Leave this here please.
@@ -37,16 +37,18 @@ const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue
 	if (rulePos != -1) {
 		// Append to the end of the existing rule value with a comma. Assume the developer knows what he or she is doing.
 		compConfig[sel][ev][condition][eachLoop][secsel][rulePos].value += ', ' + ruleValue;
-		let newRuleFile = '', newRuleLine = '';
+		let newRuleFile = '', newRuleLine = '', newRuleIntID = '';
 		if (compConfig[sel][ev][condition][eachLoop][secsel][rulePos].file) {
 			newRuleFile = ',' + ruleFile;
 			newRuleLine = ',' + ruleLine;
+			newRuleIntID = ',' + ruleIntID;
 		}
 		compConfig[sel][ev][condition][eachLoop][secsel][rulePos].file += newRuleFile;
 		compConfig[sel][ev][condition][eachLoop][secsel][rulePos].line += newRuleLine;
+		compConfig[sel][ev][condition][eachLoop][secsel][rulePos].intID += newRuleIntID;
 		return compConfig;
 	}
 	// Add as a new rule.
-	compConfig[sel][ev][condition][eachLoop][secsel].push({ name: ruleName, value: ruleValue, file: ruleFile, line: ruleLine });
+	compConfig[sel][ev][condition][eachLoop][secsel].push({ name: ruleName, value: ruleValue, file: ruleFile, line: ruleLine, intID: ruleIntID });
 	return compConfig;
 };

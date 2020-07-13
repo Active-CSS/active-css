@@ -4,17 +4,17 @@ _a.CancelTimer = o => {
 	let val = o.actVal.trim();
 	let func = val._ACSSConvFunc();
 	let found = true;
-	let i, pos, delayRef, loopref;
+	let i, pos, intID, delayRef, loopref;
 	let scope = (o.compRef) ? o.compRef : 'main';
 	// It could be a label cancel. If the label exists, remove the delay.
 	if (labelData[scope + val]) {
 		// This is a label cancel. We know it is tied to a specific action value.
 		// Format:
-		// labelData[splitArr.lab] => { del: delayRef, func: o2.func, pos: o2.pos, tid: tid };
-		// labelByIDs[tid] => { del: delayRef, func: o2.func, pos: o2.pos, lab: splitArr.lab };
+		// labelData[splitArr.lab] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, tid: tid };
+		// labelByIDs[tid] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, lab: splitArr.lab };
 		let delData = labelData[scope + val];
-		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.loopRef]);
-		_removeCancel(delData.del, delData.func, delData.pos, delData.loopRef);
+		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
+		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
 	} else {
 		delayRef = (!['~', '|'].includes(o.secSel.substr(0, 1))) ? _getActiveID(o.secSelObj) : o.secSel;
 		if (!delayRef) return;
@@ -23,9 +23,11 @@ _a.CancelTimer = o => {
 				for (i in delayArr[delayRef]) {
 					// Clear all timeout attributes for this selector, and the timeout itself.
 					for (pos in delayArr[delayRef][i]) {
-						for (loopref in delayArr[delayRef][i][pos]) {
-							_clearTimeouts(delayArr[delayRef][i][pos][loopref]);
-							_removeCancel(delayRef, i, pos, loopref);
+						for (intID in delayArr[delayRef][i][pos]) {
+							for (loopref in delayArr[delayRef][i][pos][intID]) {
+								_clearTimeouts(delayArr[delayRef][i][pos][intID][loopref]);
+								_removeCancel(delayRef, i, pos, intID, loopref);
+							}
 						}
 					}
 				}
@@ -33,9 +35,11 @@ _a.CancelTimer = o => {
 				if (delayArr[delayRef] && delayArr[delayRef][func]) {
 					// Clear all actions set up for this function.
 					for (pos in delayArr[delayRef][func]) {
-						for (loopref in delayArr[delayRef][func][pos]) {
-							_clearTimeouts(delayArr[delayRef][func][pos][loopref]);
-							_removeCancel(delayRef, func, pos, loopref);
+						for (intID in delayArr[delayRef][func][pos]) {
+							for (loopref in delayArr[delayRef][func][pos][intID]) {
+								_clearTimeouts(delayArr[delayRef][func][pos][intID][loopref]);
+								_removeCancel(delayRef, func, pos, intID, loopref);
+							}
 						}
 					}
 				} else {
@@ -72,8 +76,9 @@ _a.CancelTimer = o => {
 			} else {
 				if (['~', '|'].includes(o.secSel.substr(0, 1))) {
 					// If it's not in the delay arr we can ignore it.
-					if (!delayArr[delayRef] || !delayArr[delayRef][func] || !delayArr[delayRef][func][o.actPos] || !delayArr[delayRef][func][o.actPos][o.loopRef]) return;
-					cancelCustomArr.push([o.secSel][func][o.actPos][o.loopRef]);
+					if (!delayArr[delayRef] || !delayArr[delayRef][func] || !delayArr[delayRef][func][o.actPos] || !delayArr[delayRef][func][o.actPos][o.intID] ||
+						!delayArr[delayRef][func][o.actPos][o.intID][o.loopRef]) return;
+					cancelCustomArr.push([o.secSel][func][o.actPos][o.intID][o.loopRef]);
 				} else {
 					o.doc.querySelectorAll(o.secSel).forEach(function (obj) {
 						activeID = _getActiveID(obj);

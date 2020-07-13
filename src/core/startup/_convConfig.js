@@ -24,6 +24,7 @@ const _convConfig = (cssString, totOpenCurlies, co=0) => {
 			obj.value = newNode;
 			obj.line = configLine;
 			obj.file = configFile;
+			obj.intID = intIDCounter++;
 			obj.type = 'rule';
 			node[count++] = obj;
 		} else if (match[PARSEEND]) { return node;	// Found closing brace
@@ -43,6 +44,7 @@ const _convConfig = (cssString, totOpenCurlies, co=0) => {
 				obj.type = 'attr';
 				obj.line = configLine;
 				obj.file = configFile;
+				obj.intID = intIDCounter++;
 				node[count++] = obj;
 			} else {
 				node[count++] = line;

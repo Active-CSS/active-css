@@ -64,6 +64,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							components[compName].data = '';
 							components[compName].file = '';
 							components[compName].line = '';
+							components[compName].intID = '';
 						}
 						// Reset the component name, otherwise this will get attached to all the remaining events.
 						compName = '';
@@ -85,6 +86,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');
 							components[componentName].file = pConfig[key].value[0].file;
 							components[componentName].line = pConfig[key].value[0].line;
+							components[componentName].intID = pConfig[key].value[0].intID;
 						}
 					} else {
 						// This is an event.
