@@ -33,13 +33,13 @@ Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the la
 
 The Active CSS installation instructions are [on the website](https://activecss.org/manual/installation.html).
 
-If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
+If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. You can also 
 
 The production (live) version will look like this:<br>
-activecss-2-2-3.min.js
+activecss-2-2-4.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-2-3.min.js
+activecss-dev-2-2-4.min.js
 
 ## Documentation
 
