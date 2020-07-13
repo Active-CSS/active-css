@@ -99,8 +99,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_a[o.func](o, scopedVars, privateScopes);
 	}
 
-	if (!o.interval) {
+	if (!o.interval && delayActiveID) {
 		// We don't cleanup any timers if we are in the middle of an interval. Only on cancel, or if the element is no longer on the page.
+		// Also... don't try and clean up after a non-delayed action. Only clean-up here after delayed actions are completed. Otherwise we get actions being removed
+		// that shouldn't be when clashing actions from different events with different action values, but the same everything esle.
 		_removeCancel(delayRef, o.func, o.actPos, o.loopRef);
 	}
 
