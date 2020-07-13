@@ -18,7 +18,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, eachLoop=null, com
 			// Ie. the event is on a class, which is in more than one element, but only one of them was clicked on. We want THAT one, not the whole class
 			// as the secondary selector. This is *really* important to remember, if anything in the code is optimised.
 			if (nam == 'prevent-default') _checkPassiveState(componentName, ev);
-			compConfig = _assignRule(compConfig, sel, ev, condition, '&', nam, val, rules[key2].file, rules[key2].line, eachLoop);
+			compConfig = _assignRule(compConfig, sel, ev, condition, '&', nam, val, rules[key2].file, rules[key2].line, rules[key2].intID, eachLoop);
 			return;
 		}
 		page = '';
@@ -36,7 +36,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, eachLoop=null, com
 //					secsel = _setUpWebComponent(secsel);
 //				}
 				if (secsel == '&' && nam == 'prevent-default') _checkPassiveState(componentName, ev);
-				compConfig = _assignRule(compConfig, sel, ev, condition, secsel, val[thisAct].name, val[thisAct].value, rules[key2].file, rules[key2].line, eachLoop);
+				compConfig = _assignRule(compConfig, sel, ev, condition, secsel, val[thisAct].name, val[thisAct].value, rules[key2].file, rules[key2].line, rules[key2].intID, eachLoop);
 			}
 		}
 	});

@@ -9,6 +9,7 @@ const _iterateConditionals = (conditions, rules, sel) => {
 		conditions[sel][counter].value = rules[key].value;
 		conditions[sel][counter].file = rules[key].file;
 		conditions[sel][counter].line = rules[key].line;
+		conditions[sel][counter].intID = rules[key].intID;
 	});
 	return conditions;
 };

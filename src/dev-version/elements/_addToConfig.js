@@ -12,7 +12,7 @@ ActiveCSS._addToConfig = (typ, ev, primSel, condList, eachLoop, secSel, act, val
 			let addArr = val.split(', ');
 			let addArrLen = addArr.length, i, arr, ind, thisVal;
 			for (i = 0; i < addArrLen; i++) {
-				config = _assignRule(compConfig, primSel, ev, condList, secSel, act, addArr[i], '', '', eachLoop);
+				config = _assignRule(compConfig, primSel, ev, condList, secSel, act, addArr[i], '', '', '', eachLoop);
 			}
 	}
 	_tellPanelToUpdate();

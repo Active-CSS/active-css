@@ -51,6 +51,7 @@
 		delayArr = [],
 		cancelIDArr = [],				//	[data-activeid][func];		// for cancel-delay
 		cancelCustomArr = [],			//	[~(custom event)][func];	// for cancel-delay
+		intIDCounter = 0,
 		selectors = [],
 		userSetupStarted = false,
 		autoStartInit = false,

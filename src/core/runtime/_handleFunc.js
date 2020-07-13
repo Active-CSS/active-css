@@ -11,7 +11,8 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 			if (delayActiveID) {
 				// Cleanup any delayed actions if the element is no longer there.
 				if (delayArr[delayActiveID]) {
-					_clearTimeouts(delayArr[delayActiveID][o.func][o.actPos][o.loopRef]);
+					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
+					_unloadAllCancelTimerLoop(delayActiveID);
 				}
 				delayArr[delayActiveID] = null;
 				cancelIDArr[delayActiveID] = null;
@@ -42,18 +43,19 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				delayArr[delayRef] = (typeof delayArr[delayRef] !== 'undefined') ? delayArr[delayRef] : [];
 				delayArr[delayRef][o2.func] = (typeof delayArr[delayRef][o2.func] !== 'undefined') ? delayArr[delayRef][o2.func] : [];
 				delayArr[delayRef][o2.func][o2.actPos] = (typeof delayArr[delayRef][o2.func][o2.actPos] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos] : [];
-				if (delayArr[delayRef][o2.func][o2.actPos][o2.loopRef]) {
-//					console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.loopRef);
-					_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.loopRef]);
-					_removeCancel(delayRef, o2.func, o2.actPos, o2.loopRef);
+				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (typeof delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
+				if (delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]) {
+//					console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.intPos + ', ' + o2.loopRef);
+					_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]);
+					_removeCancel(delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef);
 				}
 				o2.delayed = true;
 				if (aftEv == 'after') {
-					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
 					return;
 				}
 				o2.interval = true;
-				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
 				o.actValSing = splitArr.str;
@@ -70,8 +72,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		// Has this action been cancelled? If so, skip the action and remove the cancel.
-		if (cancelCustomArr[delayRef] && cancelCustomArr[delayRef][o.func] && cancelCustomArr[delayRef][o.func][o.actPos] && cancelCustomArr[delayRef][o.func][o.actPos][o.loopRef]) {
-			_removeCancel(delayRef, o.func, o.actPos, o.loopRef);
+		if (cancelCustomArr[delayRef] && cancelCustomArr[delayRef][o.func] && cancelCustomArr[delayRef][o.func][o.actPos] &&
+				cancelCustomArr[delayRef][o.func][o.actPos][o.intID] && cancelCustomArr[delayRef][o.func][o.actPos][o.intID][o.loopRef]
+			) {
+			_removeCancel(delayRef, o.func, o.actPos, o.intID, o.loopRef);
 			return;
 		}
 	}
@@ -103,7 +107,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		// We don't cleanup any timers if we are in the middle of an interval. Only on cancel, or if the element is no longer on the page.
 		// Also... don't try and clean up after a non-delayed action. Only clean-up here after delayed actions are completed. Otherwise we get actions being removed
 		// that shouldn't be when clashing actions from different events with different action values, but the same everything esle.
-		_removeCancel(delayRef, o.func, o.actPos, o.loopRef);
+		_removeCancel(delayRef, o.func, o.actPos, o.intID, o.loopRef);
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!

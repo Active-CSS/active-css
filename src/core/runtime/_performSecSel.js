@@ -86,6 +86,7 @@ const _performSecSel = (loopObj) => {
 				passCond: passCond,
 				file: chilsObj[secSelLoops][targetSelector][m].file,
 				line: chilsObj[secSelLoops][targetSelector][m].line,
+				intID: chilsObj[secSelLoops][targetSelector][m].intID,
 				activeID: activeTrackObj,
 				compRef: compRef,	// unique counter of the shadow element rendered - used for variable scoping.
 				compDoc: compDoc,
