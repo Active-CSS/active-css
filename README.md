@@ -33,7 +33,7 @@ Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the la
 
 The Active CSS installation instructions are [on the website](https://activecss.org/manual/installation.html).
 
-If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. You can also 
+If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. There are also npm versions - links on the website.
 
 The production (live) version will look like this:<br>
 activecss-2-2-4.min.js
@@ -61,7 +61,7 @@ Here's a taster:
 
 Want to see it work? Go to [the website](https://activecss.org).
 
-You'll notice that the syntax looks like CSS. There are lots of features in Active CSS. It is truly epic!
+You'll notice that the syntax looks like CSS. There are lots of features in Active CSS. It is truly epic! You can even use it in-line like CSS, in a style tag!
 
 It puts back the fun in functionality! Yeah, sorry about that.
 
