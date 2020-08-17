@@ -1,28 +1,40 @@
 const _handleLoop = (loopObj) => {
-	let secSelLoops = loopObj.secSelLoops;
+	let originalLoops = loopObj.originalLoops;
 	let compRef = loopObj.compRef;
+	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
+	let existingLoopVars = (loopObj.loopVars) ? loopObj.loopVars : [];
 
 	// Which type of loop is it?
 	// This is here for when we start adding different types of loops. For now we don't need the check.
-	if (secSelLoops.substr(0, 6) == '@each ') {
-		loopObj.secSelLoops = loopObj.originalLoops;	// sort this out - this won't work when it gets to nested loops - unnecessary method - see calling func.
+	if (originalLoops.substr(0, 6) == '@each ') {
 		// eg. @each name in person
 		// eg. @each name, age in person
 		// etc.
 		// It limits variables to the scope we are in.
-		// We need to allow nested loops too. This could require a rethink, but get a single level working first to ease the gradient of complexity.
-		let inPos = secSelLoops.indexOf(' in ');
-		let leftVar = secSelLoops.substr(6, inPos - 6);
+		let inPos = originalLoops.indexOf(' in ');
+		let leftVar = originalLoops.substr(6, inPos - 6);
 		let leftVars, eachLeftVar;
 		if (leftVar.indexOf(',') !== -1) {
 			// There is more than one left-hand assignment.
 			leftVars = leftVar.split(',');
 		}
-		let rightVar = secSelLoops.substr(inPos + 4);
+		let rightVar = originalLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let rightVarReal = (compRef && privateScopes[compRef]) ? compRef + '.' + rightVar : 'main.' + rightVar;
+		let thisScope = ((compRef && privateScopes[compRef]) ? compRef : 'main') + '.';
+		let rightVarReal = thisScope + rightVar;
 
-		let rightVarVal = _get(scopedVars, rightVarReal);
+		let rightVarVal;
+		if (typeof existingLoopVars[rightVar] != 'undefined') {
+			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
+			// We need the real variable reference, so reassign rightVar.
+			rightVar = existingLoopVars[rightVar];
+		} else {
+			rightVarVal = _get(scopedVars, rightVarReal);
+		}
+		if (typeof rightVarVal == 'undefined') {
+			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
+			return;
+		}
 
 		// The variables themselves get converted internally to the actual variable reference. By doing this, we can circumvent a whole bunch of complexity to do
 		// with setting up new variables, and handling {{var}} variable binding, as internally we are referring to the real variable and not the config reference.
@@ -39,17 +51,18 @@ const _handleLoop = (loopObj) => {
 				if (!leftVars) {
 					// Single level array.
 					newRef = rightVar + '[' + i + ']';
-					loopObj2.loopVars[leftVar] = newRef;
-					loopObj2.loopRef = leftVar + '_' + i;
+					existingLoopVars[leftVar] = newRef;
+					loopObj2.loopRef = existingLoopRef + leftVar + '_' + i;
 				} else {
 					// Two dimensional array.
 					for (j in leftVars) {
 						eachLeftVar = leftVars[j].trim();
 						newRef = rightVar + '[' + i + ']' + '[' + j + ']';
-						loopObj2.loopVars[eachLeftVar] = newRef;
-						loopObj2.loopRef = eachLeftVar + '_' + i + '_' + j;	// This will expand to include nested loop references and still needs work as this references multiple items.
+						existingLoopVars[eachLeftVar] = newRef;
 					}
+					loopObj2.loopRef = existingLoopRef + leftVars[0] + '_' + i;	// This will expand to include nested loop references and still needs work as this references multiple items.
 				}
+				loopObj2.loopVars = existingLoopVars;
 				_performSecSel(loopObj2);
 			}
 		} else {
@@ -60,21 +73,20 @@ const _handleLoop = (loopObj) => {
 				if (!leftVars) {
 					// Only referencing the key in the key, value pair. We just place the key value straight in - there is no auto-var substitution for a key.
 					// See _replaceLoopingVars for how this '-_-' works. It just places the value in, basically, and not a variable reference.
-					loopObj2.loopVars[leftVar] = '-_-' + key;
-					loopObj2.loopRef = leftVar + '_0_' + co;
+					existingLoopVars[leftVar] = '-_-' + key;
+					loopObj2.loopRef = existingLoopRef + leftVar + '_0_' + co;
 				} else {
-					loopObj2.loopVars[leftVars[0]] = '-_-' + key;
+					existingLoopVars[leftVars[0]] = '-_-' + key;
 					loopObj2.loopRef = leftVars[0] + '_0_' + co;
 					objValVar = leftVars[1].trim();
 					newRef = rightVar + '.' + key;
-					loopObj2.loopVars[objValVar] = newRef;
-					loopObj2.loopRef = objValVar + '_1_' + co;
+					existingLoopVars[objValVar] = newRef;
+					loopObj2.loopRef = existingLoopRef + objValVar + '_1_' + co;
 				}
 				co++;
+				loopObj2.loopVars = existingLoopVars;
 				_performSecSel(loopObj2);
 			}				
 		}
-	} else {
-		_performSecSel(loopObj);
 	}
 };

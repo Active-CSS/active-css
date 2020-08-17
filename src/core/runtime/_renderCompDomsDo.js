@@ -8,9 +8,8 @@ const _renderCompDomsDo = (o, obj) => {
 	obj.remove();	// Remove the shadow DOM reference tag.
 	shadowMode = components[componentName].mode;
 
-	if (shadowMode && shadowParent.shadowRoot || !shadowMode && shadowParent._acssScoped) {
-		// This is an additional render covering the same area, but we already have this covered. I don't think we can check this any earlier as an additional
-		// component may be required in the same render in the same html string. It's worth looking over this again at a later date.
+	if (shadowMode && shadowParent.shadowRoot) {
+		// This is an additional shadow render covering the same area, but we already have this covered.
 		_renderCompDomsClean(shadRef);
 		return;
 	}
@@ -98,8 +97,8 @@ const _renderCompDomsDo = (o, obj) => {
 		// we can't manipulate the order of those because browsers do not allow a true clone of an event object and everything goes weird.
 		// Basically, if you click on a sub-shadow DOM element and there is no event set on the DOM, it does not trigger IN the shadow DOM. The target is never reached.
 		// So we make sure there is always going to be a shadow DOM event triggered by setting up all possible events. Technically overkill, but we have to do this.
-		// It would be nice if there was a way to get the truly real target on any click, regardless of whether or not it is in a shadow DOM, but that would partly
-		// defeat the point of shadow DOMs. Thankfully there is e.composedPath(), otherwise we'd be royally buggered.
+		// It would be nice if there was a way to get the truly real target on any click, regardless of whether or not it is in a shadow DOM. But thankfully there is
+		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {

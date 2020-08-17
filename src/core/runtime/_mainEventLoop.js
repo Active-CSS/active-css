@@ -54,7 +54,6 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			let rootNode = _getRootNode(el);
-//			if (supportsShadow && rootNode instanceof ShadowRoot) {
 			if (!rootNode.isEqualNode(document)) {
 				// Get the component variables so we can run this element's events in context.
 				let rootNodeHost = rootNode;

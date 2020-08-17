@@ -123,13 +123,7 @@ const _handleEvents = evObj => {
 							eve,
 							runButElNotThere
 						};
-						if (secSelLoops != '0') {
-							// Process any secondary selector loops and anything else.
-							_processSecSelLoops(loopObj);
-						} else {
-							// No secondary selector loops. Just run the action setup.
-							_performSecSel(loopObj);
-						}
+						_performSecSel(loopObj);
 					}
 				}
 			}
