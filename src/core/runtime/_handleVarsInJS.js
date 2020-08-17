@@ -38,7 +38,6 @@ const _handleVarsInJS = function(str) {
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// There's probably a faster way of doing this, but my regex brain isn't totally switched on today. Help if you can!
 		// Just want to remove any /scopedVars\[_activeVarScope\]\./ anywhere in single or double quotes catering for escaped quotes.
-		// If you can do that, lines 37, 38, 49 and 50 can go.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
 			return innards.replace(/scopedVars\[_activeVarScope\]\./g, '');
 		});

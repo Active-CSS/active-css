@@ -2,11 +2,10 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 	// Loop through the config, splitting up multi selectors and giving them their own entry. Put this into the config.
 	var pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	var str, strLength, i, strTrimmed, strTrimCheck, isComponent;
-	var selectorName, selectorProps, evSplit, ev, sel, isConditional;
+	var selectorName, evSplit, ev, sel, isConditional;
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
-		selectorProps = pConfig[key].value;
 		isConditional = false;
 		// Split by comma, but not any that are in parentheses, as those are in selector functions.
 		str = selectorName.split(/,(?![^\(\[]*[\]\)])/);
@@ -146,7 +145,16 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							conditionName = conds.join(' ');
 						}
 						preSetupEvents.push({ ev, sel });
-						config = _iterateRules(config, pConfig[key].value, sel, ev, conditionName, componentName);
+						if (typeof config[sel] === 'undefined') {	// needed for DevTools.
+							config[sel] = {};
+						}
+						if (typeof config[sel][ev] === 'undefined') {	// needed for DevTools.
+							config[sel][ev] = {};
+						}
+						if (typeof config[sel][ev][conditionName] === 'undefined') {
+							config[sel][ev][conditionName] = [];
+						}
+						config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
 					}
 			}
 		}
