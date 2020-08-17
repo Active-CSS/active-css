@@ -14,7 +14,8 @@ Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 * **Fast, intuitive to write:** Active CSS converts common JavaScript actions to a higher-level one-liner CSS syntax. Around 100 new commands and pseudo-selectors for all common website building tasks.
 * **Easy to debug:** Active CSS is easy to debug, even easier than CSS. All declarations are cumulative which means that there are no cascading commands - no heirarchical rules to slow you down trying to get things to work.
 * **A true reactive framework:** Active CSS has the simplest method of automatically updating drawn content based on variable changes. Why suffer with unnecessarily complicated frameworks, when you can set up easy to read CSS-style declarations for components and write your code in one-liners?
-* **No virtual DOM:** Because we worked out how to do the same things as the other frameworks, but without a virtual DOM. Let's face it, a virtual DOM is an overhead if you don't need it. In Active CSS, only the content you want updating gets updated - same as any other framework that uses a virtual DOM. Another benefit, as well as speed, is that you can use your old plugins, and you know where you are with the DOM at any one time. None of this "state-of-truth" stuff. Sure, there's a couple of attributes we need to inject when stuff is going on, but hey - small price to pay. It isn't native technology yet.
+* **Sequential commands:** When you code in Active CSS, commands happen one after the other in sequence. But it still looks like CSS.
+* **No virtual DOM:** Because we worked out how to do pretty much the same things as the other frameworks, but without a virtual DOM. Let's face it, a virtual DOM is an overhead if you don't need it. In Active CSS, only the content you want updating gets updated - same as any other framework that uses a virtual DOM. Another benefit, as well as speed, is that you can use your old plugins, and you know where you are with the DOM at any one time. None of this "state-of-truth" stuff. Sure, there's a couple of attributes we need to inject when stuff is going on, but hey - small price to pay. It isn't native technology yet.
 * **Supports modern web components:** As well as supporting the regular DOM, you can more easily build web components with shadow DOM containers or non-shadow DOM areas having private variables or shared variables that span multiple areas. Events can be isolated to any component. Using state is majorly simplified, as Active CSS variables are automatically shared within a specific component area. State isn't a big deal in Active CSS, like it isn't a big deal in CSS.
 * **Build SPAs:** Active CSS includes an easy front-end method of single page application routing (with tutorial) to make your site faster, more scalable, and more friendly to use. No more clunk-fest website! Now you can have that radio station on your site that you always wanted without melting your brain trying to work out how to keep it on the page.
 * **Extendable:** Write your own Active CSS in native JavaScript on-the-fly in your code. Prototype new commands so you can try out your own styling and action concepts as one-liner commands.
@@ -36,10 +37,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. There are also npm versions - links on the website.
 
 The production (live) version will look like this:<br>
-activecss-2-2-4.min.js
+activecss-2-3-0.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-2-4.min.js
+activecss-dev-2-3-0.min.js
 
 ## Documentation
 
