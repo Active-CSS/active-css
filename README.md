@@ -1,6 +1,7 @@
 <p align="center"><a href="https://activecss.org" target="_blank" rel="noopener noreferrer"><img src="https://github.com/Active-CSS/active-css/raw/master/logo/activecss-150.jpg" alt="Active CSS Logo" style="border-radius: 20px;"></a></p>
 <p align="center">
   <a href="https://github.com/Active-CSS/active-css/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  [![Build Status](https://travis-ci.com/Active-CSS/active-css.svg?branch=master)](https://travis-ci.com/Active-CSS/active-css)
 </p>
 
 # [Active CSS](https://activecss.org/)
