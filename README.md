@@ -8,7 +8,7 @@
 
 Power-up your CSS with actions! Is the CSS of the future a full-on programming language?
 
-Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
+Active CSS is a JavaScript plugin that adds event-driven actions to CSS. It will easy your work with CSS.
 
 * **Easy to install and setup:** Active CSS is just a plugin. You can write your own Active CSS files or use it in inline styles, just like CSS. You can quickly download a regular JavaScript plugin for use in a script tag, or use an NPM version. No pre-processing or complicated setups - Active CSS works in runtime.
 * **Fast to learn:** Active CSS is quick to learn, as it looks like CSS. Just learn some new commands like "add-class", "remove-class", etc., plus a few new concepts that turn CSS into a proper programming language.
@@ -40,10 +40,14 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. There are also npm versions - links on the website.
 
 The production (live) version will look like this:<br>
+```
 activecss-2-3-0.min.js
+```
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
+```
 activecss-dev-2-3-0.min.js
+```
 
 ## Documentation
 
@@ -63,7 +67,7 @@ Here's a taster:
 }
 ```
 
-Want to see it work? Go to [the website](https://activecss.org).
+Want to see it work? Go to Activecss website 👉[the website](https://activecss.org).
 
 You'll notice that the syntax looks like CSS. There are lots of features in Active CSS. It is truly epic! You can even use it in-line like CSS, in a style tag!
 
