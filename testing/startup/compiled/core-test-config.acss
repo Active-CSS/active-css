@@ -26,5 +26,5 @@ body:init {
 
 #checkRemoveClass:test {
 	remove-class: .removeClassToRemove;
-	func: checkRemoveClass testsRun;
+	func: checkRemoveClass;
 }
