@@ -7,7 +7,7 @@ ActiveCSS._returnTree = el => {
 	// selectors[thisAction]
 	let act, itemConfig = {}, stopProp, arr, origEl = el, co, realEvent, mainElRoot, elRoot, origComponent;
 	mainElRoot = _getRootNode(el);
-	if (!mainElRoot.isEqualNode(document)) {
+	if (!mainElRoot.isSameNode(document)) {
 		origComponent = mainElRoot.host._acssComponent;
 		if (!origComponent) origComponent = null;		// Shadow found, but it wasn't set up by Active CSS - so ignore this element, as events won't work on those.
 	}
@@ -82,7 +82,7 @@ ActiveCSS._returnTree = el => {
 							}
 							el = el.host;
 							let thisRootEl = _getRootNode(el);
-							if (!thisRootEl.isEqualNode(document)) {
+							if (!thisRootEl.isSameNode(document)) {
 								component = thisRootEl.host._acssComponent;
 								if (!component) component = null;	// Shadow found, but it wasn't set up by Active CSS - so ignore this element, as events won't work on those.
 							} else {

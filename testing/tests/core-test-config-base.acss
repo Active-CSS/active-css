@@ -1,0 +1,12 @@
+body:init {
+	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
+	var: testIndex 0, window.testsRun [];
+	render: "<div id=\"content\"></div>";
+}
+
+.coreTest:draw {
+	var: testIndex testIndex + 1;
+	var: window.testsRun[testIndex] {};
+	var: window.testsRun[testIndex].desc "{@data-desc}";
+	trigger: test;
+}

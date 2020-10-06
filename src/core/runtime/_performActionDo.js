@@ -32,13 +32,15 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (o.secSel == '#') {
 			console.log('Error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
-		let useSecSel = _prepSelector(o.secSel, o.obj);
-		o.doc.querySelectorAll(useSecSel).forEach(function (obj) {
-			// Loop over each secSec object and handle all the action commands for each one.
-			checkThere = true;
-			let oCopy = Object.assign({}, o);
-			_actionValLoop(oCopy, pars, obj);
-		});
+		let els = _prepSelector(o.secSel, o.obj, o.doc);
+		if (els) {
+			els.forEach((obj) => {
+				// Loop over each target selector object and handle all the action commands for each one.
+				checkThere = true;
+				let oCopy = Object.assign({}, o);
+				_actionValLoop(oCopy, pars, obj);
+			});
+		}
 		if (!checkThere) {
 			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.

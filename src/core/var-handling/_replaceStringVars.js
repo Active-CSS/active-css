@@ -10,9 +10,9 @@ const _replaceStringVars = (o, str, compRef) => {
 				res = '{$STRING}';
 			}
 			return res;
-		} else if (innards.indexOf('$') !== -1) {
+		} else if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 			// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
-			let scopedVar = ((compRef && privateScopes[compRef]) ? compRef : 'main') + '.' + innards;
+			let scopedVar = ((compRef && privVarScopes[compRef]) ? compRef : 'main') + '.' + innards;
 			res = _get(scopedVars, scopedVar);
 			return res || '';
 		} else {

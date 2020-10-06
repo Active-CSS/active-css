@@ -18,7 +18,7 @@ _c.IfVar = o => {
 		} else {
 			compareVal = compareVal._ACSSRepQuo();
 		}
-		let scopedVar = ((o.compRef && privateScopes[o.compRef]) ? o.compRef : 'main') + '.' + varName;
+		let scopedVar = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main') + '.' + varName;
 		let varValue = _get(scopedVars, scopedVar);
 		if (typeof varValue == 'undefined') {
 			varValue = window[varName];

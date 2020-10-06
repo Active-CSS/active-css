@@ -89,6 +89,9 @@
 		// The next two keep track of pending shadow DOM and scoped components to render.
 		compCount = 0,
 		compPending = {},
+		compParents = [],
+		compPrivEvs = [],
+		privVarScopes = [],
 		shadowSels = [],
 		shadowDoms = {},
 		actualDoms = {},
@@ -101,8 +104,7 @@
 		nonPassiveEvents = [],
 		passiveEvents = true,
 		inlineConfigTags = null,
-		supportsShadow = true,
-		privateScopes = [];
+		supportsShadow = true;
 
 	ActiveCSS.customHTMLElements = {};
 

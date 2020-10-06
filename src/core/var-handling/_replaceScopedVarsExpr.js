@@ -16,7 +16,7 @@ const _replaceScopedVarsExpr = (str, compRef=null) => {
 			}
 		}
 		// Prefix with sub-scope (main or _compRef).
-		wot = (compRef && privateScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
+		wot = (compRef && privVarScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
 		res = _get(scopedVars, wot);
 		if (res !== undefined) {
 			// Variable definitely exists in some form.

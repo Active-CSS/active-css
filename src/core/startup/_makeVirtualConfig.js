@@ -40,21 +40,26 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// This is an html component. Stored like the conditional but in a different place.
 						let compName = strTrimmed.split(' ')[1].trim();
 						if (!components[compName]) components[compName] = {};
-						// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 						components[compName].mode = null;
 						components[compName].shadow = false;
 						components[compName].scoped = false;
-						components[compName].priv = false;
-						if ((strTrimmed + ' ').indexOf(' shadow ') !== -1) {
+//						components[compName].scoped = true;		// All components are scoped by default now.
+						components[compName].privEvs = false;
+						let checkStr = strTrimmed + ' ';
+						// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
+						if (checkStr.indexOf(' shadow ') !== -1) {
 							components[compName].shadow = true;
 							components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 						}
-						if ((strTrimmed + ' ').indexOf(' private ') !== -1) {
-							components[compName].priv = true;
+						if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVariables ') !== -1) {	// "private" is deprecated as of v2.4.0
+							components[compName].privVars = true;
 							// Private variable areas are always scoped, as they need their own area.
 							// We get a performance hit with scoped areas, so we try and limit this to where needed.
 							// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
 							components[compName].scoped = true;
+						}
+						if (checkStr.indexOf(' privateEvents ') !== -1) {
+							components[compName].privEvs = true;
 						}
 						// Recurse and set up componentness.
 						_makeVirtualConfig(pConfig[key].value, '', compName);

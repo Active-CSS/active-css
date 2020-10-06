@@ -6,4 +6,5 @@ const _wrapUpStart = () => {
 	let url = _resolveURL(window.location.href);
 	window.history.replaceState(url, document.title, url);
 	setupEnded = true;
+	document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 };

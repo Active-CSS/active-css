@@ -4,6 +4,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, compRef=n
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		wot = _replaceScopedVarsExpr(wot, compRef);
+		
 		try {
 			res = Function('scopedVars', '"use strict";return (' + wot + ');')(scopedVars);		// jshint ignore:line
 		} catch (err) {

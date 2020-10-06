@@ -2,7 +2,7 @@ const _getComponentRoot = (obj) => {
 	// This gets the root of the component - either a scoped host or a shadow DOM rootNode.
 	let scopedHost = (obj.parentElement && (!supportsShadow || supportsShadow && !(obj.parentNode instanceof ShadowRoot))) ? obj.parentElement.closest('[data-active-scoped]') : false;
 	let rootNode = obj.getRootNode();
-	if (!scopedHost && rootNode.isEqualNode(document)) {
+	if (!scopedHost && rootNode.isSameNode(document)) {
 		// There is no component that contains this element.
 		return document;
 	} else if (!scopedHost) {
@@ -10,7 +10,7 @@ const _getComponentRoot = (obj) => {
 		return rootNode;
 	} else {
 		// If it's gotten this far, then there is a scoped component involved.
-		if (scopedHost && rootNode.isEqualNode(document)) {
+		if (scopedHost && rootNode.isSameNode(document)) {
 			// This has to be a scoped component.
 			return scopedHost;
 		} else {

@@ -2,7 +2,7 @@ const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 	let targSel, iframeID;
 	let root = (relatedObj && typeof relatedObj == 'object') ? _getRootNode(relatedObj) : null;
 	let doc = document, hostIsShadow = false, hostIsScoped = false, splitSel = false;
-	if (root && !root.isEqualNode(document)) {
+	if (root && !root.isSameNode(document)) {
 		// This was called from within a shadow or scoped component object. The doc defaults to the shadowRoot or the scoped host.
 		doc = root;
 		if (supportsShadow && root instanceof ShadowRoot) {

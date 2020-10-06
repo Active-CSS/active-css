@@ -1,4 +1,4 @@
-const _getRootNode = (obj) => {
+const _getRootNode = obj => {
 	if (!supportsShadow) {
 		// Either this element is in a scoped component, or it is in the document. It's a simple check.
 		return _getScopedRoot(obj) || document;

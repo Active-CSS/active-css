@@ -18,35 +18,68 @@ const _handleEvents = evObj => {
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
 	let i, testSel, debugNot = '', compSelCheckPos;
+	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
 	if (typeof obj !== 'string') {
-		if (component) {
+		let runGlobalScopeEvents = true;
+		if (component && !(evType == 'draw' && customTags.indexOf(obj.tagName) !== -1)) {
 			// Split for speed. It could be split into document/shadow areas to make even faster, at the times of adding config.
 			// Don't bother optimizing by trying to remember the selectors per event the first time so they can be reused later on. Been down that route already.
 			// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
 			// on a per object basis. It is fine as it is working dynamically. If you do have a go, you will need to consider things like routing affecting DOM
 			// attributes, adding/removing attributes, properties, plus monitoring all objects for any external manipulation. It's really not worth it. This code is
 			// short and fast enough on most devices.
-			for (i = 0; i < selectorListLen; i++) {
-				compSelCheckPos = selectors[evType][i].indexOf(':');
-				if (selectors[evType][i].substr(0, compSelCheckPos) !== component) continue;
-				testSel = selectors[evType][i].substr(compSelCheckPos + 1);
-				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
-				if (testSel.indexOf('<') === -1 && !selectorList.includes(selectors[evType][i])) {
-				    if (testSel == '&') {
-						selectorList.push(selectors[evType][i]);
-				    } else {
-					    try {
-							if (obj.matches(testSel)) {
-								selectorList.push(selectors[evType][i]);
-					    	}
-					    } catch(err) {
-					        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+
+			// Events have an additional action in Active CSS. They can bubble up per component. So a selector in a higher component will be inherited by a lower
+			// component if the mode of the lower component is set to open. If set to closed, only that component's event will be processed. The developer can
+			// stop this event hierarchy bubbling by using the Active CSS prevent-event-default action command. It's like DOM bubbling, but for events.
+			// In a function-based language using native event listeners this would be confusing, but in Active CSS it makes *visual* sense to do this as we are
+			// not using native event listeners. Which is nice.
+			// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components. It is *not* element bubbling. It is event bubbling.
+			// Element bubbling follows native rules. In non-shadow DOM components element bubbling is not affected by the mode of the component.
+			// There is a component tree array, which is used to track if we've hit the document in our references. If we have we bomb out after that.
+			// We stop a component going up the tree after we hit a component mode of "closed". Everything inside a closed component is isolated from anything
+			// higher up.
+			// We bomb out immediately if the developer has used the prevent-event-default action command.
+			// This is all managed before running any events on an object. We make a valid event selector list first and then do the work.
+			// This next bit creates the valid list.
+			let checkCompRef = topCompRef, checkComponent = component, privateEvents = compPrivEvs[topCompRef], parentComponentDetails;
+			while (true) {
+				for (i = 0; i < selectorListLen; i++) {
+					compSelCheckPos = selectors[evType][i].indexOf(':');
+					if (selectors[evType][i].substr(0, compSelCheckPos) !== checkComponent) continue;
+					testSel = selectors[evType][i].substr(compSelCheckPos + 1);
+					// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
+					testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
+					if (testSel.indexOf('<') === -1 && !selectorList.includes(selectors[evType][i])) {
+					    if (testSel == '&') {
+							selectorList.push(selectors[evType][i]);
+					    } else {
+						    try {
+								if (obj.matches(testSel)) {
+									selectorList.push(selectors[evType][i]);
+						    	}
+						    } catch(err) {
+						        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+							}
 						}
 					}
 				}
+				parentComponentDetails = compParents[checkCompRef];
+				if (!privateEvents && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+					if (parentComponentDetails.compRef) {
+						checkCompRef = parentComponentDetails.compRef;
+						checkComponent = '|' + parentComponentDetails.component;
+						privateEvents = parentComponentDetails.privateEvs;	// If the next component mode is set to closed, we won't go any higher than this.
+						continue;
+					}
+				} else {
+					// This component is closed. We don't go any higher.
+					runGlobalScopeEvents = false;
+				}
+				break;
 			}
-    	} else {
+    	}
+    	if (runGlobalScopeEvents) {
 			for (i = 0; i < selectorListLen; i++) {
 				if (['~', '|'].includes(selectors[evType][i].substr(0, 1))) continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
@@ -67,7 +100,7 @@ const _handleEvents = evObj => {
 		selectorList.push(obj);
 		obj = (origObj) ? origObj : obj;
 	}
-		
+
 	let sel, chilsObj;
 	component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
 
@@ -126,7 +159,15 @@ const _handleEvents = evObj => {
 						_performSecSel(loopObj);
 					}
 				}
+				if (obj && obj.activeStopEvProp) {
+					// If the developer has used stop-immediate-event-propagation, we break out at this point.
+					break;
+				}
 			}
+		}
+		if (obj && (obj.activePrevEvDef || obj.activeStopEvProp)) {
+			// If the developer has used prevent-event-default, we break out at this point.
+			break;
 		}
 	}
 	return true;

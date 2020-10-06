@@ -41,7 +41,7 @@ ActiveCSS._theEventFunction = e => {
 	let fsDet = _fullscreenDetails();
 	switch (ev) {
 		case 'click':
-			if (!e.ctrlKey) {	// Allow default behaviour if control key is used.
+			if (!e.ctrlKey && !e.metaKey) {	// Allow default behaviour if control/meta key is used.
 				_mainEventLoop('click', e, component, compDoc, compRef);
 			}
 			break;
@@ -50,6 +50,7 @@ ActiveCSS._theEventFunction = e => {
 		case 'keydown':
 			// A second Active CSS event is going to fire here to check if there is a specific key event.
 			let ctrlCheck = (e.ctrlKey) ? 'Ctrl' : '';
+			let metaCheck = (e.metaKey) ? 'Meta' : '';
 			let shiftCheck = (e.shiftKey) ? 'Shift' : '';
 			let funcKey = e.key;
 			switch (e.key) {
@@ -62,7 +63,7 @@ ActiveCSS._theEventFunction = e => {
 				case '?': funcKey = 'Question'; shiftCheck = ''; break;
 				case '!': funcKey = 'Exclamation'; shiftCheck = ''; break;
 			}
-			_mainEventLoop(ev + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, compRef);
+			_mainEventLoop(ev + metaCheck + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, compRef);
 			_mainEventLoop(ev, e, component, compDoc, compRef);
 			break;
 

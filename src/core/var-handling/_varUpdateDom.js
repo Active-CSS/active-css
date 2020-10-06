@@ -109,7 +109,11 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete shadowDoms[change.currentPath];
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
+			delete compParents[change.currentPath];
+			delete compPrivEvs[change.currentPath];
 			return;
+			// Note that this is only going to clean up components that contain reactive variables. At some point, we should look at a method of cleaning up
+			// all component references when they are removed. Then this can possibly be removed depending on the method.
 		}
 	}
 	for (obj in dataObj.cids) {
@@ -138,7 +142,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 		frag = document.createTextNode(refObj);
 		while (treeWalker.nextNode()) {
 			thisNode = treeWalker.currentNode;
-			if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isEqualNode(el)) {
+			if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isSameNode(el)) {
 				treeWalker.nextNode();
 				continue;	// If this isn't the same parent node or var change, skip it. We got all the appropriate nodes covered with el.
 			}

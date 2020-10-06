@@ -20,7 +20,7 @@ const _performSecSel = (loopObj) => {
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
 		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
-	} else if (!compDoc.isEqualNode(document) && compDoc.hasAttribute('data-active-scoped')) {
+	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
 		// This must be a scoped component.
 		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
 	} else {

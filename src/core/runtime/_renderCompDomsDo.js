@@ -1,14 +1,30 @@
-const _renderCompDomsDo = (o, obj) => {
-	let shadowParent, shadowMode, shadRef, compRef, componentName, template, shadow, shadPar, shadEv;
+const _renderCompDomsDo = (o, obj, childTree) => {
+	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, compRef, componentName, template, shadow, shadPar, shadEv;
 
 	shadowParent = obj.parentNode;
+	parentCompDetails = _componentDetails(shadowParent);
+
 	shadRef = obj.getAttribute('data-ref');
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
-	obj.remove();	// Remove the shadow DOM reference tag.
-	shadowMode = components[componentName].mode;
+	privateEvents = components[componentName].privEvs;
+	isShadow = components[componentName].shadow;
 
-	if (shadowMode && shadowParent.shadowRoot) {
+	// We have a scenario for non-shadow DOM components:
+	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
+	// So check if it already has child nodes. If it does, then it cannot act as a host. Components must have dedicated hosts. So we will add one later.
+	// Shadow DOM components already have hosts, so this action of assigning a host if there is not one does not apply to them.
+	let scopeEl;
+	if (!isShadow && shadowParent.childNodes.length > 1) {
+		scopeEl = document.createElement('acss-scope');
+		shadowParent.replaceChild(scopeEl, obj);
+		// Switch the parent to the new scoping element.
+		shadowParent = scopeEl;
+	} else {
+		obj.remove();	// Remove the shadow DOM reference tag.
+	}
+
+	if (isShadow && shadowParent.shadowRoot) {
 		// This is an additional shadow render covering the same area, but we already have this covered.
 		_renderCompDomsClean(shadRef);
 		return;
@@ -24,13 +40,21 @@ const _renderCompDomsDo = (o, obj) => {
 	// Set up a private scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the compRef, is not the same as the component name. The compRef is the reference of the unique scope.
 	// Hence we need to do this at this point in the code.
-	privateScopes[compRef] = components[componentName].priv ? true: false;
+	privVarScopes[compRef] = components[componentName].privVars ? true: false;
+
+	// Get the parent component details for event bubbling (not element bubbling).
+	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
+	// The data will be assigned to the compParents array further down this page once we have the component drawn.
+	compParents[compRef] = parentCompDetails;
+	compPrivEvs[compRef] = privateEvents;
+
+	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
-	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', compRef: compRef, compDoc: shadow, component: componentName });
+	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', compRef: compRef, compDoc: undefined, component: componentName });
 
 	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, compRef);
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -47,9 +71,9 @@ const _renderCompDomsDo = (o, obj) => {
 	// Remove the pending shadow DOM instruction from the array as it is about to be drawn, and some other clean-up.
 	_renderCompDomsClean(shadRef);
 
-	if (shadowMode) {
+	if (isShadow) {
 		try {
-			shadow = shadowParent.attachShadow({mode: shadowMode});
+			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
 		} catch(err) {
 			console.log('Active CSS error in attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err);
 		}
@@ -64,10 +88,11 @@ const _renderCompDomsDo = (o, obj) => {
 	// that point so we don't need to search for it.
 	shadowParent._acssComponent = componentName;
 	shadowParent._acssCompRef = compRef;
+	shadowParent._acssPrivEvs = privateEvents;
 
 	shadowDoms[compRef] = shadow;
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
-	actualDoms[compRef] = (shadowMode) ? shadow : shadow.getRootNode();
+	actualDoms[compRef] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow.
 	shadow.appendChild(template.content);
@@ -87,7 +112,7 @@ const _renderCompDomsDo = (o, obj) => {
 		});
 	}, 0);
 
-	if (shadowMode) {
+	if (isShadow) {
 		// Now add all possible window events to this shadow, so we can get some proper bubbling order going on when we handle events that don't have any real event
 		// in the shadow. We have to do this - it's to do with future potential events being added during runtime and the necessity of being able to trap them in the
 		// real target so we can initiate true bubbling.

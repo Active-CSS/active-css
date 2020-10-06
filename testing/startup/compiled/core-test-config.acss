@@ -1,0 +1,30 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAddClass\" data-desc=\"Add-class command\" class=\"coreTest\"></div>";
+}
+
+#checkAddClass:test {
+	add-class: .success;
+}
+
+
+body:init {
+	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
+	var: testIndex 0, window.testsRun [];
+	render: "<div id=\"content\"></div>";
+}
+
+.coreTest:draw {
+	var: testIndex testIndex + 1;
+	var: window.testsRun[testIndex] {};
+	var: window.testsRun[testIndex].desc "{@data-desc}";
+	trigger: test;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkRemoveClass\" data-desc=\"Remove-class command\" class=\"coreTest removeClassToRemove\"></div>";
+}
+
+#checkRemoveClass:test {
+	remove-class: .removeClassToRemove;
+	func: checkRemoveClass testsRun;
+}

@@ -30,11 +30,11 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Delayed / interval events need to happen at this level.
-	if (o.actVal.match(/(after|every) (stack|[\d]+(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm)) {
+	if (o.actVal.match(/(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm)) {
 		let o2 = Object.assign({}, o), delLoop = ['after', 'every'], aftEv;
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
-			splitArr = _delaySplit(o2.actVal, aftEv);
+			splitArr = _delaySplit(o2.actVal, aftEv, o.compRef);
 			scope = (o.compRef) ? o.compRef : 'main';
 			splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
@@ -100,7 +100,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.secSelObj.style[o.actName] = o.actVal;
 	} else {
 		// Run the function.
-		_a[o.func](o, scopedVars, privateScopes);
+		_a[o.func](o, scopedVars, privVarScopes);
 	}
 
 	if (!o.interval && delayActiveID) {

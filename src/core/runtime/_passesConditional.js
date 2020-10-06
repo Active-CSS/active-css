@@ -54,7 +54,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 						'component': component,
 						'compDoc': compDoc,
 						'compRef': compRef
-					}, scopedVars, privateScopes) !== actionBoolState) {
+					}, scopedVars, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}
@@ -113,7 +113,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 							'component': component,
 							'compDoc': compDoc,
 							'compRef': compRef
-						}, scopedVars, privateScopes) !== actionBoolState) {
+						}, scopedVars, privVarScopes) !== actionBoolState) {
 							return false;	// Barf out immediately if it fails a condition.
 						}
 					}

@@ -39,12 +39,14 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	// to get a bit creative with the handling. Event listeners occur in the order of registration, which will always give us a bubble down effect, so we have to
 	// do a manual bubble up and skip the first events if they are not related to the document or shadow DOM of the real target.
 	let realItem = composedPath[0];
-	if (_getRootNode(realItem).isEqualNode(document) || e.target.isEqualNode(realItem)) {
+	if (_getRootNode(realItem).isSameNode(document) || e.target.isSameNode(realItem)) {
 		// We do not run parent events of shadow DOM nodes - we only process the final events that run on the actual target, and then bubble up through
 		// composedPath(). *Fully* cloning the event object (with preventDefault() still functional) is not currently supported in browsers, understandably, so
 		// re-ordering of real events is not possible, so we have to skip these. The reason being that preventDefault will break on events that have already bubbled,
 		// and cloning and running an event object later on means that any bubbling will happen before the re-run, thus rendering preventDefault() unusable, and we
-		// do still need it for cancelling browser behaviour. So therefore preventDefault() will correctly fatally error if cloned and re-used.
+		// do still need it for cancelling browser behaviour. So therefore preventDefault() will correctly fatally error if cloned and re-used. [edit] Possibly could have
+		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
+		let compDetails;
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
@@ -53,22 +55,8 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 				_setUpNavAttrs(el);
 			}
 			// Is this in the document root or a shadow DOM root?
-			let rootNode = _getRootNode(el);
-			if (!rootNode.isEqualNode(document)) {
-				// Get the component variables so we can run this element's events in context.
-				let rootNodeHost = rootNode;
-				if (supportsShadow && rootNode instanceof ShadowRoot) {
-					rootNodeHost = rootNode.host;
-				}
-				component = rootNodeHost._acssComponent;
-				compDoc = rootNode;
-				compRef = rootNodeHost._acssCompRef;
-			} else {
-				component = null;
-				compDoc = null;
-				compRef = null;
-			}
-			_handleEvents({ obj: el, evType: typ, eve: e, component: component, compDoc: compDoc, compRef: compRef });
+			compDetails = _componentDetails(el);
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || el.activeStopProp) break;		// el can be deleted during the handleEvent.
 		}
 		if (el && el.activeStopProp) {

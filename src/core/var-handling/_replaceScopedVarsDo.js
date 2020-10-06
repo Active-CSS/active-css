@@ -22,7 +22,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 						let hostCID = shadHost.getAttribute('data-activeid').replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
-						console.log('Component host attribute ' + wot + ' not found.');
+						console.log('Component host attribute ' + wot + ' not found. Looking in host element: ', shadHost);
 						return _;
 					}
 				} else {
@@ -45,7 +45,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					}
 				}
 				// Prefix with sub-scope (main or _CompRef).
-				wot = (compRef && privateScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
+				wot = (compRef && privVarScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
 				res = _get(scopedVars, wot);
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res, func) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
@@ -53,7 +53,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			}
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
-				// original, untouched, config.
+				// original, untouched config.
 				_addScopedCID(realWot, obj, compRef);
 				let retLT, retGT;
 				if (obj.tagName == 'STYLE') {
