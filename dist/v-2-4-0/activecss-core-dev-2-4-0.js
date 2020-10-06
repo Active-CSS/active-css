@@ -1210,6 +1210,21 @@ _a.Var = o => {
 	// Get the expression on the right.
 	let varDetails = arr.join(' ');
 
+	if (!varDetails) {
+		// A right-hand expression is needed, unless it a ++ or a -- operator is being used.
+		if (varName.endsWith('++')) {
+			varName = varName.slice(0, -2);
+			varDetails = varName + '+1';
+		} else if (varName.endsWith('--')) {
+			varName = varName.slice(0, -2);
+			varDetails = varName + '-1';
+		} else {
+			// Display an error and barf out.
+			console.log('Active CSS error: Invalid command "var: ' + varName + ';" needs an expression to be assigned.');
+			return;
+		}
+	}
+
 	// Add in correct scoped variable locations.
 	varName = _prefixScopedVars(varName, o.compRef, 'varname');
 	varDetails = _prefixScopedVars(varDetails, o.compRef);
