@@ -31,7 +31,6 @@ module.exports = function(config) {
 
 		// See here for available frameworks: https://npmjs.org/browse/keyword/karma-adapter
 		// Note that frameworks are loaded from right to left.
-//		frameworks: ['jasmine-dom', 'jasmine', 'es6-shim'],
 		frameworks: ['jasmine', 'es6-shim'],
 
 		// list of files / patterns to load in the browser
@@ -86,8 +85,8 @@ module.exports = function(config) {
 				flags: [
 					'-headless',
 				]
-            }
-        },
+			}
+		},
 
 		// Continuous Integration mode
 		// if true, Karma captures browsers, runs the tests and exits
