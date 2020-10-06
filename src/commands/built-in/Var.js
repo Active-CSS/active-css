@@ -1,7 +1,4 @@
 _a.Var = o => {
-
-	console.log('_a.Var, o.actVal:', o.actVal);
-
 	// Get the name of the variable on the left.
 	let arr = o.actVal.trim().split(' ');
 	let varName = arr.shift();
@@ -40,11 +37,11 @@ _a.Var = o => {
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.
-		console.log('Set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('Set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(window, scopedVar, expr);
 	} else {
 		// Active CSS component/document scopes.
-		console.log('Set ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('Set ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(scopedVars, scopedVar, expr);
 	}
 };
