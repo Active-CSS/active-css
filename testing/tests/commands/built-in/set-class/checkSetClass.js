@@ -6,21 +6,17 @@ function checkSetClassA(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
+		_fail(testEl, 'Element to test (#setClassBox) is not there.');
 		return;
 	}
 
 	if (!_hasClassObj(el, 'classes') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'quotes')) {
-		console.log('Failure in set-class: The classes with .quotes test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The classes with .quotes test failed. Element:', el);
 	}
 
 	// Check if the old classes are still there. This tests a full replacement.
 	if (_hasClassObj(el, 'some') || _hasClassObj(el, 'randomClasses') || _hasClassObj(el, 'in') || _hasClassObj(el, 'here')) {
-		console.log('Failure in set-class: The classes with .quotes test failed because the old classes are still there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The classes with .quotes test failed because the old classes are still there. Element:', el);
 	}
 }
 
@@ -32,17 +28,13 @@ function checkSetClassB(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'someclasses') || !_hasClassObj(el, 'without') || !_hasClassObj(el, 'thequotes')) {
-		console.log('Failure in set-class: The .someclasses .without .thequotes test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The .someclasses .without .thequotes test failed. Element:', el);
 	}
 }
 
@@ -54,17 +46,13 @@ function checkSetClassFinal(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'moreclasses') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'no') || !_hasClassObj(el, 'dots')) {
-		console.log('Failure in set-class: The moreclasses with no dots test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The moreclasses with no dots test failed. Element:', el);
 	}
 
 	_addSuccessClass(testEl);

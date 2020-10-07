@@ -1,0 +1,22 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFunc\" data-desc=\"Basic func command\" class=\"coreTest\"></div>";
+}
+
+#checkFunc:test {
+	var: window.acSSGlobIt "some data";
+	var: myACSSVariable {myObj: true, myArray: [1, 2, 3, 4]};
+	func: checkFuncNum 8;
+	func: checkFuncStr "test string";
+	func: checkFuncTrue true;
+	func: checkFuncFalse false;
+/*	
+	Still to set up:
+	func: checkFuncArr [1, 2, "cheesey wotsit"];
+	func: checkFuncObj {dave: "hi"};
+	func: checkFuncWinVar window.globIt;
+	func: checkFuncACSSVar {myACSSVariable};
+	func: checkFuncExpr {= 7 + 10 =};
+	func: checkFuncCombined [1, 2, "cheesey wotsit"] {dave: "hi"} window.globIt {myACSSVariable} {= new Date =};*/
+
+	func: checkFuncFinal;
+}

@@ -3,8 +3,7 @@ function checkToggleClassA(o) {
 	if (!testEl) return;
 
 	if (!_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		console.log('Failure in toggle-class: The first toggle did not add the class.');
-		_fail(testEl);
+		_fail(testEl, 'The first toggle did not add the class.');
 	}
 }
 
@@ -15,7 +14,7 @@ function checkToggleClassFinal(o) {
 	if (!testEl) return;
 
 	if (_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		console.log('Failure in toggle-class: The second toggle did not remove the class.');
+		_fail(testEl, 'The second toggle did not remove the class.');
 		return;
 	}
 

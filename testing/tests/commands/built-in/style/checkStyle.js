@@ -5,7 +5,7 @@ function checkStyle(o) {
 
 	// Check if the class is no longer there.
 	if (testEl.style.backgroundColor != 'green') {
-		console.log('Failure in style: Green was not set as the background color of the test element.');
+		_fail(testEl, 'Green was not set as the background color of the test element.');
 		return;
 	}
 

@@ -51,7 +51,7 @@ describe('Set up core to test', function() {
 				let allSuccess = true;
 				listOfTestElements.forEach(function ({ thisTitle, thisResult }) {
 					if (!thisResult) {
-						failedTests += thisTitle + "\n";
+						failedTests += '******** ' + thisTitle + "\n";
 						allSuccess = false;
 					}
 				});

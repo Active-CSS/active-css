@@ -4,8 +4,7 @@ function checkTakeClassA(o) {
 
 	// Check if the orange option is selected. That's all we ned to do at this point.
 	if (!_hasClassObj(_getObj('#takeClassOrange'), 'taken')) {
-		console.log('Failure in take-class: The orange fruit did not get the class.');
-		_fail(testEl);
+		_fail(testEl, 'The orange fruit did not get the class.');
 	}
 }
 
@@ -24,13 +23,13 @@ function checkTakeClassFinal(o) {
 			} else {
 				quit = true;
 				success = false;
-				console.log('Failure in take-class: Some fruit other than lime still has the class.');
+				_fail(testEl, 'Some fruit other than lime still has the class.');
 			}
 		}
 	});
 	if (quit) return;
 	if (!success) {
-		console.log('Failure in take-class: The lime fruit did not get the class.');
+		_fail(testEl, 'The lime fruit did not get the class.');
 		return;
 	}
 	_addSuccessClass(testEl);

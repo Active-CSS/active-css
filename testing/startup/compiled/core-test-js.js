@@ -2,11 +2,19 @@
 
 function _addSuccessClass(objOrStr) {
 	let el = (typeof objOrStr == 'object') ? objOrStr : _getObj(str);
+	if (_hasClassObj(el, 'failed')) return;
 	el.classList.add('success');
 }
 
-function _fail(testEl) {
+function _fail(testEl, message=null, par1=null) {
 	testEl.classList.add('failed');
+	if (message) {
+		if (par1) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1);
+		} else {
+			console.log('Failure in ' + testEl.id + ': ' + message);
+		}
+	}
 }
 function _getObj(str, doc=document) {
 	let obj = (str == 'body') ? doc.body : doc.querySelector(str);
@@ -42,17 +50,58 @@ window.alert = function(idToMarkSuccessFul) {
 	el.classList.add('success');
 };
 
-function checkStyle(o) {
+/*
+	Still to set up:
+// func: checkFuncArr [1, 2, "cheesey wotsit"];
+// func: checkFuncObj {dave: "hi"};
+// func: checkFuncWinVar window.globIt;
+// func: checkFuncACSSVar {myACSSVariable};
+// func: checkFuncExpr {= 7 + 10 =};
+// func: checkFuncCombined [1, 2, "cheesey wotsit"] {dave: "hi"} window.globIt {myACSSVariable} {= new Date =};
+*/
+
+// func: checkFuncNum 8;
+function checkFuncNum(o, pars) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkStyle');
+	let testEl = _initTest('checkFunc');
 	if (!testEl) return;
 
-	// Check if the class is no longer there.
-	if (testEl.style.backgroundColor != 'green') {
-		console.log('Failure in style: Green was not set as the background color of the test element.');
-		return;
-	}
-	_addSuccessClass(testEl);
+	if (pars[0] !== 8) _fail(testEl, 'Did not receive the number 8 in checkFuncNum().');
+}
+
+// func: checkFuncStr "test string";
+function checkFuncStr(o, pars) {
+	// Check that the element to remove the class from is definitely there.
+	let testEl = _initTest('checkFunc');
+	if (!testEl) return;
+
+	if (pars[0] !== "test string") _fail(testEl, 'Did not receive the string "test string" in checkFuncStr().');
+}
+
+// func: checkFuncTrue true;
+function checkFuncTrue(o, pars) {
+	// Check that the element to remove the class from is definitely there.
+	let testEl = _initTest('checkFunc');
+	if (!testEl) return;
+
+	if (pars[0] !== true) _fail(testEl, 'Did not receive boolean true in checkFuncTrue().');
+}
+
+// func: checkFuncFalse false;
+function checkFuncFalse(o, pars) {
+	// Check that the element to remove the class from is definitely there.
+	let testEl = _initTest('checkFunc');
+	if (!testEl) return;
+
+	if (pars[0] !== false) _fail(testEl, 'Did not receive boolean false in checkFuncTrue().');
+}
+
+function checkFuncFinal(o) {
+	// Check that the element to remove the class from is definitely there.
+	let testEl = _initTest('checkFunc');
+	if (!testEl) return;
+
+	_addSuccessClass(testEl);	// Only adds a success class if it hasn't specifically failed already.
 }
 
 function checkRemoveClass(o) {
@@ -75,21 +124,17 @@ function checkSetClassA(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
+		_fail(testEl, 'Element to test (#setClassBox) is not there.');
 		return;
 	}
 
 	if (!_hasClassObj(el, 'classes') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'quotes')) {
-		console.log('Failure in set-class: The classes with .quotes test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The classes with .quotes test failed. Element:', el);
 	}
 
 	// Check if the old classes are still there. This tests a full replacement.
 	if (_hasClassObj(el, 'some') || _hasClassObj(el, 'randomClasses') || _hasClassObj(el, 'in') || _hasClassObj(el, 'here')) {
-		console.log('Failure in set-class: The classes with .quotes test failed because the old classes are still there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The classes with .quotes test failed because the old classes are still there. Element:', el);
 	}
 }
 
@@ -101,17 +146,13 @@ function checkSetClassB(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'someclasses') || !_hasClassObj(el, 'without') || !_hasClassObj(el, 'thequotes')) {
-		console.log('Failure in set-class: The .someclasses .without .thequotes test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The .someclasses .without .thequotes test failed. Element:', el);
 	}
 }
 
@@ -123,17 +164,27 @@ function checkSetClassFinal(o) {
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		console.log('Failure in set-class: Element to test (#setClassBox) is not there.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'moreclasses') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'no') || !_hasClassObj(el, 'dots')) {
-		console.log('Failure in set-class: The moreclasses with no dots test failed.');
-		console.log('Element:', el);
-		_fail(testEl);
+		_fail(testEl, 'The moreclasses with no dots test failed. Element:', el);
+	}
+
+	_addSuccessClass(testEl);
+}
+
+function checkStyle(o) {
+	// Check that the element to remove the class from is definitely there.
+	let testEl = _initTest('checkStyle');
+	if (!testEl) return;
+
+	// Check if the class is no longer there.
+	if (testEl.style.backgroundColor != 'green') {
+		_fail(testEl, 'Green was not set as the background color of the test element.');
+		return;
 	}
 
 	_addSuccessClass(testEl);
@@ -145,8 +196,7 @@ function checkTakeClassA(o) {
 
 	// Check if the orange option is selected. That's all we ned to do at this point.
 	if (!_hasClassObj(_getObj('#takeClassOrange'), 'taken')) {
-		console.log('Failure in take-class: The orange fruit did not get the class.');
-		_fail(testEl);
+		_fail(testEl, 'The orange fruit did not get the class.');
 	}
 }
 
@@ -165,13 +215,13 @@ function checkTakeClassFinal(o) {
 			} else {
 				quit = true;
 				success = false;
-				console.log('Failure in take-class: Some fruit other than lime still has the class.');
+				_fail(testEl, 'Some fruit other than lime still has the class.');
 			}
 		}
 	});
 	if (quit) return;
 	if (!success) {
-		console.log('Failure in take-class: The lime fruit did not get the class.');
+		_fail(testEl, 'The lime fruit did not get the class.');
 		return;
 	}
 	_addSuccessClass(testEl);
@@ -182,8 +232,7 @@ function checkToggleClassA(o) {
 	if (!testEl) return;
 
 	if (!_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		console.log('Failure in toggle-class: The first toggle did not add the class.');
-		_fail(testEl);
+		_fail(testEl, 'The first toggle did not add the class.');
 	}
 }
 
@@ -194,7 +243,7 @@ function checkToggleClassFinal(o) {
 	if (!testEl) return;
 
 	if (_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		console.log('Failure in toggle-class: The second toggle did not remove the class.');
+		_fail(testEl, 'The second toggle did not remove the class.');
 		return;
 	}
 
