@@ -56,7 +56,8 @@
 				},
 				testingJS: {
 					src: [
-						'testing/helpers/**/*.js',
+						'testing/helpers/start/helpers-start.js',	// This goes first, always.
+						'testing/helpers/functions/**/*.js',
 						'testing/tests/**/*.js',
 					],
 					dest: 'testing/startup/compiled/core-test-js.js'
@@ -74,7 +75,8 @@
 				files: [
 					'Gruntfile.js',
 					'dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js',
-					'dist/v-<%= fileVersion %>/full-source/prod.js'
+					'dist/v-<%= fileVersion %>/full-source/prod.js',
+					'testing/startup/compiled/core-test-js.js'
 				],
 				options: {
 					esversion: 6,

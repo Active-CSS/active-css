@@ -1,0 +1,20 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSetClass\" data-desc=\"Basic set-class command\" class=\"coreTest\">{|checkSetClassHTML}</div>";
+}
+
+@component checkSetClassHTML {
+	html {
+		<div id="setClassBox" class="some randomClasses in here"></div>
+	}
+}
+
+#checkSetClass:test {
+	#setClassBox {
+		set-class: "classes with .quotes";
+		func: checkSetClassA;
+		set-class: .someclasses .without .thequotes;
+		func: checkSetClassB;
+		set-class: moreclasses with no dots;
+		func: checkSetClassFinal;
+	}
+}

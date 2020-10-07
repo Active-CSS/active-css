@@ -1,0 +1,8 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAddClass\" data-desc=\"Basic add-class command\" class=\"coreTest\"></div>";
+}
+
+#checkAddClass:test {
+	add-class: .success;
+}
+

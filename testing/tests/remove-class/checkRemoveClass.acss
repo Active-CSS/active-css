@@ -1,8 +1,0 @@
-#content:draw {
-	render-before-end: "<div id=\"checkRemoveClass\" data-desc=\"Remove-class command\" class=\"coreTest removeClassToRemove\"></div>";
-}
-
-#checkRemoveClass:test {
-	remove-class: .removeClassToRemove;
-	func: checkRemoveClass;
-}

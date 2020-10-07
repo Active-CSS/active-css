@@ -1051,7 +1051,7 @@ _a.SetAttribute = o => {
 };
 
 _a.SetClass = o => {
-	let str = o.actVal.replace(/\./g, '');
+	let str = o.actVal.replace(/\./g, '')._ACSSRepQuo();
 	_setClassObj(o.secSelObj, str);
 };
 
@@ -1464,7 +1464,7 @@ const _delaySplit = (str, typ, compRef) => {
 	let regex, convTime, theLabel;
 	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)))(?=(?:[^"]|"[^"]*")*)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
-		if (delayValue) {
+		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
 			delayValue = delayValue.replace(/[\{\}]+/g, '');
 			// Replace any scoped variables that may be in the timer value.

@@ -1,11 +1,95 @@
 #content:draw {
-	render-before-end: "<div id=\"checkAddClass\" data-desc=\"Add-class command\" class=\"coreTest\"></div>";
+	render-before-end: "<div id=\"checkAddClass\" data-desc=\"Basic add-class command\" class=\"coreTest\"></div>";
 }
 
 #checkAddClass:test {
 	add-class: .success;
 }
 
+
+#content:draw {
+	render-before-end: "<div id=\"checkAlert\" data-desc=\"Basic alert command\" class=\"coreTest\"></div>";
+}
+
+#checkAlert:test {
+	alert: "checkAlert";
+}
+
+
+#content:draw {
+	render-before-end: "<div id=\"checkRemoveClass\" data-desc=\"Basic remove-class command\" class=\"coreTest removeClassToRemove\"></div>";
+}
+
+#checkRemoveClass:test {
+	remove-class: .removeClassToRemove;
+	func: checkRemoveClass;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkSetClass\" data-desc=\"Basic set-class command\" class=\"coreTest\">{|checkSetClassHTML}</div>";
+}
+
+@component checkSetClassHTML {
+	html {
+		<div id="setClassBox" class="some randomClasses in here"></div>
+	}
+}
+
+#checkSetClass:test {
+	#setClassBox {
+		set-class: "classes with .quotes";
+		func: checkSetClassA;
+		set-class: .someclasses .without .thequotes;
+		func: checkSetClassB;
+		set-class: moreclasses with no dots;
+		func: checkSetClassFinal;
+	}
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkTakeClass\" data-desc=\"Basic take-class command\" class=\"coreTest\">{|checkTakeClassHTML}</div>";
+}
+
+@component checkTakeClassHTML {
+	html {
+		<p>Click on a fruit to select it.</p>
+
+		<div id="takeClassApple" class="takeClassFruit">Apple</div>
+		<div id="takeClassOrange" class="takeClassFruit">Orange</div>
+		<div id="takeClassLemon" class="takeClassFruit taken">Lemon</div>
+		<div id="takeClassLime" class="takeClassFruit">Lime</div>
+	}
+}
+
+#checkTakeClass:test {
+	#takeClassOrange {
+		take-class: .taken;
+		func: checkTakeClassA;
+	}
+	#takeClassLime {
+		take-class: .taken;
+		func: checkTakeClassFinal;
+	}
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkToggleClass\" data-desc=\"Basic toggle-class command\" class=\"coreTest\">{|checkToggleClassHTML}</div>";
+}
+
+@component checkToggleClassHTML {
+	html {
+		<div id="toggleClassBox" class="exampleSquare"></div>
+	}
+}
+
+#checkToggleClass:test {
+	#toggleClassBox {
+        toggle-class: .butNotReally;
+		func: checkToggleClassA;
+        toggle-class: .butNotReally;
+		func: checkToggleClassFinal;
+    }
+}
 
 body:init {
 	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
@@ -18,13 +102,4 @@ body:init {
 	var: window.testsRun[testIndex] {};
 	var: window.testsRun[testIndex].desc "{@data-desc}";
 	trigger: test;
-}
-
-#content:draw {
-	render-before-end: "<div id=\"checkRemoveClass\" data-desc=\"Remove-class command\" class=\"coreTest removeClassToRemove\"></div>";
-}
-
-#checkRemoveClass:test {
-	remove-class: .removeClassToRemove;
-	func: checkRemoveClass;
 }

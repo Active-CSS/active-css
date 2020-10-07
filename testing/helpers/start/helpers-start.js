@@ -1,0 +1,1 @@
+/*jshint strict:false */
