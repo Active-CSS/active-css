@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkScrollY\" data-desc=\"Basic scroll-y command\" class=\"coreTest\">{|checkScrollYHTML}</div>";
+}
+
+@component checkScrollYHTML {
+	html {
+	}
+}
+
+#checkScrollY:test {
+	func: checkScrollY;
+}

@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkLocation\" data-desc=\"Basic location command\" class=\"coreTest\">{|checkLocationHTML}</div>";
+}
+
+@component checkLocationHTML {
+	html {
+	}
+}
+
+#checkLocation:test {
+	func: checkLocation;
+}

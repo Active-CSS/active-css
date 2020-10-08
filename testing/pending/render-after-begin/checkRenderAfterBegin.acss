@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRenderAfterBegin\" data-desc=\"Basic render-after-begin command\" class=\"coreTest\">{|checkRenderAfterBeginHTML}</div>";
+}
+
+@component checkRenderAfterBeginHTML {
+	html {
+	}
+}
+
+#checkRenderAfterBegin:test {
+	func: checkRenderAfterBegin;
+}

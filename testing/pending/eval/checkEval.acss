@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkEval\" data-desc=\"Basic eval command\" class=\"coreTest\">{|checkEvalHTML}</div>";
+}
+
+@component checkEvalHTML {
+	html {
+	}
+}
+
+#checkEval:test {
+	func: checkEval;
+}

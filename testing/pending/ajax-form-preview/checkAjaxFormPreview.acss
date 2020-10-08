@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAjaxFormPreview\" data-desc=\"Basic ajax-form-preview command\" class=\"coreTest\">{|checkAjaxFormPreviewHTML}</div>";
+}
+
+@component checkAjaxFormPreviewHTML {
+	html {
+	}
+}
+
+#checkAjaxFormPreview:test {
+	func: checkAjaxFormPreview;
+}

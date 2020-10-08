@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSelectAll\" data-desc=\"Basic select-all command\" class=\"coreTest\">{|checkSelectAllHTML}</div>";
+}
+
+@component checkSelectAllHTML {
+	html {
+	}
+}
+
+#checkSelectAll:test {
+	func: checkSelectAll;
+}

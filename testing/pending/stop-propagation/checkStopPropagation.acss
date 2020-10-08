@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkStopPropagation\" data-desc=\"Basic stop-propagation command\" class=\"coreTest\">{|checkStopPropagationHTML}</div>";
+}
+
+@component checkStopPropagationHTML {
+	html {
+	}
+}
+
+#checkStopPropagation:test {
+	func: checkStopPropagation;
+}

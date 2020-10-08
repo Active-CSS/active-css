@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkMediaControl\" data-desc=\"Basic media-control command\" class=\"coreTest\">{|checkMediaControlHTML}</div>";
+}
+
+@component checkMediaControlHTML {
+	html {
+	}
+}
+
+#checkMediaControl:test {
+	func: checkMediaControl;
+}

@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnFirst\" data-desc=\"Basic click-on-first command\" class=\"coreTest\">{|checkClickOnFirstHTML}</div>";
+}
+
+@component checkClickOnFirstHTML {
+	html {
+	}
+}
+
+#checkClickOnFirst:test {
+	func: checkClickOnFirst;
+}

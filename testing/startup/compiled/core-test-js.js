@@ -50,6 +50,353 @@ window.alert = function(idToMarkSuccessFul) {
 	el.classList.add('success');
 };
 
+function checkBlur(o) {
+	let testEl = _initTest('checkBlur');
+	if (!testEl) return;
+
+	// Initially #blurField not in focus. Activates after 1s. Blur actives after 1.5s (500ms later).
+	let el = _getObj('#blurField');
+
+	// We want not in focus at start.
+	if (!el.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					// Now we want not in focus.
+					if (!el.isSameNode(document.activeElement)) {
+						// That looked good.
+						_addSuccessClass(testEl);
+					} else {
+						_fail(testEl, '#blurField in not out of focus at the end.');
+					}
+				}, 500);
+			} else {
+				_fail(testEl, '#blurField is not in focus after 1s and it should be.');
+			}
+		}, 1100);
+	} else {
+		_fail(testEl, '#blurField in focus at the start and it shouldn\'t be.');
+	}
+}
+
+// Note: This is the same test as the blur command but with different timings - focus-off is an alternative syntax.
+function checkFocusOff(o) {
+	let testEl = _initTest('checkFocusOff');
+	if (!testEl) return;
+
+	// Initially #focusOffField not in focus. Activates after 2s. Focus-off actives after 2.5s (500ms later).
+	let el = _getObj('#focusOffField');
+
+	// We want not in focus at start.
+	if (!el.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					// Now we want not in focus.
+					if (!el.isSameNode(document.activeElement)) {
+						// That looked good.
+						_addSuccessClass(testEl);
+					} else {
+						_fail(testEl, '#focusOffField in not out of focus at the end.');
+					}
+				}, 500);
+			} else {
+				_fail(testEl, '#focusOffField is not in focus after 2s and it should be.');
+			}
+		}, 2100);
+	} else {
+		_fail(testEl, '#focusOffField in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<form id="focusOnFirstForm">
+		    <input id="focusOnFirstTarget" type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input type="text" name="focus4" value="Sharon">
+		</form>
+*/
+
+function checkFocusOnFirst(o) {
+	let testEl = _initTest('checkFocusOnFirst');
+	if (!testEl) return;
+
+	// Initially #focusOnFirstTarget not in focus. Activates after 3s.
+	let el = _getObj('#focusOnFirstTarget');
+
+	// We want not in focus at start.
+	if (!el.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.isSameNode(document.activeElement)) {
+				// That looked good.
+				_addSuccessClass(testEl);
+			} else {
+				_fail(testEl, '#focusOnFirstTarget is not in focus after 3s and it should be.');
+			}
+		}, 3100);
+	} else {
+		_fail(testEl, '#focusOnFirstTarget in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<form id="focusOnLastForm">
+		    <input type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input id="focusOnLastTarget" type="text" name="focus4" value="Sharon">
+		</form>
+*/
+
+function checkFocusOnLast(o) {
+	let testEl = _initTest('checkFocusOnLast');
+	if (!testEl) return;
+
+	// Initially #focusOnLastTarget not in focus. Activates after 3.5s.
+	let el = _getObj('#focusOnLastTarget');
+
+	// We want not in focus at start.
+	if (!el.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.isSameNode(document.activeElement)) {
+				// That looked good.
+				_addSuccessClass(testEl);
+			} else {
+				_fail(testEl, '#focusOnLastTarget is not in focus after 3.5s and it should be.');
+			}
+		}, 3600);
+	} else {
+		_fail(testEl, '#focusOnLastTarget in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div class="focusOnNextCycleBlock">
+		    <a id="focusOnNextCycleEnd" href="">Apples</a>
+		    <a href="">Oranges</a>
+		    <a href="">Pears</a>
+		    <a id="focusOnNextCycleStart" href="">Bananas</a>
+		    <a id="focusOnNextCycleSecond" href="">Grapes</a>
+		</div>
+
+	focus-on: #focusOnNextCycleStart after 6000ms;
+	focus-on-next: .focusOnNextCycleBlock a after 6250ms;
+	focus-on-next: .focusOnNextCycleBlock a after 6500ms;
+ 	focus-on-next: .focusOnNextCycleBlock a after 6750ms;
+
+*/
+
+function checkFocusOnNextCycle(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnNextCycleStart');
+	let secondEl = _getObj('#focusOnNextCycleSecond');
+	let thirdEl = _getObj('#focusOnNextCycleEnd');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (firstEl.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					if (secondEl.isSameNode(document.activeElement)) {
+						setTimeout(function() {
+							if (thirdEl.isSameNode(document.activeElement)) {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
+			}
+		}, 6100);
+	} else {
+		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div class="focusOnNextBlock">
+		    <a href="">Apples</a>
+		    <a href="">Oranges</a>
+		    <a id="focusOnNextStart" href="">Pears</a>
+		    <a id="focusOnNextSecond" href="">Bananas</a>
+		    <a id="focusOnNextEnd" href="">Grapes</a>
+		</div>
+
+	focus-on: #focusOnNextStart after 4000ms;
+	focus-on-next: .focusOnNextBlock a after 4300ms;
+	focus-on-next: .focusOnNextBlock a after 4600ms;
+	focus-on-next: .focusOnNextBlock a after 4900ms;
+
+*/
+
+function checkFocusOnNext(o) {
+	let testEl = _initTest('checkFocusOnNext');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnNextStart');
+	let secondEl = _getObj('#focusOnNextSecond');
+	let thirdEl = _getObj('#focusOnNextEnd');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (firstEl.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					if (secondEl.isSameNode(document.activeElement)) {
+						setTimeout(function() {
+							if (thirdEl.isSameNode(document.activeElement)) {
+								setTimeout(function() {
+									// Is it still on the last element when it gets to the end and not something else?
+									if (thirdEl.isSameNode(document.activeElement)) {
+										// That looked good.
+										_addSuccessClass(testEl);
+									} else {
+										_fail(testEl, '#focusOnNextEnd is not in focus at the end');
+									}
+								}, 250);
+							} else {
+								_fail(testEl, '#focusOnNextEnd is not in focus at the end');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#focusOnNextSecond has not moved into focus');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#focusOnNextStart is not in focus after 4s and it should be.');
+			}
+		}, 4100);
+	} else {
+		_fail(testEl, '#focusOnNextStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div class="focusOnPreviousCycleBlock">
+		    <a id="focusOnPreviousCycleSecond" href="">Apples</a>
+		    <a id="focusOnPreviousCycleStart" href="">Oranges</a>
+		    <a href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a id="focusOnPreviousCycleEnd" href="">Grapes</a>
+		</div>
+
+    focus-on: #focusOnPreviousCycleStart after 7000ms;
+	focus-on-previous: .focusOnPreviousCycleBlock a after 7250ms;
+	focus-on-previous: .focusOnPreviousCycleBlock a after 7500ms;
+	focus-on-previous: .focusOnPreviousCycleBlock a after 7750ms;
+
+*/
+
+function checkFocusOnPreviousCycle(o) {
+	let testEl = _initTest('checkFocusOnPreviousCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnPreviousCycleStart');
+	let secondEl = _getObj('#focusOnPreviousCycleSecond');
+	let thirdEl = _getObj('#focusOnPreviousCycleEnd');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (firstEl.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					if (secondEl.isSameNode(document.activeElement)) {
+						setTimeout(function() {
+							if (thirdEl.isSameNode(document.activeElement)) {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#focusOnPreviousCycleEnd is not in focus at the end');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#focusOnPreviousCycleSecond has not moved into focus');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
+			}
+		}, 7100);
+	} else {
+		_fail(testEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div class="focusOnPreviousBlock">
+		    <a id="focusOnPreviousEnd" href="">Apples</a>
+		    <a id="focusOnPreviousSecond" href="">Oranges</a>
+		    <a id="focusOnPreviousStart" href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a href="">Grapes</a>
+		</div>
+
+	focus-on: #focusOnPreviousStart after 5000ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5250ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5500ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5750ms;
+
+*/
+
+function checkFocusOnPrevious(o) {
+	let testEl = _initTest('checkFocusOnPrevious');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnPreviousStart');
+	let secondEl = _getObj('#focusOnPreviousSecond');
+	let thirdEl = _getObj('#focusOnPreviousEnd');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (firstEl.isSameNode(document.activeElement)) {
+				setTimeout(function() {
+					if (secondEl.isSameNode(document.activeElement)) {
+						setTimeout(function() {
+							if (thirdEl.isSameNode(document.activeElement)) {
+								setTimeout(function() {
+									// Is it still on the last element when it gets to the end and not something else?
+									if (thirdEl.isSameNode(document.activeElement)) {
+										// That looked good.
+										_addSuccessClass(testEl);
+									} else {
+										_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+									}
+								}, 250);
+							} else {
+								_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#focusOnPreviousSecond has not moved into focus');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
+			}
+		}, 5100);
+	} else {
+		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/* This is tested in the blur command test and will specifically error if it doesn't work. */
+
 /*
 	Still to set up:
 // func: checkFuncArr [1, 2, "cheesey wotsit"];

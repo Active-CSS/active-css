@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkConsoleLog\" data-desc=\"Basic console-log command\" class=\"coreTest\">{|checkConsoleLogHTML}</div>";
+}
+
+@component checkConsoleLogHTML {
+	html {
+	}
+}
+
+#checkConsoleLog:test {
+	func: checkConsoleLog;
+}

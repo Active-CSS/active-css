@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFormReset\" data-desc=\"Basic form-reset command\" class=\"coreTest\">{|checkFormResetHTML}</div>";
+}
+
+@component checkFormResetHTML {
+	html {
+	}
+}
+
+#checkFormReset:test {
+	func: checkFormReset;
+}

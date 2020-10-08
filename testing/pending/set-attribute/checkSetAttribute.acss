@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSetAttribute\" data-desc=\"Basic set-attribute command\" class=\"coreTest\">{|checkSetAttributeHTML}</div>";
+}
+
+@component checkSetAttributeHTML {
+	html {
+	}
+}
+
+#checkSetAttribute:test {
+	func: checkSetAttribute;
+}

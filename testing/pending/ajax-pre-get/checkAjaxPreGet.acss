@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAjaxPreGet\" data-desc=\"Basic ajax-pre-get command\" class=\"coreTest\">{|checkAjaxPreGet}</div>";
+}
+
+@component checkAjaxPreGet {
+	html {
+	}
+}
+
+#checkAjaxPreGet:test {
+	func: checkAjaxPreGet;
+}

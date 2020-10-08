@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRun\" data-desc=\"Basic run command\" class=\"coreTest\">{|checkRunHTML}</div>";
+}
+
+@component checkRunHTML {
+	html {
+	}
+}
+
+#checkRun:test {
+	func: checkRun;
+}

@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkPreventEventDefault\" data-desc=\"Basic prevent-event-default command\" class=\"coreTest\">{|checkPreventEventDefaultHTML}</div>";
+}
+
+@component checkPreventEventDefaultHTML {
+	html {
+	}
+}
+
+#checkPreventEventDefault:test {
+	func: checkPreventEventDefault;
+}

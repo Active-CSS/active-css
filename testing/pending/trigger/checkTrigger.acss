@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkTrigger\" data-desc=\"Basic trigger command\" class=\"coreTest\">{|checkTriggerHTML}</div>";
+}
+
+@component checkTriggerHTML {
+	html {
+	}
+}
+
+#checkTrigger:test {
+	func: checkTrigger;
+}

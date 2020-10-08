@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkCreateCommand\" data-desc=\"Basic create-command command\" class=\"coreTest\">{|checkCreateCommandHTML}</div>";
+}
+
+@component checkCreateCommandHTML {
+	html {
+	}
+}
+
+#checkCreateCommand:test {
+	func: checkCreateCommand;
+}

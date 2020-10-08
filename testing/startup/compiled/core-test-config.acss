@@ -17,6 +17,183 @@
 
 
 #content:draw {
+	render-before-end: "<div id=\"checkBlur\" data-desc=\"Basic blur command\" class=\"coreTest\">{|checkBlurHTML}</div>";
+}
+
+@component checkBlurHTML {
+	html {
+		<input id="blurField" type="text" value="This text field will get focus after one second, and then will blur - or focus-off - two seconds after that.">
+	}
+}
+
+#checkBlur:test {
+	#blurField {
+	    focus-on: self after 1000ms;
+	    blur: true after 1500ms;
+	}
+	func: checkBlur;
+}
+
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOff\" data-desc=\"Basic focus-off command\" class=\"coreTest\">{|checkFocusOffHTML}</div>";
+}
+
+@component checkFocusOffHTML {
+	html {
+		<input id="focusOffField" type="text" value="This text field will get focus after one second, and then will blur - or focus-off - two seconds after that.">
+	}
+}
+
+#checkFocusOff:test {
+	#focusOffField {
+	    focus-on: self after 2000ms;
+	    focus-off: true after 2500ms;
+	}
+	func: checkFocusOff;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnFirst\" data-desc=\"Basic focus-on-first command\" class=\"coreTest\">{|checkFocusOnFirstHTML}</div>";
+}
+
+@component checkFocusOnFirstHTML {
+	html {
+		<form id="focusOnFirstForm">
+		    <input id="focusOnFirstTarget" type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input type="text" name="focus4" value="Sharon">
+		</form>
+	}
+}
+
+#checkFocusOnFirst:test {
+	focus-on-first: #focusOnFirstForm input after 3000ms;
+	func: checkFocusOnFirst;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnLast\" data-desc=\"Basic focus-on-last command\" class=\"coreTest\">{|checkFocusOnLastHTML}</div>";
+}
+
+@component checkFocusOnLastHTML {
+	html {
+		<form id="focusOnLastForm">
+		    <input type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input id="focusOnLastTarget" type="text" name="focus4" value="Sharon">
+		</form>
+	}
+}
+
+#checkFocusOnLast:test {
+	focus-on-last: #focusOnLastForm input after 3500ms;
+	func: checkFocusOnLast;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnNextCycle\" data-desc=\"Basic focus-on-next-cycle command\" class=\"coreTest\">{|checkFocusOnNextCycleHTML}</div>";
+}
+
+@component checkFocusOnNextCycleHTML {
+	html {
+		<div class="focusOnNextCycleBlock">
+		    <a id="focusOnNextCycleEnd" href="">Apples</a>
+		    <a href="">Oranges</a>
+		    <a href="">Pears</a>
+		    <a id="focusOnNextCycleStart" href="">Bananas</a>
+		    <a id="focusOnNextCycleSecond" href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnNextCycle:test {
+	focus-on: #focusOnNextCycleStart after 6000ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after 6250ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after 6500ms;
+ 	focus-on-next-cycle: .focusOnNextCycleBlock a after 6750ms;
+	func: checkFocusOnNextCycle;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnNext\" data-desc=\"Basic focus-on-next command\" class=\"coreTest\">{|checkFocusOnNextHTML}</div>";
+}
+
+@component checkFocusOnNextHTML {
+	html {
+		<div class="focusOnNextBlock">
+		    <a href="">Apples</a>
+		    <a href="">Oranges</a>
+		    <a id="focusOnNextStart" href="">Pears</a>
+		    <a id="focusOnNextSecond" href="">Bananas</a>
+		    <a id="focusOnNextEnd" href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnNext:test {
+    focus-on: #focusOnNextStart after 4000ms;
+	focus-on-next: .focusOnNextBlock a after 4250ms;
+	focus-on-next: .focusOnNextBlock a after 4500ms;
+	focus-on-next: .focusOnNextBlock a after 4750ms;
+	func: checkFocusOnNext;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnPreviousCycle\" data-desc=\"Basic focus-on-previous-cycle command\" class=\"coreTest\">{|checkFocusOnPreviousCycleHTML}</div>";
+}
+
+@component checkFocusOnPreviousCycleHTML {
+	html {
+		<div class="focusOnPreviousCycleBlock">
+		    <a id="focusOnPreviousCycleSecond" href="">Apples</a>
+		    <a id="focusOnPreviousCycleStart" href="">Oranges</a>
+		    <a href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a id="focusOnPreviousCycleEnd" href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnPreviousCycle:test {
+    focus-on: #focusOnPreviousCycleStart after 7000ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7250ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7500ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7750ms;
+	func: checkFocusOnPreviousCycle;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnPrevious\" data-desc=\"Basic focus-on-previous command\" class=\"coreTest\">{|checkFocusOnPreviousHTML}</div>";
+}
+
+@component checkFocusOnPreviousHTML {
+	html {
+		<div class="focusOnPreviousBlock">
+		    <a id="focusOnPreviousEnd" href="">Apples</a>
+		    <a id="focusOnPreviousSecond" href="">Oranges</a>
+		    <a id="focusOnPreviousStart" href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnPrevious:test {
+	focus-on: #focusOnPreviousStart after 5000ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5250ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5500ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5750ms;
+	func: checkFocusOnPrevious;
+}
+
+/* This is tested in the blur command test and will specifically error if it doesn't work. */
+
+#content:draw {
 	render-before-end: "<div id=\"checkFunc\" data-desc=\"Basic func command\" class=\"coreTest\"></div>";
 }
 

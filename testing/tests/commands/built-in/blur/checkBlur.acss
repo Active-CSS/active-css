@@ -1,0 +1,18 @@
+#content:draw {
+	render-before-end: "<div id=\"checkBlur\" data-desc=\"Basic blur command\" class=\"coreTest\">{|checkBlurHTML}</div>";
+}
+
+@component checkBlurHTML {
+	html {
+		<input id="blurField" type="text" value="This text field will get focus after one second, and then will blur - or focus-off - two seconds after that.">
+	}
+}
+
+#checkBlur:test {
+	#blurField {
+	    focus-on: self after 1000ms;
+	    blur: true after 1500ms;
+	}
+	func: checkBlur;
+}
+

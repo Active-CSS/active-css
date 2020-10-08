@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickoutsideEvent\" data-desc=\"Basic clickoutside-event command\" class=\"coreTest\">{|checkClickoutsideEventHTML}</div>";
+}
+
+@component checkClickoutsideEventHTML {
+	html {
+	}
+}
+
+#checkClickoutsideEvent:test {
+	func: checkClickoutsideEvent;
+}

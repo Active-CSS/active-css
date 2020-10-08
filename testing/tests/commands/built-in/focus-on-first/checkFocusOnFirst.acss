@@ -1,0 +1,20 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnFirst\" data-desc=\"Basic focus-on-first command\" class=\"coreTest\">{|checkFocusOnFirstHTML}</div>";
+}
+
+@component checkFocusOnFirstHTML {
+	html {
+		<form id="focusOnFirstForm">
+		    <input id="focusOnFirstTarget" type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input type="text" name="focus4" value="Sharon">
+		</form>
+	}
+}
+
+#checkFocusOnFirst:test {
+	focus-on-first: #focusOnFirstForm input after 3000ms;
+	func: checkFocusOnFirst;
+}

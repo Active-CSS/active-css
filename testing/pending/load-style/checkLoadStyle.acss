@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkLoadStyle\" data-desc=\"Basic load-style command\" class=\"coreTest\">{|checkLoadStyleHTML}</div>";
+}
+
+@component checkLoadStyleHTML {
+	html {
+	}
+}
+
+#checkLoadStyle:test {
+	func: checkLoadStyle;
+}

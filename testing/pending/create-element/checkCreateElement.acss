@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkCreateElement\" data-desc=\"Basic create-element command\" class=\"coreTest\">{|checkCreateElementHTML}</div>";
+}
+
+@component checkCreateElementHTML {
+	html {
+	}
+}
+
+#checkCreateElement:test {
+	func: checkCreateElement;
+}

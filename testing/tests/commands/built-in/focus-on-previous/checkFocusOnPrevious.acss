@@ -1,0 +1,23 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnPrevious\" data-desc=\"Basic focus-on-previous command\" class=\"coreTest\">{|checkFocusOnPreviousHTML}</div>";
+}
+
+@component checkFocusOnPreviousHTML {
+	html {
+		<div class="focusOnPreviousBlock">
+		    <a id="focusOnPreviousEnd" href="">Apples</a>
+		    <a id="focusOnPreviousSecond" href="">Oranges</a>
+		    <a id="focusOnPreviousStart" href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnPrevious:test {
+	focus-on: #focusOnPreviousStart after 5000ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5250ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5500ms;
+	focus-on-previous: .focusOnPreviousBlock a after 5750ms;
+	func: checkFocusOnPrevious;
+}

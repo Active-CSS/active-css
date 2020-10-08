@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAjaxFormSubmit\" data-desc=\"Basic ajax-form-submit command\" class=\"coreTest\">{|checkAjaxFormSubmitHTML}</div>";
+}
+
+@component checkAjaxFormSubmitHTML {
+	html {
+	}
+}
+
+#checkAjaxFormSubmit:test {
+	func: checkAjaxFormSubmit;
+}
