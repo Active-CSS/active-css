@@ -70,13 +70,307 @@ function checkBlur(o) {
 					} else {
 						_fail(testEl, '#blurField in not out of focus at the end.');
 					}
-				}, 500);
+				}, window.delayTimes.blur[1] - window.delayTimes.blur[0] + 100);
 			} else {
 				_fail(testEl, '#blurField is not in focus after 1s and it should be.');
 			}
-		}, 1100);
+		}, window.delayTimes.blur[0] + 100);
 	} else {
 		_fail(testEl, '#blurField in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div class="clickOnFirstDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnFirstP"></p>
+*/
+
+function checkClickOnFirst(o) {
+	let testEl = _initTest('checkClickOnFirst');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnFirstP');
+
+	if (el.innerHTML == '') {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.innerHTML == 'green') {
+				// That looked good.
+				_addSuccessClass(testEl);
+			} else {
+				_fail(testEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
+			}
+		}, window.delayTimes.clickOnFirst[0] + 100);
+	} else {
+		_fail(testEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
+	}
+}
+
+/*
+		<div id="clickOnLastDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnLastP"></p>
+*/
+
+function checkClickOnLast(o) {
+	let testEl = _initTest('checkClickOnLast');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnLastP');
+
+	if (el.innerHTML == '') {
+		setTimeout(function() {
+			// Now we want in focus.
+			if (el.innerHTML == 'purple and green') {
+				// That looked good.
+				_addSuccessClass(testEl);
+			} else {
+				_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
+			}
+		}, window.delayTimes.clickOnLast[0] + 100);
+	} else {
+		_fail(testEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
+	}
+}
+
+/*
+		<div id="clickOnNextCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextCycleP"></p>
+*/
+
+function checkClickOnNextCycle(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (el.innerHTML == 'yellow') {
+				setTimeout(function() {
+					if (el.innerHTML == 'purple and green') {
+						setTimeout(function() {
+							if (el.innerHTML == 'green') {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
+			}
+		}, window.delayTimes.clickOnNextCycle[0] + 350); // can skip the first focus check as we're interested in click-on-next.
+	} else {
+		_fail(testEl, '#clickOnNextCycleStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div id="clickOnNextDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextP"></p>
+*/
+
+function checkClickOnNext(o) {
+	let testEl = _initTest('checkClickOnNext');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextStart');
+	let el = _getObj('#clickOnNextP');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (el.innerHTML == 'yellow') {
+				setTimeout(function() {
+					if (el.innerHTML == 'purple and green') {
+						setTimeout(function() {
+							if (el.innerHTML == 'purple and green') {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#clickOnNextP does not contain the test "purple and green".');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
+			}
+		}, window.delayTimes.clickOnNext[0] + 350); // can skip the first focus check as we're interested in click-on-next.
+	} else {
+		_fail(testEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div id="clickOnPreviousCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnPreviousCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnPreviousCycleP"></p>
+*/
+
+function checkClickOnPreviousCycle(o) {
+	let testEl = _initTest('checkClickOnPreviousCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnPreviousCycleStart');
+	let el = _getObj('#clickOnPreviousCycleP');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (el.innerHTML == 'orange') {
+				setTimeout(function() {
+					if (el.innerHTML == 'green') {
+						setTimeout(function() {
+							if (el.innerHTML == 'purple and green') {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#clickOnPreviousCycleP does not contain the test "purple and green".');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
+			}
+		}, window.delayTimes.clickOnPreviousCycle[0] + 350); // can skip the first focus check as we're interested in click-on-next.
+	} else {
+		_fail(testEl, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/*
+		<div id="clickOnPreviousDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnPreviousStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnPreviousP"></p>
+*/
+
+function checkClickOnPrevious(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnPreviousStart');
+	let el = _getObj('#clickOnPreviousP');
+
+	// We want not in focus at start.
+	if (!firstEl.isSameNode(document.activeElement)) {
+		setTimeout(function() {
+			if (el.innerHTML == 'orange') {
+				setTimeout(function() {
+					if (el.innerHTML == 'green') {
+						setTimeout(function() {
+							if (el.innerHTML == 'green') {
+								// That looked good.
+								_addSuccessClass(testEl);
+							} else {
+								_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
+							}
+						}, 250);
+					} else {
+						_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
+					}
+				}, 250);
+			} else {
+				_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
+			}
+		}, window.delayTimes.clickOnPrevious[0] + 350); // can skip the first focus check as we're interested in click-on-next.
+	} else {
+		_fail(testEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+/* Pended until clone/restore-clone issue 36 has been resolved.
+
+function checkClone(o) {
+	let testEl = _initTest('checkClone');
+	if (!testEl) return;
+
+	let el = _getObj('#restoreCloneInHere');
+	if (el.innerHTML == '<p class="cloneText"><span>This text is going to be cloned</span></p>') {
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, 'The #restoreCloneHere element failed to receive the clone from .cloneText. el.innerHTML:', el.innerHTML);
+	}
+}
+
+function checkCloneBefore(o) {
+	let testEl = _initTest('checkClone');
+	if (!testEl) return;
+
+	let el = _getObj('#restoreCloneInHere');
+	if (el.innerHTML != '<div id="restoreHere"></div>') {
+		_fail(testEl, 'The #restoreCloneHere element hasn\'t got the correct inner HTML before the clone test starts.');
+	}
+}
+*/
+/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
+
+function checkCopyToClipboard(o) {
+	let testEl = _initTest('checkCopyToClipboard');
+	if (!testEl) return;
+
+	// It gets into this function from the copy event, the test has passed. There appears to be no way to read the contents of the clipboard reliably.
+	_addSuccessClass(testEl);
+}
+*/
+
+function checkEval(o) {
+	let testEl = _initTest('checkEval');
+	if (!testEl) return;
+
+	if (typeof window.evalResult !== undefined) {
+		if (window.evalResult === 2) {
+			_addSuccessClass(testEl);
+		} else {
+			_fail(testEl, 'window.evalResult is being defined in eval check but result doesn\'t equal 2.');
+		}
+	} else {
+		_fail(testEl, 'window.evalResult not being defined in eval check.');
 	}
 }
 
@@ -101,11 +395,11 @@ function checkFocusOff(o) {
 					} else {
 						_fail(testEl, '#focusOffField in not out of focus at the end.');
 					}
-				}, 500);
+				}, 250);
 			} else {
 				_fail(testEl, '#focusOffField is not in focus after 2s and it should be.');
 			}
-		}, 2100);
+		}, window.delayTimes.focusOff[0] + 100);
 	} else {
 		_fail(testEl, '#focusOffField in focus at the start and it shouldn\'t be.');
 	}
@@ -138,7 +432,7 @@ function checkFocusOnFirst(o) {
 			} else {
 				_fail(testEl, '#focusOnFirstTarget is not in focus after 3s and it should be.');
 			}
-		}, 3100);
+		}, window.delayTimes.focusOnFirst[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnFirstTarget in focus at the start and it shouldn\'t be.');
 	}
@@ -171,7 +465,7 @@ function checkFocusOnLast(o) {
 			} else {
 				_fail(testEl, '#focusOnLastTarget is not in focus after 3.5s and it should be.');
 			}
-		}, 3600);
+		}, window.delayTimes.focusOnLast[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnLastTarget in focus at the start and it shouldn\'t be.');
 	}
@@ -222,7 +516,7 @@ function checkFocusOnNextCycle(o) {
 			} else {
 				_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
 			}
-		}, 6100);
+		}, window.delayTimes.focusOnNextCycle[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
 	}
@@ -280,7 +574,7 @@ function checkFocusOnNext(o) {
 			} else {
 				_fail(testEl, '#focusOnNextStart is not in focus after 4s and it should be.');
 			}
-		}, 4100);
+		}, window.delayTimes.focusOnNext[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnNextStart in focus at the start and it shouldn\'t be.');
 	}
@@ -331,7 +625,7 @@ function checkFocusOnPreviousCycle(o) {
 			} else {
 				_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
 			}
-		}, 7100);
+		}, window.delayTimes.focusOnPreviousCycle[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
 	}
@@ -389,7 +683,7 @@ function checkFocusOnPrevious(o) {
 			} else {
 				_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
 			}
-		}, 5100);
+		}, window.delayTimes.focusOnPrevious[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
 	}
@@ -451,6 +745,22 @@ function checkFuncFinal(o) {
 	_addSuccessClass(testEl);	// Only adds a success class if it hasn't specifically failed already.
 }
 
+function checkRemoveAttribute(o) {
+	let testEl = _initTest('checkRemoveAttribute');
+	if (!testEl) return;
+
+	let el = _getObj('#removeAttributeDiv');
+	if (!el) {
+		_fail(testEl, '#removeAttributeDiv not present to perform remove-attribute command.');
+	}
+
+	if (!el.hasAttribute('data-test')) {
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, 'Failed to remove the attribute "data-test" from #removeAttributeDiv. Element:', el);
+	}
+}
+
 function checkRemoveClass(o) {
 	// Check that the element to remove the class from is definitely there.
 	let testEl = _initTest('checkRemoveClass');
@@ -461,6 +771,105 @@ function checkRemoveClass(o) {
 		return;
 	}
 	_addSuccessClass(testEl);
+}
+
+/* Pended until clone/restore-clone issue 36 has been resolved.
+function checkRemoveClone(o) {
+	let testEl = _initTest('checkRemoveClone');
+	if (!testEl) return;
+
+//	_fail(testEl, 'message');
+
+	_addSuccessClass(testEl);
+}
+*/
+function checkRemoveProperty(o) {
+	let testEl = _initTest('checkRemoveProperty');
+	if (!testEl) return;
+
+	let el = _getObj('#removePropertyDiv');
+	if (!el) {
+		_fail(testEl, '#removePropertyDiv not present to perform remove-property command.');
+	}
+
+	if (el.style.backgroundColor != 'green') {
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, 'Failed to remove the background-color property from #removePropertyDiv. Element:', el);
+	}
+}
+
+function checkRemovePropertyBefore(o) {
+	let testEl = _initTest('checkRemoveProperty');
+	if (!testEl) return;
+
+	let el = _getObj('#removePropertyDiv');
+	if (!el) {
+		_fail(testEl, '#removePropertyDiv not present to perform remove-property command.');
+	}
+
+	if (el.style.backgroundColor != 'green') {
+		_fail(testEl, '#removePropertyDiv does not have a background-color of green before the test of remove-property begins.');
+	}
+}
+
+function checkRemove(o) {
+	let testEl = _initTest('checkRemove');
+	if (!testEl) return;
+
+	let el = _getObj('#removeToRemove');
+	if (!el) {
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#removeToRemove did not get removed by the remove command.');
+	}
+}
+
+function checkRemoveBefore(o) {
+	let testEl = _initTest('checkRemove');
+	if (!testEl) return;
+
+	let el = _getObj('#removeToRemove');
+	if (!el) {
+		_fail(testEl, '#removeToRemove is not present in order to perform the remove test.');
+	}
+}
+
+/* This test is covered by the clone command test, as they work together. */
+
+function checkRun(o) {
+	let testEl = _initTest('checkRun');
+	if (!testEl) return;
+
+	if (typeof window.runResult !== undefined) {
+		if (window.runResult === 2) {
+			_addSuccessClass(testEl);
+		} else {
+			_fail(testEl, 'window.runResult is being defined in run check but result doesn\'t equal 2.');
+		}
+	} else {
+		_fail(testEl, 'window.runResult not being defined in run check.');
+	}
+}
+
+function checkSetAttribute(o) {
+	let testEl = _initTest('checkSetAttribute');
+	if (!testEl) return;
+
+	let el = _getObj('#setAttributeDiv');
+	if (!el) {
+		_fail(testEl, '#setAttributeDiv not present to perform set-attribute command.');
+	}
+
+	if (el.hasAttribute('data-test')) {
+		if (el.getAttribute('data-test') == 'some data') {
+			_addSuccessClass(testEl);
+		} else {
+			_fail(testEl, 'Added attribute "data-test" to #setAttributeDiv but it does not contain the text "some data". Element:', el);
+		}
+	} else {
+		_fail(testEl, 'Failed to add the attribute "data-test" to #setAttributeDiv. Element:', el);
+	}
 }
 
 // set-class: "classes with .quotes";
@@ -521,6 +930,36 @@ function checkSetClassFinal(o) {
 	}
 
 	_addSuccessClass(testEl);
+}
+
+function checkSetProperty(o) {
+	let testEl = _initTest('checkSetProperty');
+	if (!testEl) return;
+
+	let el = _getObj('#setPropertyInput');
+	if (!el) {
+		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+	}
+
+	if (!el.disabled) {
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, 'Failed to remove the disabled property from #setPropertyInput. Element:', el);
+	}
+}
+
+function checkSetPropertyBefore(o) {
+	let testEl = _initTest('checkSetProperty');
+	if (!testEl) return;
+
+	let el = _getObj('#setPropertyInput');
+	if (!el) {
+		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+	}
+
+	if (!el.disabled) {
+		_fail(testEl, '#setPropertyInput is not disabled before the test of set-property begins and it shouldn\'t be.');
+	}
 }
 
 function checkStyle(o) {
@@ -595,4 +1034,27 @@ function checkToggleClassFinal(o) {
 	}
 
 	_addSuccessClass(testEl);
+}
+
+function checkUrlChange(o) {
+	let testEl = _initTest('checkUrlChange');
+	if (!testEl) return;
+
+	let urlTestOk = false, titleTestOk = false;
+
+	if (window.location.pathname === '/test/funky/url') {
+		urlTestOk = true;
+	} else {
+		_fail(testEl, 'url-change failed to change the URL to "/test/funky/url"');
+	}
+
+	if (document.title === 'Funky test URL') {
+		titleTestOk = true;
+	} else {
+		_fail(testEl, 'url-change failed to change the document.title to "Funky test URL"');
+	}
+
+	if (urlTestOk && titleTestOk) {
+		_addSuccessClass(testEl);
+	}
 }

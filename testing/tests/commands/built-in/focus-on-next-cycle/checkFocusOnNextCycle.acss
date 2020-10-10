@@ -15,9 +15,9 @@
 }
 
 #checkFocusOnNextCycle:test {
-	focus-on: #focusOnNextCycleStart after 6000ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after 6250ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after 6500ms;
- 	focus-on-next-cycle: .focusOnNextCycleBlock a after 6750ms;
+	focus-on: #focusOnNextCycleStart after {window.delayTimes.focusOnNextCycle[0]}ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[1]}ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[2]}ms;
+ 	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[3]}ms;
 	func: checkFocusOnNextCycle;
 }

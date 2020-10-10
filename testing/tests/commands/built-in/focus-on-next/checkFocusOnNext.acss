@@ -15,9 +15,9 @@
 }
 
 #checkFocusOnNext:test {
-    focus-on: #focusOnNextStart after 4000ms;
-	focus-on-next: .focusOnNextBlock a after 4250ms;
-	focus-on-next: .focusOnNextBlock a after 4500ms;
-	focus-on-next: .focusOnNextBlock a after 4750ms;
+    focus-on: #focusOnNextStart after {window.delayTimes.focusOnNext[0]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[1]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[2]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[3]}ms;
 	func: checkFocusOnNext;
 }

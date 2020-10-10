@@ -25,7 +25,7 @@ function checkFocusOnFirst(o) {
 			} else {
 				_fail(testEl, '#focusOnFirstTarget is not in focus after 3s and it should be.');
 			}
-		}, 3100);
+		}, window.delayTimes.focusOnFirst[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnFirstTarget in focus at the start and it shouldn\'t be.');
 	}

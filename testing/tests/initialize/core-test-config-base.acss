@@ -1,6 +1,30 @@
 body:init {
 	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
 	var: testIndex 0, window.testsRun [];
+
+	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
+		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
+		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+	*/
+	var: window.delayTimes {
+		blur: [1000, 1250],
+		focusOff: [1500, 1750],
+		focusOnFirst: [2000],
+		focusOnLast: [2250],
+		focusOnNext: [2500, 2750, 3000, 3250],
+		focusOnPrevious: [3500, 3750, 4000, 4250],
+		focusOnNextCycle: [4500, 4750, 5000, 5250],
+		focusOnPreviousCycle: [5500, 5750, 6000, 6250],
+		clickOnFirst: [6500],
+		clickOnLast: [6750],
+		clickOnNext: [7000, 7250, 7500, 7750],
+		clickOnPrevious: [8000, 8250, 8500, 8750],
+		clickOnNextCycle: [9000, 9250, 9500, 9750],
+		clickOnPreviousCycle: [10000, 10250, 10500, 10750],
+		copyToClipboard: [11000]
+	};
+
+	/* This has to go at the end if stuff goes above it :) */
 	render: "<div id=\"content\"></div>";
 }
 

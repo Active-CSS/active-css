@@ -50,7 +50,7 @@ function checkFocusOnPrevious(o) {
 			} else {
 				_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
 			}
-		}, 5100);
+		}, window.delayTimes.focusOnPrevious[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
 	}

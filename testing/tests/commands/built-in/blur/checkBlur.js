@@ -18,11 +18,11 @@ function checkBlur(o) {
 					} else {
 						_fail(testEl, '#blurField in not out of focus at the end.');
 					}
-				}, 500);
+				}, window.delayTimes.blur[1] - window.delayTimes.blur[0] + 100);
 			} else {
 				_fail(testEl, '#blurField is not in focus after 1s and it should be.');
 			}
-		}, 1100);
+		}, window.delayTimes.blur[0] + 100);
 	} else {
 		_fail(testEl, '#blurField in focus at the start and it shouldn\'t be.');
 	}

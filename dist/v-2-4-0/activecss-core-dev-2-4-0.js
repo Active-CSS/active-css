@@ -282,7 +282,6 @@ _a.ClickoutsideEvent = o => {
 
 _a.Clone = o => {
 	let el = _getSel(o, o.actVal);
-	let ref = el.dataset.activeid;
 	if (el) {
 		if (el.tagName == 'IFRAME') {
 			if (el.contentWindow.document.readyState != 'complete') {
@@ -290,8 +289,11 @@ _a.Clone = o => {
 				setTimeout(_a.Clone.bind(this, o), 200);
 				return false;
 			}
+			let ref = _getActiveID(el);
 			mimicClones[ref] = document.importNode(el.contentWindow.document.body, true);
 		} else {
+			let ref = _getActiveID(el);
+			console.log('_a.Clone, ref:', ref);
 			mimicClones[ref] = document.importNode(el, true);
 		}
 	}

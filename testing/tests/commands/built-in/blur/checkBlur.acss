@@ -10,9 +10,8 @@
 
 #checkBlur:test {
 	#blurField {
-	    focus-on: self after 1000ms;
-	    blur: true after 1500ms;
+	    focus-on: self after {window.delayTimes.blur[0]}ms;
+	    blur: true after {window.delayTimes.blur[1]}ms;
 	}
 	func: checkBlur;
 }
-

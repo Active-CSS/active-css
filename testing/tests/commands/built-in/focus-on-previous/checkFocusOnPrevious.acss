@@ -15,9 +15,9 @@
 }
 
 #checkFocusOnPrevious:test {
-	focus-on: #focusOnPreviousStart after 5000ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5250ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5500ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5750ms;
+	focus-on: #focusOnPreviousStart after {window.delayTimes.focusOnPrevious[0]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[1]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[2]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[3]}ms;
 	func: checkFocusOnPrevious;
 }

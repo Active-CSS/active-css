@@ -43,7 +43,7 @@ function checkFocusOnPreviousCycle(o) {
 			} else {
 				_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
 			}
-		}, 7100);
+		}, window.delayTimes.focusOnPreviousCycle[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
 	}

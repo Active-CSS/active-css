@@ -50,7 +50,7 @@ function checkFocusOnNext(o) {
 			} else {
 				_fail(testEl, '#focusOnNextStart is not in focus after 4s and it should be.');
 			}
-		}, 4100);
+		}, window.delayTimes.focusOnNext[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnNextStart in focus at the start and it shouldn\'t be.');
 	}

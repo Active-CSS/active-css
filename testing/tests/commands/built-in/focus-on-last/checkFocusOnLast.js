@@ -25,7 +25,7 @@ function checkFocusOnLast(o) {
 			} else {
 				_fail(testEl, '#focusOnLastTarget is not in focus after 3.5s and it should be.');
 			}
-		}, 3600);
+		}, window.delayTimes.focusOnLast[0] + 100);
 	} else {
 		_fail(testEl, '#focusOnLastTarget in focus at the start and it shouldn\'t be.');
 	}

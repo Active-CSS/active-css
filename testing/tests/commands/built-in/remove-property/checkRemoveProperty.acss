@@ -1,0 +1,17 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRemoveProperty\" data-desc=\"Basic remove-property command\" class=\"coreTest\">{|checkRemovePropertyHTML}</div>";
+}
+
+@component checkRemovePropertyHTML {
+	html {
+		<div id="removePropertyDiv" style="background-color: green;"></div>
+	}
+}
+
+#checkRemoveProperty:test {
+	#removePropertyDiv {
+		func: checkRemovePropertyBefore;
+		remove-property: background-color;
+	}
+	func: checkRemoveProperty;
+}

@@ -1,0 +1,32 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnPrevious\" data-desc=\"Basic click-on-previous command\" class=\"coreTest\">{|checkClickOnPreviousHTML}</div>";
+}
+
+@component checkClickOnPreviousHTML {
+	html {
+		<div id="clickOnPreviousDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnPreviousStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnPreviousP"></p>
+	}
+}
+
+#clickOnPreviousDiv a:click {
+	#clickOnPreviousP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnPrevious:test {
+	focus-on: #clickOnPreviousStart after {window.delayTimes.clickOnPrevious[0]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
+	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
+	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[3]}ms;
+	func: checkClickOnPrevious;
+}

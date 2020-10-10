@@ -1,0 +1,32 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnNextCycle\" data-desc=\"Basic click-on-next-cycle command\" class=\"coreTest\">{|checkClickOnNextCycleHTML}</div>";
+}
+
+@component checkClickOnNextCycleHTML {
+	html {
+		<div id="clickOnNextCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextCycleP"></p>
+	}
+}
+
+#clickOnNextCycleDiv a:click {
+	#clickOnNextCycleP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnNextCycle:test {
+	focus-on: #clickOnNextCycleStart after {window.delayTimes.clickOnNextCycle[0]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
+	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
+	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[3]}ms;
+	func: checkClickOnNextCycle;
+}

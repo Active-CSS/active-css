@@ -28,12 +28,253 @@
 
 #checkBlur:test {
 	#blurField {
-	    focus-on: self after 1000ms;
-	    blur: true after 1500ms;
+	    focus-on: self after {window.delayTimes.blur[0]}ms;
+	    blur: true after {window.delayTimes.blur[1]}ms;
 	}
 	func: checkBlur;
 }
 
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnFirst\" data-desc=\"Basic click-on-first command\" class=\"coreTest\">{|checkClickOnFirstHTML}</div>";
+}
+
+@component checkClickOnFirstHTML {
+	html {
+		<div id="clickOnFirstDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnFirstP"></p>
+	}
+}
+
+#clickOnFirstDiv a:click {
+	#clickOnFirstP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnFirst:test {
+	click-on-first: #clickOnFirstDiv a after {window.delayTimes.clickOnFirst[0]}ms;
+	func: checkClickOnFirst;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnLast\" data-desc=\"Basic click-on-last command\" class=\"coreTest\">{|checkClickOnLastHTML}</div>";
+}
+
+@component checkClickOnLastHTML {
+	html {
+		<div id="clickOnLastDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnLastP"></p>
+	}
+}
+
+#clickOnLastDiv a:click {
+	#clickOnLastP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnLast:test {
+	click-on-last: #clickOnLastDiv a after {window.delayTimes.clickOnLast[0]}ms;
+	func: checkClickOnLast;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnNextCycle\" data-desc=\"Basic click-on-next-cycle command\" class=\"coreTest\">{|checkClickOnNextCycleHTML}</div>";
+}
+
+@component checkClickOnNextCycleHTML {
+	html {
+		<div id="clickOnNextCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextCycleP"></p>
+	}
+}
+
+#clickOnNextCycleDiv a:click {
+	#clickOnNextCycleP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnNextCycle:test {
+	focus-on: #clickOnNextCycleStart after {window.delayTimes.clickOnNextCycle[0]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
+	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
+	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
+	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[3]}ms;
+	func: checkClickOnNextCycle;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnNext\" data-desc=\"Basic click-on-next command\" class=\"coreTest\">{|checkClickOnNextHTML}</div>";
+}
+
+@component checkClickOnNextHTML {
+	html {
+		<div id="clickOnNextDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextP"></p>
+	}
+}
+
+#clickOnNextDiv a:click {
+	#clickOnNextP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnNext:test {
+	focus-on: #clickOnNextStart after {window.delayTimes.clickOnNext[0]}ms;
+	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
+	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
+	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
+	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
+	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[3]}ms;
+	func: checkClickOnNext;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnPreviousCycle\" data-desc=\"Basic click-on-previous-cycle command\" class=\"coreTest\">{|checkClickOnPreviousCycleHTML}</div>";
+}
+
+@component checkClickOnPreviousCycleHTML {
+	html {
+		<div id="clickOnPreviousCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnPreviousCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnPreviousCycleP"></p>
+	}
+}
+
+#clickOnPreviousCycleDiv a:click {
+	#clickOnPreviousCycleP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnPreviousCycle:test {
+	focus-on: #clickOnPreviousCycleStart after {window.delayTimes.clickOnPreviousCycle[0]}ms;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[3]}ms;
+	func: checkClickOnPreviousCycle;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnPrevious\" data-desc=\"Basic click-on-previous command\" class=\"coreTest\">{|checkClickOnPreviousHTML}</div>";
+}
+
+@component checkClickOnPreviousHTML {
+	html {
+		<div id="clickOnPreviousDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnPreviousStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnPreviousP"></p>
+	}
+}
+
+#clickOnPreviousDiv a:click {
+	#clickOnPreviousP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnPrevious:test {
+	focus-on: #clickOnPreviousStart after {window.delayTimes.clickOnPrevious[0]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
+	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
+	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
+	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[3]}ms;
+	func: checkClickOnPrevious;
+}
+
+/* Pended until clone/restore-clone issue 36 has been resolved.
+
+#content:draw {
+	render-before-end: "<div id=\"checkClone\" data-desc=\"Basic clone command\" class=\"coreTest\">{|checkCloneHTML}</div>";
+}
+
+@component checkCloneHTML {
+	html {
+		<p class="cloneText"><span>This text is going to be cloned</span></p>
+		<div id="restoreCloneInHere"><div id="restoreHere"></div></div>
+	}
+}
+
+#checkClone:test {
+	func: checkCloneBefore;
+	clone: .cloneText;
+	#restoreHere {
+		restore-clone: .cloneText;
+	}
+	func: checkClone;
+}
+*/
+/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
+
+#content:draw {
+	render-before-end: "<div id=\"checkCopyToClipboard\" data-desc=\"Basic copy-to-clipboard command\" class=\"coreTest\">{|checkCopyToClipboardHTML}</div>";
+	func: checkCopyToClipboard;
+}
+
+@component checkCopyToClipboardHTML {
+	html {
+		<input id="copyToClipboardFrom" name="copyToClipboardFrom" value="some text">
+	}
+}
+
+#checkCopyToClipboard:test {
+	copy-to-clipboard: #copyToClipboardFrom after {window.delayTimes.copyToClipboard[0]}ms;
+}
+
+#copyToClipboardFrom:copy {
+	*//* If this event is called, then we have to assume it works as we can't read the clipboard. This function marks the test as passed. *//*
+	console-log: "something was just copied.";
+	func: checkCopyToClipboard;
+}
+*/
+#content:draw {
+	render-before-end: "<div id=\"checkEval\" data-desc=\"Basic eval command\" class=\"coreTest\"></div>";
+}
+
+#checkEval:test {
+	eval: {= window.evalResult = 1 + 1; =};
+	func: checkEval;
+}
 
 #content:draw {
 	render-before-end: "<div id=\"checkFocusOff\" data-desc=\"Basic focus-off command\" class=\"coreTest\">{|checkFocusOffHTML}</div>";
@@ -47,8 +288,8 @@
 
 #checkFocusOff:test {
 	#focusOffField {
-	    focus-on: self after 2000ms;
-	    focus-off: true after 2500ms;
+	    focus-on: self after {window.delayTimes.focusOff[0]}ms;
+	    focus-off: true after {window.delayTimes.focusOff[1]}ms;
 	}
 	func: checkFocusOff;
 }
@@ -70,7 +311,7 @@
 }
 
 #checkFocusOnFirst:test {
-	focus-on-first: #focusOnFirstForm input after 3000ms;
+	focus-on-first: #focusOnFirstForm input after {window.delayTimes.focusOnFirst[0]}ms;
 	func: checkFocusOnFirst;
 }
 
@@ -91,9 +332,10 @@
 }
 
 #checkFocusOnLast:test {
-	focus-on-last: #focusOnLastForm input after 3500ms;
+	focus-on-last: #focusOnLastForm input after {window.delayTimes.focusOnLast[0]}ms;
 	func: checkFocusOnLast;
 }
+
 
 #content:draw {
 	render-before-end: "<div id=\"checkFocusOnNextCycle\" data-desc=\"Basic focus-on-next-cycle command\" class=\"coreTest\">{|checkFocusOnNextCycleHTML}</div>";
@@ -112,10 +354,10 @@
 }
 
 #checkFocusOnNextCycle:test {
-	focus-on: #focusOnNextCycleStart after 6000ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after 6250ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after 6500ms;
- 	focus-on-next-cycle: .focusOnNextCycleBlock a after 6750ms;
+	focus-on: #focusOnNextCycleStart after {window.delayTimes.focusOnNextCycle[0]}ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[1]}ms;
+	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[2]}ms;
+ 	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[3]}ms;
 	func: checkFocusOnNextCycle;
 }
 
@@ -136,10 +378,10 @@
 }
 
 #checkFocusOnNext:test {
-    focus-on: #focusOnNextStart after 4000ms;
-	focus-on-next: .focusOnNextBlock a after 4250ms;
-	focus-on-next: .focusOnNextBlock a after 4500ms;
-	focus-on-next: .focusOnNextBlock a after 4750ms;
+    focus-on: #focusOnNextStart after {window.delayTimes.focusOnNext[0]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[1]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[2]}ms;
+	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[3]}ms;
 	func: checkFocusOnNext;
 }
 
@@ -160,10 +402,10 @@
 }
 
 #checkFocusOnPreviousCycle:test {
-    focus-on: #focusOnPreviousCycleStart after 7000ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7250ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7500ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after 7750ms;
+    focus-on: #focusOnPreviousCycleStart after {window.delayTimes.focusOnPreviousCycle[0]}ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[1]}ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[2]}ms;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[3]}ms;
 	func: checkFocusOnPreviousCycle;
 }
 
@@ -184,10 +426,10 @@
 }
 
 #checkFocusOnPrevious:test {
-	focus-on: #focusOnPreviousStart after 5000ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5250ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5500ms;
-	focus-on-previous: .focusOnPreviousBlock a after 5750ms;
+	focus-on: #focusOnPreviousStart after {window.delayTimes.focusOnPrevious[0]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[1]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[2]}ms;
+	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[3]}ms;
 	func: checkFocusOnPrevious;
 }
 
@@ -217,12 +459,104 @@
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkRemoveAttribute\" data-desc=\"Basic remove-attribute command\" class=\"coreTest\">{|checkRemoveAttributeHTML}</div>";
+}
+
+@component checkRemoveAttributeHTML {
+	html {
+		<div id="removeAttributeDiv" data-test="some data"></div>
+	}
+}
+
+#checkRemoveAttribute:test {
+	#removeAttributeDiv {
+		remove-attribute: data-test;
+	}
+	func: checkRemoveAttribute;
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkRemoveClass\" data-desc=\"Basic remove-class command\" class=\"coreTest removeClassToRemove\"></div>";
 }
 
 #checkRemoveClass:test {
 	remove-class: .removeClassToRemove;
 	func: checkRemoveClass;
+}
+
+/* Pended until clone/restore-clone issue 36 has been resolved.
+#content:draw {
+	render-before-end: "<div id=\"checkRemoveClone\" data-desc=\"Basic remove-clone command\" class=\"coreTest\">{|checkRemoveCloneHTML}</div>";
+}
+
+@component checkRemoveCloneHTML {
+	html {
+	}
+}
+
+#checkRemoveClone:test {
+	func: checkRemoveClone;
+}
+*/
+#content:draw {
+	render-before-end: "<div id=\"checkRemoveProperty\" data-desc=\"Basic remove-property command\" class=\"coreTest\">{|checkRemovePropertyHTML}</div>";
+}
+
+@component checkRemovePropertyHTML {
+	html {
+		<div id="removePropertyDiv" style="background-color: green;"></div>
+	}
+}
+
+#checkRemoveProperty:test {
+	#removePropertyDiv {
+		func: checkRemovePropertyBefore;
+		remove-property: background-color;
+	}
+	func: checkRemoveProperty;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkRemove\" data-desc=\"Basic remove command\" class=\"coreTest\">{|checkRemoveHTML}</div>";
+}
+
+@component checkRemoveHTML {
+	html {
+		<div id="removeToRemove"></div>
+	}
+}
+
+#checkRemove:test {
+	func: checkRemoveBefore;
+	remove: #removeToRemove;
+	func: checkRemove;
+}
+
+/* This test is covered by the clone command test, as they work together. */
+#content:draw {
+	render-before-end: "<div id=\"checkRun\" data-desc=\"Basic run command\" class=\"coreTest\"></div>";
+}
+
+#checkRun:test {
+	run: {= window.runResult = 1 + 1; =};
+	func: checkRun;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkSetAttribute\" data-desc=\"Basic set-attribute command\" class=\"coreTest\">{|checkSetAttributeHTML}</div>";
+}
+
+@component checkSetAttributeHTML {
+	html {
+		<div id="setAttributeDiv"></div>
+	}
+}
+
+#checkSetAttribute:test {
+	#setAttributeDiv {
+		set-attribute: data-test "some data";
+	}
+	func: checkSetAttribute;
 }
 
 #content:draw {
@@ -244,6 +578,24 @@
 		set-class: moreclasses with no dots;
 		func: checkSetClassFinal;
 	}
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkSetProperty\" data-desc=\"Basic set-property command\" class=\"coreTest\">{|checkSetPropertyHTML}</div>";
+}
+
+@component checkSetPropertyHTML {
+	html {
+		<input id="setPropertyInput" name="setPropertyInput" disabled></div>
+	}
+}
+
+#checkSetProperty:test {
+	#setPropertyInput {
+		func: checkSetPropertyBefore;
+		set-property: disabled false;
+	}
+	func: checkSetProperty;
 }
 
 #content:draw {
@@ -300,9 +652,42 @@
     }
 }
 
+#content:draw {
+	render-before-end: "<div id=\"checkUrlChange\" data-desc=\"Basic url-change command\" class=\"coreTest\"></div>";
+}
+
+#checkUrlChange:test {
+	url-change: "/test/funky/url" "Funky test URL";
+	func: checkUrlChange;
+}
+
 body:init {
 	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
 	var: testIndex 0, window.testsRun [];
+
+	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
+		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
+		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+	*/
+	var: window.delayTimes {
+		blur: [1000, 1250],
+		focusOff: [1500, 1750],
+		focusOnFirst: [2000],
+		focusOnLast: [2250],
+		focusOnNext: [2500, 2750, 3000, 3250],
+		focusOnPrevious: [3500, 3750, 4000, 4250],
+		focusOnNextCycle: [4500, 4750, 5000, 5250],
+		focusOnPreviousCycle: [5500, 5750, 6000, 6250],
+		clickOnFirst: [6500],
+		clickOnLast: [6750],
+		clickOnNext: [7000, 7250, 7500, 7750],
+		clickOnPrevious: [8000, 8250, 8500, 8750],
+		clickOnNextCycle: [9000, 9250, 9500, 9750],
+		clickOnPreviousCycle: [10000, 10250, 10500, 10750],
+		copyToClipboard: [11000]
+	};
+
+	/* This has to go at the end if stuff goes above it :) */
 	render: "<div id=\"content\"></div>";
 }
 

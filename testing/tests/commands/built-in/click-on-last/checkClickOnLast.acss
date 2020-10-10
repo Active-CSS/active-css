@@ -1,0 +1,27 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnLast\" data-desc=\"Basic click-on-last command\" class=\"coreTest\">{|checkClickOnLastHTML}</div>";
+}
+
+@component checkClickOnLastHTML {
+	html {
+		<div id="clickOnLastDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnLastP"></p>
+	}
+}
+
+#clickOnLastDiv a:click {
+	#clickOnLastP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnLast:test {
+	click-on-last: #clickOnLastDiv a after {window.delayTimes.clickOnLast[0]}ms;
+	func: checkClickOnLast;
+}

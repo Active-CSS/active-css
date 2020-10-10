@@ -19,11 +19,11 @@ function checkFocusOff(o) {
 					} else {
 						_fail(testEl, '#focusOffField in not out of focus at the end.');
 					}
-				}, 500);
+				}, 250);
 			} else {
 				_fail(testEl, '#focusOffField is not in focus after 2s and it should be.');
 			}
-		}, 2100);
+		}, window.delayTimes.focusOff[0] + 100);
 	} else {
 		_fail(testEl, '#focusOffField in focus at the start and it shouldn\'t be.');
 	}

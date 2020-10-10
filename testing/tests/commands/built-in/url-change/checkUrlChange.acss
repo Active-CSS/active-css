@@ -1,0 +1,8 @@
+#content:draw {
+	render-before-end: "<div id=\"checkUrlChange\" data-desc=\"Basic url-change command\" class=\"coreTest\"></div>";
+}
+
+#checkUrlChange:test {
+	url-change: "/test/funky/url" "Funky test URL";
+	func: checkUrlChange;
+}
