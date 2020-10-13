@@ -2353,17 +2353,10 @@ const _performSecSel = (loopObj) => {
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
-
-//		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
 		compRef = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
-
-
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
 		// This must be a scoped component.
-
-//		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
 		compRef = '_' + compDoc._acssActiveID.replace(/id\-/, '');
-
 	} else {
 		compRef = (evObj.compRef) ? evObj.compRef : null;
 	}
@@ -4912,8 +4905,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
 						res = _escapeItem(shadHost.getAttribute(wot), func);
-						let hostCID;
-						hostCID = _getActiveID(shadHost).replace('d-', '');
+						let hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
 						console.log('Component host attribute ' + wot + ' not found. Looking in host element: ', shadHost);
