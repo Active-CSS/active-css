@@ -19,7 +19,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
 						res = _escapeItem(shadHost.getAttribute(wot), func);
-						let hostCID = shadHost.getAttribute('data-activeid').replace('d-', '');
+						let hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
 						console.log('Component host attribute ' + wot + ' not found. Looking in host element: ', shadHost);

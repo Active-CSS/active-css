@@ -104,7 +104,11 @@
 		nonPassiveEvents = [],
 		passiveEvents = true,
 		inlineConfigTags = null,
-		supportsShadow = true;
+		supportsShadow = true,
+		idMap = [],
+		varMap = [],
+		varInStyleMap = [],
+		elementObserver;
 
 	ActiveCSS.customHTMLElements = {};
 

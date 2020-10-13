@@ -66,7 +66,7 @@ _a.CreateElement = o => {
 			'attributeChangedCallback(name, oldVal, newVal) {' +
 				'if (!oldVal) return;' +	// skip if this is the first time in, as it's an addition not an update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
-				'let ref = this.getAttribute(\'data-activeid\').replace(\'d-\', \'\') + \'HOST\' + name;' +
+				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'attrChange-\' + name, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });' +

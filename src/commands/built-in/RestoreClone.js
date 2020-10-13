@@ -1,7 +1,7 @@
 _a.RestoreClone = o => {
 	// This has a settimeout so it puts it at the end of the queue so other things can be destroyed if they are going on.
 	let el = _getSel(o, o.actVal);
-	let ref = el.dataset.activeid;
+	let ref = _getActiveID(el);
 	if (!mimicClones[ref]) return;	// Clone not there.
 	if (el.tagName == 'IFRAME') {
 		if (el.contentWindow.document.readyState != 'complete') {

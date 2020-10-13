@@ -41,6 +41,8 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				_actionValLoop(oCopy, pars, obj);
 			});
 		}
+
+/* Pretty sure we don't need this anymore. References to data-activeid in the o.secSel has been replaced by an object and should be covered in the section below this.
 		if (!checkThere) {
 			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
@@ -50,6 +52,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}
+*/
 	} else {
 		let oCopy = Object.assign({}, o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.

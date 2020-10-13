@@ -104,7 +104,11 @@
 		nonPassiveEvents = [],
 		passiveEvents = true,
 		inlineConfigTags = null,
-		supportsShadow = true;
+		supportsShadow = true,
+		idMap = [],
+		varMap = [],
+		varInStyleMap = [],
+		elementObserver;
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -293,7 +297,6 @@ _a.Clone = o => {
 			mimicClones[ref] = document.importNode(el.contentWindow.document.body, true);
 		} else {
 			let ref = _getActiveID(el);
-			console.log('_a.Clone, ref:', ref);
 			mimicClones[ref] = document.importNode(el, true);
 		}
 	}
@@ -477,7 +480,7 @@ _a.CreateElement = o => {
 			'attributeChangedCallback(name, oldVal, newVal) {' +
 				'if (!oldVal) return;' +	// skip if this is the first time in, as it's an addition not an update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
-				'let ref = this.getAttribute(\'data-activeid\').replace(\'d-\', \'\') + \'HOST\' + name;' +
+				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'attrChange-\' + name, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });' +
@@ -859,7 +862,7 @@ _a.RemoveClass = o => {
 
 _a.RemoveClone = o => {
 	let el = _getSel(o, o.actVal);
-	let ref = el.dataset.activeid;
+	let ref = _getActiveID(el);
 	if (ref) mimicClones[ref] = null; 
 };
 
@@ -919,7 +922,7 @@ _a.RenderReplace = o => { o.renderPos = 'replace'; _a.Render(o); };
 _a.RestoreClone = o => {
 	// This has a settimeout so it puts it at the end of the queue so other things can be destroyed if they are going on.
 	let el = _getSel(o, o.actVal);
-	let ref = el.dataset.activeid;
+	let ref = _getActiveID(el);
 	if (!mimicClones[ref]) return;	// Clone not there.
 	if (el.tagName == 'IFRAME') {
 		if (el.contentWindow.document.readyState != 'complete') {
@@ -1160,7 +1163,7 @@ _a.Trigger = o => {
 			}
 		});
 	} else {
-		if (['~'].includes(o.secSel.substr(0, 1))) {
+		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
 			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), origObj: (o.obj || null), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 		} else {
@@ -1445,7 +1448,7 @@ _c.IfVisible = o => { return ActiveCSS._ifVisible(o); };	// Used by extensions.
 _c.MqlTrue = o => { return mediaQueries[o.actVal].val; };
 
 const _addCancelAttr = (obj, func) => {
-	let activeID = obj.dataset.activeid;
+	let activeID = _getActiveID(obj);
 	if (!cancelIDArr[activeID]) cancelIDArr[activeID] = [];
 	cancelIDArr[activeID][func] = true;
 };
@@ -1576,7 +1579,7 @@ const _handleClickOutside = el => {
 		// Check the state of the clickoutside for this container. Will be true if active.
 		if (clickOutsideSels[cid][0]) {
 			// Does this clicked object exist in the clickoutside main element?
-			clickOutsideObj = document.querySelector('[data-activeid="' + cid + '"]');
+			clickOutsideObj = idMap[cid];
 			if (clickOutsideObj && !clickOutsideObj.contains(el)) {
 				// This is outside.
 				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', otherObj: el })) {	// clickoutside sends the target also.
@@ -1787,6 +1790,8 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				cancelCustomArr[delayActiveID] = null;
 			}
 			_a.StopPropagation(o);
+			// Remove any mapping to this object.
+			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);
@@ -2097,6 +2102,20 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	}
 };
 
+// This function is incomplete and mentioned in an outstanding ticket.
+ActiveCSS._nodeMutations = function(mutations) {
+	mutations.forEach(mutation => {
+		if (mutation.type == 'childList' && mutation.removedNodes) {
+			mutation.removedNodes.forEach(nod => {
+				let activeID = nod.acssActiveID;
+
+				idMap.splice(idMap.indexOf(nod), 1);
+				varInStyleMap.splice(varInStyleMap.indexOf(activeID), 1);
+			});
+		}
+	});
+};
+
 const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef, component, eve, compDoc) => {
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
@@ -2281,6 +2300,8 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				_actionValLoop(oCopy, pars, obj);
 			});
 		}
+
+/* Pretty sure we don't need this anymore. References to data-activeid in the o.secSel has been replaced by an object and should be covered in the section below this.
 		if (!checkThere) {
 			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
@@ -2290,6 +2311,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}
+*/
 	} else {
 		let oCopy = Object.assign({}, o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -2331,10 +2353,17 @@ const _performSecSel = (loopObj) => {
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
-		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
+
+//		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
+		compRef = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
+
+
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
 		// This must be a scoped component.
-		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
+
+//		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
+		compRef = '_' + compDoc._acssActiveID.replace(/id\-/, '');
+
 	} else {
 		compRef = (evObj.compRef) ? evObj.compRef : null;
 	}
@@ -2393,7 +2422,7 @@ const _performSecSel = (loopObj) => {
 				} else {
 					activeTrackObj = _getActiveID(obj);
 					if (activeTrackObj) {
-						passTargSel = '[data-activeid="' + activeTrackObj + '"]';
+						passTargSel = idMap[activeTrackObj];
 					} else {
 						// It might not be an element, so a data-activeid wasn't assigned.
 						passTargSel = obj;
@@ -2470,17 +2499,22 @@ const _performSecSel = (loopObj) => {
 const _prepSelector = (sel, obj, doc) => {
 	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
 	// Returns a collection of unique objects for iterating as target selectors.
+	let attrActiveID;
 	if (sel.indexOf('&') !== -1) {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
 		if (sel.substr(0, 1) == '&') {
 			// Substitute the active ID into the selector.
-			let activeID = _getActiveID(obj);
-			sel = sel.replace(/&/g, '[data-activeid=' + activeID + ']');
+			attrActiveID = _getActiveID(obj);
+			// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
+			obj.setAttribute('data-activeid', attrActiveID);
+			sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
 		}
 	}
 	if (sel.indexOf('<') === -1) {
-		return doc.querySelectorAll(sel);
+		let res = doc.querySelectorAll(sel);
+		if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
+		return res;
 	}
 	// Handle "<" selection by iterating in stages. There could be multiple instances of "<".
 	let stages = sel.split('<');
@@ -2505,6 +2539,7 @@ const _prepSelector = (sel, obj, doc) => {
 		}
 		if (thisEl) objArr.add(thisEl);
 	});
+	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
 	return objArr;
 };
 
@@ -2636,6 +2671,10 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// Attach the shadow.
 	shadow.appendChild(template.content);
 
+	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
+		_replaceTempActiveID(obj);
+	});
+
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });
@@ -2730,6 +2769,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	for (item of drawArr) {
 		let el = o.doc.querySelector('[data-activeid=' + item + ']');
+		_replaceTempActiveID(el);
+		el.querySelectorAll('[data-activeid]').forEach(function(obj) {	// jshint ignore:line
+			_replaceTempActiveID(obj);
+		});
+
 		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
 		_handleEvents({ obj: el, evType: 'draw', otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
@@ -3602,6 +3646,13 @@ const _readSiteMap = () => {
 
 		// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 		_initScriptTrack();
+
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
 
 		// Handle any initialisation events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
@@ -4861,7 +4912,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
 						res = _escapeItem(shadHost.getAttribute(wot), func);
-						let hostCID = shadHost.getAttribute('data-activeid').replace('d-', '');
+						let hostCID;
+						hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
 						console.log('Component host attribute ' + wot + ' not found. Looking in host element: ', shadHost);
@@ -5163,6 +5215,10 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete actualDoms[change.currentPath];
 			delete compParents[change.currentPath];
 			delete compPrivEvs[change.currentPath];
+			delete varMap[change.currentPath];
+
+//				varInStyleMap[el._acssActiveID] = str;		// This needs cleaning up - do it when removing item from DOM in observer.
+
 			return;
 			// Note that this is only going to clean up components that contain reactive variables. At some point, we should look at a method of cleaning up
 			// all component references when they are removed. Then this can possibly be removed depending on the method.
@@ -5177,9 +5233,9 @@ const _varUpdateDomDo = (change, dataObj) => {
 		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
 
 		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];
+		el = idMap[cid];
 
-		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
 		if (!el) {
 			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
 			delete dataObj.cids[cid];
@@ -5190,35 +5246,72 @@ const _varUpdateDomDo = (change, dataObj) => {
 			el,
 			NodeFilter.SHOW_COMMENT
 		);
-		// Iterate tree and find unique ref enclosures and update within with newValue.
+		// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
 		frag = document.createTextNode(refObj);
+		let nodesToRemove = [];
 		while (treeWalker.nextNode()) {
 			thisNode = treeWalker.currentNode;
-			if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isSameNode(el)) {
-				treeWalker.nextNode();
-				continue;	// If this isn't the same parent node or var change, skip it. We got all the appropriate nodes covered with el.
+			if (thisNode.data == 'active-var-' + change.currentPath) {
+				// Now we can get rid of the comments altogether and make the node itself be the reference.
+				if (typeof varMap[change.currentPath] == 'undefined') varMap[change.currentPath] = [];
+				if (thisNode.nextSibling.data == '/active-var') {
+					// There is no content there. Insert a text node now. A variable was probably empty when first drawn.
+					let newNode = document.createTextNode(frag.textContent);
+					thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
+				}
+				varMap[change.currentPath].push(thisNode.nextSibling);
+				nodesToRemove.push(thisNode);	// Mark for removal.
+			} else if (thisNode.data == '/active-var') {
+				nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
 			}
-			// Replace the text content of the fragment with new text.
-			if (thisNode.nextSibling.data == '/active-var') {
-				// There is no content there. Insert a text node.
-				let newNode = document.createTextNode(frag.textContent);
-				// Yeah, there is no insertAfter() and after() is not supported on Safari according to MDN...
-				thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
-			} else {
-				thisNode.nextSibling.textContent = frag.textContent;
-			}
-			// Move to the last tag. We know it won't match the first loop condition.
-			treeWalker.nextNode();
 		}
+
+		if (varMap[change.currentPath]) {
+			varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
+				if (!nod.isConnected) {
+					// Clean-up.
+					varMap[change.currentPath].splice(i, 1);
+				} else {
+					// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
+					nod.textContent = refObj;
+				}
+			});
+		}
+
+		nodesToRemove.forEach(nod => {	// jshint ignore:line
+			nod.remove();
+		});
 
 		// If this element is an inline-style tag, replace this variable if it is there.
 		if (el.tagName == 'STYLE') {
-			let regex = new RegExp('\\/\\*active\\-var\\-' + change.currentPath + '\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
+			// First we are going to create a reference with the original placeholders and store it in an array mapped to the element itself.
 			let str = el.textContent;
-			str = str.replace(regex, function(_, wot) {	// jshint ignore:line
-				return '/*active-var-' + change.currentPath + '*/' + frag.textContent + '/*/active-var*/';
+			if (!el._acssActiveID) _getActiveID(el);
+			if (typeof varInStyleMap[el._acssActiveID] == 'undefined') {
+				varInStyleMap[el._acssActiveID] = str;
+			}
+
+			let regex = new RegExp('\\/\\*active\\-var\\-([\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-\\.\\:\\[\\]]+)\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
+			// What we do now is replace with ALL the current values contained in the string - not just what has changed.
+			str = varInStyleMap[el._acssActiveID].replace(regex, function(_, wot) {	// jshint ignore:line
+				if (wot == change.currentPath) {
+					return refObj;
+				} else {
+					let thisColonPos = wot.indexOf('HOST');
+					if (thisColonPos !== -1) {
+						let varName = wot.substr(colonPos + 4);
+						let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
+						if (!varHost || !varHost.hasAttribute(varName)) return _;
+						return varHost.getAttribute(varName);
+					} else {
+						// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
+						let val = _get(scopedVars, wot);
+						return (val) ? val : _;
+					}
+				}
 			});
 			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+
 		}
 	}
 
@@ -5234,9 +5327,9 @@ const _varUpdateDomDo = (change, dataObj) => {
 				if (typeof theDoc == 'undefined') break;	// Not there, skip it. It might not be drawn yet.
 
 				// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];
+				el = idMap[cid];
 
-				el = theDoc.querySelector('[data-activeid="' + cid + '"]');
 				if (!el) {
 					// The node is no longer there at all. Clean it up so we don't bother looking for it again.
 					// Note the current method won't work if the same binding variable is in the attribute twice.
@@ -5775,12 +5868,17 @@ const _get = (object, keys, defaultVal=undefined) => {
 };
 
 const _getActiveID = obj => {
-	if (obj && obj.dataset) {
-		if (!obj.dataset.activeid) {
+	if (!obj.isConnected) {
+		return _getTempActiveID(obj);
+	}
+	if (obj) {
+		if (!obj._acssActiveID) {
 			activeIDTrack++;
-			obj.dataset.activeid = 'id-' + activeIDTrack;
+			let fullID = 'id-' + activeIDTrack;
+			obj._acssActiveID = fullID;
+			idMap[fullID] = obj;
 		}
-		return obj.dataset.activeid;
+		return obj._acssActiveID;
 	}
 	return false;
 };
@@ -5830,8 +5928,8 @@ const _getComponentRoot = (obj) => {
 			// But which component is this element really in?
 			// If the shadow root contains the same exact scoped component, then the element is in the scoped component, as it is lower in the DOM tree.
 			// If the shadow root does not contain the same exact scoped component, then the element must be in the shadow root, as it is lower in the DOM tree.
-			// We can just use querySelector for this check. Make sure we check on the exact same scoped component, so we need the data-activeid for this.
-			return (rootNode.querySelector('[data-activeid=' + scopedHost.getAttribute('data-activeid') + ']')) ? scopedHost : rootNode;
+			// Make sure we check on the exact same scoped component, so we need the activeid for this.
+			return (idMap[scopedHost._acssActiveID]) ? scopedHost : rootNode;
 		}
 	}
 };
@@ -5921,6 +6019,19 @@ const _getSel = (o, sel, priorToGrabAll) => {
 			// Grab the element or the first in the group specified.
 			return (priorToGrabAll !== true) ? _getObj(sel) : false;
 	}
+};
+
+const _getTempActiveID = obj => {
+	// This is used before a component is drawn for real. It is needed as the output starts off in string form, and when added to the page the attribute is removed
+	// and a real internal value gets assigned.
+	if (obj && obj.dataset) {
+		if (!obj.dataset.activeid) {
+			activeIDTrack++;
+			obj.dataset.activeid = 'id-' + activeIDTrack;
+		}
+		return obj.dataset.activeid;
+	}
+	return false;
 };
 
 const _getValFromList = (list, item, returnPos=false) => {
@@ -6044,6 +6155,14 @@ ActiveCSS._removeClassObj = (obj, str) => {
 ActiveCSS._removeObj = obj => {
 	if (!obj) return; // element is no longer there.
 	obj.remove();
+};
+
+const _replaceTempActiveID = obj => {
+	if (obj && obj.dataset && obj.dataset.activeid) {
+		obj._acssActiveID = obj.dataset.activeid;
+		obj.removeAttribute('data-activeid');
+		idMap[obj._acssActiveID] = obj;
+	}
 };
 
 const _resolveURL = url => {

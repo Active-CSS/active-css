@@ -6,7 +6,7 @@ const _handleClickOutside = el => {
 		// Check the state of the clickoutside for this container. Will be true if active.
 		if (clickOutsideSels[cid][0]) {
 			// Does this clicked object exist in the clickoutside main element?
-			clickOutsideObj = document.querySelector('[data-activeid="' + cid + '"]');
+			clickOutsideObj = idMap[cid];
 			if (clickOutsideObj && !clickOutsideObj.contains(el)) {
 				// This is outside.
 				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', otherObj: el })) {	// clickoutside sends the target also.

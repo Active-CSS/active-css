@@ -11,7 +11,7 @@ _a.Trigger = o => {
 			}
 		});
 	} else {
-		if (['~'].includes(o.secSel.substr(0, 1))) {
+		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
 			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), origObj: (o.obj || null), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 		} else {

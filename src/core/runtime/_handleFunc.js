@@ -19,6 +19,8 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				cancelCustomArr[delayActiveID] = null;
 			}
 			_a.StopPropagation(o);
+			// Remove any mapping to this object.
+			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);

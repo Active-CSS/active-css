@@ -11,7 +11,6 @@ _a.Clone = o => {
 			mimicClones[ref] = document.importNode(el.contentWindow.document.body, true);
 		} else {
 			let ref = _getActiveID(el);
-			console.log('_a.Clone, ref:', ref);
 			mimicClones[ref] = document.importNode(el, true);
 		}
 	}

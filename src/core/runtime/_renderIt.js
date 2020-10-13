@@ -48,6 +48,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	for (item of drawArr) {
 		let el = o.doc.querySelector('[data-activeid=' + item + ']');
+		_replaceTempActiveID(el);
+		el.querySelectorAll('[data-activeid]').forEach(function(obj) {	// jshint ignore:line
+			_replaceTempActiveID(obj);
+		});
+
 		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
 		_handleEvents({ obj: el, evType: 'draw', otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line

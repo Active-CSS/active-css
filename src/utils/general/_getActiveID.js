@@ -1,10 +1,15 @@
 const _getActiveID = obj => {
-	if (obj && obj.dataset) {
-		if (!obj.dataset.activeid) {
+	if (!obj.isConnected) {
+		return _getTempActiveID(obj);
+	}
+	if (obj) {
+		if (!obj._acssActiveID) {
 			activeIDTrack++;
-			obj.dataset.activeid = 'id-' + activeIDTrack;
+			let fullID = 'id-' + activeIDTrack;
+			obj._acssActiveID = fullID;
+			idMap[fullID] = obj;
 		}
-		return obj.dataset.activeid;
+		return obj._acssActiveID;
 	}
 	return false;
 };

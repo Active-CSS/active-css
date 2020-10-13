@@ -668,6 +668,8 @@ body:init {
 	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
 		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
 		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+		Note: The times for these could be removed and the settimeouts in the function calls in the tests could be split into sequential functions for focus and click.
+		Don't stop the flow of getting these all done - get all the tests done and then come back and do that.
 	*/
 	var: window.delayTimes {
 		blur: [1000, 1250],

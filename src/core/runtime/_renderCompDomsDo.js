@@ -97,6 +97,10 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// Attach the shadow.
 	shadow.appendChild(template.content);
 
+	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
+		_replaceTempActiveID(obj);
+	});
+
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });

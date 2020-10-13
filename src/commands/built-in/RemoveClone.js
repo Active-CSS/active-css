@@ -1,5 +1,5 @@
 _a.RemoveClone = o => {
 	let el = _getSel(o, o.actVal);
-	let ref = el.dataset.activeid;
+	let ref = _getActiveID(el);
 	if (ref) mimicClones[ref] = null; 
 };

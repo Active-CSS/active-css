@@ -31,6 +31,13 @@ const _readSiteMap = () => {
 		// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 		_initScriptTrack();
 
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+
 		// Handle any initialisation events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
 

@@ -1,17 +1,22 @@
 const _prepSelector = (sel, obj, doc) => {
 	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
 	// Returns a collection of unique objects for iterating as target selectors.
+	let attrActiveID;
 	if (sel.indexOf('&') !== -1) {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
 		if (sel.substr(0, 1) == '&') {
 			// Substitute the active ID into the selector.
-			let activeID = _getActiveID(obj);
-			sel = sel.replace(/&/g, '[data-activeid=' + activeID + ']');
+			attrActiveID = _getActiveID(obj);
+			// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
+			obj.setAttribute('data-activeid', attrActiveID);
+			sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
 		}
 	}
 	if (sel.indexOf('<') === -1) {
-		return doc.querySelectorAll(sel);
+		let res = doc.querySelectorAll(sel);
+		if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
+		return res;
 	}
 	// Handle "<" selection by iterating in stages. There could be multiple instances of "<".
 	let stages = sel.split('<');
@@ -36,5 +41,6 @@ const _prepSelector = (sel, obj, doc) => {
 		}
 		if (thisEl) objArr.add(thisEl);
 	});
+	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
 	return objArr;
 };

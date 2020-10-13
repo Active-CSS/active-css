@@ -19,10 +19,10 @@ const _performSecSel = (loopObj) => {
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
-		compRef = '_' + compDoc.host.getAttribute('data-activeid').replace(/id\-/, '');
+		compRef = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
 		// This must be a scoped component.
-		compRef = '_' + compDoc.getAttribute('data-activeid').replace(/id\-/, '');
+		compRef = '_' + compDoc._acssActiveID.replace(/id\-/, '');
 	} else {
 		compRef = (evObj.compRef) ? evObj.compRef : null;
 	}
@@ -81,7 +81,7 @@ const _performSecSel = (loopObj) => {
 				} else {
 					activeTrackObj = _getActiveID(obj);
 					if (activeTrackObj) {
-						passTargSel = '[data-activeid="' + activeTrackObj + '"]';
+						passTargSel = idMap[activeTrackObj];
 					} else {
 						// It might not be an element, so a data-activeid wasn't assigned.
 						passTargSel = obj;
