@@ -14,7 +14,7 @@
 
 */
 
-function checkFocusOnNextCycle(o) {
+function checkFocusOnNextCycleA(o) {
 	let testEl = _initTest('checkFocusOnNextCycle');
 	if (!testEl) return;
 
@@ -23,28 +23,43 @@ function checkFocusOnNextCycle(o) {
 	let thirdEl = _getObj('#focusOnNextCycleEnd');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (firstEl.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					if (secondEl.isSameNode(document.activeElement)) {
-						setTimeout(function() {
-							if (thirdEl.isSameNode(document.activeElement)) {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
-			}
-		}, window.delayTimes.focusOnNextCycle[0] + 100);
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkFocusOnNextCycleB(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnNextCycleStart');
+
+	if (!firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
+	}
+}
+
+function checkFocusOnNextCycleC(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let secondEl = _getObj('#focusOnNextCycleSecond');
+
+	if (!secondEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
+	}
+}
+
+function checkFocusOnNextCycleFinal(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnNextCycleEnd');
+
+	if (thirdEl.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
 	}
 }

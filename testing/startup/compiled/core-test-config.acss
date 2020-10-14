@@ -28,10 +28,11 @@
 
 #checkBlur:test {
 	#blurField {
-	    focus-on: self after {window.delayTimes.blur[0]}ms;
-	    blur: true after {window.delayTimes.blur[1]}ms;
+	    focus-on: self;
+		func: checkBlurA;
+	    blur: true;
 	}
-	func: checkBlur;
+	func: checkBlurFinal;
 }
 
 #content:draw {
@@ -58,8 +59,9 @@
 }
 
 #checkClickOnFirst:test {
-	click-on-first: #clickOnFirstDiv a after {window.delayTimes.clickOnFirst[0]}ms;
-	func: checkClickOnFirst;
+	func: checkClickOnFirstA;
+	click-on-first: #clickOnFirstDiv a;
+	func: checkClickOnFirstFinal;
 }
 
 #content:draw {
@@ -86,8 +88,9 @@
 }
 
 #checkClickOnLast:test {
-	click-on-last: #clickOnLastDiv a after {window.delayTimes.clickOnLast[0]}ms;
-	func: checkClickOnLast;
+	func: checkClickOnLastA;
+	click-on-last: #clickOnLastDiv a;
+	func: checkClickOnLastFinal;
 }
 
 #content:draw {
@@ -114,13 +117,16 @@
 }
 
 #checkClickOnNextCycle:test {
-	focus-on: #clickOnNextCycleStart after {window.delayTimes.clickOnNextCycle[0]}ms;
-	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
-	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[1]}ms;
-	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
-	focus-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[2]}ms;
-	click-on-next-cycle: #clickOnNextCycleDiv a after {window.delayTimes.clickOnNextCycle[3]}ms;
-	func: checkClickOnNextCycle;
+	func: checkClickOnNextCycleA;
+	focus-on: #clickOnNextCycleStart;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleB;
+	focus-on-next-cycle: #clickOnNextCycleDiv a;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleC;
+	focus-on-next-cycle: #clickOnNextCycleDiv a;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleFinal;
 }
 
 #content:draw {
@@ -147,13 +153,16 @@
 }
 
 #checkClickOnNext:test {
-	focus-on: #clickOnNextStart after {window.delayTimes.clickOnNext[0]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
-	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
-	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[3]}ms;
-	func: checkClickOnNext;
+	func: checkClickOnNextA;
+	focus-on: #clickOnNextStart;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextB;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextC;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextFinal;
 }
 
 #content:draw {
@@ -180,13 +189,16 @@
 }
 
 #checkClickOnPreviousCycle:test {
-	focus-on: #clickOnPreviousCycleStart after {window.delayTimes.clickOnPreviousCycle[0]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
-	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
-	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[3]}ms;
-	func: checkClickOnPreviousCycle;
+	func: checkClickOnPreviousCycleA;
+	focus-on: #clickOnPreviousCycleStart;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleB;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleC;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleFinal;
 }
 
 #content:draw {
@@ -213,13 +225,16 @@
 }
 
 #checkClickOnPrevious:test {
-	focus-on: #clickOnPreviousStart after {window.delayTimes.clickOnPrevious[0]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
-	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
-	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[3]}ms;
-	func: checkClickOnPrevious;
+	func: checkClickOnPreviousA;
+	focus-on: #clickOnPreviousStart;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousB;
+	focus-on-previous: #clickOnPreviousDiv a;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousC;
+	focus-on-previous: #clickOnPreviousDiv a;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousFinal;
 }
 
 /* Pended until clone/restore-clone issue 36 has been resolved.
@@ -288,10 +303,11 @@
 
 #checkFocusOff:test {
 	#focusOffField {
-	    focus-on: self after {window.delayTimes.focusOff[0]}ms;
-	    focus-off: true after {window.delayTimes.focusOff[1]}ms;
+	    focus-on: self;
+	    func: checkFocusOffA;
+	    focus-off: true;
 	}
-	func: checkFocusOff;
+	func: checkFocusOffFinal;
 }
 
 #content:draw {
@@ -311,8 +327,9 @@
 }
 
 #checkFocusOnFirst:test {
-	focus-on-first: #focusOnFirstForm input after {window.delayTimes.focusOnFirst[0]}ms;
-	func: checkFocusOnFirst;
+	func: checkFocusOnFirstA;
+	focus-on-first: #focusOnFirstForm input;
+	func: checkFocusOnFirstFinal;
 }
 
 #content:draw {
@@ -332,8 +349,9 @@
 }
 
 #checkFocusOnLast:test {
-	focus-on-last: #focusOnLastForm input after {window.delayTimes.focusOnLast[0]}ms;
-	func: checkFocusOnLast;
+	func: checkFocusOnLastA;
+	focus-on-last: #focusOnLastForm input;
+	func: checkFocusOnLastFinal;
 }
 
 
@@ -354,11 +372,13 @@
 }
 
 #checkFocusOnNextCycle:test {
-	focus-on: #focusOnNextCycleStart after {window.delayTimes.focusOnNextCycle[0]}ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[1]}ms;
-	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[2]}ms;
- 	focus-on-next-cycle: .focusOnNextCycleBlock a after {window.delayTimes.focusOnNextCycle[3]}ms;
-	func: checkFocusOnNextCycle;
+	func: checkFocusOnNextCycleA;
+	focus-on: #focusOnNextCycleStart;
+	func: checkFocusOnNextCycleB;
+	focus-on-next-cycle: .focusOnNextCycleBlock a;
+	func: checkFocusOnNextCycleC;
+ 	focus-on-next-cycle: .focusOnNextCycleBlock a;
+	func: checkFocusOnNextCycleFinal;
 }
 
 #content:draw {
@@ -378,11 +398,15 @@
 }
 
 #checkFocusOnNext:test {
-    focus-on: #focusOnNextStart after {window.delayTimes.focusOnNext[0]}ms;
-	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[1]}ms;
-	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[2]}ms;
-	focus-on-next: .focusOnNextBlock a after {window.delayTimes.focusOnNext[3]}ms;
-	func: checkFocusOnNext;
+	func: checkFocusOnNextA;
+    focus-on: #focusOnNextStart;
+	func: checkFocusOnNextB;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextC;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextD;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextFinal;
 }
 
 #content:draw {
@@ -402,11 +426,13 @@
 }
 
 #checkFocusOnPreviousCycle:test {
-    focus-on: #focusOnPreviousCycleStart after {window.delayTimes.focusOnPreviousCycle[0]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[1]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[2]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[3]}ms;
-	func: checkFocusOnPreviousCycle;
+	func: checkFocusOnPreviousCycleA;
+    focus-on: #focusOnPreviousCycleStart;
+	func: checkFocusOnPreviousCycleB;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleC;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleFinal;
 }
 
 #content:draw {
@@ -426,11 +452,15 @@
 }
 
 #checkFocusOnPrevious:test {
-	focus-on: #focusOnPreviousStart after {window.delayTimes.focusOnPrevious[0]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[1]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[2]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[3]}ms;
-	func: checkFocusOnPrevious;
+	func: checkFocusOnPreviousA;
+	focus-on: #focusOnPreviousStart;
+	func: checkFocusOnPreviousB;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousC;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousD;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousFinal;
 }
 
 /* This is tested in the blur command test and will specifically error if it doesn't work. */
@@ -668,25 +698,10 @@ body:init {
 	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
 		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
 		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
-		Note: The times for these could be removed and the settimeouts in the function calls in the tests could be split into sequential functions for focus and click.
-		Don't stop the flow of getting these all done - get all the tests done and then come back and do that.
 	*/
 	var: window.delayTimes {
-		blur: [1000, 1250],
-		focusOff: [1500, 1750],
-		focusOnFirst: [2000],
-		focusOnLast: [2250],
-		focusOnNext: [2500, 2750, 3000, 3250],
-		focusOnPrevious: [3500, 3750, 4000, 4250],
-		focusOnNextCycle: [4500, 4750, 5000, 5250],
-		focusOnPreviousCycle: [5500, 5750, 6000, 6250],
-		clickOnFirst: [6500],
-		clickOnLast: [6750],
-		clickOnNext: [7000, 7250, 7500, 7750],
-		clickOnPrevious: [8000, 8250, 8500, 8750],
-		clickOnNextCycle: [9000, 9250, 9500, 9750],
-		clickOnPreviousCycle: [10000, 10250, 10500, 10750],
-		copyToClipboard: [11000]
+/* leave this here as an example of how to use delay times when it gets needed - see the unused test for copyToClipboard for the syntax.
+		copyToClipboard: [3000]*/
 	};
 
 	/* This has to go at the end if stuff goes above it :) */

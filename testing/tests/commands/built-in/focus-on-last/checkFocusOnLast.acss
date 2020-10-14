@@ -15,7 +15,8 @@
 }
 
 #checkFocusOnLast:test {
-	focus-on-last: #focusOnLastForm input after {window.delayTimes.focusOnLast[0]}ms;
-	func: checkFocusOnLast;
+	func: checkFocusOnLastA;
+	focus-on-last: #focusOnLastForm input;
+	func: checkFocusOnLastFinal;
 }
 

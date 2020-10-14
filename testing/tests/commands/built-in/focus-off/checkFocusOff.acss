@@ -10,8 +10,9 @@
 
 #checkFocusOff:test {
 	#focusOffField {
-	    focus-on: self after {window.delayTimes.focusOff[0]}ms;
-	    focus-off: true after {window.delayTimes.focusOff[1]}ms;
+	    focus-on: self;
+	    func: checkFocusOffA;
+	    focus-off: true;
 	}
-	func: checkFocusOff;
+	func: checkFocusOffFinal;
 }

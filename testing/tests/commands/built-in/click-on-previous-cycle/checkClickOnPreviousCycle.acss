@@ -22,11 +22,14 @@
 }
 
 #checkClickOnPreviousCycle:test {
-	focus-on: #clickOnPreviousCycleStart after {window.delayTimes.clickOnPreviousCycle[0]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
-	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[1]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
-	focus-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[2]}ms;
-	click-on-previous-cycle: #clickOnPreviousCycleDiv a after {window.delayTimes.clickOnPreviousCycle[3]}ms;
-	func: checkClickOnPreviousCycle;
+	func: checkClickOnPreviousCycleA;
+	focus-on: #clickOnPreviousCycleStart;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleB;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleC;
+	focus-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	click-on-previous-cycle: #clickOnPreviousCycleDiv a;
+	func: checkClickOnPreviousCycleFinal;
 }

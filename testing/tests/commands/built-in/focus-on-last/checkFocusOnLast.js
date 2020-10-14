@@ -8,7 +8,7 @@
 		</form>
 */
 
-function checkFocusOnLast(o) {
+function checkFocusOnLastA(o) {
 	let testEl = _initTest('checkFocusOnLast');
 	if (!testEl) return;
 
@@ -16,17 +16,21 @@ function checkFocusOnLast(o) {
 	let el = _getObj('#focusOnLastTarget');
 
 	// We want not in focus at start.
-	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#focusOnLastTarget is not in focus after 3.5s and it should be.');
-			}
-		}, window.delayTimes.focusOnLast[0] + 100);
+	if (el.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
+	}
+}
+
+function checkFocusOnLastFinal(o) {
+	let testEl = _initTest('checkFocusOnLast');
+	if (!testEl) return;
+
+	let el = _getObj('#focusOnLastTarget');
+
+	if (el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnLastTarget in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnLastTarget is not in focus at the end and it should be.');
 	}
 }

@@ -15,6 +15,7 @@
 }
 
 #checkFocusOnFirst:test {
-	focus-on-first: #focusOnFirstForm input after {window.delayTimes.focusOnFirst[0]}ms;
-	func: checkFocusOnFirst;
+	func: checkFocusOnFirstA;
+	focus-on-first: #focusOnFirstForm input;
+	func: checkFocusOnFirstFinal;
 }

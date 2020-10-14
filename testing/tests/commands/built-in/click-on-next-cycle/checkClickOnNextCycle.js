@@ -9,7 +9,7 @@
 		<p id="clickOnNextCycleP"></p>
 */
 
-function checkClickOnNextCycle(o) {
+function checkClickOnNextCycleA(o) {
 	let testEl = _initTest('checkClickOnNextCycle');
 	if (!testEl) return;
 
@@ -17,28 +17,46 @@ function checkClickOnNextCycle(o) {
 	let el = _getObj('#clickOnNextCycleP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'yellow') {
-				setTimeout(function() {
-					if (el.innerHTML == 'purple and green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
-			}
-		}, window.delayTimes.clickOnNextCycle[0] + 350); // can skip the first focus check as we're interested in click-on-next.
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#clickOnNextCycleStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnNextCycleB(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML != 'yellow') {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
+	}
+}
+
+function checkClickOnNextCycleC(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML != 'purple and green') {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
+	}
+}
+
+function checkClickOnNextCycleFinal(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML == 'green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
 	}
 }

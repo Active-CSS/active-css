@@ -9,36 +9,50 @@
 		<p id="clickOnPreviousP"></p>
 */
 
-function checkClickOnPrevious(o) {
+function checkClickOnPreviousA(o) {
 	let testEl = _initTest('checkClickOnPrevious');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#clickOnPreviousStart');
-	let el = _getObj('#clickOnPreviousP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'orange') {
-				setTimeout(function() {
-					if (el.innerHTML == 'green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
-			}
-		}, window.delayTimes.clickOnPrevious[0] + 350); // can skip the first focus check as we're interested in click-on-next.
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnPreviousB(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML != 'orange') {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousC(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML != 'green') {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousFinal(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML == 'green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
 	}
 }

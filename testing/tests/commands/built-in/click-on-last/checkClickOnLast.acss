@@ -22,6 +22,7 @@
 }
 
 #checkClickOnLast:test {
-	click-on-last: #clickOnLastDiv a after {window.delayTimes.clickOnLast[0]}ms;
-	func: checkClickOnLast;
+	func: checkClickOnLastA;
+	click-on-last: #clickOnLastDiv a;
+	func: checkClickOnLastFinal;
 }

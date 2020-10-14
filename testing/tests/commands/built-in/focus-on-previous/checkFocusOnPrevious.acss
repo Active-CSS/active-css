@@ -15,9 +15,13 @@
 }
 
 #checkFocusOnPrevious:test {
-	focus-on: #focusOnPreviousStart after {window.delayTimes.focusOnPrevious[0]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[1]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[2]}ms;
-	focus-on-previous: .focusOnPreviousBlock a after {window.delayTimes.focusOnPrevious[3]}ms;
-	func: checkFocusOnPrevious;
+	func: checkFocusOnPreviousA;
+	focus-on: #focusOnPreviousStart;
+	func: checkFocusOnPreviousB;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousC;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousD;
+	focus-on-previous: .focusOnPreviousBlock a;
+	func: checkFocusOnPreviousFinal;
 }

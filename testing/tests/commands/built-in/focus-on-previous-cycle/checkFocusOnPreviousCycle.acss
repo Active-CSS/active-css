@@ -15,9 +15,11 @@
 }
 
 #checkFocusOnPreviousCycle:test {
-    focus-on: #focusOnPreviousCycleStart after {window.delayTimes.focusOnPreviousCycle[0]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[1]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[2]}ms;
-	focus-on-previous-cycle: .focusOnPreviousCycleBlock a after {window.delayTimes.focusOnPreviousCycle[3]}ms;
-	func: checkFocusOnPreviousCycle;
+	func: checkFocusOnPreviousCycleA;
+    focus-on: #focusOnPreviousCycleStart;
+	func: checkFocusOnPreviousCycleB;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleC;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleFinal;
 }

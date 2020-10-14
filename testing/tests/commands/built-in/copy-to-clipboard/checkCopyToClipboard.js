@@ -1,4 +1,4 @@
-/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
+/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment when/if it can work.
 
 function checkCopyToClipboard(o) {
 	let testEl = _initTest('checkCopyToClipboard');

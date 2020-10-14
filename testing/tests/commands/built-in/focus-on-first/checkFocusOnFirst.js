@@ -8,25 +8,28 @@
 		</form>
 */
 
-function checkFocusOnFirst(o) {
+function checkFocusOnFirstA(o) {
 	let testEl = _initTest('checkFocusOnFirst');
 	if (!testEl) return;
 
-	// Initially #focusOnFirstTarget not in focus. Activates after 3s.
 	let el = _getObj('#focusOnFirstTarget');
 
 	// We want not in focus at start.
-	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#focusOnFirstTarget is not in focus after 3s and it should be.');
-			}
-		}, window.delayTimes.focusOnFirst[0] + 100);
+	if (el.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
+	}
+}
+
+function checkFocusOnFirstFinal(o) {
+	let testEl = _initTest('checkFocusOnFirst');
+	if (!testEl) return;
+
+	let el = _getObj('#focusOnFirstTarget');
+
+	if (el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnFirstTarget in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
 	}
 }

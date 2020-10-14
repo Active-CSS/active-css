@@ -9,23 +9,27 @@
 		<p id="clickOnLastP"></p>
 */
 
-function checkClickOnLast(o) {
+function checkClickOnLastA(o) {
 	let testEl = _initTest('checkClickOnLast');
 	if (!testEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
-	if (el.innerHTML == '') {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.innerHTML == 'purple and green') {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
-			}
-		}, window.delayTimes.clickOnLast[0] + 100);
-	} else {
+	if (el.innerHTML != '') {
 		_fail(testEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
+	}
+}
+
+function checkClickOnLastFinal(o) {
+	let testEl = _initTest('checkClickOnLast');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnLastP');
+
+	if (el.innerHTML == 'purple and green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
 	}
 }

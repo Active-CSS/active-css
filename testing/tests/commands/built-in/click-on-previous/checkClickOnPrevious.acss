@@ -22,11 +22,14 @@
 }
 
 #checkClickOnPrevious:test {
-	focus-on: #clickOnPreviousStart after {window.delayTimes.clickOnPrevious[0]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
-	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[1]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
-	focus-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[2]}ms;
-	click-on-previous: #clickOnPreviousDiv a after {window.delayTimes.clickOnPrevious[3]}ms;
-	func: checkClickOnPrevious;
+	func: checkClickOnPreviousA;
+	focus-on: #clickOnPreviousStart;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousB;
+	focus-on-previous: #clickOnPreviousDiv a;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousC;
+	focus-on-previous: #clickOnPreviousDiv a;
+	click-on-previous: #clickOnPreviousDiv a;
+	func: checkClickOnPreviousFinal;
 }

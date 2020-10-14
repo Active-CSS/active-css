@@ -50,33 +50,28 @@ window.alert = function(idToMarkSuccessFul) {
 	el.classList.add('success');
 };
 
-function checkBlur(o) {
+function checkBlurA(o) {
 	let testEl = _initTest('checkBlur');
 	if (!testEl) return;
 
-	// Initially #blurField not in focus. Activates after 1s. Blur actives after 1.5s (500ms later).
 	let el = _getObj('#blurField');
 
-	// We want not in focus at start.
 	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					// Now we want not in focus.
-					if (!el.isSameNode(document.activeElement)) {
-						// That looked good.
-						_addSuccessClass(testEl);
-					} else {
-						_fail(testEl, '#blurField in not out of focus at the end.');
-					}
-				}, window.delayTimes.blur[1] - window.delayTimes.blur[0] + 100);
-			} else {
-				_fail(testEl, '#blurField is not in focus after 1s and it should be.');
-			}
-		}, window.delayTimes.blur[0] + 100);
+		_fail(testEl, '#blurField is not in focus for the first test and it should be.');
+	}
+}
+
+function checkBlurFinal(o) {
+	let testEl = _initTest('checkBlur');
+	if (!testEl) return;
+
+	let el = _getObj('#blurField');
+
+	if (!el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#blurField in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#blurField in not out of focus at the end.');
 	}
 }
 
@@ -91,24 +86,29 @@ function checkBlur(o) {
 		<p id="clickOnFirstP"></p>
 */
 
-function checkClickOnFirst(o) {
+function checkClickOnFirstA(o) {
 	let testEl = _initTest('checkClickOnFirst');
 	if (!testEl) return;
 
 	let el = _getObj('#clickOnFirstP');
 
-	if (el.innerHTML == '') {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.innerHTML == 'green') {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
-			}
-		}, window.delayTimes.clickOnFirst[0] + 100);
-	} else {
+	if (el.innerHTML != '') {
 		_fail(testEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
+	}
+}
+
+function checkClickOnFirstFinal(o) {
+	let testEl = _initTest('checkClickOnFirst');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnFirstP');
+
+	// Now we want in focus.
+	if (el.innerHTML == 'green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
 	}
 }
 
@@ -123,24 +123,28 @@ function checkClickOnFirst(o) {
 		<p id="clickOnLastP"></p>
 */
 
-function checkClickOnLast(o) {
+function checkClickOnLastA(o) {
 	let testEl = _initTest('checkClickOnLast');
 	if (!testEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
-	if (el.innerHTML == '') {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.innerHTML == 'purple and green') {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
-			}
-		}, window.delayTimes.clickOnLast[0] + 100);
-	} else {
+	if (el.innerHTML != '') {
 		_fail(testEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
+	}
+}
+
+function checkClickOnLastFinal(o) {
+	let testEl = _initTest('checkClickOnLast');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnLastP');
+
+	if (el.innerHTML == 'purple and green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
 	}
 }
 
@@ -155,7 +159,7 @@ function checkClickOnLast(o) {
 		<p id="clickOnNextCycleP"></p>
 */
 
-function checkClickOnNextCycle(o) {
+function checkClickOnNextCycleA(o) {
 	let testEl = _initTest('checkClickOnNextCycle');
 	if (!testEl) return;
 
@@ -163,29 +167,47 @@ function checkClickOnNextCycle(o) {
 	let el = _getObj('#clickOnNextCycleP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'yellow') {
-				setTimeout(function() {
-					if (el.innerHTML == 'purple and green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
-			}
-		}, window.delayTimes.clickOnNextCycle[0] + 350); // can skip the first focus check as we're interested in click-on-next.
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#clickOnNextCycleStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnNextCycleB(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML != 'yellow') {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
+	}
+}
+
+function checkClickOnNextCycleC(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML != 'purple and green') {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
+	}
+}
+
+function checkClickOnNextCycleFinal(o) {
+	let testEl = _initTest('checkClickOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#clickOnNextCycleStart');
+	let el = _getObj('#clickOnNextCycleP');
+
+	if (el.innerHTML == 'green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
 	}
 }
 
@@ -200,37 +222,52 @@ function checkClickOnNextCycle(o) {
 		<p id="clickOnNextP"></p>
 */
 
-function checkClickOnNext(o) {
+function checkClickOnNextA(o) {
 	let testEl = _initTest('checkClickOnNext');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#clickOnNextStart');
+
+	// We want not in focus at start.
+	if (firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnNextB(o) {
+	let testEl = _initTest('checkClickOnNext');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnNextP');
+
+	if (el.innerHTML != 'yellow') {
+		_fail(testEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
+	}
+}
+
+function checkClickOnNextC(o) {
+	let testEl = _initTest('checkClickOnNext');
+	if (!testEl) return;
+
 	let el = _getObj('#clickOnNextP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'yellow') {
-				setTimeout(function() {
-					if (el.innerHTML == 'purple and green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'purple and green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnNextP does not contain the test "purple and green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
-			}
-		}, window.delayTimes.clickOnNext[0] + 350); // can skip the first focus check as we're interested in click-on-next.
+	if (el.innerHTML != 'purple and green') {
+		_fail(testEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
+	}
+}
+
+function checkClickOnNextFinal(o) {
+	let testEl = _initTest('checkClickOnNext');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnNextP');
+
+	if (el.innerHTML == 'purple and green') {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#clickOnNextP does not contain the test "purple and green".');
 	}
 }
 
@@ -245,37 +282,51 @@ function checkClickOnNext(o) {
 		<p id="clickOnPreviousCycleP"></p>
 */
 
-function checkClickOnPreviousCycle(o) {
+function checkClickOnPreviousCycleA(o) {
 	let testEl = _initTest('checkClickOnPreviousCycle');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#clickOnPreviousCycleStart');
-	let el = _getObj('#clickOnPreviousCycleP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'orange') {
-				setTimeout(function() {
-					if (el.innerHTML == 'green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'purple and green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnPreviousCycleP does not contain the test "purple and green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
-			}
-		}, window.delayTimes.clickOnPreviousCycle[0] + 350); // can skip the first focus check as we're interested in click-on-next.
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnPreviousCycleB(o) {
+	let testEl = _initTest('checkClickOnPreviousCycle');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousCycleP');
+
+	if (el.innerHTML != 'orange') {
+		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousCycleC(o) {
+	let testEl = _initTest('checkClickOnPreviousCycle');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousCycleP');
+
+	if (el.innerHTML != 'green') {
+		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousCycleFinal(o) {
+	let testEl = _initTest('checkClickOnPreviousCycle');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousCycleP');
+
+	if (el.innerHTML == 'purple and green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "purple and green".');
 	}
 }
 
@@ -290,37 +341,51 @@ function checkClickOnPreviousCycle(o) {
 		<p id="clickOnPreviousP"></p>
 */
 
-function checkClickOnPrevious(o) {
+function checkClickOnPreviousA(o) {
 	let testEl = _initTest('checkClickOnPrevious');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#clickOnPreviousStart');
-	let el = _getObj('#clickOnPreviousP');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (el.innerHTML == 'orange') {
-				setTimeout(function() {
-					if (el.innerHTML == 'green') {
-						setTimeout(function() {
-							if (el.innerHTML == 'green') {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
-			}
-		}, window.delayTimes.clickOnPrevious[0] + 350); // can skip the first focus check as we're interested in click-on-next.
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkClickOnPreviousB(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML != 'orange') {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousC(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML != 'green') {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
+	}
+}
+
+function checkClickOnPreviousFinal(o) {
+	let testEl = _initTest('checkClickOnPrevious');
+	if (!testEl) return;
+
+	let el = _getObj('#clickOnPreviousP');
+
+	if (el.innerHTML == 'green') {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
 	}
 }
 
@@ -348,7 +413,7 @@ function checkCloneBefore(o) {
 	}
 }
 */
-/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
+/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment when/if it can work.
 
 function checkCopyToClipboard(o) {
 	let testEl = _initTest('checkCopyToClipboard');
@@ -375,33 +440,28 @@ function checkEval(o) {
 }
 
 // Note: This is the same test as the blur command but with different timings - focus-off is an alternative syntax.
-function checkFocusOff(o) {
+function checkFocusOffA(o) {
 	let testEl = _initTest('checkFocusOff');
 	if (!testEl) return;
 
-	// Initially #focusOffField not in focus. Activates after 2s. Focus-off actives after 2.5s (500ms later).
 	let el = _getObj('#focusOffField');
 
-	// We want not in focus at start.
 	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					// Now we want not in focus.
-					if (!el.isSameNode(document.activeElement)) {
-						// That looked good.
-						_addSuccessClass(testEl);
-					} else {
-						_fail(testEl, '#focusOffField in not out of focus at the end.');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOffField is not in focus after 2s and it should be.');
-			}
-		}, window.delayTimes.focusOff[0] + 100);
+		_fail(testEl, '#focusOffField is not in focus for the first test and it should be.');
+	}
+}
+
+function checkFocusOffFinal(o) {
+	let testEl = _initTest('checkFocusOff');
+	if (!testEl) return;
+
+	let el = _getObj('#focusOffField');
+
+	if (!el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOffField in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOffField in not out of focus at the end.');
 	}
 }
 
@@ -415,26 +475,29 @@ function checkFocusOff(o) {
 		</form>
 */
 
-function checkFocusOnFirst(o) {
+function checkFocusOnFirstA(o) {
 	let testEl = _initTest('checkFocusOnFirst');
 	if (!testEl) return;
 
-	// Initially #focusOnFirstTarget not in focus. Activates after 3s.
 	let el = _getObj('#focusOnFirstTarget');
 
 	// We want not in focus at start.
-	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#focusOnFirstTarget is not in focus after 3s and it should be.');
-			}
-		}, window.delayTimes.focusOnFirst[0] + 100);
+	if (el.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
+	}
+}
+
+function checkFocusOnFirstFinal(o) {
+	let testEl = _initTest('checkFocusOnFirst');
+	if (!testEl) return;
+
+	let el = _getObj('#focusOnFirstTarget');
+
+	if (el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnFirstTarget in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
 	}
 }
 
@@ -448,7 +511,7 @@ function checkFocusOnFirst(o) {
 		</form>
 */
 
-function checkFocusOnLast(o) {
+function checkFocusOnLastA(o) {
 	let testEl = _initTest('checkFocusOnLast');
 	if (!testEl) return;
 
@@ -456,18 +519,22 @@ function checkFocusOnLast(o) {
 	let el = _getObj('#focusOnLastTarget');
 
 	// We want not in focus at start.
-	if (!el.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			// Now we want in focus.
-			if (el.isSameNode(document.activeElement)) {
-				// That looked good.
-				_addSuccessClass(testEl);
-			} else {
-				_fail(testEl, '#focusOnLastTarget is not in focus after 3.5s and it should be.');
-			}
-		}, window.delayTimes.focusOnLast[0] + 100);
+	if (el.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
+	}
+}
+
+function checkFocusOnLastFinal(o) {
+	let testEl = _initTest('checkFocusOnLast');
+	if (!testEl) return;
+
+	let el = _getObj('#focusOnLastTarget');
+
+	if (el.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnLastTarget in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnLastTarget is not in focus at the end and it should be.');
 	}
 }
 
@@ -487,7 +554,7 @@ function checkFocusOnLast(o) {
 
 */
 
-function checkFocusOnNextCycle(o) {
+function checkFocusOnNextCycleA(o) {
 	let testEl = _initTest('checkFocusOnNextCycle');
 	if (!testEl) return;
 
@@ -496,29 +563,44 @@ function checkFocusOnNextCycle(o) {
 	let thirdEl = _getObj('#focusOnNextCycleEnd');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (firstEl.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					if (secondEl.isSameNode(document.activeElement)) {
-						setTimeout(function() {
-							if (thirdEl.isSameNode(document.activeElement)) {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
-			}
-		}, window.delayTimes.focusOnNextCycle[0] + 100);
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkFocusOnNextCycleB(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnNextCycleStart');
+
+	if (!firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
+	}
+}
+
+function checkFocusOnNextCycleC(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let secondEl = _getObj('#focusOnNextCycleSecond');
+
+	if (!secondEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
+	}
+}
+
+function checkFocusOnNextCycleFinal(o) {
+	let testEl = _initTest('checkFocusOnNextCycle');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnNextCycleEnd');
+
+	if (thirdEl.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
 	}
 }
 
@@ -538,45 +620,63 @@ function checkFocusOnNextCycle(o) {
 
 */
 
-function checkFocusOnNext(o) {
+function checkFocusOnNextA(o) {
 	let testEl = _initTest('checkFocusOnNext');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#focusOnNextStart');
-	let secondEl = _getObj('#focusOnNextSecond');
-	let thirdEl = _getObj('#focusOnNextEnd');
 
 	// We want not in focus at start.
+	if (firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextStart is in focus at the start and shouldn\'t be to get a valid test.');
+	}
+}
+
+function checkFocusOnNextB(o) {
+	let testEl = _initTest('checkFocusOnNext');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnNextStart');
+
 	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (firstEl.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					if (secondEl.isSameNode(document.activeElement)) {
-						setTimeout(function() {
-							if (thirdEl.isSameNode(document.activeElement)) {
-								setTimeout(function() {
-									// Is it still on the last element when it gets to the end and not something else?
-									if (thirdEl.isSameNode(document.activeElement)) {
-										// That looked good.
-										_addSuccessClass(testEl);
-									} else {
-										_fail(testEl, '#focusOnNextEnd is not in focus at the end');
-									}
-								}, 250);
-							} else {
-								_fail(testEl, '#focusOnNextEnd is not in focus at the end');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#focusOnNextSecond has not moved into focus');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOnNextStart is not in focus after 4s and it should be.');
-			}
-		}, window.delayTimes.focusOnNext[0] + 100);
+		_fail(testEl, '#focusOnNextStart has not moved into focus.');
+	}
+}
+
+function checkFocusOnNextC(o) {
+	let testEl = _initTest('checkFocusOnNext');
+	if (!testEl) return;
+
+	let secondEl = _getObj('#focusOnNextSecond');
+
+	if (!secondEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextSecond has not moved into focus');
+	}
+}
+
+function checkFocusOnNextD(o) {
+	let testEl = _initTest('checkFocusOnNext');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnNextEnd');
+
+	if (!thirdEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnNextEnd has not moved into focus');
+	}
+}
+
+function checkFocusOnNextFinal(o) {
+	let testEl = _initTest('checkFocusOnNext');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnNextEnd');
+
+	// Is it still on the last element when it gets to the end and not something else?
+	if (thirdEl.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnNextStart in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnNextEnd is not in focus at the end');
 	}
 }
 
@@ -596,38 +696,51 @@ function checkFocusOnNext(o) {
 
 */
 
-function checkFocusOnPreviousCycle(o) {
+function checkFocusOnPreviousCycleA(o) {
 	let testEl = _initTest('checkFocusOnPreviousCycle');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousCycleStart');
-	let secondEl = _getObj('#focusOnPreviousCycleSecond');
-	let thirdEl = _getObj('#focusOnPreviousCycleEnd');
 
 	// We want not in focus at start.
-	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (firstEl.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					if (secondEl.isSameNode(document.activeElement)) {
-						setTimeout(function() {
-							if (thirdEl.isSameNode(document.activeElement)) {
-								// That looked good.
-								_addSuccessClass(testEl);
-							} else {
-								_fail(testEl, '#focusOnPreviousCycleEnd is not in focus at the end');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#focusOnPreviousCycleSecond has not moved into focus');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
-			}
-		}, window.delayTimes.focusOnPreviousCycle[0] + 100);
-	} else {
+	if (firstEl.isSameNode(document.activeElement)) {
 		_fail(testEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkFocusOnPreviousCycleB(o) {
+	let testEl = _initTest('checkFocusOnPreviousCycle');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnPreviousCycleStart');
+
+	if (!firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
+	}
+}
+
+function checkFocusOnPreviousCycleC(o) {
+	let testEl = _initTest('checkFocusOnPreviousCycle');
+	if (!testEl) return;
+
+	let secondEl = _getObj('#focusOnPreviousCycleSecond');
+
+	if (!secondEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnPreviousCycleSecond has not moved into focus');
+	}
+}
+
+function checkFocusOnPreviousCycleFinal(o) {
+	let testEl = _initTest('checkFocusOnPreviousCycle');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnPreviousCycleEnd');
+
+	if (thirdEl.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
+	} else {
+		_fail(testEl, '#focusOnPreviousCycleEnd is not in focus at the end');
 	}
 }
 
@@ -647,45 +760,66 @@ function checkFocusOnPreviousCycle(o) {
 
 */
 
-function checkFocusOnPrevious(o) {
+function checkFocusOnPreviousA(o) {
 	let testEl = _initTest('checkFocusOnPrevious');
 	if (!testEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousStart');
-	let secondEl = _getObj('#focusOnPreviousSecond');
-	let thirdEl = _getObj('#focusOnPreviousEnd');
+
+	// We want not in focus at start.
+	if (firstEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
+	}
+}
+
+function checkFocusOnPreviousB(o) {
+	let testEl = _initTest('checkFocusOnPrevious');
+	if (!testEl) return;
+
+	let firstEl = _getObj('#focusOnPreviousStart');
 
 	// We want not in focus at start.
 	if (!firstEl.isSameNode(document.activeElement)) {
-		setTimeout(function() {
-			if (firstEl.isSameNode(document.activeElement)) {
-				setTimeout(function() {
-					if (secondEl.isSameNode(document.activeElement)) {
-						setTimeout(function() {
-							if (thirdEl.isSameNode(document.activeElement)) {
-								setTimeout(function() {
-									// Is it still on the last element when it gets to the end and not something else?
-									if (thirdEl.isSameNode(document.activeElement)) {
-										// That looked good.
-										_addSuccessClass(testEl);
-									} else {
-										_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
-									}
-								}, 250);
-							} else {
-								_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
-							}
-						}, 250);
-					} else {
-						_fail(testEl, '#focusOnPreviousSecond has not moved into focus');
-					}
-				}, 250);
-			} else {
-				_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
-			}
-		}, window.delayTimes.focusOnPrevious[0] + 100);
+		_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
+	}
+}
+
+function checkFocusOnPreviousC(o) {
+	let testEl = _initTest('checkFocusOnPrevious');
+	if (!testEl) return;
+
+	let secondEl = _getObj('#focusOnPreviousSecond');
+
+	// We want not in focus at start.
+	if (!secondEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnPreviousSecond has not moved into focus');
+	}
+}
+
+function checkFocusOnPreviousD(o) {
+	let testEl = _initTest('checkFocusOnPrevious');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnPreviousEnd');
+
+	// We want not in focus at start.
+	if (!thirdEl.isSameNode(document.activeElement)) {
+		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+	}
+}
+
+function checkFocusOnPreviousFinal(o) {
+	let testEl = _initTest('checkFocusOnPrevious');
+	if (!testEl) return;
+
+	let thirdEl = _getObj('#focusOnPreviousEnd');
+
+	// Is it still on the last element when it gets to the end and not something else?
+	if (thirdEl.isSameNode(document.activeElement)) {
+		// That looked good.
+		_addSuccessClass(testEl);
 	} else {
-		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
+		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
 	}
 }
 

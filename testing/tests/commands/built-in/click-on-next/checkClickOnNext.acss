@@ -22,11 +22,14 @@
 }
 
 #checkClickOnNext:test {
-	focus-on: #clickOnNextStart after {window.delayTimes.clickOnNext[0]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
-	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[1]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
-	focus-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[2]}ms;
-	click-on-next: #clickOnNextDiv a after {window.delayTimes.clickOnNext[3]}ms;
-	func: checkClickOnNext;
+	func: checkClickOnNextA;
+	focus-on: #clickOnNextStart;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextB;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextC;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextFinal;
 }

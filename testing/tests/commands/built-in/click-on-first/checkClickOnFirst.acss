@@ -22,6 +22,7 @@
 }
 
 #checkClickOnFirst:test {
-	click-on-first: #clickOnFirstDiv a after {window.delayTimes.clickOnFirst[0]}ms;
-	func: checkClickOnFirst;
+	func: checkClickOnFirstA;
+	click-on-first: #clickOnFirstDiv a;
+	func: checkClickOnFirstFinal;
 }
