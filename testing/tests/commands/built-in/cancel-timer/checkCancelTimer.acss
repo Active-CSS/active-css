@@ -1,0 +1,30 @@
+
+#content:draw {
+	render-before-end: "<div id=\"checkCancelTimer\" data-desc=\"Basic cancel-timer command\" class=\"coreTest\">{|checkCancelTimerHTML}</div>";
+}
+
+@component checkCancelTimerHTML {
+	html {
+		<div id="cancelTimerDiv" style="background-color: blue;"></div>
+	}
+}
+
+#checkCancelTimer:test {
+
+	/* Cancel by action test. */
+	func: checkCancelTimerA;
+	#cancelTimerDiv {
+		background-color: green after 1s;
+		func: checkCancelTimerB;
+		cancel-timer: background-color;
+	}
+
+	/* Cancel by label test. */
+	#cancelTimerDiv {
+		background-color: green after 1s label greenColor;
+		func: checkCancelTimerC;
+		cancel-timer: greenColor;
+	}
+	func: checkCancelTimerFinal;
+
+}

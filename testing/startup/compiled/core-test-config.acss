@@ -36,6 +36,69 @@
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkCancelTimerAll\" data-desc=\"Basic cancel-timer-all command\" class=\"coreTest\">{|checkCancelTimerAllHTML}</div>";
+}
+
+@component checkCancelTimerAllHTML {
+	html {
+		<div id="cancelTimerAllDiv" style="background-color: blue;"></div>
+	}
+}
+
+#checkCancelTimerAll:test {
+
+	/* Cancel all by action test. */
+	func: checkCancelTimerAllA;
+	#cancelTimerAllDiv {
+		background-color: green after 1s;
+		add-class: .testAddition after 1s;
+	}
+	cancel-timer-all: true;
+	func: checkCancelTimerAllB;
+
+	/* Cancel all by label test. */
+	#cancelTimerAllDiv {
+		background-color: green after 1s label greenColor;
+		add-class: .testAddition after 1s label myAddition;
+		func: checkCancelTimerAllC;
+	}
+	cancel-timer-all: true;
+	func: checkCancelTimerAllFinal;
+
+}
+
+
+#content:draw {
+	render-before-end: "<div id=\"checkCancelTimer\" data-desc=\"Basic cancel-timer command\" class=\"coreTest\">{|checkCancelTimerHTML}</div>";
+}
+
+@component checkCancelTimerHTML {
+	html {
+		<div id="cancelTimerDiv" style="background-color: blue;"></div>
+	}
+}
+
+#checkCancelTimer:test {
+
+	/* Cancel by action test. */
+	func: checkCancelTimerA;
+	#cancelTimerDiv {
+		background-color: green after 1s;
+		func: checkCancelTimerB;
+		cancel-timer: background-color;
+	}
+
+	/* Cancel by label test. */
+	#cancelTimerDiv {
+		background-color: green after 1s label greenColor;
+		func: checkCancelTimerC;
+		cancel-timer: greenColor;
+	}
+	func: checkCancelTimerFinal;
+
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkClickOnFirst\" data-desc=\"Basic click-on-first command\" class=\"coreTest\">{|checkClickOnFirstHTML}</div>";
 }
 
