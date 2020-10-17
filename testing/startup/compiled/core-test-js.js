@@ -16,6 +16,22 @@ function _fail(testEl, message=null, par1=null) {
 		}
 	}
 }
+// From https://www.w3schools.com/js/js_cookies.asp
+function _getCookie(cname) {
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i = 0; i < ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0) == ' ') {
+			c = c.substring(1);
+		}
+		if (c.indexOf(name) == 0) {
+			return c.substring(name.length, c.length);
+		}
+	}
+	return "";
+}
+
 function _getObj(str, doc=document) {
 	let obj = (str == 'body') ? doc.body : doc.querySelector(str);
 	return (obj) ? obj : false;
@@ -1036,6 +1052,30 @@ function checkRemoveClone(o) {
 	_addSuccessClass(testEl);
 }
 */
+function checkRemoveCookieA(o) {
+	let testEl = _initTest('checkRemoveCookie');
+	if (!testEl) return;
+
+	let removeCookieTest1 = _getCookie('removeCookieTest1');
+
+	if (removeCookieTest1 != 'Y') {
+		_fail(testEl, 'removeCookieTest1 cookie is not set at the beginning and it should be.');
+	}
+}
+
+function checkRemoveCookieFinal(o) {
+	let testEl = _initTest('checkRemoveCookie');
+	if (!testEl) return;
+
+	let removeCookieTest1 = _getCookie('removeCookieTest1');
+
+	if (removeCookieTest1 == 'Y') {
+		_fail(testEl, 'removeCookieTest1 cookie is still there and it shouldn\'t be.');
+	}
+
+	_addSuccessClass(testEl);
+}
+
 function checkRemoveProperty(o) {
 	let testEl = _initTest('checkRemoveProperty');
 	if (!testEl) return;
@@ -1180,6 +1220,36 @@ function checkSetClassFinal(o) {
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'moreclasses') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'no') || !_hasClassObj(el, 'dots')) {
 		_fail(testEl, 'The moreclasses with no dots test failed. Element:', el);
+	}
+
+	_addSuccessClass(testEl);
+}
+
+function checkSetCookie(o) {
+	let testEl = _initTest('checkSetCookie');
+	if (!testEl) return;
+
+	let test1 = _getCookie('test1');
+	let test2 = _getCookie('test2');
+	let test3 = _getCookie('test3');
+	let test4 = _getCookie('test4');
+	let test5 = _getCookie('test5');
+
+	if (test1 != 'Y') {
+		_fail(testEl, 'test1 cookie is not set to "Y"');
+	}
+
+	if (test2 != 'some%20info%22\'') {
+		_fail(testEl, 'test2 cookie is not set to "some%20info%22\'"');
+	}
+
+	if (test3 == 'fred') {	// This shouldn't exist!
+		_fail(testEl, 'test3 cookie is set to "Fred" but shouldn\'t be - it should be expired.');
+	}
+
+	if (test4 == 'expired%20cookie' || test5 != 'non-expired%20cookie') {
+		// Both these checks need to occur to ascertain whether a correctly formatted string date test works.
+		_fail(testEl, 'test4 cookie straight date test failed.');
 	}
 
 	_addSuccessClass(testEl);

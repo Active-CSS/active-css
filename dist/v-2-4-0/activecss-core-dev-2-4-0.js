@@ -867,14 +867,27 @@ _a.RemoveClone = o => {
 };
 
 _a.RemoveCookie = o => {
-	// eg. remove-cookie: cookieName "\blah" "\sdfkjh";	// No spaces are present except between the optional parameters.
-	let spl = o.actVal.split(' ');
-	if (!spl[0]) return false;
-	spl[1] = (spl[1]) ? spl[1]._ACSSRepQuo() : null;
-	spl[2] = (spl[2]) ? spl[2]._ACSSRepQuo() : null;
-	let cookieStr = encodeURIComponent(spl[0]) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT" + (spl[1] ? "; path=" + spl[1] : "") + (spl[2] ? "; domain=" + spl[2] : "");
-	document.cookie = cookieStr;
-	return true;
+	// Only cookie name, path & domain for this command. Command syntax structured in the same way as set-cookie for consistency.
+
+	// Eg. remove-cookie: name("cookieName") path("/") domain("sdfkjh.com");
+
+	// Double-quotes are optional for the syntax.
+	let aV = o.actVal._ACSSRepQuo(), cookieName, cookieDomain, cookiePath, str;
+
+	// Cookie name.
+	cookieName = encodeURIComponent(_getParVal(aV, 'name'));
+
+	// Domain.
+	cookieDomain = _getParVal(aV, 'domain');
+
+	// Path
+	cookiePath = _getParVal(aV, 'path');
+
+	str = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT;`;
+	str += cookieDomain ? ` domain=${cookieDomain};` : '';
+	str += cookiePath ? ` path=${cookiePath};` : '';
+
+	document.cookie = str;
 };
 
 _a.RemoveProperty = o => {
@@ -1060,48 +1073,91 @@ _a.SetClass = o => {
 	_setClassObj(o.secSelObj, str);
 };
 
+/*	From MDN.
+Set-Cookie: <cookie-name>=<cookie-value> 
+Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
+Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
+Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
+Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
+Set-Cookie: <cookie-name>=<cookie-value>; Secure
+Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
+*/
+
 _a.SetCookie = o => {
-	//	Eg. set-cookie: cookieName "any string with spaces" secs/infinity/"date" "\blah" "\sdfkjh" true;
-	let aV = o.actVal;
-	//	1. Replace escaped quotes for now.
+	// Example syntax (double-quotes are optional everywhere for this command):
+	// set-cookie: name("name") value("value") expires("date") maxAge("non-zero-digit") domain("domain") path("path") secure httponly sameSite("strict/lax/none");
+
+	let aV = o.actVal, cookieName, cookieValue, expires, maxAge, cookieDomain, cookiePath, httpOnly, secure, secureIfHttps, sameSite;
+
+	//	Replace escaped quotes.
 	aV = aV.replace(/\\\"/g, '_ACSS_escaped_quote');
-	//	2. Fill in the spaces between quotes with an alternate space string, and remove the quotes if we can.
+	//	Fill in the spaces between quotes with an alternate space string, and remove the quotes.
 	aV = aV._ACSSSpaceQuoIn();
-	//	3. Put the escaped quotes back.
+	//	Put the escaped quotes back. This gives us a true space delimited string of options that can be split later on.
 	aV = aV.replace(/_ACSS_escaped_quote/g, '\\\"');
-	//	4. Split the array by space.
+
+	// Cookie name.
+	cookieName = encodeURIComponent(_getParVal(aV, 'name')._ACSSRepQuo());
+
+	// Cookie value.
+	cookieValue = encodeURIComponent(_getParVal(aV, 'value')._ACSSSpaceQuoOut()._ACSSRepQuo());
+
+	// Expires.
+	expires = _getParVal(aV, 'expires')._ACSSSpaceQuoOut()._ACSSRepQuo();
+	if (expires == 'Infinity') {
+		expires = 'Fri, 31 Dec 9999 23:59:59 GMT';	// After 8000 years that user will be forced to refresh his browser.
+	} else {
+		let attemptToGetDate = _getPastFutureDate(expires);
+		// JavaScript has no date validity function, and alternatives will bloat the core.
+		// If it's not in the right format by the developer, we must assume that it's a specific thing that the developers wants to be set.
+		expires = (attemptToGetDate instanceof Date) ? attemptToGetDate.toUTCString() : expires;
+	}
+
+	// Max-Age.
+	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
+	if (maxAge) {
+		let numTest = new RegExp('^\\d+$');
+		if (!numTest.test(maxAge)) console.log('set-cookie error: maxAge is not a number.');
+	}
+
+	// Domain.
+	cookieDomain = _getParVal(aV, 'domain')._ACSSRepQuo();
+
+	// Path
+	cookiePath = _getParVal(aV, 'path')._ACSSRepQuo();
+
+	// SameSite
+	sameSite = _getParVal(aV, 'sameSite')._ACSSCapitalize()._ACSSRepQuo();
+
+	// Split the array by space.
 	let arr = aV.split(' ');
-	//	5. 0 element is name.
-	//	6. 1 element gets spaces put back in, quotes removed and assigned as value.
-	arr[1] = (arr[1]) ? arr[1]._ACSSSpaceQuoOut()._ACSSRepQuo() : '';
-	//	7. 2 element gets spaces put back in, quotes removed and if number is seconds, if infinity is infinity, otherwise string date, or empty.
-	arr[2] = (arr[2]) ? arr[2].replace(/_ACSS_space/g, ' ')._ACSSRepQuo() : '';
-	arr[2] = (arr[2] == 'Infinity') ? Infinity : (arr[2] == 'Year') ? 31536e3 : (/^[0-9e]+$/.test(arr[2])) ? +arr[2] : arr[2];
-	//	8. 3 element if there is path.
-	arr[3] = (arr[3]) ? arr[3]._ACSSRepQuo() : null;
-	//	9. 4 element if there is domain.
-	arr[4] = (arr[4]) ? arr[4]._ACSSRepQuo() : null;
-	//	10. 5 element if there is secure.
-	arr[5] = (arr[5] == 'true') ? true : (arr[5] == 'false') ? false : null;
-	if (arr[2] == 'true' && !arr[3] && !arr[4] && !arr[5]) {
-		arr[2] = null; arr[5] = true;
+
+	// HttpOnly.
+	httpOnly = _optDef(arr, 'httponly', true, false);
+
+	// Secure/secureIfHttps
+	secureIfHttps = _optDef(arr, 'secureIfHttps', true, false);
+	if (secureIfHttps) {
+		secure = window.location.protocol != 'https:' ? false : true;
+	} else {
+		secure = _optDef(arr, 'secure', true, false);
 	}
-	if (arr[2] == 'false' && !arr[3] && !arr[4] && !arr[5]) {
-		arr[2] = null; arr[5] = false;
-	}
-	if (arr[3] == 'true' && !arr[4] && !arr[5]) {
-		arr[3] = null; arr[5] = true;
-	}
-	if (arr[3] == 'false' && !arr[4] && !arr[5]) {
-		arr[3] = null; arr[5] = false;
-	}
-	if (arr[4] == 'true' && !arr[5]) {
-		arr[4] = null; arr[5] = true;
-	}
-	if (arr[4] == 'false' && !arr[5]) {
-		arr[4] = null; arr[5] = false;
-	}
-	if (!_setCookie(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5])) console.log('set-cookie ' + arr[0] + ' failed');
+
+	let str = `${cookieName}=${cookieValue};`;
+	str += expires ? ` Expires=${expires};` : '';
+	str += maxAge ? ` Max-Age=${maxAge};` : '';
+	str += cookieDomain ? ` Domain=${cookieDomain};` : '';
+	str += cookiePath ? ` Path=${cookiePath};` : '';
+	str += secure ? ' Secure;' : '';
+	str += sameSite ? ` SameSite=${sameSite};` : '';
+	str += httpOnly ? ' HttpOnly;' : '';
+
+	str = str._ACSSSpaceQuoOut();
+
+	document.cookie = str;
 };
 
 _a.SetProperty = o => {
@@ -6030,20 +6086,20 @@ const _getCookie = nam => {
 };
 
 /* Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework */
-const _setCookie = (nam, sValue, vEnd, sPath, sDomain, bSecure) => {
+const _setCookie = (nam, sValue, vEnd, sPath, sDomain, bSecure, bSameSite, bHttpOnly) => {
 	if (!nam || /^(?:expires|max\-age|path|domain|secure)$/i.test(nam)) { return false; }
-	var sExpires = "";
+	var sExpires = '';
 	if (vEnd) {
 		switch (vEnd.constructor) {
 			case Number:
-				sExpires = vEnd === Infinity ? "; expires=Fri, 31 Dec 9999 23:59:59 GMT" : "; max-age=" + vEnd;
+				sExpires = vEnd === Infinity ? '; expires=Fri, 31 Dec 9999 23:59:59 GMT' : '; max-age=' + vEnd;
 				break;
 			case String:
-				sExpires = "; expires=" + vEnd;
+				sExpires = '; expires=' + vEnd;
 				break;
 		}
 	}
-	document.cookie = encodeURIComponent(nam) + "=" + encodeURIComponent(sValue) + sExpires + (sDomain ? "; domain=" + sDomain : "") + (sPath ? "; path=" + sPath : "") + (bSecure ? "; secure" : "");
+	document.cookie = encodeURIComponent(nam) + '=' + encodeURIComponent(sValue) + sExpires + (sDomain ? '; domain=' + sDomain : '') + (sPath ? '; path=' + sPath : '') + (bSecure ? '; Secure' : '') + (bSameSite ? '; samesite=' + bSameSite : '' + (bHttpOnly ? '; HttpOnly' : ''));
 	return true;
 };
 
@@ -6639,6 +6695,45 @@ const _getObj = (str) => {
 	}
 };
 
+const _getPastFutureDate = str => {
+	// Accepts a string representing a time frame in the past or future, like "3 months", "-3 months", "+3months", or "month" and returns it as a date.
+
+	let more = 1, expires;
+	// Remove the number from the string with the + or -, if it is indeed there.
+	let timeFrameType = str.replace(/^([\+|\-]?[\d\.]+)/, function(_, innards) {
+		more = innards * 1;	// This just converts the string to a number.
+		return '';			// Strip the number out of the line if it was found.
+	}).trim();				// Remove any remaining whitespace.
+	// Now we have the number and the time frame type.
+
+	// Remove any presence of "s" from the time frame and make it all lowercase so we have a simpler switch statement.
+	timeFrameType = timeFrameType.replace(/s/g, '').toLowerCase().trim();
+	let nowDate = new Date();
+	switch (timeFrameType) {
+		case 'year':
+			expires = nowDate.setFullYear(nowDate.getFullYear() + more);
+			break;
+		case 'month':
+			expires = nowDate.setMonth(nowDate.getMonth() + more);
+			break;
+		case 'day':
+			expires = nowDate.setHours(nowDate.getHours() + (more * 24) );
+			break;
+		case 'hour':
+			expires = nowDate.setHours(nowDate.getHours() + more);
+			break;
+		case 'minute':
+			expires = nowDate.setHours(nowDate.getHours() + more);
+			break;
+		case 'econd':	// Second. We stripped off the "s" earlier.
+			expires = nowDate.setSeconds(nowDate.getSeconds() + more);
+			break;
+		default:
+			expires = null;
+	}
+	return (!expires) ? null : new Date(expires);
+};
+
 const _getRealEvent = ev => {
 	let first5 = ev.substr(0, 5);
 	if (first5 == 'after' && ev != 'afterprint') {	// This is a Active CSS only event, so we don't want to add an event listener.
@@ -6797,7 +6892,9 @@ const _mimicReset = e => {
 };
 
 const _optDef = (arr, srch, opt, def) => {
-	if (!Array.isArray(arr)) arr = arr.split(' ');	// For speed, send in an array already split. For ease, send in a string.
+	// This is a case insensitive comparison.
+	if (!Array.isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
+	srch = srch.toLowerCase();
 	let res = arr.findIndex(item => srch === item.toLowerCase());
 	return (res !== -1) ? opt : def;	// return def if not present.
 };
@@ -6960,16 +7057,6 @@ String.prototype._ACSSSpaceQuoOut = function() {
 	return this.replace(/_ACSS_space/g, ' ');
 };
 
-// For Firefox 48.
-if (window.NodeList && !NodeList.prototype.forEach) {
-    NodeList.prototype.forEach = function (callback, thisArg) {
-        thisArg = thisArg || window;
-        for (var i = 0; i < this.length; i++) {
-            callback.call(thisArg, this[i], i, this);
-        }
-    };
-}
-
 // Edge hack - just get it vaguely working on old Edge. Shadow DOM components are not supported in Edge, so they won't work in Active CSS either.
 if (!document.head.attachShadow) {
 	supportsShadow = false;
@@ -6980,6 +7067,16 @@ if (!document.head.attachShadow) {
 			},
 		});
 	}
+}
+
+// For Firefox 48.
+if (window.NodeList && !NodeList.prototype.forEach) {
+    NodeList.prototype.forEach = function (callback, thisArg) {
+        thisArg = thisArg || window;
+        for (var i = 0; i < this.length; i++) {
+            callback.call(thisArg, this[i], i, this);
+        }
+    };
 }
 
 	// Is there inline Active CSS? If so, initiate the core.

@@ -8,5 +8,8 @@
 }
 
 #checkRemoveCookie:test {
-	func: checkRemoveCookie;
+	set-cookie: name("removeCookieTest1") value("Y") expires("1 Year") path("/") sameSite("Strict") secureIfHttps;
+	func: checkRemoveCookieA;
+	remove-cookie: name("removeCookieTest1") path("/");
+	func: checkRemoveCookieFinal;
 }
