@@ -1,3 +1,26 @@
+body:init {
+	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
+	var: testIndex 0, window.testsRun [];
+
+	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
+		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
+		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+	*/
+	var: window.delayTimes {
+		ajax: [1000]
+	};
+
+	/* This has to go at the end if stuff goes above it :) */
+	render: "<div id=\"content\"></div>";
+}
+
+.coreTest:draw {
+	var: testIndex++;
+	var: window.testsRun[testIndex] {};
+	var: window.testsRun[testIndex].desc "{@data-desc}";
+	trigger: test;
+}
+
 #content:draw {
 	render-before-end: "<div id=\"checkCancelTimerAll\" data-desc=\"Basic cancel-timer-all command\" class=\"coreTest\">{|checkCancelTimerAllHTML}</div>";
 }
@@ -796,27 +819,4 @@
 #checkUrlChange:test {
 	url-change: "/test/funky/url" "Funky test URL";
 	func: checkUrlChange;
-}
-
-body:init {
-	/* Note: window.testsRun gets used in Jasmine to report which tests have been run at the end, so it needs to be outside the Active CSS scope. */
-	var: testIndex 0, window.testsRun [];
-
-	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
-		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
-		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
-	*/
-	var: window.delayTimes {
-		ajax: [1000]
-	};
-
-	/* This has to go at the end if stuff goes above it :) */
-	render: "<div id=\"content\"></div>";
-}
-
-.coreTest:draw {
-	var: testIndex++;
-	var: window.testsRun[testIndex] {};
-	var: window.testsRun[testIndex].desc "{@data-desc}";
-	trigger: test;
 }

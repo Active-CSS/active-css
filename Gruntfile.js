@@ -58,13 +58,17 @@
 					src: [
 						'core-test-area/helpers/start/helpers-start.js',	// This goes first, always.
 						'core-test-area/helpers/functions/**/*.js',
-						'core-test-area/tests/**/*.js',
+						'core-test-area/tests/initialize/**/*.js',
+						'core-test-area/tests/to-run-first/**/*.js',
+						'core-test-area/tests/commands/**/*.js',
 					],
 					dest: 'core-test-area/startup/compiled/core-test-js.js'
 				},
 				testingConfig: {
 					src: [
-						'core-test-area/tests/**/*.acss',
+						'core-test-area/tests/initialize/**/*.acss',
+						'core-test-area/tests/to-run-first/**/*.acss',
+						'core-test-area/tests/commands/**/*.acss',
 					],
 					dest: 'core-test-area/startup/compiled/core-test-config.acss'
 				},
