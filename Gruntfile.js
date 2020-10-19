@@ -56,17 +56,17 @@
 				},
 				testingJS: {
 					src: [
-						'testing/helpers/start/helpers-start.js',	// This goes first, always.
-						'testing/helpers/functions/**/*.js',
-						'testing/tests/**/*.js',
+						'core-test-area/helpers/start/helpers-start.js',	// This goes first, always.
+						'core-test-area/helpers/functions/**/*.js',
+						'core-test-area/tests/**/*.js',
 					],
-					dest: 'testing/startup/compiled/core-test-js.js'
+					dest: 'core-test-area/startup/compiled/core-test-js.js'
 				},
 				testingConfig: {
 					src: [
-						'testing/tests/**/*.acss',
+						'core-test-area/tests/**/*.acss',
 					],
-					dest: 'testing/startup/compiled/core-test-config.acss'
+					dest: 'core-test-area/startup/compiled/core-test-config.acss'
 				},
 			},
 
@@ -76,7 +76,7 @@
 					'Gruntfile.js',
 					'dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js',
 					'dist/v-<%= fileVersion %>/full-source/prod.js',
-					'testing/startup/compiled/core-test-js.js'
+					'core-test-area/startup/compiled/core-test-js.js'
 				],
 				options: {
 					esversion: 6,
