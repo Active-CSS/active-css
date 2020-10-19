@@ -34,7 +34,7 @@ const browserSetupInSeconds = 2;
 // All Active CSS tests run right away, but there can be delays like "after 2s", so we only check all the test results after a certain time.
 // For the sake of simplicity and maintenance, it's easier just to not check the results until we know everything has been run.
 // What is the maximum delay in any test to be safe everything has run?
-const timeToRunTestsInSeconds = 3;		// 3 seconds and then we check all the test results. No one test takes more than 3 seconds to run.
+const timeToRunTestsInSeconds = 5;		// 3 seconds and then we check all the test results. No one test takes more than 3 seconds to run.
 
 // If your server is really slow, you might want to change this.
 const generalServerSlownessInSeconds = 0;

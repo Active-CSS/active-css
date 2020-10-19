@@ -38,7 +38,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		for (aftEv of delLoop) {
 			splitArr = _delaySplit(o2.actVal, aftEv, o.compRef);
 			scope = (o.compRef) ? o.compRef : 'main';
-			splitArr.lab = scope + splitArr.lab;
+			if (splitArr.lab) splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
 				o2.actValSing = o2.actVal;

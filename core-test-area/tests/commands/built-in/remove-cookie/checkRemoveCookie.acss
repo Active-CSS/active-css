@@ -1,10 +1,5 @@
 #content:draw {
-	render-before-end: "<div id=\"checkRemoveCookie\" data-desc=\"Basic remove-cookie command\" class=\"coreTest\">{|checkRemoveCookieHTML}</div>";
-}
-
-@component checkRemoveCookieHTML {
-	html {
-	}
+	render-before-end: "<div id=\"checkRemoveCookie\" data-desc=\"Basic remove-cookie command\" class=\"coreTest\"></div>";
 }
 
 #checkRemoveCookie:test {

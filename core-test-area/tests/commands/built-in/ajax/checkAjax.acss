@@ -1,0 +1,17 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAjax\" data-desc=\"Basic ajax command\" class=\"coreTest\">{|checkAjaxHTML}</div>";
+}
+
+@component checkAjaxHTML {
+	&:beforeComponentOpen {
+		ajax: "/base/core-test-area/tests/ajax-response-files/get-address-data-1.txt";
+	}
+	html {
+		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
+		<p id="checkAjaxTestAddress">{{checkAjaxAddress}}</p>
+	}
+}
+
+#checkAjax:test {
+	func: checkAjax after {window.delayTimes.ajax[0]}ms;
+}

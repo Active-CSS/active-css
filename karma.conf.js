@@ -35,11 +35,12 @@ module.exports = function(config) {
 
 		// list of files / patterns to load in the browser
 		files: [
-			{pattern: 'testing/**/*.acss', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
+			{pattern: 'core-test-area/**/*.acss', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
+			{pattern: 'core-test-area/tests/ajax-response-files/*.txt', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
 			activeCSSFile,
-			'testing/startup/core-test-settings.js',
-			'testing/startup/compiled/core-test-js.js',		// *Never* edit this file directly. It is auto-generated from the tests dir.
-			'testing/startup/core-test-start.js',
+			'core-test-area/startup/core-test-settings.js',
+			'core-test-area/startup/compiled/core-test-js.js',		// *Never* edit this file directly. It is auto-generated from the tests dir.
+			'core-test-area/startup/core-test-start.js',
 		],
 
 		// list of files / patterns to exclude

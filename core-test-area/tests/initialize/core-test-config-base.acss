@@ -7,8 +7,7 @@ body:init {
 		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
 	*/
 	var: window.delayTimes {
-/* leave this here as an example of how to use delay times when it gets needed - see the unused test for copyToClipboard for the syntax.
-		copyToClipboard: [3000]*/
+		ajax: [1000]
 	};
 
 	/* This has to go at the end if stuff goes above it :) */
