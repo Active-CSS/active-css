@@ -4,7 +4,10 @@
 
 @component checkAjaxHTML {
 	&:beforeComponentOpen {
-		ajax: "/base/core-test-area/tests/ajax-response-files/get-address-data-1.txt";
+		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-test-1.txt";
+	}
+	&:afterAjax {
+		func: checkAjax after 1s;	/* give component time to draw before checking */
 	}
 	html {
 		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
@@ -13,5 +16,5 @@
 }
 
 #checkAjax:test {
-	func: checkAjax after {window.delayTimes.ajax[0]}ms;
+	/* Nothing to see here - the test function gets run from afterAjax in the component. */
 }

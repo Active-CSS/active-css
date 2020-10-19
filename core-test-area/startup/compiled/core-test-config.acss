@@ -4,12 +4,13 @@ body:init {
 
 	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
 		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
-		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+		Increment the tests by 250ms each time *if* field focus is required and you aren't writing a sequential test. Don't go less than that, just to be on the safe side.
 	*/
-	var: window.delayTimes {
-		ajax: [1000]
-	};
 
+	var: window.delayTimes {
+		copyToClipboard: [1000]	/* this isn't actually used - it's just an example - see the copy-to-clipboard test for use */
+	};
+	
 	/* This has to go at the end if stuff goes above it :) */
 	render: "<div id=\"content\"></div>";
 }
@@ -63,12 +64,42 @@ body:init {
 
 
 #content:draw {
+	render-before-end: "<div id=\"checkAjaxPreGet\" data-desc=\"Basic ajax-pre-get command\" class=\"coreTest\">{|checkAjaxPreGet}</div>";
+}
+
+@component checkAjaxPreGet {
+	&:beforeComponentOpen {
+		ajax-pre-get: "/base/core-test-area/tests/ajax-response-files/ajax-pre-get-test-1.txt";
+	}
+	&:afterAjaxPreGet {
+		func: checkAjaxPreGetA;
+	}
+	#checkAjaxPreGetTestTitle:draw {
+		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-pre-get-test-1.txt" after 250ms;
+	}
+	&:afterAjax {
+		func: checkAjaxPreGetFinal after 1s;	/* give component time to draw before checking */
+	}
+	html {
+		<h2 id="checkAjaxPreGetTestTitle">{{checkAjaxPreGetTitle}}</h2>
+		<p id="checkAjaxPreGetTestAddress">{{checkAjaxPreGetAddress}}</p>
+	}
+}
+
+#checkAjaxPreGet:test {
+	/* Nothing to see here - the test functions gets run from afterAjaxPreGet in the component. */
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkAjax\" data-desc=\"Basic ajax command\" class=\"coreTest\">{|checkAjaxHTML}</div>";
 }
 
 @component checkAjaxHTML {
 	&:beforeComponentOpen {
-		ajax: "/base/core-test-area/tests/ajax-response-files/get-address-data-1.txt";
+		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-test-1.txt";
+	}
+	&:afterAjax {
+		func: checkAjax after 1s;	/* give component time to draw before checking */
 	}
 	html {
 		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
@@ -77,7 +108,7 @@ body:init {
 }
 
 #checkAjax:test {
-	func: checkAjax after {window.delayTimes.ajax[0]}ms;
+	/* Nothing to see here - the test function gets run from afterAjax in the component. */
 }
 
 #content:draw {

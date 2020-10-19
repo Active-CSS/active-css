@@ -633,7 +633,7 @@ _a.FullscreenOn = o => {
 	}
 };
 
-_a.Func = o => {
+_a.Func = (o, scopedVars) => {
 	let pars = [];
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();
@@ -1928,6 +1928,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		// Apply this as a CSS style if it isn't a function.
 		o.secSelObj.style[o.actName] = o.actVal;
 	} else {
+		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
+		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
+		o.vars = scopedVars[compScope];
 		// Run the function.
 		_a[o.func](o, scopedVars, privVarScopes);
 	}
@@ -5074,12 +5077,12 @@ const _replaceStringVars = (o, str, compRef) => {
 };
 
 const _resolveAjaxVars = o => {
-	if (typeof o.res === 'object') {
+	if (typeof o.res === 'object' && !o.preGet) {
 		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
 		} else {
-			// There could be a potential clash in rendering vars if ajax is called before a shadow DOM is drawn. This gets around that.
+			// There could be a potential clash in rendering vars if ajax is called before a component is drawn. This gets around that.
 			setTimeout(function() {
 				_resolveAjaxVarsDecl(o.res, compScope);
 				_ajaxCallbackDisplay(o);
@@ -5494,18 +5497,18 @@ const _ajaxCallback = (str, o) => {
 };
 
 const _ajaxCallbackDisplay = (o) => {
-	if (!o.error && o.preGet) {
-		// Store it for later.
+	if (!o.error && (o.cache || o.preGet)) {
+		// Store it for later. May need it in the afterAjaxPreGet event if it is run.
 		ajaxResLocations[o.finalURL] = o.res;
-		delete o.res;
+	}
+	if (!o.error && o.preGet) {
+		// Run the afterAjaxPreGet event.
+		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	} else {
 		// Run the post event - success or failure.
 		_ajaxDisplay(o);
-		if (!o.error && o.cache) {
-			ajaxResLocations[o.finalURL] = o.res;
-			delete o.res;
-		}
 	}
+	delete o.res;
 };
 
 const _ajaxCallbackErr = (str, resp, o) => {

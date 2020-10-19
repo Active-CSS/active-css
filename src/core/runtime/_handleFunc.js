@@ -101,6 +101,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		// Apply this as a CSS style if it isn't a function.
 		o.secSelObj.style[o.actName] = o.actVal;
 	} else {
+		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
+		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
+		o.vars = scopedVars[compScope];
 		// Run the function.
 		_a[o.func](o, scopedVars, privVarScopes);
 	}

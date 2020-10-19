@@ -6,10 +6,11 @@ body:init {
 		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
 		Increment the tests by 250ms each time *if* field focus is required and you aren't writing a sequential test. Don't go less than that, just to be on the safe side.
 	*/
-	var: window.delayTimes {
-		ajax: [1000]
-	};
 
+	var: window.delayTimes {
+		copyToClipboard: [1000]	/* this isn't actually used - it's just an example - see the copy-to-clipboard test for use */
+	};
+	
 	/* This has to go at the end if stuff goes above it :) */
 	render: "<div id=\"content\"></div>";
 }
