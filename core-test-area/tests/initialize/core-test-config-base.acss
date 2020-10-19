@@ -4,7 +4,7 @@ body:init {
 
 	/* Delay timings. Keep these here so it can be seen what's going on and adjusted if needed.
 		Don't forget to adjust startup/core-test-settings.js if the overall time taken for the tests needs to change. The last number in the list is the guideline.
-		Increment the tests by 250ms each time. Don't go less than that, just to be on the safe side.
+		Increment the tests by 250ms each time *if* field focus is required and you aren't writing a sequential test. Don't go less than that, just to be on the safe side.
 	*/
 	var: window.delayTimes {
 		ajax: [1000]
