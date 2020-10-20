@@ -135,7 +135,7 @@ _a.AjaxFormSubmit = o => {
 		o.url = el.action;
 		_ajaxDo(o);
 	} else {
-		console.log('Form ' + o.secSel + ' not found.');
+		console.log('Active CSS error: Form not found.', o.secSelObj);
 	}
 };
 
@@ -266,16 +266,12 @@ _a.ClickOnPreviousCycle = o => { _focusOn(o, 'pc'); };	//	Previous selector in l
 _a.ClickoutsideEvent = o => {
 	let cid = _getActiveID(o.secSelObj);
 	if (o.actVal.indexOf('true') !== -1) {
-		// Put a delay on this in case someone is staggering more than one. The false should be unset first always, followed
-		// by the one being set. We do this for speed, so we don't have to iterate the states.
-		setTimeout(function() {
-			clickOutsideSels[cid] = [];
-			clickOutsideSels[cid][0] = true;
-			clickOutsideSet = true;
-			if (o.actVal.indexOf('continue') !== -1) {
-				clickOutsideSels[cid][1] = true;
-			}
-		}, 50);
+		clickOutsideSels[cid] = [];
+		clickOutsideSels[cid][0] = true;
+		clickOutsideSet = true;
+		if (o.actVal.indexOf('continue') !== -1) {
+			clickOutsideSels[cid][1] = true;
+		}
 	} else {
 		if (clickOutsideSels[cid]) {
 			clickOutsideSels[cid][0] = false;
@@ -633,7 +629,7 @@ _a.FullscreenOn = o => {
 	}
 };
 
-_a.Func = (o, scopedVars) => {
+_a.Func = o => {
 	let pars = [];
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();

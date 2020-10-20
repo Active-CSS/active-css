@@ -5,6 +5,6 @@ _a.AjaxFormSubmit = o => {
 		o.url = el.action;
 		_ajaxDo(o);
 	} else {
-		console.log('Form ' + o.secSel + ' not found.');
+		console.log('Active CSS error: Form not found.', o.secSelObj);
 	}
 };

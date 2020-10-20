@@ -8,7 +8,7 @@ body:init {
 	*/
 
 	var: window.delayTimes {
-		copyToClipboard: [1000]	/* this isn't actually used - it's just an example - see the copy-to-clipboard test for use */
+		clickoutsideEvent: [1000, 1500]
 	};
 	
 	/* This has to go at the end if stuff goes above it :) */
@@ -370,6 +370,56 @@ body:init {
 	focus-on-previous: #clickOnPreviousDiv a;
 	click-on-previous: #clickOnPreviousDiv a;
 	func: checkClickOnPreviousFinal;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkClickoutsideEvent\" data-desc=\"Basic clickoutside-event command\" class=\"coreTest\">{|checkClickoutsideEventHTML}</div>";
+}
+
+@component checkClickoutsideEventHTML {
+	html {
+		<input type="input" id="clickoutsideStartInput" value="" />		
+		<input type="input" id="clickoutsideTemporaryInput" value="" />		
+		<input type="input" id="clickoutsideEndInput" value="" />		
+	}
+}
+
+#checkClickoutsideEvent:test {
+	focus-on: #clickoutsideStartInput after {window.delayTimes.clickoutsideEvent[0]}ms;
+}
+
+body:not(.clickoutside1) #clickoutsideStartInput:not(.clickoutside1):focus {
+	clickoutside-event: true;
+	#clickoutsideEndInput {
+		trigger-real: click;
+	}
+}
+
+body:not(.clickoutside1) #clickoutsideStartInput:clickoutside {
+	clickoutside-event: false;
+	body {
+		add-class: .clickoutside1;
+	}
+	focus-on: #clickoutsideTemporaryInput, #clickoutsideStartInput after {window.delayTimes.clickoutsideEvent[1]}ms;
+}
+
+body.clickoutside1 #clickoutsideStartInput:focus {
+	clickoutside-event: true continue;
+	#clickoutsideEndInput {
+		trigger-real: click;
+	}
+}
+
+body.clickoutside1 #clickoutsideStartInput:clickoutside {
+	clickoutside-event: false;
+	body {
+		add-class: .clickoutside2;
+	}
+}
+
+#clickoutsideEndInput:click {
+	/* This should only get called once at the end when "clickoutside: true continue" is set despite trigger-real happening twice. */
+	func: checkClickoutsideEvent;
 }
 
 /* Pended until clone/restore-clone issue 36 has been resolved.

@@ -8,7 +8,7 @@ body:init {
 	*/
 
 	var: window.delayTimes {
-		copyToClipboard: [1000]	/* this isn't actually used - it's just an example - see the copy-to-clipboard test for use */
+		clickoutsideEvent: [1000, 1500]
 	};
 	
 	/* This has to go at the end if stuff goes above it :) */
