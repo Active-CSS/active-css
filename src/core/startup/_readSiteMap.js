@@ -38,10 +38,12 @@ const _readSiteMap = () => {
 			subtree: true
 		});
 
-		// Handle any initialisation events
+		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
+		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
+
+		// Handle any developer initialization events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
 
-		// Handle any initialisation events
 		_handleEvents({ obj: 'body', evType: 'init' });
 
 		// Iterate items on this page and do any draw events.

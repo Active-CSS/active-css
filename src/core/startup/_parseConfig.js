@@ -15,9 +15,13 @@ const _parseConfig = str => {
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
-		return 'body:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + ((typ !== 'conditional') ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		// Take these out of whereever they are and put them at the bottom of the config after this action.
+		systemInitConfig += '~_acssSystem:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + ((typ !== 'conditional') ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		return '';
 	});
+	str += systemInitConfig;
 	// Sort out raw JavaScript in the config so it doesn't clash with the rest of the config. The raw javascript needs to get put back to normal at evaluation time,
 	// and not before, otherwise things go weird with the extensions.
 	// With the extensions, there is a similar routine to put these escaped characters back in after a modification from there - it's not the same thing though,

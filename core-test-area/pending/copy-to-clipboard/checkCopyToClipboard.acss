@@ -1,4 +1,4 @@
-/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
+/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. */
 
 #content:draw {
 	render-before-end: "<div id=\"checkCopyToClipboard\" data-desc=\"Basic copy-to-clipboard command\" class=\"coreTest\">{|checkCopyToClipboardHTML}</div>";
@@ -20,4 +20,3 @@
 	console-log: "something was just copied.";
 	func: checkCopyToClipboard;
 }
-*/

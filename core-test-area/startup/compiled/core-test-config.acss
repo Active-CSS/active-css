@@ -444,29 +444,35 @@ body.clickoutside1 #clickoutsideStartInput:clickoutside {
 	func: checkClone;
 }
 */
-/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment.
-
 #content:draw {
-	render-before-end: "<div id=\"checkCopyToClipboard\" data-desc=\"Basic copy-to-clipboard command\" class=\"coreTest\">{|checkCopyToClipboardHTML}</div>";
-	func: checkCopyToClipboard;
+	render-before-end: "<div id=\"checkCreateCommand\" data-desc=\"Basic create-command command\" class=\"coreTest\">{|checkCreateCommandHTML}</div>";
 }
 
-@component checkCopyToClipboardHTML {
+@component checkCreateCommandHTML {
+	@command create-command-blue {=
+		targetSelector.style.backgroundColor = 'blue';
+	=}
 	html {
-		<input id="copyToClipboardFrom" name="copyToClipboardFrom" value="some text">
+		<div id="checkCreateCommandDiv"></div>
 	}
 }
 
-#checkCopyToClipboard:test {
-	copy-to-clipboard: #copyToClipboardFrom after {window.delayTimes.copyToClipboard[0]}ms;
+#checkCreateCommand:test {
+	create-command: create-command-yellow {=
+		targetSelector.style.color = 'yellow';
+	=};
+	#checkCreateCommandDiv {
+		create-command-blue: true;
+		create-command-yellow: true;
+		create-command-height100: true;
+	}
+	func: checkCreateCommand;
 }
 
-#copyToClipboardFrom:copy {
-	*//* If this event is called, then we have to assume it works as we can't read the clipboard. This function marks the test as passed. *//*
-	console-log: "something was just copied.";
-	func: checkCopyToClipboard;
-}
-*/
+@command create-command-height100 {=
+	targetSelector.style.height = '100px';
+=}
+
 #content:draw {
 	render-before-end: "<div id=\"checkEval\" data-desc=\"Basic eval command\" class=\"coreTest\"></div>";
 }

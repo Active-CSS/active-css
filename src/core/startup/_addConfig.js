@@ -29,6 +29,7 @@ const _addConfig = (str, o) => {
 				}
 			}
 		}
+		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig' });
 		_handleEvents({ obj: 'body', evType: 'afterLoadConfig' });
 		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig' });
 	}

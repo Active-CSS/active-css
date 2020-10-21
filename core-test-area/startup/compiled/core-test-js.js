@@ -618,16 +618,29 @@ function checkCloneBefore(o) {
 	}
 }
 */
-/*	This is a valid test, but Chrome headless does not support the copy event. If it ever does then this can be re-implemented. Just uncomment when/if it can work.
-
-function checkCopyToClipboard(o) {
-	let testEl = _initTest('checkCopyToClipboard');
+function checkCreateCommand(o) {
+	let testEl = _initTest('checkCreateCommand');
 	if (!testEl) return;
 
-	// It gets into this function from the copy event, the test has passed. There appears to be no way to read the contents of the clipboard reliably.
+	let el = _getObj('#checkCreateCommandDiv');
+	if (!el) {
+		_fail(testEl, '#checkCreateCommandDiv not present to run create-command test.');
+	}
+
+	if (el.style.backgroundColor != 'blue') {
+		_fail(testEl, '#checkCreateCommandDiv does not have a blue background-color and it should.');
+	}
+
+	if (el.style.color != 'yellow') {
+		_fail(testEl, '#checkCreateCommandDiv does not have yellow color and it should.');
+	}
+
+	if (el.style.height != '100px') {
+		_fail(testEl, '#checkCreateCommandDiv does not have height of 100px and it should.');
+	}
+
 	_addSuccessClass(testEl);
 }
-*/
 
 function checkEval(o) {
 	let testEl = _initTest('checkEval');
