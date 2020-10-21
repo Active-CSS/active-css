@@ -474,6 +474,39 @@ body.clickoutside1 #clickoutsideStartInput:clickoutside {
 =}
 
 #content:draw {
+	var: ccValIs10 10, ccValIs20 20;
+	render-before-end: "<div id=\"checkCreateConditional\" data-desc=\"Basic create-conditional command\" class=\"coreTest\">{|checkCreateConditionalHTML}</div>";
+}
+
+@component checkCreateConditionalHTML {
+	@command conditional cc-equals-20 {=
+		return (conditionalValue == 20);
+	=}
+	html {
+	}
+}
+
+#checkCreateConditional:cc-equals-10({ccValIs10}):not-cc-equals-10({ccValIs20}):test {
+	trigger: nextTest after 250ms;
+}
+
+#checkCreateConditional:not-cc-equals-10({ccValIs10}):test {
+	func: checkCreateConditionalFail;
+}
+
+#checkCreateConditional:not-cc-equals-20({ccValIs20}):test {
+	func: checkCreateConditionalFail;
+}
+
+#checkCreateConditional:cc-equals-20({ccValIs20}):not-cc-equals-20({ccValIs10}):nextTest {
+	func: checkCreateConditionalFinal;
+}
+
+@command conditional cc-equals-10 {=
+	return (conditionalValue == 10);
+=}
+
+#content:draw {
 	render-before-end: "<div id=\"checkEval\" data-desc=\"Basic eval command\" class=\"coreTest\"></div>";
 }
 

@@ -17,8 +17,8 @@ const _parseConfig = str => {
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
-		// Take these out of whereever they are and put them at the bottom of the config after this action.
-		systemInitConfig += '~_acssSystem:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + ((typ !== 'conditional') ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
+		systemInitConfig += '~_acssSystem:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
 		return '';
 	});
 	str += systemInitConfig;
