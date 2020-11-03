@@ -16,7 +16,7 @@ _a.CancelTimer = o => {
 		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
 		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
 	} else {
-		delayRef = (!['~', '|'].includes(o.secSel.substr(0, 1))) ? _getActiveID(o.secSelObj) : o.secSel;
+		delayRef = (!(typeof o.secSel == 'string' && ['~', '|'].includes(o.secSel.substr(0, 1)))) ? _getActiveID(o.secSelObj) : o.secSel;
 		if (!delayRef) return;
 		if (delayArr[delayRef]) {
 			if (val == 'all') {

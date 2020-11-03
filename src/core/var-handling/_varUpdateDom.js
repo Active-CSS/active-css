@@ -138,30 +138,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 			continue;
 		}
 
-		treeWalker = document.createTreeWalker(
-			el,
-			NodeFilter.SHOW_COMMENT
-		);
-		// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
-		frag = document.createTextNode(refObj);
-		let nodesToRemove = [];
-		while (treeWalker.nextNode()) {
-			thisNode = treeWalker.currentNode;
-			if (thisNode.data == 'active-var-' + change.currentPath) {
-				// Now we can get rid of the comments altogether and make the node itself be the reference.
-				if (typeof varMap[change.currentPath] == 'undefined') varMap[change.currentPath] = [];
-				if (thisNode.nextSibling.data == '/active-var') {
-					// There is no content there. Insert a text node now. A variable was probably empty when first drawn.
-					let newNode = document.createTextNode(frag.textContent);
-					thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
-				}
-				varMap[change.currentPath].push(thisNode.nextSibling);
-				nodesToRemove.push(thisNode);	// Mark for removal.
-			} else if (thisNode.data == '/active-var') {
-				nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
-			}
-		}
-
 		if (varMap[change.currentPath]) {
 			varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
 				if (!nod.isConnected) {
@@ -173,10 +149,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 				}
 			});
 		}
-
-		nodesToRemove.forEach(nod => {	// jshint ignore:line
-			nod.remove();
-		});
 
 		// If this element is an inline-style tag, replace this variable if it is there.
 		if (el.tagName == 'STYLE') {

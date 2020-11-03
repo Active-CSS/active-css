@@ -12,7 +12,7 @@
  *	understood as possible. Minifies down to roughly 3000 characters.
  *
  *	Change: 29 Jan 2020, main function name change to fit into Active CSS conventions. Fixed syntax so it passes jshint. Used in data-binding.
- *	Could be made slimmer for Active CSS, as we don't need all of it. So remove bits that we don't need at a good point. FIXME.
+ *	Some public functions have been commented out as we don't need all of it.
  *
  */
 const _observableSlim = (function() {
@@ -583,12 +583,12 @@ const _observableSlim = (function() {
 				}
 			}
 		},
-
 		/*	Method: pause
 				This method will prevent any observer functions from being invoked when a change occurs to a proxy.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		pause: function(proxy) {
 			var i = observables.length;
 			var foundMatch = false;
@@ -602,12 +602,13 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not pause observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: resume
 				This method will resume execution of any observer functions when a change is made to a proxy.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		resume: function(proxy) {
 			var i = observables.length;
 			var foundMatch = false;
@@ -621,7 +622,7 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not resume observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: pauseChanges
 				This method will prevent any changes (i.e., set, and deleteProperty) from being written to the target
 				object.  However, the observer functions will still be invoked to let you know what changes WOULD have
@@ -630,6 +631,7 @@ const _observableSlim = (function() {
 			Parameters:
 				proxy	- the ES6 Proxy returned by the create() method.
 		 */
+/*	Uncomment if this is ever needed.
 		pauseChanges: function(proxy){
 			var i = observables.length;
 			var foundMatch = false;
@@ -643,12 +645,13 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not pause changes on observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: resumeChanges
 				This method will resume the changes that were taking place prior to the call to pauseChanges().
 			Parameters:
 				proxy	- the ES6 Proxy returned by the create() method.
 		 */
+/*	Uncomment if this is ever needed.
 		resumeChanges: function(proxy){
 			var i = observables.length;
 			var foundMatch = false;
@@ -662,13 +665,14 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not resume changes on observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: remove
 				This method will remove the observable and proxy thereby preventing any further callback observers for
 				changes occuring to the target object.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		remove: function(proxy) {
 
 			var matchedObservable = null;
@@ -706,5 +710,6 @@ const _observableSlim = (function() {
 				observables.splice(c,1);
 			}
 		}
+*/
 	};
 })();

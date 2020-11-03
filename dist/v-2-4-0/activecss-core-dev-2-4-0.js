@@ -171,7 +171,7 @@ _a.CancelTimer = o => {
 		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
 		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
 	} else {
-		delayRef = (!['~', '|'].includes(o.secSel.substr(0, 1))) ? _getActiveID(o.secSelObj) : o.secSel;
+		delayRef = (!(typeof o.secSel == 'string' && ['~', '|'].includes(o.secSel.substr(0, 1)))) ? _getActiveID(o.secSelObj) : o.secSel;
 		if (!delayRef) return;
 		if (delayArr[delayRef]) {
 			if (val == 'all') {
@@ -906,15 +906,19 @@ _a.Render = o => {
 	}
 	let childTree = copyOfSecSelObj.innerHTML;
 
-	// Handle any components.
+	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	content = _replaceComponents(o, content);
+
 	// Handle any ajax strings.
 	content = _replaceStringVars(o.ajaxObj, content);
 
 	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
 	content = _renderRefElements(content, childTree, 'CHILDREN');
+
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
 	content = _renderRefElements(content, selfTree, 'SELF');
+
+	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 
 	_renderIt(o, content, childTree, selfTree);
 };
@@ -2725,6 +2729,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
+		// Remove the variable placeholders.
+		_removeVarPlaceholders(shadow);
+
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {
@@ -2774,34 +2781,22 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// has proven to be over-wieldy due to the recursive nature of rendering events within and outside components, so we'll use a simple analysis to pin-point
 	// which new elements have been drawn, and manually set off the draw event for each new element as they get drawn. This way we shouldn't get multiple draw
 	// events on the same element.
+
 	let container = document.createElement('div');
 	container.innerHTML = content;
 
 	// Make a list of all immediate children via a reference to their Active IDs. After rendering we then iterate the list and run the draw event.
+	// We do this to make sure we only run the draw events on the new items.
+	// There are positions - it isn't always a straight inner render. And there can be more than one immediate child element.
 	let drawArr = [], item, cid;
 	container.childNodes.forEach(function (nod) {	// This should only be addressing the top-level children.
 		if (nod.nodeType !== Node.ELEMENT_NODE) return;		// Skip non-elements.
 		if (nod.tagName == 'DATA-ACSS-COMPONENT') return;	// Skip pending data-acss-component tags.
-		cid = _getActiveID(nod);
+		cid = _getActiveID(nod);	// Assign the active ID in a temporary state.
 		drawArr.push(cid);
 	});
-	content = container.innerHTML;
 
-	// PUT IN A CHECK HERE TO MAKE SURE THIS IS IN THE DOCUMENT SCOPE.
-	if (content.indexOf('@host:') !== -1) {	// For speed.
-		// Handle any document scope references to host attributes now that we have a full render tree.
-		// This will ignore any components to be rendered later in this render cycle, so should be relatively fast.
-		container.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
-			let thisInnerHTML = obj.innerHTML;
-			let checkHTML = obj.outerHTML.replace(thisInnerHTML, '');
-			if (checkHTML.indexOf('@host:') !== -1) {
-				if (obj.parentElement) {
-					let newObj = _htmlToElement(_replaceScopedVars(checkHTML, obj, 'SetAttribute', null, false, obj.parentElement));
-					obj.replaceWith(newObj);
-				}
-			}
-		});
-	}
+	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
 
 	if (o.renderPos) {
@@ -2815,13 +2810,19 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		o.secSelObj.innerHTML = content;
 	}
 
+	if (drawArr.length == 0) {
+		// What was rendered was the inner contents of an element only, so we need to remove var placeholders on the node itself.
+		// May as well use the parent of the target selector to ensure we got it. This could be tweaked to be more exact.
+		_removeVarPlaceholders(o.secSelObj.parentNode);
+	}
+
 	for (item of drawArr) {
 		let el = o.doc.querySelector('[data-activeid=' + item + ']');
+		_removeVarPlaceholders(el);
 		_replaceTempActiveID(el);
 		el.querySelectorAll('[data-activeid]').forEach(function(obj) {	// jshint ignore:line
 			_replaceTempActiveID(obj);
 		});
-
 		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
 		_handleEvents({ obj: el, evType: 'draw', otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
@@ -3886,7 +3887,7 @@ const _startMainListen = () => {
 		});
 	} else {
 		// If this is an iframe, we are going to send an src change message to the parent whenever the iframe changes
-		// page, so we can get an unload event on the parent iframe. Also 
+		// page, so we can get an unload event on the parent iframe.
 		window.addEventListener('beforeunload', function(e) {
 			// Don't clash names with a native DOM event.
 			parent.postMessage({ 'type': 'activecss-unloading', 'el': window.frameElement.id}, window.location.origin);
@@ -4011,7 +4012,7 @@ const _getObjFromDots = (obj, i) => {
  *	understood as possible. Minifies down to roughly 3000 characters.
  *
  *	Change: 29 Jan 2020, main function name change to fit into Active CSS conventions. Fixed syntax so it passes jshint. Used in data-binding.
- *	Could be made slimmer for Active CSS, as we don't need all of it. So remove bits that we don't need at a good point. FIXME.
+ *	Some public functions have been commented out as we don't need all of it.
  *
  */
 const _observableSlim = (function() {
@@ -4582,12 +4583,12 @@ const _observableSlim = (function() {
 				}
 			}
 		},
-
 		/*	Method: pause
 				This method will prevent any observer functions from being invoked when a change occurs to a proxy.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		pause: function(proxy) {
 			var i = observables.length;
 			var foundMatch = false;
@@ -4601,12 +4602,13 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not pause observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: resume
 				This method will resume execution of any observer functions when a change is made to a proxy.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		resume: function(proxy) {
 			var i = observables.length;
 			var foundMatch = false;
@@ -4620,7 +4622,7 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not resume observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: pauseChanges
 				This method will prevent any changes (i.e., set, and deleteProperty) from being written to the target
 				object.  However, the observer functions will still be invoked to let you know what changes WOULD have
@@ -4629,6 +4631,7 @@ const _observableSlim = (function() {
 			Parameters:
 				proxy	- the ES6 Proxy returned by the create() method.
 		 */
+/*	Uncomment if this is ever needed.
 		pauseChanges: function(proxy){
 			var i = observables.length;
 			var foundMatch = false;
@@ -4642,12 +4645,13 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not pause changes on observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: resumeChanges
 				This method will resume the changes that were taking place prior to the call to pauseChanges().
 			Parameters:
 				proxy	- the ES6 Proxy returned by the create() method.
 		 */
+/*	Uncomment if this is ever needed.
 		resumeChanges: function(proxy){
 			var i = observables.length;
 			var foundMatch = false;
@@ -4661,13 +4665,14 @@ const _observableSlim = (function() {
 
 			if (foundMatch == false) throw new Error("_observableSlim could not resume changes on observable -- matching proxy not found.");
 		},
-
+*/
 		/*	Method: remove
 				This method will remove the observable and proxy thereby preventing any further callback observers for
 				changes occuring to the target object.
 			Parameters:
 				proxy 	- the ES6 Proxy returned by the create() method.
 		*/
+/*	Uncomment if this is ever needed.
 		remove: function(proxy) {
 
 			var matchedObservable = null;
@@ -4705,6 +4710,7 @@ const _observableSlim = (function() {
 				observables.splice(c,1);
 			}
 		}
+*/
 	};
 })();
 
@@ -4734,6 +4740,41 @@ const _prefixScopedVars = function(str, compRef=null) {
 		return (varEval) ? 'scopedVars.' + scopedVar : wot;
 	});
 	return str;
+};
+
+const _removeVarPlaceholders = obj => {
+	// Remove variable placeholders. If there is no content yet, leave an empty text node.
+	let treeWalker = document.createTreeWalker(
+		obj,
+		NodeFilter.SHOW_COMMENT
+	);
+
+	// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
+	let nodesToRemove = [];
+	let thisNode, thisVar, insertedNode;
+	while (treeWalker.nextNode()) {
+		thisNode = treeWalker.currentNode;
+		if (thisNode.data.substr(0, 11) == 'active-var-') {
+			nodesToRemove.push(thisNode);	// Mark for removal.
+			thisVar = thisNode.data.substr(11);
+			// Now we can get rid of the comments altogether and make the node itself be the reference.
+			if (typeof varMap[thisVar] == 'undefined') varMap[thisVar] = [];
+			if (thisNode.nextSibling.data == '/active-var') {
+				// There is no content there. Insert an empty text node now. A variable was probably empty when first drawn.
+				nodesToRemove.push(thisNode.nextSibling);	// Mark for removal.
+				insertedNode = thisNode.parentNode.insertBefore(document.createTextNode(''), thisNode.nextSibling);
+				varMap[thisVar].push(insertedNode);
+			} else {
+				varMap[thisVar].push(thisNode.nextSibling);
+			}
+		} else if (thisNode.data == '/active-var') {
+			nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
+		}
+	}
+
+	nodesToRemove.forEach(nod => {	// jshint ignore:line
+		nod.remove();
+	});
 };
 
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
@@ -4900,38 +4941,55 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	// a bound variable. If this becomes a problem later, we would have to store the expand this to reference the location of the attribute via the active ID. But
 	// it is fine as it is at this point in development.
 	// This function is also called when an variable change triggers an attribute update.
-	let fragment, fragRoot, treeWalker, owner, txt, cid;
+	let fragment, fragRoot, treeWalker, owner, txt, cid, thisHost, actualHost, el, attrs, attr;
 	// Convert string into DOM tree. Walk DOM and set up active IDs, search for vars to replace, etc. Then convert back to string. Hopefully this will be quick.
 	// Handle inner text first.
 	if (str.indexOf('{{') !== -1 && !fromUpdate && str.indexOf('</') !== -1) {
 		fragRoot = document.createElement('template');
 		fragRoot.innerHTML = str;
-		treeWalker = document.createTreeWalker(
-			fragRoot.content,
-			NodeFilter.SHOW_TEXT
-		);
-		while (treeWalker.nextNode()) {
-			owner = treeWalker.currentNode.parentNode;
-			if (owner.nodeType == 11) continue;
-			cid = _getActiveID(owner);
-			txt = treeWalker.currentNode.textContent;
-			treeWalker.currentNode.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, shadHost, compRef);
-		}
 
-		// Now handle any attributes.
+		// First label any custom elements that do not have inner components, as these need to act as hosts, so we need to pass this host when replacing attributes.
 		treeWalker = document.createTreeWalker(
 			fragRoot.content,
 			NodeFilter.SHOW_ELEMENT
 		);
 		while (treeWalker.nextNode()) {
-			owner = treeWalker.currentNode;
-			let attrs = owner.attributes, attr;
-			for (attr of attrs) {
-				if (['data-activeid'].indexOf(attr.nodeName) !== -1) continue;
-				let newAttr = _replaceScopedVarsDo(attr.nodeValue, null, 'SetAttribute', { secSelObj: owner, actVal: attr.nodeName + ' ' + attr.nodeValue }, true, shadHost, compRef);
-				treeWalker.currentNode.setAttribute(attr.nodeName, newAttr);
+			if (customTags.includes(treeWalker.currentNode.tagName)) {
+				// Scope all custom tags by default. This happens anyway for all components. It's needed here to set a reference for host attribute variables.
+				treeWalker.currentNode.setAttribute('data-active-scoped', '');
 			}
 		}
+
+		// Now handle any attributes. Same tree - iterate again from the top now that the .closest elements are in place.
+		treeWalker.currentNode = fragRoot.content;
+		while (treeWalker.nextNode()) {
+			el = treeWalker.currentNode;
+			attrs = el.attributes;
+			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
+			actualHost = (thisHost) ? thisHost : shadHost;
+			for (attr of attrs) {
+				if (['data-activeid'].indexOf(attr.nodeName) !== -1) continue;
+				let newAttr = _replaceScopedVarsDo(attr.nodeValue, null, 'SetAttribute', { secSelObj: el, actVal: attr.nodeName + ' ' + attr.nodeValue }, true, actualHost, compRef);
+				el.setAttribute(attr.nodeName, newAttr);
+			}
+		}
+
+		// Handle text nodes.
+		treeWalker = document.createTreeWalker(
+			fragRoot.content,
+			NodeFilter.SHOW_TEXT
+		);
+		while (treeWalker.nextNode()) {
+			el = treeWalker.currentNode;
+			owner = el.parentNode;
+			if (owner.nodeType == 11) continue;
+			cid = _getActiveID(owner);
+			txt = el.textContent;
+			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
+			actualHost = (thisHost) ? thisHost : shadHost;
+			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, compRef);
+		}
+
 		// Convert the fragment back into a string.
 		str = fragRoot.innerHTML;
 		str = str.replace(/_cj_s_lt_/gm, '<!--');
@@ -5243,7 +5301,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 	let refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos, obj, scopeRef;
 
 	// Get the reference object for this variable path if it exists.
-	refObj = change.newValue;
+	refObj = change.newValue;// jshint ignore:line
 
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
@@ -5296,30 +5354,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 			continue;
 		}
 
-		treeWalker = document.createTreeWalker(
-			el,
-			NodeFilter.SHOW_COMMENT
-		);
-		// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
-		frag = document.createTextNode(refObj);
-		let nodesToRemove = [];
-		while (treeWalker.nextNode()) {
-			thisNode = treeWalker.currentNode;
-			if (thisNode.data == 'active-var-' + change.currentPath) {
-				// Now we can get rid of the comments altogether and make the node itself be the reference.
-				if (typeof varMap[change.currentPath] == 'undefined') varMap[change.currentPath] = [];
-				if (thisNode.nextSibling.data == '/active-var') {
-					// There is no content there. Insert a text node now. A variable was probably empty when first drawn.
-					let newNode = document.createTextNode(frag.textContent);
-					thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
-				}
-				varMap[change.currentPath].push(thisNode.nextSibling);
-				nodesToRemove.push(thisNode);	// Mark for removal.
-			} else if (thisNode.data == '/active-var') {
-				nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
-			}
-		}
-
 		if (varMap[change.currentPath]) {
 			varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
 				if (!nod.isConnected) {
@@ -5331,10 +5365,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 				}
 			});
 		}
-
-		nodesToRemove.forEach(nod => {	// jshint ignore:line
-			nod.remove();
-		});
 
 		// If this element is an inline-style tag, replace this variable if it is there.
 		if (el.tagName == 'STYLE') {

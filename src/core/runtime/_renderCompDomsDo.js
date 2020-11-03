@@ -103,6 +103,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
+		// Remove the variable placeholders.
+		_removeVarPlaceholders(shadow);
+
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {

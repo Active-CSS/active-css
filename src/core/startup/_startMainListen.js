@@ -35,7 +35,7 @@ const _startMainListen = () => {
 		});
 	} else {
 		// If this is an iframe, we are going to send an src change message to the parent whenever the iframe changes
-		// page, so we can get an unload event on the parent iframe. Also 
+		// page, so we can get an unload event on the parent iframe.
 		window.addEventListener('beforeunload', function(e) {
 			// Don't clash names with a native DOM event.
 			parent.postMessage({ 'type': 'activecss-unloading', 'el': window.frameElement.id}, window.location.origin);

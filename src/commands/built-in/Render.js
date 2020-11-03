@@ -14,15 +14,19 @@ _a.Render = o => {
 	}
 	let childTree = copyOfSecSelObj.innerHTML;
 
-	// Handle any components.
+	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	content = _replaceComponents(o, content);
+
 	// Handle any ajax strings.
 	content = _replaceStringVars(o.ajaxObj, content);
 
 	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
 	content = _renderRefElements(content, childTree, 'CHILDREN');
+
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
 	content = _renderRefElements(content, selfTree, 'SELF');
+
+	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 
 	_renderIt(o, content, childTree, selfTree);
 };

@@ -507,6 +507,27 @@ body.clickoutside1 #clickoutsideStartInput:clickoutside {
 =}
 
 #content:draw {
+	create-element: create-element-tag observe(cetaga, cetagb);
+	var: ceStringTest "stringtest";
+	render-before-end: "<div id=\"checkCreateElement\" data-desc=\"Basic create-element command\" class=\"coreTest\">{|checkCreateElementHTML}</div>";
+}
+
+@component checkCreateElementHTML {
+	html {
+		<create-element-tag cetaga="test1" cetagb="test2">
+			<div id="checkCreateElementDiv">{{@host:cetaga}} {{@host:cetagb}} {{ceStringTest}}</div>
+		</create-element-tag>
+	}
+}
+
+#checkCreateElementDiv:draw {
+	func: checkCreateElement;
+}
+
+#checkCreateElement:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkEval\" data-desc=\"Basic eval command\" class=\"coreTest\"></div>";
 }
 
