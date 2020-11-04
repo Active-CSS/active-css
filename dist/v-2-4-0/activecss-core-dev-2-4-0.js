@@ -466,20 +466,16 @@ _a.CreateElement = o => {
 			'disconnectedCallback() {' +
 				'let compDetails = _componentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'disconnectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef, runButElNotThere: true });' +	// true = run when not there.
-			'}' +
-			'adoptedCallback() {' +
-				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'adoptedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });' +
 			'}';
 	if (attrs) {
 		createTagJS +=
 			'attributeChangedCallback(name, oldVal, newVal) {' +
-				'if (!oldVal) return;' +	// skip if this is the first time in, as it's an addition not an update.
+				'if (!oldVal || oldVal === newVal) return;' +	// skip if this is the first time in or there's an unchanging update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
 				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'attrChange-\' + name, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });' +
+				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });' +
 			'}';
 	}
 	createTagJS +=
@@ -1880,11 +1876,11 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				}
 				o2.delayed = true;
 				if (aftEv == 'after') {
-					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 					return;
 				}
 				o2.interval = true;
-				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
 				o.actValSing = splitArr.str;
@@ -1944,7 +1940,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (['LoadConfig', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!o.secSelObj.isConnected) o.secSelObj = undefined;
+		if (!runButElNotThere && !o.secSelObj.isConnected) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
 
@@ -2378,8 +2374,8 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			_actionValLoop(o, pars, oCopy.secSel);
 		} else {
 			// Is this a custom event selector? If so, don't bother trying to get the object. Trust the developer doesn't need it.
-			if (['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
-				_actionValLoop(o, pars, {});
+			if (runButElNotThere || ['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
+				_actionValLoop(o, pars, {}, runButElNotThere);
 			}
 		}
 /* 	Feedback commented out for the moment - this will be part of a later extension upgrade.
@@ -5301,7 +5297,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 	let refObj, cid, el, pos, treeWalker, commentNode, frag, thisNode, content, attrArr, attr, attrOrig, attrContent, theHost, theDoc, colonPos, obj, scopeRef;
 
 	// Get the reference object for this variable path if it exists.
-	refObj = change.newValue;// jshint ignore:line
+	refObj = change.newValue;
 
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
@@ -6782,7 +6778,7 @@ const _getRealEvent = ev => {
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
 		if (['draw', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
-		if (ev.substr(0, 12) == 'attrChanges-') return false;	// custom Active CSS event attrChange-(attrname). We need to do this to avoid clash with custom event names by user.
+		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;
 };

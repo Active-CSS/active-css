@@ -1,19 +1,47 @@
 #content:draw {
-	create-element: create-element-tag observe(cetaga, cetagb);
-	var: ceStringTest "stringtest";
+	create-element: create-element-tag observe(cetaga cetagb);
+	var: ceStringTest "stringtest",
+		createElementConnectCallbackVar false,
+		createElementDisconnectedCallbackVar false,
+		createElementAttributeChangeVar false
+	;
 	render-before-end: "<div id=\"checkCreateElement\" data-desc=\"Basic create-element command\" class=\"coreTest\">{|checkCreateElementHTML}</div>";
 }
 
 @component checkCreateElementHTML {
 	html {
-		<create-element-tag cetaga="test1" cetagb="test2">
-			<div id="checkCreateElementDiv">{{@host:cetaga}} {{@host:cetagb}} {{ceStringTest}}</div>
-		</create-element-tag>
+		<div id="createElementTagsWrapper">
+			<create-element-tag cetaga="test1" cetagb="test2">
+				<div id="checkCreateElementDiv">{{@host:cetaga}} {{@host:cetagb}} {{ceStringTest}}</div>
+			</create-element-tag>
+			<create-element-tag id="createElementTagToRemove"></create-element-tag>
+			<create-element-tag id="createElementAttrChange" cetaga="a value"></create-element-tag>
+		</div>
 	}
 }
 
+create-element-tag:connectedCallback {
+	var: createElementConnectCallbackVar true;
+}
+
+#createElementTagToRemove:connectedCallback {
+	remove: self;
+}
+
+#createElementAttrChange:connectedCallback {
+	set-attribute: cetaga "cheesey wotsits";
+}
+
+#createElementAttrChange:attrChangeCetaga {
+	var: createElementAttributeChangeVar true;
+}
+
+#createElementTagToRemove:disconnectedCallback {
+	var: createElementDisconnectedCallbackVar true;
+}
+
 #checkCreateElementDiv:draw {
-	func: checkCreateElement;
+	func: checkCreateElement {createElementConnectCallbackVar} {createElementDisconnectedCallbackVar} {createElementAttributeChangeVar} after 1s;
 }
 
 #checkCreateElement:test {

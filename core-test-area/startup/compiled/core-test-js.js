@@ -6,10 +6,14 @@ function _addSuccessClass(objOrStr) {
 	el.classList.add('success');
 }
 
-function _fail(testEl, message=null, par1=null) {
+function _fail(testEl, message=null, par1=null, par2=null, par3=null) {
 	testEl.classList.add('failed');
 	if (message) {
-		if (par1) {
+		if (par3) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3);
+		} else if (par2) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2);
+		} else if (par1) {
 			console.log('Failure in ' + testEl.id + ': ' + message, par1);
 		} else {
 			console.log('Failure in ' + testEl.id + ': ' + message);
@@ -656,7 +660,7 @@ function checkCreateConditionalFinal(o) {
 	_addSuccessClass(testEl);
 }
 
-function checkCreateElement(o) {
+function checkCreateElement(o, pars) {
 	let testEl = _initTest('checkCreateElement');
 	if (!testEl) return;
 
@@ -667,6 +671,27 @@ function checkCreateElement(o) {
 
 	if (el.innerHTML != 'test1 test2 stringtest') {
 		_fail(testEl, 'Reactive attributes did not get rendered correctly in custom element. el.innerHTML:', el.innerHTML);
+	}
+
+	if (typeof pars[0] === 'undefined' || pars[0] !== true) {
+		_fail(testEl, 'Connected callback did not invoke. pars[0]:', pars[0]);
+	}
+
+	if (typeof pars[1] === 'undefined' || pars[1] !== true) {
+		_fail(testEl, 'Disconnected callback did not invoke. pars[1]:', pars[1], ', wrapper:', _getObj('#createElementTagsWrapper'));
+	}
+
+	if (typeof pars[2] === 'undefined' || pars[2] !== true) {
+		_fail(testEl, 'Attribute change callback did not invoke. pars[2]:', pars[2], ', wrapper:', _getObj('#createElementAttrChange'));
+	}
+
+	let el2 = _getObj('#createElementAttrChange');
+	if (!el2) {
+		_fail(testEl, '#createElementAttrChange not there to perform attribute test.');
+	} else {
+		if (el2.getAttribute('cetaga') != 'cheesey wotsits') {
+			_fail(testEl, '#createElementAttrChange does not contain the string "cheesey wotsits" at the end of the test.');
+		}
 	}
 
 	_addSuccessClass(testEl);

@@ -60,8 +60,8 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			_actionValLoop(o, pars, oCopy.secSel);
 		} else {
 			// Is this a custom event selector? If so, don't bother trying to get the object. Trust the developer doesn't need it.
-			if (['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
-				_actionValLoop(o, pars, {});
+			if (runButElNotThere || ['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
+				_actionValLoop(o, pars, {}, runButElNotThere);
 			}
 		}
 /* 	Feedback commented out for the moment - this will be part of a later extension upgrade.

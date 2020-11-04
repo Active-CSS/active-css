@@ -10,7 +10,7 @@ const _getRealEvent = ev => {
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
 		if (['draw', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
-		if (ev.substr(0, 12) == 'attrChanges-') return false;	// custom Active CSS event attrChange-(attrname). We need to do this to avoid clash with custom event names by user.
+		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;
 };
