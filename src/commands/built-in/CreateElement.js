@@ -60,7 +60,7 @@ _a.CreateElement = o => {
 	if (attrs) {
 		createTagJS +=
 			'attributeChangedCallback(name, oldVal, newVal) {' +
-				'if (!oldVal || oldVal === newVal) return;' +	// skip if this is the first time in or there's an unchanging update.
+				'if (!oldVal && oldVal !== \'\' || oldVal === newVal) return;' +	// skip if this is the first time in or there's an unchanging update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
 				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +

@@ -28,6 +28,8 @@
 		'"': '_ACSS_later_double_quote'
 	};
 
+	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+
 	window.ActiveCSS = {};
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
@@ -107,6 +109,7 @@
 		supportsShadow = true,
 		idMap = [],
 		varMap = [],
+		varStyleMap = [],
 		varInStyleMap = [],
 		elementObserver;
 

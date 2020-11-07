@@ -28,6 +28,8 @@
 		'"': '_ACSS_later_double_quote'
 	};
 
+	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+
 	window.ActiveCSS = {};
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
@@ -107,6 +109,7 @@
 		supportsShadow = true,
 		idMap = [],
 		varMap = [],
+		varStyleMap = [],
 		varInStyleMap = [],
 		elementObserver;
 
@@ -470,7 +473,7 @@ _a.CreateElement = o => {
 	if (attrs) {
 		createTagJS +=
 			'attributeChangedCallback(name, oldVal, newVal) {' +
-				'if (!oldVal || oldVal === newVal) return;' +	// skip if this is the first time in or there's an unchanging update.
+				'if (!oldVal && oldVal !== \'\' || oldVal === newVal) return;' +	// skip if this is the first time in or there's an unchanging update.
 				'this.setAttribute(name + \'-old\', oldVal); ' +
 				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
@@ -4739,12 +4742,14 @@ const _prefixScopedVars = function(str, compRef=null) {
 };
 
 const _removeVarPlaceholders = obj => {
+	/**
+	* Handle text nodes.
+	*/
 	// Remove variable placeholders. If there is no content yet, leave an empty text node.
 	let treeWalker = document.createTreeWalker(
 		obj,
 		NodeFilter.SHOW_COMMENT
 	);
-
 	// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
 	let nodesToRemove = [];
 	let thisNode, thisVar, insertedNode;
@@ -4767,10 +4772,49 @@ const _removeVarPlaceholders = obj => {
 			nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
 		}
 	}
-
 	nodesToRemove.forEach(nod => {	// jshint ignore:line
 		nod.remove();
 	});
+
+
+	/**
+	* Handle style tags.
+	*/
+	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).
+	treeWalker = document.createTreeWalker(
+		obj,
+		NodeFilter.SHOW_ELEMENT
+	);
+	let str, el;
+	while (treeWalker.nextNode()) {
+		if (treeWalker.currentNode.tagName != 'STYLE') continue;
+		el = treeWalker.currentNode;
+		if (!el._acssActiveID) _getActiveID(el);
+		str = treeWalker.currentNode.textContent;
+		// Store the original contents of the style tag with variable placeholders.
+		if (typeof varInStyleMap[el._acssActiveID] == 'undefined') varInStyleMap[el._acssActiveID] = str;
+
+		// Now set up references for the reactive variable to link to the style tag. This way we only update style tags that have changed.
+		// Remove the variable placeholders at the same time.
+		str = varInStyleMap[el._acssActiveID].replace(STYLEREGEX, function(_, wot, wot2, wot3) {	// jshint ignore:line
+			if (typeof varStyleMap[wot] == 'undefined') varStyleMap[wot] = [];
+			varStyleMap[wot].push(el);
+			let thisColonPos = wot.indexOf('HOST');
+			if (thisColonPos !== -1) {
+				let varName = wot.substr(thisColonPos + 4);
+				let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
+				if (!varHost || !varHost.hasAttribute(varName)) return '';
+				return varHost.getAttribute(varName);
+			} else {
+				// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
+				let val = _get(scopedVars, wot);
+				return (val) ? val : '';
+			}
+			return wot2 || '';
+		});
+		el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+	}
+
 };
 
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
@@ -5302,8 +5346,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
 	colonPos = change.currentPath.indexOf('HOST');
-	theHost = null;
-	theDoc = document;
+//	theHost = null;
+//	theDoc = document;
 	let compScope = null;
 
 	// There has been a recent change whereby the scope of the document may have nothing to with the scope of the variable. Ie. you can have nested shadow DOM
@@ -5324,6 +5368,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete compParents[change.currentPath];
 			delete compPrivEvs[change.currentPath];
 			delete varMap[change.currentPath];
+			delete varStyleMap[change.currentPath];
 
 //				varInStyleMap[el._acssActiveID] = str;		// This needs cleaning up - do it when removing item from DOM in observer.
 
@@ -5332,6 +5377,53 @@ const _varUpdateDomDo = (change, dataObj) => {
 			// all component references when they are removed. Then this can possibly be removed depending on the method.
 		}
 	}
+
+	// Update text nodes.
+	if (typeof varMap[change.currentPath] === 'object') {
+		varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
+			if (!nod.isConnected) {
+				// Clean-up.
+				varMap[change.currentPath].splice(i, 1);
+			} else {
+				// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
+				nod.textContent = refObj;
+			}
+		});
+	}
+
+	// Update style nodes.
+	if (typeof varStyleMap[change.currentPath] === 'object') {
+		varStyleMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
+			if (!nod.isConnected) {
+				// Clean-up.
+				varStyleMap[change.currentPath].splice(i, 1);
+				delete varInStyleMap[nod];
+			} else {
+				// Update style tag.
+				// What we do now is replace with ALL the current values contained in the string - not just what has changed.
+				let str = varInStyleMap[nod._acssActiveID].replace(STYLEREGEX, function(_, wot) {	// jshint ignore:line
+					if (wot == change.currentPath) {
+						return refObj;
+					} else {
+						let thisColonPos = wot.indexOf('HOST');
+						if (thisColonPos !== -1) {
+							let varName = wot.substr(thisColonPos + 4);
+							let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
+							if (!varHost || !varHost.hasAttribute(varName)) return _;
+							return varHost.getAttribute(varName);
+						} else {
+							// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
+							let val = _get(scopedVars, wot);
+							return (val) ? val : _;
+						}
+					}
+				});
+				nod.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+			}
+		});
+	}
+
+/*
 	for (obj in dataObj.cids) {
 		// Locate and update inside comments.
 		// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
@@ -5349,51 +5441,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete dataObj.cids[cid];
 			continue;
 		}
-
-		if (varMap[change.currentPath]) {
-			varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
-				if (!nod.isConnected) {
-					// Clean-up.
-					varMap[change.currentPath].splice(i, 1);
-				} else {
-					// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
-					nod.textContent = refObj;
-				}
-			});
-		}
-
-		// If this element is an inline-style tag, replace this variable if it is there.
-		if (el.tagName == 'STYLE') {
-			// First we are going to create a reference with the original placeholders and store it in an array mapped to the element itself.
-			let str = el.textContent;
-			if (!el._acssActiveID) _getActiveID(el);
-			if (typeof varInStyleMap[el._acssActiveID] == 'undefined') {
-				varInStyleMap[el._acssActiveID] = str;
-			}
-
-			let regex = new RegExp('\\/\\*active\\-var\\-([\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-\\.\\:\\[\\]]+)\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
-			// What we do now is replace with ALL the current values contained in the string - not just what has changed.
-			str = varInStyleMap[el._acssActiveID].replace(regex, function(_, wot) {	// jshint ignore:line
-				if (wot == change.currentPath) {
-					return refObj;
-				} else {
-					let thisColonPos = wot.indexOf('HOST');
-					if (thisColonPos !== -1) {
-						let varName = wot.substr(colonPos + 4);
-						let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
-						if (!varHost || !varHost.hasAttribute(varName)) return _;
-						return varHost.getAttribute(varName);
-					} else {
-						// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-						let val = _get(scopedVars, wot);
-						return (val) ? val : _;
-					}
-				}
-			});
-			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
-
-		}
 	}
+*/
 
 	// Handle content in attributes.
 	let found;
