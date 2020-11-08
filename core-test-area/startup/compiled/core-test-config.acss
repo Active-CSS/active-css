@@ -1064,6 +1064,27 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkTriggerReal\" data-desc=\"Basic trigger-real command\" class=\"coreTest\">{|checkTriggerRealHTML}</div>";
+}
+
+@component checkTriggerRealHTML {
+	p:draw {
+		func: checkTriggerRealSetUpDocumentEvent;
+		trigger-real: click;
+	}
+	p:click {
+		render: "Hello. Is it me you're looking for too?";
+	}
+	html {
+		<p></p>
+	}
+}
+
+#checkTriggerReal:test {
+	/* The test get runs from a document click event to test that it is true click event and not just a call to a Active CSS config event. */
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkTrigger\" data-desc=\"Basic trigger command\" class=\"coreTest\">{|checkTriggerHTML}</div>";
 }
 
