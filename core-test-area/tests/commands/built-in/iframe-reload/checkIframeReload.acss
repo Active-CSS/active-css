@@ -1,0 +1,30 @@
+#content:draw {
+	render-before-end: "<div id=\"checkIframeReload\" data-desc=\"Basic iframe-reload command\" class=\"coreTest\">{|checkIframeReloadHTML}</div>";
+}
+
+@component checkIframeReloadHTML {
+	html {
+		<iframe id="checkIframeIframe" srcdoc="<p>iframe test</p>"></iframe>
+	}
+}
+
+#checkIframeReload:runTests {
+	/* Check initial contents */
+	func: checkIframeReloadA;
+	/* Change the contents. */
+	#checkIframeIframe -> p {
+		render: "some new text";
+	}
+	/* Check for the new contents. */
+	func: checkIframeReloadB;
+	/* Re-load the iframe. */
+	#checkIframeIframe {
+		iframe-reload: true;
+	}
+	/* Check for the old contents. */
+	func: checkIframeReloadFinal after 1s;
+}
+
+#checkIframeReload:test {
+	trigger: runTests after 1s;
+}
