@@ -90,8 +90,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
 	colonPos = change.currentPath.indexOf('HOST');
-//	theHost = null;
-//	theDoc = document;
 	let compScope = null;
 
 	// There has been a recent change whereby the scope of the document may have nothing to with the scope of the variable. Ie. you can have nested shadow DOM

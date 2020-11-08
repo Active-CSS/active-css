@@ -487,6 +487,10 @@ _a.CreateElement = o => {
 	Function('_handleEvents, _componentDetails', '"use strict";' + createTagJS)(_handleEvents, _componentDetails);	// jshint ignore:line
 };
 
+_a.DocumentTitle = o => {
+	document.title = o.actVal._ACSSRepQuo();
+};
+
 _a.Eval = o => {
 	// Run JavaScript dynamically in the global window scope. This is straight-up JavaScript that runs globally.
 	let evalContent = ActiveCSS._sortOutFlowEscapeChars(o.actVal.trim().slice(2, -2));
@@ -5346,8 +5350,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
 	colonPos = change.currentPath.indexOf('HOST');
-//	theHost = null;
-//	theDoc = document;
 	let compScope = null;
 
 	// There has been a recent change whereby the scope of the document may have nothing to with the scope of the variable. Ie. you can have nested shadow DOM
@@ -5423,28 +5425,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 		});
 	}
 
-/*
-	for (obj in dataObj.cids) {
-		// Locate and update inside comments.
-		// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
-		cid = dataObj.cids[obj].cid;
-		scopeRef = dataObj.cids[obj].scopeRef;	// Scope ref is the *display* area - not the variable area!
-		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
-
-		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];
-		el = idMap[cid];
-
-		if (!el) {
-			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
-			delete dataObj.cids[cid];
-			continue;
-		}
-	}
-*/
-
-	// Handle content in attributes.
+	// Handle content in attributes. The treewalker option for attributes is deprecated unfortunately, so it uses a different method.
 	let found;
 	for (cid in dataObj.attrs) {
 		found = false;

@@ -739,6 +739,57 @@ create-element-tag:connectedCallback {
 /* This is tested in the blur command test and will specifically error if it doesn't work. */
 
 #content:draw {
+	render-before-end: "<div id=\"checkFormReset\" data-desc=\"Basic form-reset command\" class=\"coreTest\">{|checkFormResetHTML}</div>";
+}
+
+@component checkFormResetHTML {
+	html {
+		<form id="checkFormForm">
+		    <p><input id="checkFormRegularField" type="text" value="Bert"></p>
+		    <p><input id="checkFormMimicField1" class="checkFormMimicClass" data-ref="1" type="text" placeholder="Mimic to A" value="Cheryl"></p>
+		    <p>A: <span id="checkFormResultOfMimic1"></span></p>
+		    <p><input id="checkFormMimicField2" class="checkFormMimicClass" data-ref="2" type="text" placeholder="Mimic to B" value="Bob"></p>
+		    <p>B: <span id="checkFormResultOfMimic2"></span></p>
+		    <p>Browser page title: <input id="checkFormPageTitle" type="text" value="cheeseyness" placeholder="Type here"></p>
+		</form>
+	}
+}
+
+#checkFormPageTitle: draw {
+	/* Test browser page title mimic. */
+	mimic-into: title;
+}
+
+.checkFormMimicClass:draw {
+	/* Test mimic-into reset. Populate all the target fields when first drawn - this basically does the same thing as the input event. */
+    mimic-into: #checkFormResultOfMimic{@data-ref};
+}
+
+#checkFormForm:draw {
+	trigger: runTests after stack;
+}
+
+#checkFormForm:runTests {
+	/* Force changes to the input fields and target fields - we don't have to test all field types as form-reset does an HTML form reset. */
+	#checkFormRegularField, #checkFormMimicField1, #checkFormMimicField2 {
+		set-property: value "changedResult";
+	}
+	#checkFormResultOfMimic1, #checkFormResultOfMimic2 {
+		render: "changedResult";
+	}
+	document-title: "New page title";
+	/* Check changed form values. */
+	func: checkFormResetA;
+	/* Reset the form. */
+    form-reset: #checkFormForm;
+	/* Check that the regular form field and mimic-into target fields have been reset to default values. */
+	func: checkFormResetFinal;
+}
+
+#checkFormReset:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkFunc\" data-desc=\"Basic func command\" class=\"coreTest\"></div>";
 }
 
