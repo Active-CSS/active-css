@@ -3,10 +3,17 @@
 }
 
 @component checkTriggerHTML {
+	p:draw {
+		trigger: renderSomething;
+	}
+	p:renderSomething {
+		render: "Hello. Is it me you're looking for?";
+		func: checkTrigger;
+	}
 	html {
+		<p></p>
 	}
 }
 
 #checkTrigger:test {
-	func: checkTrigger;
 }
