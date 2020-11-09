@@ -1,0 +1,9 @@
+@component checkLoadConfigHTML {
+	&:afterLoadConfig {
+		div {
+			render: "Here is some text.";
+			func: checkLoadConfig;
+		}
+	}
+}
+

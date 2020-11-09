@@ -677,7 +677,7 @@ _a.LoadConfig = o => {
 		_getFile(o.actVal, 'txt', o);
 	} else {
 		// Run the success script - we should still do this, we just didn't need to load the config.
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig' });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
 };
 
@@ -2978,6 +2978,7 @@ const _addConfig = (str, o) => {
 
 	// If this is last file, run the config generator.
 	if (concatConfigCo >= concatConfigLen) _readSiteMap();
+
 	if (concatConfigCo > concatConfigLen) {
 		if (o.actName == 'load-config') {
 			configArr.push(o.avRaw);	// Add the file without anything after and including the "?".
@@ -2997,7 +2998,7 @@ const _addConfig = (str, o) => {
 		}
 		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig' });
 		_handleEvents({ obj: 'body', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig' });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
 };
 
@@ -6169,7 +6170,7 @@ const _addActValRaw = o => {
 	// (AV is a reference to o.actVal)
 	// Remove everything before the "?" in the file URL so we can store it for checking later.
 	o.avRaw = o.actVal;
-	if (o.avRaw.indexOf('?')) {
+	if (o.avRaw.indexOf('?') !== -1) {
 		// Remove any parameters to check if it is in configArr - store without the parameters, otherwise we get an accumulation of the same file in configArr.
 		o.avRaw = _getBaseURL(o.avRaw);
 	}

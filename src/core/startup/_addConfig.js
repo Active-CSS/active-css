@@ -12,6 +12,7 @@ const _addConfig = (str, o) => {
 
 	// If this is last file, run the config generator.
 	if (concatConfigCo >= concatConfigLen) _readSiteMap();
+
 	if (concatConfigCo > concatConfigLen) {
 		if (o.actName == 'load-config') {
 			configArr.push(o.avRaw);	// Add the file without anything after and including the "?".
@@ -31,6 +32,6 @@ const _addConfig = (str, o) => {
 		}
 		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig' });
 		_handleEvents({ obj: 'body', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig' });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
 };

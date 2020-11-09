@@ -844,6 +844,24 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkLoadConfig\" data-desc=\"Basic load-config command\" class=\"coreTest\">{|checkLoadConfigHTML}</div>";
+}
+
+@component checkLoadConfigHTML {
+	&:componentOpen {
+		/* In this case this needs to be in "open" and not "before open" otherwise the afterLoadConfig event cannot find the drawn div - ie. it hasn't been drawn yet. */
+		/* The verification function is called from the load-config-test.acss config itself after it has been loaded. */
+		load-config: "/base/core-test-area/tests/ajax-response-files/load-config-test.acss";
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkLoadConfig:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkRemoveAttribute\" data-desc=\"Basic remove-attribute command\" class=\"coreTest\">{|checkRemoveAttributeHTML}</div>";
 }
 
