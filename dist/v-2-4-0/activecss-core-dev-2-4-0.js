@@ -703,6 +703,9 @@ _a.LoadScript = (o, opt) => {
 			scrip.rel = 'stylesheet';
 		}
 		scrip[srcTag] = scr;
+		scrip.onload = function() {
+			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		};
 		o.doc.head.appendChild(scrip);
 		scriptTrack.push(trimmedURL);
 	}
@@ -1946,7 +1949,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (['LoadConfig', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
+	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && !o.secSelObj.isConnected) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
 	}
@@ -6671,7 +6674,8 @@ const _getActiveID = obj => {
 };
 
 const _getBaseURL = str => {
-	return str.substr(0, str.indexOf('?'));
+	let pos = str.indexOf('?');
+	return (pos !== -1) ? str.substr(0, str.indexOf('?')) : str;
 };
 
 const _getComponentDetails = rootNode => {

@@ -9,6 +9,9 @@ _a.LoadScript = (o, opt) => {
 			scrip.rel = 'stylesheet';
 		}
 		scrip[srcTag] = scr;
+		scrip.onload = function() {
+			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		};
 		o.doc.head.appendChild(scrip);
 		scriptTrack.push(trimmedURL);
 	}

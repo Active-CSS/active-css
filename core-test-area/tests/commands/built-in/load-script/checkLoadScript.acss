@@ -3,10 +3,16 @@
 }
 
 @component checkLoadScriptHTML {
+	&:beforeComponentOpen {
+		load-script: "/base/core-test-area/tests/ajax-response-files/load-script-test.js";
+	}
+	&:afterLoadScript {
+		func: checkLoadScript;
+	}
 	html {
+		<div></div>
 	}
 }
 
 #checkLoadScript:test {
-	func: checkLoadScript;
 }

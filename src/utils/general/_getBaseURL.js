@@ -1,3 +1,4 @@
 const _getBaseURL = str => {
-	return str.substr(0, str.indexOf('?'));
+	let pos = str.indexOf('?');
+	return (pos !== -1) ? str.substr(0, str.indexOf('?')) : str;
 };

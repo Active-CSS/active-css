@@ -40,6 +40,7 @@ module.exports = function(config) {
 			{pattern: 'core-test-area/tests/ajax-response-files/*.gif', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
 			{pattern: 'core-test-area/tests/ajax-response-files/*.png', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
 			{pattern: 'core-test-area/tests/ajax-response-files/*.jpg', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
+			{pattern: 'core-test-area/tests/ajax-response-files/*.js', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
 			activeCSSFile,
 			'core-test-area/startup/core-test-settings.js',
 			'core-test-area/startup/compiled/core-test-js.js',		// *Never* edit this file directly. It is auto-generated from the tests dir.

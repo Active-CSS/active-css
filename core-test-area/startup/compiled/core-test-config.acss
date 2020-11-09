@@ -885,6 +885,25 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkLoadScript\" data-desc=\"Basic load-script command\" class=\"coreTest\">{|checkLoadScriptHTML}</div>";
+}
+
+@component checkLoadScriptHTML {
+	&:beforeComponentOpen {
+		load-script: "/base/core-test-area/tests/ajax-response-files/load-script-test.js";
+	}
+	&:afterLoadScript {
+		func: checkLoadScript;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkLoadScript:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkRemoveAttribute\" data-desc=\"Basic remove-attribute command\" class=\"coreTest\">{|checkRemoveAttributeHTML}</div>";
 }
 
