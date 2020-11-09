@@ -4,7 +4,7 @@
 
 @component checkLoadScriptHTML {
 	&:beforeComponentOpen {
-		load-script: "/base/core-test-area/tests/ajax-response-files/load-script-test.js";
+		load-script: "/base/core-test-area/tests/resource-files/load-script-test.js";
 	}
 	&:afterLoadScript {
 		func: checkLoadScript;

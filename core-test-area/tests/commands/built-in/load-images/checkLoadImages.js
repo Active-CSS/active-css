@@ -1,8 +1,8 @@
 /*
-<img id="checkLoadImagesImg1" src="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/cat3.gif" alt="">
+<img id="checkLoadImagesImg1" src="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/cat3.gif" alt="">
 <picture>
-    <source id="checkLoadImagesPicSrc1" srcset="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/building-cliff-clouds-67235-tn.jpg" media="(min-width: 800px)">
-    <img id="checkLoadImagesImg2" src="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/cat2.gif" />
+    <source id="checkLoadImagesPicSrc1" srcset="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/building-cliff-clouds-67235-tn.jpg" media="(min-width: 800px)">
+    <img id="checkLoadImagesImg2" src="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/cat2.gif" />
 </picture>
 */
 

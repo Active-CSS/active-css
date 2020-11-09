@@ -4,7 +4,7 @@
 
 @component checkAjaxHTML {
 	&:beforeComponentOpen {
-		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-test-1.txt";
+		ajax: "/base/core-test-area/tests/resource-files/ajax-test-1.txt";
 	}
 	&:afterAjax {
 		func: checkAjax after 1s;	/* give component time to draw before checking */

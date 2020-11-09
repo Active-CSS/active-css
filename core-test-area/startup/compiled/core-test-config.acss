@@ -69,13 +69,13 @@ body:init {
 
 @component checkAjaxPreGet {
 	&:beforeComponentOpen {
-		ajax-pre-get: "/base/core-test-area/tests/ajax-response-files/ajax-pre-get-test-1.txt";
+		ajax-pre-get: "/base/core-test-area/tests/resource-files/ajax-pre-get-test-1.txt";
 	}
 	&:afterAjaxPreGet {
 		func: checkAjaxPreGetA;
 	}
 	#checkAjaxPreGetTestTitle:draw {
-		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-pre-get-test-1.txt" after 250ms;
+		ajax: "/base/core-test-area/tests/resource-files/ajax-pre-get-test-1.txt" after 250ms;
 	}
 	&:afterAjax {
 		func: checkAjaxPreGetFinal after 1s;	/* give component time to draw before checking */
@@ -96,7 +96,7 @@ body:init {
 
 @component checkAjaxHTML {
 	&:beforeComponentOpen {
-		ajax: "/base/core-test-area/tests/ajax-response-files/ajax-test-1.txt";
+		ajax: "/base/core-test-area/tests/resource-files/ajax-test-1.txt";
 	}
 	&:afterAjax {
 		func: checkAjax after 1s;	/* give component time to draw before checking */
@@ -851,7 +851,7 @@ create-element-tag:connectedCallback {
 	&:componentOpen {
 		/* In this case this needs to be in "open" and not "before open" otherwise the afterLoadConfig event cannot find the drawn div - ie. it hasn't been drawn yet. */
 		/* The verification function is called from the load-config-test.acss config itself after it has been loaded. */
-		load-config: "/base/core-test-area/tests/ajax-response-files/load-config-test.acss";
+		load-config: "/base/core-test-area/tests/resource-files/load-config-test.acss";
 	}
 	html {
 		<div></div>
@@ -872,10 +872,10 @@ create-element-tag:connectedCallback {
 	    }
     }
 	html {
-		<img id="checkLoadImagesImg1" src="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/cat3.gif" alt="">
+		<img id="checkLoadImagesImg1" src="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/cat3.gif" alt="">
 		<picture>
-		    <source id="checkLoadImagesPicSrc1" srcset="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/building-cliff-clouds-67235-tn.jpg" media="(min-width: 800px)">
-		    <img id="checkLoadImagesImg2" src="/base/core-test-area/tests/ajax-response-files/tiny.png" data-lazy-image="/base/core-test-area/tests/ajax-response-files/cat2.gif" />
+		    <source id="checkLoadImagesPicSrc1" srcset="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/building-cliff-clouds-67235-tn.jpg" media="(min-width: 800px)">
+		    <img id="checkLoadImagesImg2" src="/base/core-test-area/tests/resource-files/tiny.png" data-lazy-image="/base/core-test-area/tests/resource-files/cat2.gif" />
 		</picture>
 	}
 }
@@ -890,7 +890,7 @@ create-element-tag:connectedCallback {
 
 @component checkLoadScriptHTML {
 	&:beforeComponentOpen {
-		load-script: "/base/core-test-area/tests/ajax-response-files/load-script-test.js";
+		load-script: "/base/core-test-area/tests/resource-files/load-script-test.js";
 	}
 	&:afterLoadScript {
 		func: checkLoadScript;
@@ -901,6 +901,51 @@ create-element-tag:connectedCallback {
 }
 
 #checkLoadScript:test {
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkLoadStyle\" data-desc=\"Basic load-style command in document scope\" class=\"coreTest\">{|checkLoadStyleHTML}</div>";
+	render-before-end: "<div id=\"checkLoadStyleShad\" data-desc=\"Basic load-style command in shadow scope\" class=\"coreTest\">{|checkLoadStyleHTMLShadow}</div>";
+	render-before-end: "<div id=\"checkLoadStyleShad2\" data-desc=\"Basic load-style command in multiple shadow scopes\" class=\"coreTest\">{|checkLoadStyleHTMLShadow2}</div>";
+}
+
+@component checkLoadStyleHTML {
+	&:componentOpen {
+		load-style: "/base/core-test-area/tests/resource-files/load-style-test.css?v=123";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleDocument;
+	}
+	html {
+		<div></div>
+	}
+}
+
+@component checkLoadStyleHTMLShadow shadow {
+	&:componentOpen {
+		load-style: "/base/core-test-area/tests/resource-files/load-style-test-shadow.css";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleShadow;
+	}
+	html {
+		<div></div>
+	}
+}
+
+@component checkLoadStyleHTMLShadow2 shadow {
+	&:componentOpen {
+		load-style: "/base/core-test-area/tests/resource-files/load-style-test-shadow.css";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleShadow2;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkLoadStyle:test {
 }
 
 #content:draw {
