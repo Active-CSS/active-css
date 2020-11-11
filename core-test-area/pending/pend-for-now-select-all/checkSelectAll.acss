@@ -3,10 +3,17 @@
 }
 
 @component checkSelectAllHTML {
+	div:draw {
+		trigger-real: click;
+	}
+	div:click {
+		select-all: self;
+		func: checkSelectAll;
+	}
 	html {
+		<div contenteditable="true">Some text</div>
 	}
 }
 
 #checkSelectAll:test {
-	func: checkSelectAll;
 }

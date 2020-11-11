@@ -1,1 +1,1 @@
-_c.IfEmpty = o => { return (_selCompare(o, 'eM')) ? true : false; };
+_c.IfEmpty = o => { return (_selCompare(o, 'eM')); };

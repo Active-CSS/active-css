@@ -63,7 +63,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 		}
 		if (component) {
 			cond = '|' + component + '|' + cond;
-			if (typeof conditionals[cond] === 'undefined') {
+			if (conditionals[cond] === undefined) {
 				let condErr = cond.substr(component.length + 2);
 				console.log('Active CSS error: Conditional ' + condErr + ' not found in config for component ' + component);
 			}

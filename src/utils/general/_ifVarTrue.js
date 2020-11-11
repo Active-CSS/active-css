@@ -7,7 +7,7 @@ const _ifVarTrue = (val, compRef) => {
 	}
 	let scopedVar = ((compRef && privVarScopes[compRef]) ? compRef : 'main') + '.' + val;
 	let res = _get(scopedVars, scopedVar);
-	if (typeof res === 'undefined') {
+	if (res === undefined) {
 		// If the value wasn't a variable, check if it's a window variable. If not, then just set it to its original value.
 		res = window[val];
 	}

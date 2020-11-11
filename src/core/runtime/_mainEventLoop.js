@@ -1,7 +1,7 @@
 const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	if (e.target.id == 'cause-js-elements-ext') return;	// Internally triggered by extension to get bubble state. Don't run anything.
 	let el;
-	let bod = (e.target == self || e.target.body) ? true : false;
+	let bod = (e.target == self || e.target.body);
 	if (typ != 'click' && bod) {
 		// Run any events on the body, followed by the window.
 		_handleEvents({ obj: 'body', evType: typ, eve: e });

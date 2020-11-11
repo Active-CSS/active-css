@@ -33,7 +33,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	compRef = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
-	if (typeof scopedVars[compRef] === 'undefined') {
+	if (scopedVars[compRef] === undefined) {
 		scopedVars[compRef] = {};
 	}
 
@@ -137,12 +137,12 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			    if (/^on/.test(key)) {
 			    	thisEv = key.slice(2);
 			    	allEvents.push(thisEv);
-					_attachListener(shadow, thisEv, componentName, shadow, compRef);	// for speed.
+					_attachListener(shadow, thisEv, false, true);	// for speed.
 			    }
 			});
 		} else {
 			for (thisEv of allEvents) {
-				_attachListener(shadow, thisEv, componentName, shadow, compRef);
+				_attachListener(shadow, thisEv, false, true);
 			}
 		}
 	}

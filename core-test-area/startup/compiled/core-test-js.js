@@ -1350,7 +1350,6 @@ function checkLoadStyleShadow(o) {
 	} else if (styles.color !== 'rgb(255, 0, 0)') {
 		_fail(testDiv, 'Color of test div has not been set to "rgb(255, 0, 0)" from the load-style stylesheet. styles.color:', styles.color);
 	} else {
-		// Second, test in the document scope.
 		_addSuccessClass(testEl);
 	}
 
@@ -1369,10 +1368,23 @@ function checkLoadStyleShadow2(o) {
 	} else if (styles.color !== 'rgb(255, 0, 0)') {
 		_fail(testDiv, 'Color of test div has not been set to "rgb(255, 0, 0)" from the load-style stylesheet. styles.color:', styles.color);
 	} else {
-		// Second, test in the document scope.
 		_addSuccessClass(testEl);
 	}
 
+}
+
+function checkPreventDefault(o) {
+	let testEl = _initTest('checkPreventDefault');
+	if (!testEl) return;
+
+	_addSuccessClass(testEl);
+}
+
+function checkPreventDefaultShadow(o) {
+	let testEl = _initTest('checkPreventDefaultShadow');
+	if (!testEl) return;
+
+	_addSuccessClass(testEl);
 }
 
 function checkRemoveAttribute(o) {

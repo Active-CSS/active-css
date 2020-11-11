@@ -16,7 +16,7 @@ const _removeVarPlaceholders = obj => {
 			nodesToRemove.push(thisNode);	// Mark for removal.
 			thisVar = thisNode.data.substr(11);
 			// Now we can get rid of the comments altogether and make the node itself be the reference.
-			if (typeof varMap[thisVar] == 'undefined') varMap[thisVar] = [];
+			if (varMap[thisVar] === undefined) varMap[thisVar] = [];
 			if (thisNode.nextSibling.data == '/active-var') {
 				// There is no content there. Insert an empty text node now. A variable was probably empty when first drawn.
 				nodesToRemove.push(thisNode.nextSibling);	// Mark for removal.
@@ -49,12 +49,12 @@ const _removeVarPlaceholders = obj => {
 		if (!el._acssActiveID) _getActiveID(el);
 		str = treeWalker.currentNode.textContent;
 		// Store the original contents of the style tag with variable placeholders.
-		if (typeof varInStyleMap[el._acssActiveID] == 'undefined') varInStyleMap[el._acssActiveID] = str;
+		if (varInStyleMap[el._acssActiveID] === undefined) varInStyleMap[el._acssActiveID] = str;
 
 		// Now set up references for the reactive variable to link to the style tag. This way we only update style tags that have changed.
 		// Remove the variable placeholders at the same time.
 		str = varInStyleMap[el._acssActiveID].replace(STYLEREGEX, function(_, wot, wot2, wot3) {	// jshint ignore:line
-			if (typeof varStyleMap[wot] == 'undefined') varStyleMap[wot] = [];
+			if (varStyleMap[wot] === undefined) varStyleMap[wot] = [];
 			varStyleMap[wot].push(el);
 			let thisColonPos = wot.indexOf('HOST');
 			if (thisColonPos !== -1) {

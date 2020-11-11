@@ -66,7 +66,7 @@ _a.SetCookie = o => {
 	// Secure/secureIfHttps
 	secureIfHttps = _optDef(arr, 'secureIfHttps', true, false);
 	if (secureIfHttps) {
-		secure = window.location.protocol != 'https:' ? false : true;
+		secure = (window.location.protocol == 'https:');
 	} else {
 		secure = _optDef(arr, 'secure', true, false);
 	}

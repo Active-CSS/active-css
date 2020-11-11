@@ -13,7 +13,7 @@ const _handleEvents = evObj => {
 	let topCompRef = evObj.compRef;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
-	if (typeof obj !== 'string' && !obj || !selectors[evType] || typeof evType === 'undefined') return false;	// No selectors set for this event.
+	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
@@ -130,7 +130,7 @@ const _handleEvents = evObj => {
 				clauseCo++;
 				passCond = '';
 				if (clause != '0') {	// A conditional is there.
-					if (typeof clauseArr[clauseCo] == 'undefined') continue;	// The conditional failed earlier.
+					if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
 					// This conditional passed earlier - we can run it.
 					passCond = clauseArr[clauseCo];
 				}

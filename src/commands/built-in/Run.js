@@ -5,7 +5,7 @@ _a.Run = o => {
 		return inn;
 	});
 	let _activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main';
-	scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === 'undefined') ? {} : scopedVars[_activeVarScope];
+	scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];
 	try {
 		Function('scopedVars, _activeVarScope', funky)(scopedVars, _activeVarScope);		// jshint ignore:line
 	} catch (err) {

@@ -2,7 +2,7 @@ _a.CopyToClipboard = o => {
 	let el = _getSel(o, o.actVal);
 	var arr = ['INPUT', 'TEXTAREA'];
 	if (arr.indexOf(el.tagName) !== -1) {
-		let rO = (el.getAttribute('readonly') == 'readonly') ? true : false;
+		let rO = (el.getAttribute('readonly') == 'readonly');
 		el.removeAttribute('readonly');
 		el.select();
 		document.execCommand('copy');

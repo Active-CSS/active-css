@@ -1,8 +1,8 @@
 const _checkForm = (frm, wot) => {
 	// opt = 'check' (check if changed), 'pars' (generate as ajax parameters)
 	if (!frm) return false;	// form not there, so unchanged.
-	var check = (wot == 'check') ? true : false;
-	var pars = (wot == 'pars') ? true : false;
+	var check = (wot == 'check');
+	var pars = (wot == 'pars');
 	var parStr = '', parAdd = '&';
 	var changed = [], n, c, def, i, ol, opt, valu;
 	for (var e = 0, el = frm.elements.length; e < el; e++) {

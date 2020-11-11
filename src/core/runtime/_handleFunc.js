@@ -42,10 +42,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
 				o2.actValSing = o2.actVal;
-				delayArr[delayRef] = (typeof delayArr[delayRef] !== 'undefined') ? delayArr[delayRef] : [];
-				delayArr[delayRef][o2.func] = (typeof delayArr[delayRef][o2.func] !== 'undefined') ? delayArr[delayRef][o2.func] : [];
-				delayArr[delayRef][o2.func][o2.actPos] = (typeof delayArr[delayRef][o2.func][o2.actPos] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos] : [];
-				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (typeof delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
+				delayArr[delayRef] = (delayArr[delayRef] !== undefined) ? delayArr[delayRef] : [];
+				delayArr[delayRef][o2.func] = (delayArr[delayRef][o2.func] !== undefined) ? delayArr[delayRef][o2.func] : [];
+				delayArr[delayRef][o2.func][o2.actPos] = (delayArr[delayRef][o2.func][o2.actPos] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos] : [];
+				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
 				if (delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]) {
 //					console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.intPos + ', ' + o2.loopRef);
 					_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]);

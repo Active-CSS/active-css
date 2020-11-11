@@ -1,6 +1,6 @@
 ActiveCSS.init = (config) => {
 	config = config || {};
-	passiveEvents = (typeof config.passiveEvents == 'undefined') ? true : config.passiveEvents;
+	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
 	inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {

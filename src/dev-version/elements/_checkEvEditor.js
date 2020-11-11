@@ -1,3 +1,3 @@
 ActiveCSS._checkEvEditor = debugID => {
-	return (evEditorExtID && evEditorExtID == debugID) ? true : false;
+	return (evEditorExtID && evEditorExtID == debugID);
 };

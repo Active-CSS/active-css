@@ -20,10 +20,10 @@ _a.CreateElement = o => {
 
 	if (splitAV[1].indexOf('observe(') === -1) {
 		component = splitAV[1];
-		if (typeof config[tag] === 'undefined') config[tag] = {};
-		if (typeof config[tag].draw === 'undefined') config[tag].draw = {};
-		if (typeof config[tag].draw[0] === 'undefined') config[tag].draw[0] = [];
-		if (typeof config[tag].draw[0][0] === 'undefined') config[tag].draw[0][0] = [];
+		if (config[tag] === undefined) config[tag] = {};
+		if (config[tag].draw === undefined) config[tag].draw = {};
+		if (config[tag].draw[0] === undefined) config[tag].draw[0] = [];
+		if (config[tag].draw[0][0] === undefined) config[tag].draw[0][0] = [];
 		let secSel = [];
 		secSel['&'] = [];
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.

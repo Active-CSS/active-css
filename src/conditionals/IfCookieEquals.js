@@ -4,5 +4,5 @@ _c.IfCookieEquals = o =>  {
 	let nam = spl[0];
 	spl.shift();
 	spl = spl.join(' ');
-	return (_getCookie(nam) == spl._ACSSRepQuo()) ? true : false;
+	return (_getCookie(nam) == spl._ACSSRepQuo());
 };

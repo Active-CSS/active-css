@@ -24,14 +24,14 @@ const _handleLoop = (loopObj) => {
 		let rightVarReal = thisScope + rightVar;
 
 		let rightVarVal;
-		if (typeof existingLoopVars[rightVar] != 'undefined') {
+		if (existingLoopVars[rightVar] !== undefined) {
 			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
 			// We need the real variable reference, so reassign rightVar.
 			rightVar = existingLoopVars[rightVar];
 		} else {
 			rightVarVal = _get(scopedVars, rightVarReal);
 		}
-		if (typeof rightVarVal == 'undefined') {
+		if (rightVarVal === undefined) {
 			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
 			return;
 		}

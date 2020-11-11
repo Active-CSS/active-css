@@ -39,7 +39,7 @@ _a.CreateCommand = o => {
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
 		'_activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : "main";' +
-		'scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === \'undefined\') ? {} : scopedVars[_activeVarScope];' +
+		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.

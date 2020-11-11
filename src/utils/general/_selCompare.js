@@ -32,18 +32,18 @@ const _selCompare = (o, opt) => {
 			}
 			switch (opt) {
 				case 'eM':
-					return (!firstVal || firstVal === '') ? true : false;
+					return (!firstVal || firstVal === '');
 				case 'maL':
-					return (firstVal.length <= compareVal) ? true : false;
+					return (firstVal.length <= compareVal);
 				case 'miL':
-					return (firstVal.length >= compareVal) ? true : false;
+					return (firstVal.length >= compareVal);
 			}
 			break;
 		case 'iT':
 			// _c.IfInnerText
-			return (el && compareVal == el.innerText) ? true : false;
+			return (el && compareVal == el.innerText);
 		case 'iH':
 			// _cIfInnerHTML
-			return (el && compareVal == el.innerHTML) ? true : false;
+			return (el && compareVal == el.innerHTML);
 	}
 };

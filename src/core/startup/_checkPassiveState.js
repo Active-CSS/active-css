@@ -9,9 +9,8 @@ const _checkPassiveState = (componentName, ev) => {
 				realEv = 'keydown';
 			}
 		}	// The fullscreen events shouldn't need any sort of treatment as they are at window level and you can't prevent default there.
-		if (typeof nonPassiveEvents[componentRef] === 'undefined') nonPassiveEvents[componentRef] = [];
-		if (typeof nonPassiveEvents[componentRef][realEv] !== true) {
-			nonPassiveEvents[componentRef][realEv] = true;
+		if (nonPassiveEvents[realEv] === undefined) {
+			nonPassiveEvents[realEv] = true;
 		}
 	}
 };

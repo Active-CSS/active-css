@@ -309,7 +309,7 @@ _a.CopyToClipboard = o => {
 	let el = _getSel(o, o.actVal);
 	var arr = ['INPUT', 'TEXTAREA'];
 	if (arr.indexOf(el.tagName) !== -1) {
-		let rO = (el.getAttribute('readonly') == 'readonly') ? true : false;
+		let rO = (el.getAttribute('readonly') == 'readonly');
 		el.removeAttribute('readonly');
 		el.select();
 		document.execCommand('copy');
@@ -367,7 +367,7 @@ _a.CreateCommand = o => {
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
 		'_activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : "main";' +
-		'scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === \'undefined\') ? {} : scopedVars[_activeVarScope];' +
+		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
@@ -402,7 +402,7 @@ _a.CreateConditional = o => {
 		'compDoc = o.compDoc,' + 
 		'carriedEventObject = o.ajaxObj,' +
 		'_activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : "main";' +
-		'scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === \'undefined\') ? {} : scopedVars[_activeVarScope];' +
+		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
@@ -433,10 +433,10 @@ _a.CreateElement = o => {
 
 	if (splitAV[1].indexOf('observe(') === -1) {
 		component = splitAV[1];
-		if (typeof config[tag] === 'undefined') config[tag] = {};
-		if (typeof config[tag].draw === 'undefined') config[tag].draw = {};
-		if (typeof config[tag].draw[0] === 'undefined') config[tag].draw[0] = [];
-		if (typeof config[tag].draw[0][0] === 'undefined') config[tag].draw[0][0] = [];
+		if (config[tag] === undefined) config[tag] = {};
+		if (config[tag].draw === undefined) config[tag].draw = {};
+		if (config[tag].draw[0] === undefined) config[tag].draw[0] = [];
+		if (config[tag].draw[0][0] === undefined) config[tag].draw[0][0] = [];
 		let secSel = [];
 		secSel['&'] = [];
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
@@ -974,7 +974,7 @@ _a.Run = o => {
 		return inn;
 	});
 	let _activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main';
-	scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === 'undefined') ? {} : scopedVars[_activeVarScope];
+	scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];
 	try {
 		Function('scopedVars, _activeVarScope', funky)(scopedVars, _activeVarScope);		// jshint ignore:line
 	} catch (err) {
@@ -1154,7 +1154,7 @@ _a.SetCookie = o => {
 	// Secure/secureIfHttps
 	secureIfHttps = _optDef(arr, 'secureIfHttps', true, false);
 	if (secureIfHttps) {
-		secure = window.location.protocol != 'https:' ? false : true;
+		secure = (window.location.protocol == 'https:');
 	} else {
 		secure = _optDef(arr, 'secure', true, false);
 	}
@@ -1393,7 +1393,7 @@ _c.IfCookieEquals = o =>  {
 	let nam = spl[0];
 	spl.shift();
 	spl = spl.join(' ');
-	return (_getCookie(nam) == spl._ACSSRepQuo()) ? true : false;
+	return (_getCookie(nam) == spl._ACSSRepQuo());
 };
 
 _c.IfCookieExists = o => {
@@ -1402,10 +1402,10 @@ _c.IfCookieExists = o => {
 
 _c.IfDisplay = o => {
 	let el = o.doc.querySelector(o.actVal);
-	return (el && getComputedStyle(el, null).display !== 'none') ? true : false;
+	return (el && getComputedStyle(el, null).display !== 'none');
 };
 
-_c.IfEmpty = o => { return (_selCompare(o, 'eM')) ? true : false; };
+_c.IfEmpty = o => { return (_selCompare(o, 'eM')); };
 
 _c.IfExists = o => {
 	return (_getSel(o, o.actVal)) ? true : false;
@@ -1435,14 +1435,14 @@ _c.IfFunc = o => {
 
 _c.IfHasClass = o => {
 	let arr = _actValSelItem(o);
-	return (arr[0] && ActiveCSS._hasClassObj(arr[0], arr[1].substr(1))) ? true : false;		// Used by extensions.
+	return (arr[0] && ActiveCSS._hasClassObj(arr[0], arr[1].substr(1)));		// Used by extensions.
 };
 
-_c.IfInnerHtml = o => { return (_selCompare(o, 'iH')) ? true : false; };	// Used in core unit testing.
+_c.IfInnerHtml = o => { return (_selCompare(o, 'iH')); };	// Used in core unit testing.
 
-_c.IfInnerText = o => { return (_selCompare(o, 'iT')) ? true : false; };
+_c.IfInnerText = o => { return (_selCompare(o, 'iT')); };
 
-_c.IfMaxLength = o => { return (_selCompare(o, 'maL')) ? true : false; };
+_c.IfMaxLength = o => { return (_selCompare(o, 'maL')); };
 
 _c.IfMediaMaxWidth = o => {
 	// This could get stored in a variable with an event listener rather than running each time. Probably not worth the overhead though.
@@ -1456,7 +1456,7 @@ _c.IfMediaMinWidth = o => {
 	return mq.matches;
 };
 
-_c.IfMinLength = o => { return (_selCompare(o, 'miL')) ? true : false; };
+_c.IfMinLength = o => { return (_selCompare(o, 'miL')); };
 
 _c.IfScrolltopGreater = o => {
 	if (o.obj == 'body') {
@@ -1477,7 +1477,7 @@ _c.IfScrolltopLess = o => {
 _c.IfSelection = o => {
   let selObj = window.getSelection();
   o.actVal = o.actVal._ACSSRepQuo().trim();
-  return (selObj.toString() == o.actVal) ? true : false;
+  return (selObj.toString() == o.actVal);
 };
 
 _c.IfVar = o => {
@@ -1502,10 +1502,10 @@ _c.IfVar = o => {
 		}
 		let scopedVar = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main') + '.' + varName;
 		let varValue = _get(scopedVars, scopedVar);
-		if (typeof varValue == 'undefined') {
+		if (varValue === undefined) {
 			varValue = window[varName];
 		}
-		return (typeof varValue == typeof compareVal && varValue == compareVal) ? true : false;
+		return (typeof varValue == typeof compareVal && varValue == compareVal);
 	}
 };
 
@@ -1678,7 +1678,7 @@ const _handleEvents = evObj => {
 	let topCompRef = evObj.compRef;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
-	if (typeof obj !== 'string' && !obj || !selectors[evType] || typeof evType === 'undefined') return false;	// No selectors set for this event.
+	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
@@ -1795,7 +1795,7 @@ const _handleEvents = evObj => {
 				clauseCo++;
 				passCond = '';
 				if (clause != '0') {	// A conditional is there.
-					if (typeof clauseArr[clauseCo] == 'undefined') continue;	// The conditional failed earlier.
+					if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
 					// This conditional passed earlier - we can run it.
 					passCond = clauseArr[clauseCo];
 				}
@@ -1882,10 +1882,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
 				o2.actValSing = o2.actVal;
-				delayArr[delayRef] = (typeof delayArr[delayRef] !== 'undefined') ? delayArr[delayRef] : [];
-				delayArr[delayRef][o2.func] = (typeof delayArr[delayRef][o2.func] !== 'undefined') ? delayArr[delayRef][o2.func] : [];
-				delayArr[delayRef][o2.func][o2.actPos] = (typeof delayArr[delayRef][o2.func][o2.actPos] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos] : [];
-				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (typeof delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
+				delayArr[delayRef] = (delayArr[delayRef] !== undefined) ? delayArr[delayRef] : [];
+				delayArr[delayRef][o2.func] = (delayArr[delayRef][o2.func] !== undefined) ? delayArr[delayRef][o2.func] : [];
+				delayArr[delayRef][o2.func][o2.actPos] = (delayArr[delayRef][o2.func][o2.actPos] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos] : [];
+				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
 				if (delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]) {
 //					console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.intPos + ', ' + o2.loopRef);
 					_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]);
@@ -1989,14 +1989,14 @@ const _handleLoop = (loopObj) => {
 		let rightVarReal = thisScope + rightVar;
 
 		let rightVarVal;
-		if (typeof existingLoopVars[rightVar] != 'undefined') {
+		if (existingLoopVars[rightVar] !== undefined) {
 			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
 			// We need the real variable reference, so reassign rightVar.
 			rightVar = existingLoopVars[rightVar];
 		} else {
 			rightVarVal = _get(scopedVars, rightVarReal);
 		}
-		if (typeof rightVarVal == 'undefined') {
+		if (rightVarVal === undefined) {
 			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
 			return;
 		}
@@ -2108,7 +2108,7 @@ const _handleVarsInJS = function(str) {
 const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	if (e.target.id == 'cause-js-elements-ext') return;	// Internally triggered by extension to get bubble state. Don't run anything.
 	let el;
-	let bod = (e.target == self || e.target.body) ? true : false;
+	let bod = (e.target == self || e.target.body);
 	if (typ != 'click' && bod) {
 		// Run any events on the body, followed by the window.
 		_handleEvents({ obj: 'body', evType: typ, eve: e });
@@ -2253,7 +2253,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 		}
 		if (component) {
 			cond = '|' + component + '|' + cond;
-			if (typeof conditionals[cond] === 'undefined') {
+			if (conditionals[cond] === undefined) {
 				let condErr = cond.substr(component.length + 2);
 				console.log('Active CSS error: Conditional ' + condErr + ' not found in config for component ' + component);
 			}
@@ -2672,7 +2672,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	compRef = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
-	if (typeof scopedVars[compRef] === 'undefined') {
+	if (scopedVars[compRef] === undefined) {
 		scopedVars[compRef] = {};
 	}
 
@@ -2776,12 +2776,12 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			    if (/^on/.test(key)) {
 			    	thisEv = key.slice(2);
 			    	allEvents.push(thisEv);
-					_attachListener(shadow, thisEv, componentName, shadow, compRef);	// for speed.
+					_attachListener(shadow, thisEv, false, true);	// for speed.
 			    }
 			});
 		} else {
 			for (thisEv of allEvents) {
-				_attachListener(shadow, thisEv, componentName, shadow, compRef);
+				_attachListener(shadow, thisEv, false, true);
 			}
 		}
 	}
@@ -2880,7 +2880,7 @@ const _replaceLoopingVars = (str, loopVars) => {
 };
 
 const _runInnerEvent = (sel, ev, doc=document, initialization=false) => {
-	let noDrawTwiceCheck = (ev == 'draw' && initialization) ? true : false;	// If new elements get added during body:init, then it's possible draw events can happen on the same thing twice, hence this line.
+	let noDrawTwiceCheck = (ev == 'draw' && initialization);	// If new elements get added during body:init, then it's possible draw events can happen on the same thing twice, hence this line.
 	if (typeof sel == 'string') {
 		doc.querySelectorAll(sel).forEach(function(obj) {
 			if (!obj._acssDrawn || !noDrawTwiceCheck) _handleEvents({ obj: obj, evType: ev });
@@ -3020,7 +3020,7 @@ const _addConfigError = (str, o) => {
 const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentName, ev) => {
 	let secsels, secselsLength, secsel, i, thisAct, secSelCounter = -1;
 	if (['@each'].indexOf(nam.substr(0, 5)) !== -1) {
-		if (typeof configObj[secSelCounter] === 'undefined') {
+		if (configObj[secSelCounter] === undefined) {
 			configObj[secSelCounter] = [nam.replace(/acss_int_loop_comm/g, ',')];
 		}
 		configObj[secSelCounter] = _assignLoopToConfig(configObj[secSelCounter], val.name, val.value, val.file, val.line, val.intID, componentName, ev);
@@ -3034,12 +3034,12 @@ const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentNa
 		secSelCounter++;
 		for (thisAct in val) {
 			if (val[thisAct].name == 'prevent-default') _checkPassiveState(componentName, ev);
-			if (typeof val[thisAct].type === 'undefined') continue;
+			if (val[thisAct].type === undefined) continue;
 			// Assign rule direct to the config. Nested if this is a loop.
-			if (typeof configObj[secSelCounter] === 'undefined') {
+			if (configObj[secSelCounter] === undefined) {
 				configObj[secSelCounter] = [];
 			}
-			if (typeof configObj[secSelCounter][secsel] === 'undefined') {
+			if (configObj[secSelCounter][secsel] === undefined) {
 				// Note this next here needs to be an array and not an object, as we do splicing and adding later on from DevTools,
 				// so we need to be flexible in the numbering.
 				configObj[secSelCounter][secsel] = [];
@@ -3072,13 +3072,13 @@ const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue
 //	console.log('eachLoop = ' + eachLoop);
 
 	eachLoop = (eachLoop) ? eachLoop : '0';
-	if (typeof compConfig[sel][ev][condition][eachLoop] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop] === undefined) {
 		compConfig[sel][ev][condition][eachLoop] = {};
 	}
-	if (typeof compConfig[sel][ev][condition][eachLoop][secSelCounter] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop][secSelCounter] === undefined) {
 		compConfig[sel][ev][condition][eachLoop][secSelCounter] = [];
 	}
-	if (typeof compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] === undefined) {
 		// Note this next here needs to be an array and not an object, as we do splicing and adding later on from DevTools,
 		// so we need to be flexible in the numbering.
 		compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] = [];
@@ -3107,14 +3107,12 @@ const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue
 };
 */
 
-const _attachListener = (obj, ev, component, compDoc, compRef, reGenEvent=false) => {
+const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 	let opts = { capture: true };
 	if (doesPassive) {
-		let componentRef = !component ? 'doc' : component;
-		if (nonPassiveEvents[componentRef] !== undefined &&
-				nonPassiveEvents[componentRef][ev] !== undefined &&
-				nonPassiveEvents[componentRef][ev] === true ||
-				passiveEvents === false
+		if (nonPassiveEvents[ev] === true ||
+				passiveEvents === false ||
+				isShadow
 			) {
 			opts.passive = false;
 		} else {
@@ -3125,16 +3123,7 @@ const _attachListener = (obj, ev, component, compDoc, compRef, reGenEvent=false)
 		// We are interested in a change from a passive to a non-passive from the addition of a prevent-default now being added to the config.
 		// Any duplicate events added will get disregarded by the browser.
 		obj.removeEventListener(ev, ActiveCSS._theEventFunction, { capture: true });
-		// Clean up.
-		delete obj['_acss' + ev + 'EvComponent'];
-		delete obj['_acss' + ev + 'EvCompDoc'];
-		delete obj['_acss' + ev + 'EvCompRef'];
-		
 	}
-	// JavaScript is very particular when it comes to removing event listeners. A bit too particular for my liking. Curried functions with pars don't seem to work.
-	obj['_acss' + ev + 'EvComponent'] = component;
-	obj['_acss' + ev + 'EvCompDoc'] = compDoc;
-	obj['_acss' + ev + 'EvCompRef'] = compRef;
 	obj.addEventListener(ev, ActiveCSS._theEventFunction, opts);
 
 };
@@ -3143,9 +3132,9 @@ const _attachListener = (obj, ev, component, compDoc, compRef, reGenEvent=false)
 // do that if a real function is used and is scoped higher up.
 ActiveCSS._theEventFunction = e => {
 	let ev = e.type;
-	let component = e.target['_acss' + ev + 'EvComponent'];
-	let compDoc = e.target['_acss' + ev + 'EvCompDoc'];
-	let compRef = e.target['_acss' + ev + 'EvCompRef'];
+	let component = e.target._acssComponent;
+	let compDoc = (e.target instanceof ShadowRoot) ? e.target : null;
+	let compRef = e.target._acssCompRef;
 	if (!setupEnded) return;	// Wait for the config to fully load before any events start.
 	let fsDet = _fullscreenDetails();
 	switch (ev) {
@@ -3201,9 +3190,8 @@ const _checkPassiveState = (componentName, ev) => {
 				realEv = 'keydown';
 			}
 		}	// The fullscreen events shouldn't need any sort of treatment as they are at window level and you can't prevent default there.
-		if (typeof nonPassiveEvents[componentRef] === 'undefined') nonPassiveEvents[componentRef] = [];
-		if (typeof nonPassiveEvents[componentRef][realEv] !== true) {
-			nonPassiveEvents[componentRef][realEv] = true;
+		if (nonPassiveEvents[realEv] === undefined) {
+			nonPassiveEvents[realEv] = true;
 		}
 	}
 };
@@ -3349,7 +3337,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter][secsel] = [];
 			for (thisAct in val) {
-				if (typeof val[thisAct].type === 'undefined') continue;
+				if (val[thisAct].type === undefined) continue;
 				if (secsel == '&' && val[thisAct].name == 'prevent-default') _checkPassiveState(componentName, ev);
 				compConfig[secSelCounter][secsel].push({ name: val[thisAct].name, value: val[thisAct].value, file: val[thisAct].file, line: val[thisAct].line, intID: val[thisAct].intID });
 			}
@@ -3374,7 +3362,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 		for (i = 0; i < strLength; i++) {
 			strTrimmed = str[i].trim();
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
-			isComponent = (strTrimmed.substr(0, 11) == '@component ') ? true : false;
+			isComponent = (strTrimmed.substr(0, 11) == '@component ');
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
 			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
 			let noQuestionMark;
@@ -3388,7 +3376,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 					if (componentName) {
 						condName = '|' + componentName + '|' + condName;
 					}
-					conditionals[condName] = (typeof conditionals[condName] === 'undefined') ? [] : conditionals[condName];
+					conditionals[condName] = (conditionals[condName] === undefined) ? [] : conditionals[condName];
 					conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
 					isConditional = true;
 					break;
@@ -3425,7 +3413,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// Recurse and set up componentness.
 						_makeVirtualConfig(pConfig[key].value, '', compName);
 						// Handle no html content.
-						if (typeof components[compName].data == 'undefined') {
+						if (components[compName].data === undefined) {
 							components[compName].data = '';
 							components[compName].file = '';
 							components[compName].line = '';
@@ -3494,14 +3482,14 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// If this is an event for a component, it gets a special handling compared to the main document. It gets a component prefix.
 						if (componentName) {
 							sel = '|' + componentName + ':' + sel;
-							shadowSels[componentName] = (typeof shadowSels[componentName] === 'undefined') ? [] : shadowSels[componentName];
+							shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
 							shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
 							// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
 							// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
 							components[componentName].scoped = true;
 						}
-						config[sel] = (typeof config[sel] === 'undefined') ? {} : config[sel];
-						config[sel][ev] = (typeof config[sel][ev] === 'undefined') ? {} : config[sel][ev];
+						config[sel] = (config[sel] === undefined) ? {} : config[sel];
+						config[sel][ev] = (config[sel][ev] === undefined) ? {} : config[sel][ev];
 
 						let conditionName;
 						if (conds.length === 0) {
@@ -3511,13 +3499,13 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							conditionName = conds.join(' ');
 						}
 						preSetupEvents.push({ ev, sel });
-						if (typeof config[sel] === 'undefined') {	// needed for DevTools.
+						if (config[sel] === undefined) {	// needed for DevTools.
 							config[sel] = {};
 						}
-						if (typeof config[sel][ev] === 'undefined') {	// needed for DevTools.
+						if (config[sel][ev] === undefined) {	// needed for DevTools.
 							config[sel][ev] = {};
 						}
-						if (typeof config[sel][ev][conditionName] === 'undefined') {
+						if (config[sel][ev][conditionName] === undefined) {
 							config[sel][ev][conditionName] = [];
 						}
 						config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
@@ -3750,7 +3738,7 @@ const _readSiteMap = () => {
 };
 
 const _setupEvent = (ev, sel, component) => {
-	if (typeof selectors[ev] === 'undefined') {
+	if (selectors[ev] === undefined) {
 		selectors[ev] = [];
 	}
 	// We are giving the main navig keys events, as they are commonly used in UI. Prefixed by keyup 
@@ -3782,8 +3770,8 @@ const _setupEvent = (ev, sel, component) => {
 		// everything because they already have a slow page. In that case a few microseconds extra won't make a difference particularly. So it's micro-optimization.
 		// It might not even be worth it.
 		let obj = (document.parentNode && sel == 'body' && ev == 'scroll') ? document.body : window;
-		let reGenEvent = (setupEnded) ? true : false;	// We need this, because of the dynamic shadow DOM event adding, which always happens after setup but is actually not a regeneration of an event.
-		_attachListener(obj, ev, null, null, null, reGenEvent);
+		// Re-gen event. We need this, because of the dynamic shadow DOM event adding, which always happens after setup but is actually not a regeneration of an event.
+		_attachListener(obj, ev, setupEnded);
 		eventState[ev] = true;
 	}
 };
@@ -3931,7 +3919,7 @@ const _wrapUpStart = () => {
 
 ActiveCSS.init = (config) => {
 	config = config || {};
-	passiveEvents = (typeof config.passiveEvents == 'undefined') ? true : config.passiveEvents;
+	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
 	inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {
@@ -4004,7 +3992,7 @@ const _escapeItem = (str, func) => {
 };
 
 const _getObjFromDots = (obj, i) => {
-	if (typeof obj[i] === 'undefined') {	// could be empty, which is fine.
+	if (obj[i] === undefined) {	// could be empty, which is fine.
 		// Display sane error for debugging. Not sure what level of debug this should go in, so leave it for now.
 		// Var may not be there though, which could be totally valid.
 		return '';
@@ -4774,7 +4762,7 @@ const _removeVarPlaceholders = obj => {
 			nodesToRemove.push(thisNode);	// Mark for removal.
 			thisVar = thisNode.data.substr(11);
 			// Now we can get rid of the comments altogether and make the node itself be the reference.
-			if (typeof varMap[thisVar] == 'undefined') varMap[thisVar] = [];
+			if (varMap[thisVar] === undefined) varMap[thisVar] = [];
 			if (thisNode.nextSibling.data == '/active-var') {
 				// There is no content there. Insert an empty text node now. A variable was probably empty when first drawn.
 				nodesToRemove.push(thisNode.nextSibling);	// Mark for removal.
@@ -4807,12 +4795,12 @@ const _removeVarPlaceholders = obj => {
 		if (!el._acssActiveID) _getActiveID(el);
 		str = treeWalker.currentNode.textContent;
 		// Store the original contents of the style tag with variable placeholders.
-		if (typeof varInStyleMap[el._acssActiveID] == 'undefined') varInStyleMap[el._acssActiveID] = str;
+		if (varInStyleMap[el._acssActiveID] === undefined) varInStyleMap[el._acssActiveID] = str;
 
 		// Now set up references for the reactive variable to link to the style tag. This way we only update style tags that have changed.
 		// Remove the variable placeholders at the same time.
 		str = varInStyleMap[el._acssActiveID].replace(STYLEREGEX, function(_, wot, wot2, wot3) {	// jshint ignore:line
-			if (typeof varStyleMap[wot] == 'undefined') varStyleMap[wot] = [];
+			if (varStyleMap[wot] === undefined) varStyleMap[wot] = [];
 			varStyleMap[wot].push(el);
 			let thisColonPos = wot.indexOf('HOST');
 			if (thisColonPos !== -1) {
@@ -5445,7 +5433,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				found = true;	// Only need to do this once per element to get the correct scope.
 				scopeRef = dataObj.attrs[cid][attr].scopeRef;	// Scope ref is the *display* area - not the variable area!
 				theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-				if (typeof theDoc == 'undefined') break;	// Not there, skip it. It might not be drawn yet.
+				if (theDoc === undefined) break;	// Not there, skip it. It might not be drawn yet.
 
 				// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
 				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];
@@ -5499,7 +5487,7 @@ const _drawHighlight = (rect, disp) => {
 
 ActiveCSS._hasSetupEnded = () => {
 	// This is called from the extensions. Otherwise, this function would, indeed, be quite pointless.
-	return (!setupEnded) ? false : true;
+	return setupEnded;
 };
 
 ActiveCSS._highlightDOM = sel => {
@@ -5624,7 +5612,7 @@ ActiveCSS._addToConfig = (typ, ev, primSel, condList, eachLoop, secSel, act, val
 };
 
 ActiveCSS._checkEvEditor = debugID => {
-	return (evEditorExtID && evEditorExtID == debugID) ? true : false;
+	return (evEditorExtID && evEditorExtID == debugID);
 };
 
 ActiveCSS._checkEventDupe = (primSel, condList, ev) => {
@@ -5911,9 +5899,9 @@ ActiveCSS._removeFromConfig = (typ, ev, primSel, condList, eachLoop, secSel, act
 const _removeRule = (compConfig, sel, ev, condition, eachLoop, secsel, ruleName, ruleValue) => {
 	// Note this rule value may be comma delimited itself, so we need to iterate through the values and remove each one.
 	let rulePos;
-	if (typeof compConfig[sel][ev][condition] === 'undefined') return compConfig;
-	if (typeof compConfig[sel][ev][condition][eachLoop] === 'undefined') return compConfig;
-	if (typeof compConfig[sel][ev][condition][eachLoop][secsel] === 'undefined') return compConfig;
+	if (compConfig[sel][ev][condition] === undefined) return compConfig;
+	if (compConfig[sel][ev][condition][eachLoop] === undefined) return compConfig;
+	if (compConfig[sel][ev][condition][eachLoop][secsel] === undefined) return compConfig;
 	// See if this rule already exists here. It should do.
 	rulePos = ActiveCSS._getPosOfRule(compConfig[sel][ev][condition][eachLoop][secsel], ruleName);
 	if (rulePos != -1) {
@@ -6063,7 +6051,7 @@ ActiveCSS._startEvEditor = debugID => {
 };
 
 ActiveCSS._checkDebugger = debugID => {
-	return (debuggerExtID && debuggerExtID == debugID) ? true : false;
+	return (debuggerExtID && debuggerExtID == debugID);
 };
 
 const _debugOutput = oCopy => {
@@ -6424,8 +6412,8 @@ ActiveCSS._addClassObj = (obj, str) => {
 const _checkForm = (frm, wot) => {
 	// opt = 'check' (check if changed), 'pars' (generate as ajax parameters)
 	if (!frm) return false;	// form not there, so unchanged.
-	var check = (wot == 'check') ? true : false;
-	var pars = (wot == 'pars') ? true : false;
+	var check = (wot == 'check');
+	var pars = (wot == 'pars');
 	var parStr = '', parAdd = '&';
 	var changed = [], n, c, def, i, ol, opt, valu;
 	for (var e = 0, el = frm.elements.length; e < el; e++) {
@@ -6523,15 +6511,15 @@ const _doDebug = (typ, primSel) => {
 	if (primSel) {
 		if (debugMode.indexOf(':') !== -1) {
 			let a = primSel.split(':');
-			return debugMode.indexOf(a[0] + ':' + typ) !== -1 ? true : false;
+			return (debugMode.indexOf(a[0] + ':' + typ) !== -1);
 		} else {
-			return debugMode.indexOf(primSel) !== -1 || debugMode.indexOf(typ) !== -1 ? true : false;
+			return (debugMode.indexOf(primSel) !== -1 || debugMode.indexOf(typ) !== -1);
 		}
 	} else {
 		if (debugMode.indexOf(':') !== -1) {
-			return debugMode.indexOf(typ) !== -1 && debugMode.indexOf(':') !== debugMode.indexOf(typ) - 1  ? true : false;
+			return (debugMode.indexOf(typ) !== -1 && debugMode.indexOf(':') !== debugMode.indexOf(typ) - 1);
 		} else {
-			return debugMode.indexOf(typ) !== -1;
+			return (debugMode.indexOf(typ) !== -1);
 		}
 	}
 };
@@ -6915,9 +6903,9 @@ const _htmlToElement = html => {
 const _ifFocus = (o, first=true) => {
 	let arr = _getFocusedOfNodes(o.actVal, o);
 	if (first) {
-		return (arr[1] === 0) ? true : false;
+		return (arr[1] === 0);
 	} else {
-		return (arr[1] == arr[0].length - 1) ? true : false;
+		return (arr[1] == arr[0].length - 1);
 	}
 };
 
@@ -6930,7 +6918,7 @@ const _ifVarTrue = (val, compRef) => {
 	}
 	let scopedVar = ((compRef && privVarScopes[compRef]) ? compRef : 'main') + '.' + val;
 	let res = _get(scopedVars, scopedVar);
-	if (typeof res === 'undefined') {
+	if (res === undefined) {
 		// If the value wasn't a variable, check if it's a window variable. If not, then just set it to its original value.
 		res = window[val];
 	}
@@ -7046,19 +7034,19 @@ const _selCompare = (o, opt) => {
 			}
 			switch (opt) {
 				case 'eM':
-					return (!firstVal || firstVal === '') ? true : false;
+					return (!firstVal || firstVal === '');
 				case 'maL':
-					return (firstVal.length <= compareVal) ? true : false;
+					return (firstVal.length <= compareVal);
 				case 'miL':
-					return (firstVal.length >= compareVal) ? true : false;
+					return (firstVal.length >= compareVal);
 			}
 			break;
 		case 'iT':
 			// _c.IfInnerText
-			return (el && compareVal == el.innerText) ? true : false;
+			return (el && compareVal == el.innerText);
 		case 'iH':
 			// _cIfInnerHTML
-			return (el && compareVal == el.innerHTML) ? true : false;
+			return (el && compareVal == el.innerHTML);
 	}
 };
 

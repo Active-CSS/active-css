@@ -1,5 +1,5 @@
 const _runInnerEvent = (sel, ev, doc=document, initialization=false) => {
-	let noDrawTwiceCheck = (ev == 'draw' && initialization) ? true : false;	// If new elements get added during body:init, then it's possible draw events can happen on the same thing twice, hence this line.
+	let noDrawTwiceCheck = (ev == 'draw' && initialization);	// If new elements get added during body:init, then it's possible draw events can happen on the same thing twice, hence this line.
 	if (typeof sel == 'string') {
 		doc.querySelectorAll(sel).forEach(function(obj) {
 			if (!obj._acssDrawn || !noDrawTwiceCheck) _handleEvents({ obj: obj, evType: ev });

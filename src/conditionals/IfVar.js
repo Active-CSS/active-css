@@ -20,9 +20,9 @@ _c.IfVar = o => {
 		}
 		let scopedVar = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main') + '.' + varName;
 		let varValue = _get(scopedVars, scopedVar);
-		if (typeof varValue == 'undefined') {
+		if (varValue === undefined) {
 			varValue = window[varName];
 		}
-		return (typeof varValue == typeof compareVal && varValue == compareVal) ? true : false;
+		return (typeof varValue == typeof compareVal && varValue == compareVal);
 	}
 };

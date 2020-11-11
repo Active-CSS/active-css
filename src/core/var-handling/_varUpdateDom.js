@@ -174,7 +174,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				found = true;	// Only need to do this once per element to get the correct scope.
 				scopeRef = dataObj.attrs[cid][attr].scopeRef;	// Scope ref is the *display* area - not the variable area!
 				theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-				if (typeof theDoc == 'undefined') break;	// Not there, skip it. It might not be drawn yet.
+				if (theDoc === undefined) break;	// Not there, skip it. It might not be drawn yet.
 
 				// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
 				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];

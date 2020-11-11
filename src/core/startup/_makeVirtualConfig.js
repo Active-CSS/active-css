@@ -13,7 +13,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 		for (i = 0; i < strLength; i++) {
 			strTrimmed = str[i].trim();
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
-			isComponent = (strTrimmed.substr(0, 11) == '@component ') ? true : false;
+			isComponent = (strTrimmed.substr(0, 11) == '@component ');
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
 			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
 			let noQuestionMark;
@@ -27,7 +27,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 					if (componentName) {
 						condName = '|' + componentName + '|' + condName;
 					}
-					conditionals[condName] = (typeof conditionals[condName] === 'undefined') ? [] : conditionals[condName];
+					conditionals[condName] = (conditionals[condName] === undefined) ? [] : conditionals[condName];
 					conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
 					isConditional = true;
 					break;
@@ -64,7 +64,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// Recurse and set up componentness.
 						_makeVirtualConfig(pConfig[key].value, '', compName);
 						// Handle no html content.
-						if (typeof components[compName].data == 'undefined') {
+						if (components[compName].data === undefined) {
 							components[compName].data = '';
 							components[compName].file = '';
 							components[compName].line = '';
@@ -133,14 +133,14 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// If this is an event for a component, it gets a special handling compared to the main document. It gets a component prefix.
 						if (componentName) {
 							sel = '|' + componentName + ':' + sel;
-							shadowSels[componentName] = (typeof shadowSels[componentName] === 'undefined') ? [] : shadowSels[componentName];
+							shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
 							shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
 							// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
 							// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
 							components[componentName].scoped = true;
 						}
-						config[sel] = (typeof config[sel] === 'undefined') ? {} : config[sel];
-						config[sel][ev] = (typeof config[sel][ev] === 'undefined') ? {} : config[sel][ev];
+						config[sel] = (config[sel] === undefined) ? {} : config[sel];
+						config[sel][ev] = (config[sel][ev] === undefined) ? {} : config[sel][ev];
 
 						let conditionName;
 						if (conds.length === 0) {
@@ -150,13 +150,13 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							conditionName = conds.join(' ');
 						}
 						preSetupEvents.push({ ev, sel });
-						if (typeof config[sel] === 'undefined') {	// needed for DevTools.
+						if (config[sel] === undefined) {	// needed for DevTools.
 							config[sel] = {};
 						}
-						if (typeof config[sel][ev] === 'undefined') {	// needed for DevTools.
+						if (config[sel][ev] === undefined) {	// needed for DevTools.
 							config[sel][ev] = {};
 						}
-						if (typeof config[sel][ev][conditionName] === 'undefined') {
+						if (config[sel][ev][conditionName] === undefined) {
 							config[sel][ev][conditionName] = [];
 						}
 						config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));

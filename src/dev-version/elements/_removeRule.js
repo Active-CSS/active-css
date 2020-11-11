@@ -1,9 +1,9 @@
 const _removeRule = (compConfig, sel, ev, condition, eachLoop, secsel, ruleName, ruleValue) => {
 	// Note this rule value may be comma delimited itself, so we need to iterate through the values and remove each one.
 	let rulePos;
-	if (typeof compConfig[sel][ev][condition] === 'undefined') return compConfig;
-	if (typeof compConfig[sel][ev][condition][eachLoop] === 'undefined') return compConfig;
-	if (typeof compConfig[sel][ev][condition][eachLoop][secsel] === 'undefined') return compConfig;
+	if (compConfig[sel][ev][condition] === undefined) return compConfig;
+	if (compConfig[sel][ev][condition][eachLoop] === undefined) return compConfig;
+	if (compConfig[sel][ev][condition][eachLoop][secsel] === undefined) return compConfig;
 	// See if this rule already exists here. It should do.
 	rulePos = ActiveCSS._getPosOfRule(compConfig[sel][ev][condition][eachLoop][secsel], ruleName);
 	if (rulePos != -1) {
