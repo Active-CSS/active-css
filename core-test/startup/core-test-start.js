@@ -13,7 +13,7 @@ describe('Set up core to test', function() {
 	beforeAll(async function() {
 		// Note, Karma uses /base as the starting point for all ajax loads in headless browsers.
 		await ActiveCSS.init({
-			configLocation: '/base/core-test-area/startup/compiled/core-test-config.acss'	// *Never* edit this file directly. It is auto-generated from the tests dir.
+			configLocation: '/base/core-test/startup/compiled/core-test-config.acss'	// *Never* edit this file directly. It is auto-generated from the tests dir.
 		});
 	});
 
@@ -55,7 +55,7 @@ describe('Set up core to test', function() {
 						allSuccess = false;
 					}
 				});
-				// window.testsRun is set up in the Active CSS config. See /core-test-area/tests/core-test-config-base.acss.
+				// window.testsRun is set up in the Active CSS config. See /core-test/tests/core-test-config-base.acss.
 				let descs = "\n\n" + 'The following tests were run:' + "\n\n";
 				window.testsRun.forEach(i => {
 					descs += i.desc + "\n";

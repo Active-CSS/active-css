@@ -6,7 +6,7 @@
 
 @component checkLoadStyleHTML {
 	&:componentOpen {
-		load-style: "/base/core-test-area/tests/resource-files/load-style-test.css?v=123";
+		load-style: "/base/core-test/tests/resource-files/load-style-test.css?v=123";
 	}
 	&:afterLoadStyle {
 		func: checkLoadStyleDocument;
@@ -18,7 +18,7 @@
 
 @component checkLoadStyleHTMLShadow shadow {
 	&:componentOpen {
-		load-style: "/base/core-test-area/tests/resource-files/load-style-test-shadow.css";
+		load-style: "/base/core-test/tests/resource-files/load-style-test-shadow.css";
 	}
 	&:afterLoadStyle {
 		func: checkLoadStyleShadow;
@@ -30,7 +30,7 @@
 
 @component checkLoadStyleHTMLShadow2 shadow {
 	&:componentOpen {
-		load-style: "/base/core-test-area/tests/resource-files/load-style-test-shadow.css";
+		load-style: "/base/core-test/tests/resource-files/load-style-test-shadow.css";
 	}
 	&:afterLoadStyle {
 		func: checkLoadStyleShadow2;

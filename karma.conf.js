@@ -35,17 +35,17 @@ module.exports = function(config) {
 
 		// list of files / patterns to load in the browser
 		files: [
-			{pattern: 'core-test-area/**/*.acss', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
-			{pattern: 'core-test-area/tests/resource-files/*.txt', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
-			{pattern: 'core-test-area/tests/resource-files/*.gif', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
-			{pattern: 'core-test-area/tests/resource-files/*.png', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
-			{pattern: 'core-test-area/tests/resource-files/*.jpg', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
-			{pattern: 'core-test-area/tests/resource-files/*.js', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
-			{pattern: 'core-test-area/tests/resource-files/*.css', watched: false, included: false, served: true, nocache: false },	// Needed for tests.
+			{pattern: 'core-test/**/*.acss', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
+			{pattern: 'core-test/tests/resource-files/*.txt', watched: false, included: false, served: true, nocache: false},	// Needed to load the Active CSS config file later.
+			{pattern: 'core-test/tests/resource-files/*.gif', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
+			{pattern: 'core-test/tests/resource-files/*.png', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
+			{pattern: 'core-test/tests/resource-files/*.jpg', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
+			{pattern: 'core-test/tests/resource-files/*.js', watched: false, included: false, served: true, nocache: false},	// Needed for tests.
+			{pattern: 'core-test/tests/resource-files/*.css', watched: false, included: false, served: true, nocache: false },	// Needed for tests.
 			activeCSSFile,
-			'core-test-area/startup/core-test-settings.js',
-			'core-test-area/startup/compiled/core-test-js.js',		// *Never* edit this file directly. It is auto-generated from the tests dir.
-			'core-test-area/startup/core-test-start.js',
+			'core-test/startup/core-test-settings.js',
+			'core-test/startup/compiled/core-test-js.js',		// *Never* edit this file directly. It is auto-generated from the tests dir.
+			'core-test/startup/core-test-start.js',
 		],
 
 		// list of files / patterns to exclude

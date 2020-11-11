@@ -4,13 +4,13 @@
 
 @component checkAjaxPreGet {
 	&:beforeComponentOpen {
-		ajax-pre-get: "/base/core-test-area/tests/resource-files/ajax-pre-get-test-1.txt";
+		ajax-pre-get: "/base/core-test/tests/resource-files/ajax-pre-get-test-1.txt";
 	}
 	&:afterAjaxPreGet {
 		func: checkAjaxPreGetA;
 	}
 	#checkAjaxPreGetTestTitle:draw {
-		ajax: "/base/core-test-area/tests/resource-files/ajax-pre-get-test-1.txt" after 250ms;
+		ajax: "/base/core-test/tests/resource-files/ajax-pre-get-test-1.txt" after 250ms;
 	}
 	&:afterAjax {
 		func: checkAjaxPreGetFinal after 1s;	/* give component time to draw before checking */

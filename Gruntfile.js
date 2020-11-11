@@ -56,21 +56,21 @@
 				},
 				testingJS: {
 					src: [
-						'core-test-area/helpers/start/helpers-start.js',	// This goes first, always.
-						'core-test-area/helpers/functions/**/*.js',
-						'core-test-area/tests/initialize/**/*.js',
-						'core-test-area/tests/to-run-first/**/*.js',
-						'core-test-area/tests/commands/**/*.js',
+						'core-test/helpers/start/helpers-start.js',	// This goes first, always.
+						'core-test/helpers/functions/**/*.js',
+						'core-test/tests/initialize/**/*.js',
+						'core-test/tests/to-run-first/**/*.js',
+						'core-test/tests/commands/**/*.js',
 					],
-					dest: 'core-test-area/startup/compiled/core-test-js.js'
+					dest: 'core-test/startup/compiled/core-test-js.js'
 				},
 				testingConfig: {
 					src: [
-						'core-test-area/tests/initialize/**/*.acss',
-						'core-test-area/tests/to-run-first/**/*.acss',
-						'core-test-area/tests/commands/**/*.acss',
+						'core-test/tests/initialize/**/*.acss',
+						'core-test/tests/to-run-first/**/*.acss',
+						'core-test/tests/commands/**/*.acss',
 					],
-					dest: 'core-test-area/startup/compiled/core-test-config.acss'
+					dest: 'core-test/startup/compiled/core-test-config.acss'
 				},
 			},
 
@@ -80,7 +80,7 @@
 					'Gruntfile.js',
 					'dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js',
 					'dist/v-<%= fileVersion %>/full-source/prod.js',
-					'core-test-area/startup/compiled/core-test-js.js'
+					'core-test/startup/compiled/core-test-js.js'
 				],
 				options: {
 					esversion: 6,

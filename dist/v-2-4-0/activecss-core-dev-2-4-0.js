@@ -3121,7 +3121,9 @@ const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 	}
 	if (doesPassive && reGenEvent) {
 		// We are interested in a change from a passive to a non-passive from the addition of a prevent-default now being added to the config.
-		// Any duplicate events added will get disregarded by the browser.
+		// Any duplicate events added will get disregarded by the browser. This only happens in the document scope and for a document/component blend.
+		// The reason for it not being more specific is that it's not worth the performance hit, being all about performance anyway and not functionality.
+		// It could be made more specific later on if anyone complains. But it will need an actual real complaint before it's worth doing.
 		obj.removeEventListener(ev, ActiveCSS._theEventFunction, { capture: true });
 	}
 	obj.addEventListener(ev, ActiveCSS._theEventFunction, opts);
