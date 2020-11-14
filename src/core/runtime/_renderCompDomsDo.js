@@ -54,7 +54,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
-	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', compRef: compRef, compDoc: undefined, component: componentName });
+	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, compRef: compRef, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, compRef);
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -106,7 +106,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// Remove the variable placeholders.
 		_removeVarPlaceholders(shadow);
 
-		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });
+		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, compRef: compRef, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
@@ -115,7 +115,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', otherObj: o.ajaxObj, compRef: compRef, compDoc: shadow, component: componentName });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, compRef: compRef, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}, 0);
 

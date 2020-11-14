@@ -23,7 +23,7 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
-		if (clickOutsideSet && !_handleClickOutside(el)) {
+		if (clickOutsideSet && !_handleClickOutside(el, e)) {
 			if (!e.primSel) {
 				e.preventDefault();
 			}
@@ -32,8 +32,14 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	}
 
 	let composedPath;
-
 	composedPath = _composedPath(e);
+
+	// Each real event gets it's own counter as a pointer to a central real object event.
+	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
+	// It is empty at first and gets added to when referencing is needed.
+	mainEventCounter++;
+	maEv[mainEventCounter] = { };
+
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
 	// to get a bit creative with the handling. Event listeners occur in the order of registration, which will always give us a bubble down effect, so we have to
@@ -56,13 +62,15 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });
-			if (!el || !e.bubbles || el.tagName == 'BODY' || el.activeStopProp) break;		// el can be deleted during the handleEvent.
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef, _maEvCo: mainEventCounter });
+			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;		// el can be deleted during the handleEvent.
 		}
-		if (el && el.activeStopProp) {
-			el.activeStopProp = false;
-		} else {
-			if (document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
-		}
+		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
+
+	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
+	// It just needs to happen at some point, so we'll say 10 seconds.
+	setTimeout(function() {
+		maEv = maEv.filter(function(obj, ind) { return ind != mainEventCounter; });
+	}, 10000);
 };

@@ -111,6 +111,10 @@
 		varMap = [],
 		varStyleMap = [],
 		varInStyleMap = [],
+		maEv = [],
+		mainEventCounter = -1,
+		taEv = [],
+		targetEventCounter = -1,
 		elementObserver;
 
 	ActiveCSS.customHTMLElements = {};
@@ -677,7 +681,7 @@ _a.LoadConfig = o => {
 		_getFile(o.actVal, 'txt', o);
 	} else {
 		// Run the success script - we should still do this, we just didn't need to load the config.
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 };
 
@@ -707,7 +711,7 @@ _a.LoadScript = (o, opt) => {
 		}
 		scrip[srcTag] = scr;
 		scrip.onload = function() {
-			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		};
 		if (forShadow) {
 			o.compDoc.appendChild(scrip);
@@ -839,11 +843,6 @@ _a.MimicInto = o => {
 
 _a.PreventDefault = o => {
 	if (o.e) o.e.preventDefault();	// Sometimes will get activated on a browser back-arrow, etc., so check first.
-};
-
-_a.PreventEventDefault = o => {
-	// This breaks out of the component event hierarchy once all the actions for that component have taken place.
-	if (typeof o.obj == 'object') o.obj.activePrevEvDef = true;
 };
 
 _a.Remove = o => {
@@ -1180,21 +1179,34 @@ _a.SetProperty = o => {
 	o.secSelObj[attrArr[0]] = (attrArr[1] == 'true') ? true : (attrArr[1] == 'false') ? false : attrArr[1];
 };
 
+_a.StopEventPropagation = o => {
+	// Don't bubble up the Active CSS component element hierarchy.
+	// Short variable names are used here as there are a lot of passing around of variables and it help keeps the core small.
+	// maEv = main event object, o._maEvCo = main event object counter
+	// taEv = target event object, o._taEvCo = target event object counter
+	if (typeof taEv[o._taEvCo] !== 'undefined') taEv[o._taEvCo]._acssStopEventProp = true;
+	if (typeof maEv[o._maEvCo] !== 'undefined') maEv[o._maEvCo]._acssStopEventProp = true;
+};
+
 _a.StopImmediateEventPropagation = o => {
-	// Don't bubble up the Active CSS component event hierarchy and don't run any more events for this current element also.
-	if (typeof o.obj == 'object') o.obj.activeStopEvProp = true;
+	// Don't bubble up the Active CSS element hierarchy and do any more target selectors.
+	// Short variable names are used here as there are a lot of passing around of variables and it help keeps the core small.
+	// maEv = main event object, o._maEvCo = main event object counter
+	// taEv = target event object, o._taEvCo = target event object counter
+	if (typeof taEv[o._taEvCo] !== 'undefined') taEv[o._taEvCo]._acssStopImmedEvProp = true;
+	if (typeof maEv[o._maEvCo] !== 'undefined') maEv[o._maEvCo]._acssStopEventProp = true;
 };
 
 _a.StopImmediatePropagation = o => {
-	// Don't bubble up Active CSS events and stop propagation in the browser too.
+	// Don't bubble up the Active CSS element hierarchy and do any more target selectors and stop propagation in the browser too.
 	if (o.e) o.e.stopImmediatePropagation();
-	if (typeof o.obj == 'object') o.obj.activeStopProp = true;
+	_a.StopImmediateEventPropagation(o);
 };
 
 _a.StopPropagation = o => {
-	// Don't bubble up Active CSS events and stop propagation in the browser too.
+	// Don't bubble up the Active CSS element hierarchy and stop propagation in the browser too.
 	if (o.e) o.e.stopPropagation();
-	if (typeof o.obj == 'object') o.obj.activeStopProp = true;
+	_a.StopEventPropagation(o);
 };
 
 _a.Style = o => {
@@ -1225,23 +1237,23 @@ _a.Trigger = o => {
 		o.doc.querySelectorAll(o.obj).forEach(function (obj, i) {
 			if (['~'].includes(o.secSel.substr(0,1))) {
 				// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), origObj: obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			} else {
 				// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
-				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			}
 		});
 	} else {
 		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), origObj: (o.obj || null), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		} else {
 			// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
 			// Is this a draw event? If so, we also want to run all draw events for elements within.
 			if (o.actVal == 'draw') {
-				_runInnerEvent(o.secSelObj, 'draw');
+				_runInnerEvent(o, null, 'draw');
 			} else {
-				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: (o.ajaxObj || null), eve: (o.e || null), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			}
 		}
 	}
@@ -1640,7 +1652,7 @@ const _cloneAttrs = (el, srcEl) => {
 	el.setAttribute('data-active-nav', '1');
 };
 
-const _handleClickOutside = el => {
+const _handleClickOutside = (el, e) => {
 	// Does this element pass the click outside test?
 	// Iterate the click outside selectors from the config.
 	let cid, clickOutsideObj;
@@ -1651,7 +1663,7 @@ const _handleClickOutside = el => {
 			clickOutsideObj = idMap[cid];
 			if (clickOutsideObj && !clickOutsideObj.contains(el)) {
 				// This is outside.
-				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', otherObj: el })) {	// clickoutside sends the target also.
+				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', eve: e, otherObj: el })) {	// clickoutside sends the target also.
 					if (!clickOutsideSels[cid][1]) {
 						// This is a blocking click outside, so cancel any further actions.
 						return false;
@@ -1676,6 +1688,7 @@ const _handleEvents = evObj => {
 	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topCompRef = evObj.compRef;
+	let _maEvCo = evObj._maEvCo;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
@@ -1789,50 +1802,49 @@ const _handleEvents = evObj => {
 		}
 	}
 	clauseCo = 0;
-	for (sel = 0; sel < selectorListLen; sel++) {
-		if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
-			for (clause in config[selectorList[sel]][evType]) {
-				clauseCo++;
-				passCond = '';
-				if (clause != '0') {	// A conditional is there.
-					if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
-					// This conditional passed earlier - we can run it.
-					passCond = clauseArr[clauseCo];
-				}
-				chilsObj = config[selectorList[sel]][evType][clause];
-				if (chilsObj !== false) {
-					// Secondary selector loops go here.
-					let secSelLoops, loopObj;
-					for (secSelLoops in chilsObj) {
-						loopObj = {
-							chilsObj,
-							originalLoops: secSelLoops,
-							secSelLoops,
-							obj,
-							compDoc,
-							evType,
-							compRef: topCompRef,
-							evObj,
-							otherObj,
-							passCond,
-							sel,
-							component,
-							selectorList,
-							eve,
-							runButElNotThere
-						};
-						_performSecSel(loopObj);
+	eventLoop: {
+		for (sel = 0; sel < selectorListLen; sel++) {
+			if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
+				for (clause in config[selectorList[sel]][evType]) {
+					clauseCo++;
+					passCond = '';
+					if (clause != '0') {	// A conditional is there.
+						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
+						// This conditional passed earlier - we can run it.
+						passCond = clauseArr[clauseCo];
+					}
+					chilsObj = config[selectorList[sel]][evType][clause];
+					if (chilsObj !== false) {
+						// Secondary selector loops go here.
+						let secSelLoops, loopObj;
+						for (secSelLoops in chilsObj) {
+							loopObj = {
+								chilsObj,
+								originalLoops: secSelLoops,
+								secSelLoops,
+								obj,
+								compDoc,
+								evType,
+								compRef: topCompRef,
+								evObj,
+								otherObj,
+								passCond,
+								sel,
+								component,
+								selectorList,
+								eve,
+								_maEvCo,
+								runButElNotThere
+							};
+							_performSecSel(loopObj);
+							if (typeof maEv[_maEvCo] !== 'undefined' && maEv[_maEvCo]._acssStopImmedEvProp) {
+//							if (typeof obj == 'object' && obj._acssStopImmedEvProp) {
+								break eventLoop;
+							}
+						}
 					}
 				}
-				if (obj && obj.activeStopEvProp) {
-					// If the developer has used stop-immediate-event-propagation, we break out at this point.
-					break;
-				}
 			}
-		}
-		if (obj && (obj.activePrevEvDef || obj.activeStopEvProp)) {
-			// If the developer has used prevent-event-default, we break out at this point.
-			break;
 		}
 	}
 	return true;
@@ -1958,7 +1970,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && !o.secSelObj.isConnected) o.secSelObj = undefined;
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
 };
@@ -2130,7 +2142,7 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
-		if (clickOutsideSet && !_handleClickOutside(el)) {
+		if (clickOutsideSet && !_handleClickOutside(el, e)) {
 			if (!e.primSel) {
 				e.preventDefault();
 			}
@@ -2139,8 +2151,14 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 	}
 
 	let composedPath;
-
 	composedPath = _composedPath(e);
+
+	// Each real event gets it's own counter as a pointer to a central real object event.
+	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
+	// It is empty at first and gets added to when referencing is needed.
+	mainEventCounter++;
+	maEv[mainEventCounter] = { };
+
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
 	// to get a bit creative with the handling. Event listeners occur in the order of registration, which will always give us a bubble down effect, so we have to
@@ -2163,15 +2181,17 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef });
-			if (!el || !e.bubbles || el.tagName == 'BODY' || el.activeStopProp) break;		// el can be deleted during the handleEvent.
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef, _maEvCo: mainEventCounter });
+			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;		// el can be deleted during the handleEvent.
 		}
-		if (el && el.activeStopProp) {
-			el.activeStopProp = false;
-		} else {
-			if (document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
-		}
+		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
+
+	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
+	// It just needs to happen at some point, so we'll say 10 seconds.
+	setTimeout(function() {
+		maEv = maEv.filter(function(obj, ind) { return ind != mainEventCounter; });
+	}, 10000);
 };
 
 // This function is incomplete and mentioned in an outstanding ticket.
@@ -2419,6 +2439,7 @@ const _performSecSel = (loopObj) => {
 	let selectorList = loopObj.selectorList;
 	let eve = loopObj.eve;
 	let loopVars = loopObj.loopVars;
+	let _maEvCo = loopObj._maEvCo;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 	let runButElNotThere = loopObj.runButElNotThere;
 
@@ -2435,76 +2456,27 @@ const _performSecSel = (loopObj) => {
 
 	// Get the selectors this event is going to apply to.
 	let secSelCounter, targetSelector, targs, doc, passTargSel, meMap = [ '&', 'self', 'this' ], activeTrackObj = '', m, n, tmpSecondaryFunc, actionValue;
+
+	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
+	// It is empty at first and gets added to when referencing is needed.
+	targetEventCounter++;
+	taEv[targetEventCounter] = { };
+
 	// Loop declarations in sequence.
-	for (secSelCounter in chilsObj[secSelLoops]) {
-		// Loop target selectors in sequence.
-		for (targetSelector in chilsObj[secSelLoops][secSelCounter]) {
-			if (targetSelector == 'conds') continue;	// skip the conditions.
-			if (targetSelector.indexOf('@each') !== -1) {
-				let outerFill = [];
-				outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector]);
-				let innerLoopObj = {
-					chilsObj: outerFill,
-					originalLoops: targetSelector,
-					secSelLoops: '0',
-					obj,
-					compDoc,
-					evType,
-					compRef,
-					evObj,
-					otherObj,
-					passCond,
-					sel,
-					component,
-					selectorList,
-					eve,
-					loopVars,
-					loopRef,
-					runButElNotThere
-				};
-				_handleLoop(innerLoopObj);
-
-				continue;
-			}
-			// Get the correct document/iframe/shadow for this target.
-			targs = _splitIframeEls(targetSelector, obj, compDoc);	// Note - here it is compDoc as we are doing this in relation to the 
-			if (!targs) continue;	// invalid target.
-			doc = targs[0];
-			passTargSel = targs[1];
-
-			// passTargSel is the string of the target selector that now goes through some changes.
-			if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
-
-			passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, compRef);
-			// See if there are any left that can be populated by the passed otherObj.
-			passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, compRef);
-			// Handle functions being run on self.
-			if (meMap.includes(passTargSel)) {
-				// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
-				// It won't work unless we can identify it later and have it selectable as a string.
-				if (typeof obj == 'string') {	// passed in as a string - skip it, this is already a string selector.
-					passTargSel = obj;
-				} else {
-					activeTrackObj = _getActiveID(obj);
-					if (activeTrackObj) {
-						passTargSel = idMap[activeTrackObj];
-					} else {
-						// It might not be an element, so a data-activeid wasn't assigned.
-						passTargSel = obj;
-					}
+	secSelLoop: {
+		for (secSelCounter in chilsObj[secSelLoops]) {
+			// Loop target selectors in sequence.
+			for (targetSelector in chilsObj[secSelLoops][secSelCounter]) {
+				if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp) {
+					break secSelLoop;
 				}
-			} else if (passTargSel == 'host') {
-				let rootNode = _getRootNode(obj);
-				passTargSel = (rootNode._acssScoped) ? rootNode : rootNode.host;
-			}
-			let act;
-			for (m in chilsObj[secSelLoops][secSelCounter][targetSelector]) {
-				if (chilsObj[secSelLoops][secSelCounter][targetSelector][m].name.indexOf('@each') !== -1) {
+				if (targetSelector == 'conds') continue;	// skip the conditions.
+				if (targetSelector.indexOf('@each') !== -1) {
 					let outerFill = [];
-					outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector][m].value);
+					outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector]);
 					let innerLoopObj = {
 						chilsObj: outerFill,
-						originalLoops: chilsObj[secSelLoops][secSelCounter][targetSelector][m].name,
+						originalLoops: targetSelector,
 						secSelLoops: '0',
 						obj,
 						compDoc,
@@ -2517,6 +2489,8 @@ const _performSecSel = (loopObj) => {
 						component,
 						selectorList,
 						eve,
+						_maEvCo,
+						_taEvCo: targetEventCounter,
 						loopVars,
 						loopRef,
 						runButElNotThere
@@ -2525,40 +2499,111 @@ const _performSecSel = (loopObj) => {
 
 					continue;
 				}
-				tmpSecondaryFunc = chilsObj[secSelLoops][secSelCounter][targetSelector][m].name._ACSSConvFunc();
-				// Generate the object that performs the magic in the functions.
-				actionValue = chilsObj[secSelLoops][secSelCounter][targetSelector][m].value;
-				// Note: this can be optionally optimised by putting all the rules into the secondary selecor
-				// rather than a whole array each time. Micro-optimising, but for a large project it is a good idea.
-				act = {
-					event: evType,
-					func: tmpSecondaryFunc,
-					actName: chilsObj[secSelLoops][secSelCounter][targetSelector][m].name,
-					secSel: passTargSel,
-					origSecSel: targetSelector,	// Used for debugging only.
-					actVal: actionValue,
-					origActVal: actionValue,
-					primSel: selectorList[sel],
-					rules: chilsObj[secSelLoops][secSelCounter][targetSelector],
-					obj: obj,
-					doc: doc,
-					ajaxObj: otherObj,
-					e: eve,
-					passCond: passCond,
-					file: chilsObj[secSelLoops][secSelCounter][targetSelector][m].file,
-					line: chilsObj[secSelLoops][secSelCounter][targetSelector][m].line,
-					intID: chilsObj[secSelLoops][secSelCounter][targetSelector][m].intID,
-					activeID: activeTrackObj,
-					compRef: compRef,	// unique counter of the shadow element rendered - used for variable scoping.
-					compDoc: compDoc,
-					component: component,
-					loopVars: loopVars,
-					loopRef: loopRef
-				};
-				_performAction(act, runButElNotThere);
+				// Get the correct document/iframe/shadow for this target.
+				targs = _splitIframeEls(targetSelector, obj, compDoc);	// Note - here it is compDoc as we are doing this in relation to the 
+				if (!targs) continue;	// invalid target.
+				doc = targs[0];
+				passTargSel = targs[1];
+
+				// passTargSel is the string of the target selector that now goes through some changes.
+				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
+
+				passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, compRef);
+				// See if there are any left that can be populated by the passed otherObj.
+				passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, compRef);
+				// Handle functions being run on self.
+				if (meMap.includes(passTargSel)) {
+					// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
+					// It won't work unless we can identify it later and have it selectable as a string.
+					if (typeof obj == 'string') {	// passed in as a string - skip it, this is already a string selector.
+						passTargSel = obj;
+					} else {
+						activeTrackObj = _getActiveID(obj);
+						if (activeTrackObj) {
+							passTargSel = idMap[activeTrackObj];
+						} else {
+							// It might not be an element, so a data-activeid wasn't assigned.
+							passTargSel = obj;
+						}
+					}
+				} else if (passTargSel == 'host') {
+					let rootNode = _getRootNode(obj);
+					passTargSel = (rootNode._acssScoped) ? rootNode : rootNode.host;
+				}
+				let act;
+				for (m in chilsObj[secSelLoops][secSelCounter][targetSelector]) {
+					if (chilsObj[secSelLoops][secSelCounter][targetSelector][m].name.indexOf('@each') !== -1) {
+						let outerFill = [];
+						outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector][m].value);
+						let innerLoopObj = {
+							chilsObj: outerFill,
+							originalLoops: chilsObj[secSelLoops][secSelCounter][targetSelector][m].name,
+							secSelLoops: '0',
+							obj,
+							compDoc,
+							evType,
+							compRef,
+							evObj,
+							otherObj,
+							passCond,
+							sel,
+							component,
+							selectorList,
+							eve,
+							_maEvCo,
+							_taEvCo: targetEventCounter,
+							loopVars,
+							loopRef,
+							runButElNotThere
+						};
+						_handleLoop(innerLoopObj);
+
+						continue;
+					}
+					tmpSecondaryFunc = chilsObj[secSelLoops][secSelCounter][targetSelector][m].name._ACSSConvFunc();
+					// Generate the object that performs the magic in the functions.
+					actionValue = chilsObj[secSelLoops][secSelCounter][targetSelector][m].value;
+					// Note: this can be optionally optimised by putting all the rules into the secondary selecor
+					// rather than a whole array each time. Micro-optimising, but for a large project it is a good idea.
+					act = {
+						event: evType,
+						func: tmpSecondaryFunc,
+						actName: chilsObj[secSelLoops][secSelCounter][targetSelector][m].name,
+						secSel: passTargSel,
+						origSecSel: targetSelector,	// Used for debugging only.
+						actVal: actionValue,
+						origActVal: actionValue,
+						primSel: selectorList[sel],
+						rules: chilsObj[secSelLoops][secSelCounter][targetSelector],
+						obj,
+						doc,
+						ajaxObj: otherObj,
+						e: eve,
+						_maEvCo,
+						_taEvCo: targetEventCounter,
+						passCond: passCond,
+						file: chilsObj[secSelLoops][secSelCounter][targetSelector][m].file,
+						line: chilsObj[secSelLoops][secSelCounter][targetSelector][m].line,
+						intID: chilsObj[secSelLoops][secSelCounter][targetSelector][m].intID,
+						activeID: activeTrackObj,
+						compRef,	// unique counter of the shadow element rendered - used for variable scoping.
+						compDoc,
+						component,
+						loopVars,
+						loopRef
+					};
+					_performAction(act, runButElNotThere);
+				}
 			}
 		}
 	}
+
+	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
+	// It just needs to happen at some point, so we'll say 10 seconds.
+	setTimeout(function() {
+		taEv = taEv.filter(function(obj, ind) { return ind != targetEventCounter; });
+	}, 10000);
+
 };
 
 const _prepSelector = (sel, obj, doc) => {
@@ -2693,7 +2738,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
-	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', compRef: compRef, compDoc: undefined, component: componentName });
+	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, compRef: compRef, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, compRef);
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -2745,7 +2790,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// Remove the variable placeholders.
 		_removeVarPlaceholders(shadow);
 
-		_handleEvents({ obj: shadowParent, evType: 'componentOpen', compRef: compRef, compDoc: shadow, component: componentName });
+		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, compRef: compRef, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
@@ -2754,7 +2799,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', otherObj: o.ajaxObj, compRef: compRef, compDoc: shadow, component: componentName });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, compRef: compRef, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}, 0);
 
@@ -2837,13 +2882,13 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			_replaceTempActiveID(obj);
 		});
 		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
-		_handleEvents({ obj: el, evType: 'draw', otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
 			// We can potentially have the same element running a draw event twice. Like the first draw event can add content inside any divs in the first object, which
 			// could run this script again. When it finishes that run, it would then come back and run the loop below. And thereby running the draw event twice.
 			// So we mark the element as drawn and don't run it twice. It gets marked as drawn in _handleEvents.
 			if (obj._acssDrawn || obj.tagName == 'DATA-ACSS-COMPONENT') return;		// Skip pending data-acss-component tags. Note that node may have changed.
-			_handleEvents({ obj: obj, evType: 'draw', otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}
 
@@ -2879,7 +2924,7 @@ const _replaceLoopingVars = (str, loopVars) => {
 	return str;
 };
 
-const _runInnerEvent = (sel, ev, doc=document, initialization=false) => {
+const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
 	let noDrawTwiceCheck = (ev == 'draw' && initialization);	// If new elements get added during body:init, then it's possible draw events can happen on the same thing twice, hence this line.
 	if (typeof sel == 'string') {
 		doc.querySelectorAll(sel).forEach(function(obj) {
@@ -2887,8 +2932,8 @@ const _runInnerEvent = (sel, ev, doc=document, initialization=false) => {
 		});
 	} else {
 		// This is a draw trigger on an element, which should include its contents.
-		_handleEvents({ obj: sel, evType: ev });
-		_runInnerEvent('*', ev, sel);
+		_handleEvents({ obj: o.secSelObj, evType: ev });
+		_runInnerEvent(null, '*', ev, o.secSelObj);
 	}
 };
 
@@ -3006,15 +3051,15 @@ const _addConfig = (str, o) => {
 				}
 			}
 		}
-		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: 'body', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig', eve: o.e });
+		_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 };
 
 const _addConfigError = (str, o) => {
 	// Needs an error handling.
-	_handleEvents({ obj: o.obj, evType: 'loadconfigerror' });
+	_handleEvents({ obj: o.obj, evType: 'loadconfigerror', eve: o.e });
 };
 
 const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentName, ev) => {
@@ -3721,7 +3766,7 @@ const _readSiteMap = () => {
 		_handleEvents({ obj: 'body', evType: 'init' });
 
 		// Iterate items on this page and do any draw events.
-		_runInnerEvent('*', 'draw', document, true);
+		_runInnerEvent(null, '*', 'draw', document, true);
 
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
@@ -5563,7 +5608,7 @@ const _ajaxCallbackDisplay = (o) => {
 	}
 	if (!o.error && o.preGet) {
 		// Run the afterAjaxPreGet event.
-		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
 		// Run the post event - success or failure.
 		_ajaxDisplay(o);
@@ -5589,7 +5634,7 @@ const _ajaxCallbackErr = (str, resp, o) => {
 const _ajaxDisplay = o => {
 	let ev = 'afterAjax' + ((o.formSubmit) ? 'Form' + (o.formPreview ? 'Preview' : o.formSubmit ? 'Submit' : '') : '');
 	if (o.error) ev += o.errorCode;
-	_handleEvents({ obj: o.obj, evType: ev, otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+	_handleEvents({ obj: o.obj, evType: ev, eve: o.e, otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	if (o.hash !== '') {
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;

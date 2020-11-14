@@ -1161,6 +1161,74 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkStopEventPropagation\" data-desc=\"Basic stop-event-propagation command\" class=\"coreTest\">{|checkStopEventPropagationHTML}</div>";
+}
+
+@component checkStopEventPropagationHTML {
+	html {
+	}
+}
+
+#checkStopEventPropagation:test {
+	func: checkStopEventPropagation;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkStopImmediateEventPropagation\" data-desc=\"Basic stop-immediate-event-propagation command\" class=\"coreTest\">{|checkStopImmediateEventPropagationHTML}</div>";
+}
+
+@component checkStopImmediateEventPropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopImmedPropFail false;
+	}
+	&:componentOpen {
+		#checkStopImmedPropA {
+			/* Don't run any more target selectors after this. */
+			stop-immediate-event-propagation: true;
+
+			/* after stack is important here, as we want to know the class event didn't run. */
+			func: checkStopImmediateEventPropagation {checkStopImmedPropFail} after stack;
+		}
+		.checkStopImmedPropClass {
+			var: checkStopImmedPropFail true;
+		}
+	}
+	html {
+		<div id="checkStopImmedPropA" class="checkStopImmedPropClass"></div>
+		<div class="checkStopImmedPropClass"></div>
+	}
+}
+
+#checkStopImmediateEventPropagation:test {
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkStopImmediatePropagation\" data-desc=\"Basic stop-immediate-propagation command\" class=\"coreTest\">{|checkStopImmediatePropagationHTML}</div>";
+}
+
+@component checkStopImmediatePropagationHTML {
+	html {
+	}
+}
+
+#checkStopImmediatePropagation:test {
+	func: checkStopImmediatePropagation;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkStopPropagation\" data-desc=\"Basic stop-propagation command\" class=\"coreTest\">{|checkStopPropagationHTML}</div>";
+}
+
+@component checkStopPropagationHTML {
+	html {
+	}
+}
+
+#checkStopPropagation:test {
+	func: checkStopPropagation;
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkStyle\" data-desc=\"Basic style command\" class=\"coreTest\"></div>";
 }
 

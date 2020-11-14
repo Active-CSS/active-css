@@ -47,7 +47,7 @@ const _readSiteMap = () => {
 		_handleEvents({ obj: 'body', evType: 'init' });
 
 		// Iterate items on this page and do any draw events.
-		_runInnerEvent('*', 'draw', document, true);
+		_runInnerEvent(null, '*', 'draw', document, true);
 
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 

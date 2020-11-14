@@ -111,6 +111,10 @@
 		varMap = [],
 		varStyleMap = [],
 		varInStyleMap = [],
+		maEv = [],
+		mainEventCounter = -1,
+		taEv = [],
+		targetEventCounter = -1,
 		elementObserver;
 
 	ActiveCSS.customHTMLElements = {};

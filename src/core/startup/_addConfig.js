@@ -30,8 +30,8 @@ const _addConfig = (str, o) => {
 				}
 			}
 		}
-		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: 'body', evType: 'afterLoadConfig' });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig', eve: o.e });
+		_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 };

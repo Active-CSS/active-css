@@ -1,0 +1,28 @@
+#content:draw {
+	render-before-end: "<div id=\"checkStopImmediateEventPropagation\" data-desc=\"Basic stop-immediate-event-propagation command\" class=\"coreTest\">{|checkStopImmediateEventPropagationHTML}</div>";
+}
+
+@component checkStopImmediateEventPropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopImmedPropFail false;
+	}
+	&:componentOpen {
+		#checkStopImmedPropA {
+			/* Don't run any more target selectors after this. */
+			stop-immediate-event-propagation: true;
+
+			/* after stack is important here, as we want to know the class event didn't run. */
+			func: checkStopImmediateEventPropagation {checkStopImmedPropFail} after stack;
+		}
+		.checkStopImmedPropClass {
+			var: checkStopImmedPropFail true;
+		}
+	}
+	html {
+		<div id="checkStopImmedPropA" class="checkStopImmedPropClass"></div>
+		<div class="checkStopImmedPropClass"></div>
+	}
+}
+
+#checkStopImmediateEventPropagation:test {
+}

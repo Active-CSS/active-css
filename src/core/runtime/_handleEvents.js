@@ -11,6 +11,7 @@ const _handleEvents = evObj => {
 	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topCompRef = evObj.compRef;
+	let _maEvCo = evObj._maEvCo;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
@@ -124,50 +125,49 @@ const _handleEvents = evObj => {
 		}
 	}
 	clauseCo = 0;
-	for (sel = 0; sel < selectorListLen; sel++) {
-		if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
-			for (clause in config[selectorList[sel]][evType]) {
-				clauseCo++;
-				passCond = '';
-				if (clause != '0') {	// A conditional is there.
-					if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
-					// This conditional passed earlier - we can run it.
-					passCond = clauseArr[clauseCo];
-				}
-				chilsObj = config[selectorList[sel]][evType][clause];
-				if (chilsObj !== false) {
-					// Secondary selector loops go here.
-					let secSelLoops, loopObj;
-					for (secSelLoops in chilsObj) {
-						loopObj = {
-							chilsObj,
-							originalLoops: secSelLoops,
-							secSelLoops,
-							obj,
-							compDoc,
-							evType,
-							compRef: topCompRef,
-							evObj,
-							otherObj,
-							passCond,
-							sel,
-							component,
-							selectorList,
-							eve,
-							runButElNotThere
-						};
-						_performSecSel(loopObj);
+	eventLoop: {
+		for (sel = 0; sel < selectorListLen; sel++) {
+			if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
+				for (clause in config[selectorList[sel]][evType]) {
+					clauseCo++;
+					passCond = '';
+					if (clause != '0') {	// A conditional is there.
+						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
+						// This conditional passed earlier - we can run it.
+						passCond = clauseArr[clauseCo];
+					}
+					chilsObj = config[selectorList[sel]][evType][clause];
+					if (chilsObj !== false) {
+						// Secondary selector loops go here.
+						let secSelLoops, loopObj;
+						for (secSelLoops in chilsObj) {
+							loopObj = {
+								chilsObj,
+								originalLoops: secSelLoops,
+								secSelLoops,
+								obj,
+								compDoc,
+								evType,
+								compRef: topCompRef,
+								evObj,
+								otherObj,
+								passCond,
+								sel,
+								component,
+								selectorList,
+								eve,
+								_maEvCo,
+								runButElNotThere
+							};
+							_performSecSel(loopObj);
+							if (typeof maEv[_maEvCo] !== 'undefined' && maEv[_maEvCo]._acssStopImmedEvProp) {
+//							if (typeof obj == 'object' && obj._acssStopImmedEvProp) {
+								break eventLoop;
+							}
+						}
 					}
 				}
-				if (obj && obj.activeStopEvProp) {
-					// If the developer has used stop-immediate-event-propagation, we break out at this point.
-					break;
-				}
 			}
-		}
-		if (obj && (obj.activePrevEvDef || obj.activeStopEvProp)) {
-			// If the developer has used prevent-event-default, we break out at this point.
-			break;
 		}
 	}
 	return true;

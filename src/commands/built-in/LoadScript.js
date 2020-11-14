@@ -13,7 +13,7 @@ _a.LoadScript = (o, opt) => {
 		}
 		scrip[srcTag] = scr;
 		scrip.onload = function() {
-			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		};
 		if (forShadow) {
 			o.compDoc.appendChild(scrip);

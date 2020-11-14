@@ -1665,6 +1665,45 @@ function checkSetPropertyBefore(o) {
 	}
 }
 
+function checkStopEventPropagation(o) {
+	let testEl = _initTest('checkStopEventPropagation');
+	if (!testEl) return;
+
+//	_fail(testEl, 'message');
+
+	_addSuccessClass(testEl);
+}
+
+function checkStopImmediateEventPropagation(o, pars) {
+	let testEl = _initTest('checkStopImmediateEventPropagation');
+	if (!testEl) return;
+
+	console.log();
+	if (pars[0] === true) {
+		_fail(testEl, 'It failed to stop immediate propagation and ran the following class event on the same element.');
+	} else {
+		_addSuccessClass(testEl);
+	}
+}
+
+function checkStopImmediatePropagation(o) {
+	let testEl = _initTest('checkStopImmediatePropagation');
+	if (!testEl) return;
+
+//	_fail(testEl, 'message');
+
+	_addSuccessClass(testEl);
+}
+
+function checkStopPropagation(o) {
+	let testEl = _initTest('checkStopPropagation');
+	if (!testEl) return;
+
+//	_fail(testEl, 'message');
+
+	_addSuccessClass(testEl);
+}
+
 function checkStyle(o) {
 	// Check that the element to remove the class from is definitely there.
 	let testEl = _initTest('checkStyle');
