@@ -18,7 +18,6 @@ const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 		obj.removeEventListener(ev, ActiveCSS._theEventFunction, { capture: true });
 	}
 	obj.addEventListener(ev, ActiveCSS._theEventFunction, opts);
-
 };
 
 // Keep this in here. The only reason it needs to be scoped to the root of Active CSS is because we need to remove an identical event listener, and we can only

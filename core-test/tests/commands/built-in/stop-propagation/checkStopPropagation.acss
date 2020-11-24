@@ -3,10 +3,31 @@
 }
 
 @component checkStopPropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopPropagationVar 0, checkStopPropagationAdditionalVar 0;
+	}
+	#checkStopPropagationDiv:draw {
+		trigger-real: click;
+		func: checkStopPropagation {checkStopPropagationVar} {checkStopPropagationAdditionalVar} after 1s;
+	}
+	#checkStopPropagationDiv:click {
+		var: checkStopPropagationVar 1;
+		stop-propagation: true;
+	}
+	.checkStopPropagationRunToo:click {
+		/* This should get called also, as it's in the same element as the first click. */
+		var: checkStopPropagationAdditionalVar 1;
+	}
+	#checkStopPropagationWrapper:click {
+		/* This should not get called - if this is called then the event bubbled, which is not what we want here. */
+		var: checkStopPropagationVar 10;
+	}
 	html {
+		<div id="checkStopPropagationWrapper">
+			<div id="checkStopPropagationDiv" class="checkStopPropagationRunToo"></div>
+		</div>
 	}
 }
 
 #checkStopPropagation:test {
-	func: checkStopPropagation;
 }

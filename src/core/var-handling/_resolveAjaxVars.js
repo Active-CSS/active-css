@@ -1,5 +1,6 @@
 const _resolveAjaxVars = o => {
-	if (typeof o.res === 'object' && !o.preGet) {
+	let typeORes = typeof o.res;
+	if (typeORes === 'object' && !o.preGet) {
 		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
@@ -11,6 +12,10 @@ const _resolveAjaxVars = o => {
 			}, 0);	// jshint ignore:line
 			return;
 		}
+	} else if (typeORes === 'string') {
+		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
+		o.res = _escapeInline(o.res, 'script');
+		o.res = _escapeInline(o.res, 'style type="text/acss"');
 	}
 	_ajaxCallbackDisplay(o);
 };
@@ -19,7 +24,6 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
-		// Convert escaped new lines from json into real new lines because you can't pass new lines through json. I'm not saying anything.
 		_set(scopedVars, compScope + '.' + v, res[v]);
 	}
 };

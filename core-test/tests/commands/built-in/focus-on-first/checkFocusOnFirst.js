@@ -9,27 +9,27 @@
 */
 
 function checkFocusOnFirstA(o) {
-	let testEl = _initTest('checkFocusOnFirst');
-	if (!testEl) return;
+	let checkFocusOnFirstEl = _initTest('checkFocusOnFirst');
+	if (!checkFocusOnFirstEl) return;
 
 	let el = _getObj('#focusOnFirstTarget');
 
 	// We want not in focus at start.
 	if (el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
+		_fail(checkFocusOnFirstEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
 	}
 }
 
 function checkFocusOnFirstFinal(o) {
-	let testEl = _initTest('checkFocusOnFirst');
-	if (!testEl) return;
+	let checkFocusOnFirstEl = _initTest('checkFocusOnFirst');
+	if (!checkFocusOnFirstEl) return;
 
 	let el = _getObj('#focusOnFirstTarget');
 
 	if (el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnFirstEl);
 	} else {
-		_fail(testEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
+		_fail(checkFocusOnFirstEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
 	}
 }

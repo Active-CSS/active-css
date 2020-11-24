@@ -10,26 +10,26 @@
 */
 
 function checkClickOnLastA(o) {
-	let testEl = _initTest('checkClickOnLast');
-	if (!testEl) return;
+	let checkClickOnLastEl = _initTest('checkClickOnLast');
+	if (!checkClickOnLastEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
 	if (el.innerHTML != '') {
-		_fail(testEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
+		_fail(checkClickOnLastEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
 	}
 }
 
 function checkClickOnLastFinal(o) {
-	let testEl = _initTest('checkClickOnLast');
-	if (!testEl) return;
+	let checkClickOnLastEl = _initTest('checkClickOnLast');
+	if (!checkClickOnLastEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnLastEl);
 	} else {
-		_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
+		_fail(checkClickOnLastEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
 	}
 }

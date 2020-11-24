@@ -9,6 +9,7 @@
 	const PARSEEND = 2;
 	const PARSEATTR = 3;
 	const PARSEDEBUG = 4;
+	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
@@ -42,10 +43,11 @@
 		configArr = [],
 		configLine = '',
 		configFile = '',
+		configBox = [],
 		lazyConfig = [],
-		concatConfig = '',
 		concatConfigCo = 0,
 		concatConfigLen = 0,
+		masterConfigCo = 0,
 		currentPage = '',
 		ajaxResLocations = {},
 		pageList = [],
@@ -105,7 +107,6 @@
 		preSetupEvents = [],
 		nonPassiveEvents = [],
 		passiveEvents = true,
-		inlineConfigTags = null,
 		supportsShadow = true,
 		idMap = [],
 		varMap = [],
@@ -115,7 +116,12 @@
 		mainEventCounter = -1,
 		taEv = [],
 		targetEventCounter = -1,
-		elementObserver;
+		elementObserver,
+		pageStore,
+		pagesDisplayed = [],
+		inlineRefCo = 0,
+		inlineRefArr = [],
+		inlineIDArr = [];
 
 	ActiveCSS.customHTMLElements = {};
 

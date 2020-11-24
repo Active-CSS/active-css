@@ -10,49 +10,49 @@
 */
 
 function checkClickOnPreviousCycleA(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycleEl = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let firstEl = _getObj('#clickOnPreviousCycleStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnPreviousCycleB(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML != 'orange') {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousCycleC(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML != 'green') {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousCycleFinal(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnPreviousCycle);
 	} else {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "purple and green".');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "purple and green".');
 	}
 }

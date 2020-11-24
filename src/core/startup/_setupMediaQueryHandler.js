@@ -12,7 +12,14 @@ const _setupMediaQueryHandler = str => {
 	// worry about that for the moment - sounds well dodgy.
 
 	str = str.trim();
-	if (mediaQueriesOrig[str]) return mediaQueriesOrig[str];	// Return the name of the already existing media query.
+	let medQName = mediaQueriesOrig[str];
+	if (typeof medQName !== 'undefined') {
+		if (typeof conditionals[medQName] === 'undefined') {
+			conditionals[medQName] = [];
+			conditionals[medQName].push({ 'name': 'mql-true', 'value': medQName });
+		}
+		return medQName;	// Return the name of the already existing media query.
+	}
 	// It doesn't already exist, set up new references and the media query event listener.
 	// Set up name of media query in an array for quick referencing later. It will store the current state of the media query.
 	let leng = mediaQueries.length + 1;

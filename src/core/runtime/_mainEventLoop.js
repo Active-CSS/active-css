@@ -19,7 +19,6 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			_setUpNavAttrs(el);
 		}
 	}
-
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
@@ -70,7 +69,5 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() {
-		maEv = maEv.filter(function(obj, ind) { return ind != mainEventCounter; });
-	}, 10000);
+	setTimeout(function() { maEv = maEv.filter(function(_, i) { return i != mainEventCounter; }); }, 10000);
 };

@@ -10,50 +10,50 @@
 */
 
 function checkClickOnNextA(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let firstEl = _getObj('#clickOnNextStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnNextEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnNextB(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	if (el.innerHTML != 'yellow') {
-		_fail(testEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
 	}
 }
 
 function checkClickOnNextC(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	// We want not in focus at start.
 	if (el.innerHTML != 'purple and green') {
-		_fail(testEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
 	}
 }
 
 function checkClickOnNextFinal(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnNextEl);
 	} else {
-		_fail(testEl, '#clickOnNextP does not contain the test "purple and green".');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "purple and green".');
 	}
 }

@@ -9,28 +9,28 @@
 */
 
 function checkFocusOnLastA(o) {
-	let testEl = _initTest('checkFocusOnLast');
-	if (!testEl) return;
+	let checkFocusOnLastEl = _initTest('checkFocusOnLast');
+	if (!checkFocusOnLastEl) return;
 
 	// Initially #focusOnLastTarget not in focus. Activates after 3.5s.
 	let el = _getObj('#focusOnLastTarget');
 
 	// We want not in focus at start.
 	if (el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
+		_fail(checkFocusOnLastEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
 	}
 }
 
 function checkFocusOnLastFinal(o) {
-	let testEl = _initTest('checkFocusOnLast');
-	if (!testEl) return;
+	let checkFocusOnLastEl = _initTest('checkFocusOnLast');
+	if (!checkFocusOnLastEl) return;
 
 	let el = _getObj('#focusOnLastTarget');
 
 	if (el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnLastEl);
 	} else {
-		_fail(testEl, '#focusOnLastTarget is not in focus at the end and it should be.');
+		_fail(checkFocusOnLastEl, '#focusOnLastTarget is not in focus at the end and it should be.');
 	}
 }

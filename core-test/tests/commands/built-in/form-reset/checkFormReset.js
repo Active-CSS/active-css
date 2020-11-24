@@ -19,55 +19,55 @@ function checkFormEls() {
 }
 
 function checkFormResetA(o) {
-	let testEl = _initTest('checkFormReset');
-	if (!testEl) return;
+	let checkFormResetEl = _initTest('checkFormReset');
+	if (!checkFormResetEl) return;
 
 	let els = checkFormEls();
 
 	if (els.regularField !== 'changedResult') {
-		_fail(testEl, '#checkFormRegularField is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormRegularField is not "changedResult" on the change');
 	}
 	if (els.firstMimicField !== 'changedResult') {
-		_fail(testEl, '#checkFormMimicField1 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormMimicField1 is not "changedResult" on the change');
 	}
 	if (els.secondMimicField !== 'changedResult') {
-		_fail(testEl, '#checkFormMimicField2 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormMimicField2 is not "changedResult" on the change');
 	}
 	if (els.firstResultField !== 'changedResult') {
-		_fail(testEl, '#checkFormResultOfMimic1 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic1 is not "changedResult" on the change');
 	}
 	if (els.secondResultField !== 'changedResult') {
-		_fail(testEl, '#checkFormResultOfMimic2 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic2 is not "changedResult" on the change');
 	}
 	if (els.pageTitle !== 'New page title') {
-		_fail(testEl, 'document.title is not "New page title" on the change');
+		_fail(checkFormResetEl, 'document.title is not "New page title" on the change');
 	}
 }
 
 function checkFormResetFinal(o) {
-	let testEl = _initTest('checkFormReset');
-	if (!testEl) return;
+	let checkFormResetEl = _initTest('checkFormReset');
+	if (!checkFormResetEl) return;
 
 	let els = checkFormEls();
 
 	if (els.regularField !== 'Bert') {
-		_fail(testEl, '#checkFormRegularField is not "Bert" on the reset');
+		_fail(checkFormResetEl, '#checkFormRegularField is not "Bert" on the reset');
 	}
 	if (els.firstMimicField !== 'Cheryl') {
-		_fail(testEl, '#checkFormMimicField1 is not "Cheryl" on the reset');
+		_fail(checkFormResetEl, '#checkFormMimicField1 is not "Cheryl" on the reset');
 	}
 	if (els.secondMimicField !== 'Bob') {
-		_fail(testEl, '#checkFormMimicField2 is not "Bob" on the reset');
+		_fail(checkFormResetEl, '#checkFormMimicField2 is not "Bob" on the reset');
 	}
 	if (els.firstResultField !== 'Cheryl') {
-		_fail(testEl, '#checkFormResultOfMimic1 is not "Cheryl" on the reset');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic1 is not "Cheryl" on the reset');
 	}
 	if (els.secondResultField !== 'Bob') {
-		_fail(testEl, '#checkFormResultOfMimic2 is not "Bob" on the reset');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic2 is not "Bob" on the reset');
 	}
 	if (els.pageTitle !== 'cheeseyness') {
-		_fail(testEl, 'document.title is not "cheeseyness" on the reset');
+		_fail(checkFormResetEl, 'document.title is not "cheeseyness" on the reset');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkFormResetEl);
 }

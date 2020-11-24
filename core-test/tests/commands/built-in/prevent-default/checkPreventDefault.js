@@ -1,6 +1,6 @@
 function checkPreventDefault(o) {
-	let testEl = _initTest('checkPreventDefault');
-	if (!testEl) return;
+	let checkPreventDefaultEl = _initTest('checkPreventDefault');
+	if (!checkPreventDefaultEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkPreventDefaultEl);
 }

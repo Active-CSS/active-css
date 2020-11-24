@@ -6,5 +6,14 @@ const _wrapUpStart = () => {
 	let url = _resolveURL(window.location.href);
 	window.history.replaceState(url, document.title, url);
 	setupEnded = true;
+
+	// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+	elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+	elementObserver.observe(document.body, {
+		characterData: true,
+		childList: true,
+		subtree: true
+	});
+
 	document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 };

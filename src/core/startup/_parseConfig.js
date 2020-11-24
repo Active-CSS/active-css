@@ -1,4 +1,4 @@
-const _parseConfig = str => {
+const _parseConfig = (str, inlineActiveID=null) => {
 	// Keep the parsing regex for the config arrays as simple as practical.
 	// The purpose of this script is to escape characters that may get in the way of evaluating the config sanely during _makeVirtualConfig.
 	// There may be edge cases that cause this to fail, if so let us know, but it's usually pretty solid for practical use.
@@ -8,20 +8,30 @@ const _parseConfig = str => {
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	// Remove all comments.
-	str = str.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
+	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n\t]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
-		systemInitConfig += '~_acssSystem:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		let sel, ev;
+		if (inlineActiveID) {
+			sel = '~_inlineTag_' + inlineActiveID;
+			ev = 'loaded';
+		} else {
+			sel = '~_acssSystem';
+			ev = !setupEnded ? 'init' : 'afterLoadConfig';
+		}
+		systemInitConfig += sel + ':' + ev + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
 		return '';
 	});
 	str += systemInitConfig;
+
 	// Sort out raw JavaScript in the config so it doesn't clash with the rest of the config. The raw javascript needs to get put back to normal at evaluation time,
 	// and not before, otherwise things go weird with the extensions.
 	// With the extensions, there is a similar routine to put these escaped characters back in after a modification from there - it's not the same thing though,
@@ -37,7 +47,10 @@ const _parseConfig = str => {
 		}
 		return '_ACSS_subst_equal_brace_start' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '_ACSS_subst_equal_brace_end';
 	});
-	str = str.replace(/<style>([\s\S]*?)<\/style>/gim, function(_, innards) {
+	// Handle any inline Active CSS style tags and convert to regular style tags.
+	str = str.replace(/acss\-style/gi, 'style');
+	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
+	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
@@ -74,7 +87,7 @@ const _parseConfig = str => {
 	str = str.replace(/\\{/g, '_ACSS_brace_start');
 	str = str.replace(/\\}/g, '_ACSS_brace_end');
 	// Now we can match the component accurately. The regex below should match all components.
-	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\u00BF-\u1FFF\u2C00-\uD7FF\w_\- ]+{)([\s\S]*?)}/gi, function(_, startBit, innards) {
+	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
 		// Replace existing escaped quote placeholder with literally escaped quotes.
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
@@ -112,9 +125,9 @@ const _parseConfig = str => {
 	let totOpenCurlies = str.split('{').length;
 
 	// Now run the actual parser now that we have sane content.
-	str = _convConfig(str, totOpenCurlies);
-	if (!str['0']) {
-		console.log('Active CSS: Either your config is empty or there is a structural syntax error.');
+	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
+	if (!Object.keys(str).length) {
+		console.log('Active CSS: Either your config is empty or there is a structural syntax error. str:', str);
 	}
 	return str;
 };

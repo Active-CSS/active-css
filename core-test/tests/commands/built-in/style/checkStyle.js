@@ -1,13 +1,13 @@
 function checkStyle(o) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkStyle');
-	if (!testEl) return;
+	let checkStyleEl = _initTest('checkStyle');
+	if (!checkStyleEl) return;
 
 	// Check if the class is no longer there.
-	if (testEl.style.backgroundColor != 'green') {
-		_fail(testEl, 'Green was not set as the background color of the test element.');
+	if (checkStyleEl.style.backgroundColor != 'green') {
+		_fail(checkStyleEl, 'Green was not set as the background color of the test element.');
 		return;
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkStyleEl);
 }

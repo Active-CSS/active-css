@@ -10,6 +10,7 @@ _a.CreateCommand = o => {
 	// function.
 
 	if (_a[funcName]) return;	// If this command already exists, do nothing more.
+
 	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
 	funcContent = _handleVarsInJS(funcContent);
 

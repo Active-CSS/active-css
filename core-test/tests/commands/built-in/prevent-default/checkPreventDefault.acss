@@ -7,7 +7,6 @@
 		prevent-default: true;
 	}
 	a:draw {
-		console-log: "If there is an error of \"Some of your tests did a full page reload!\" below then there is an error with the prevent-default test. Otherwise, ignore this message.";
 		trigger-real: click;
 	}
 	a:afterTriggerReal {

@@ -15,8 +15,8 @@
 */
 
 function checkFocusOnNextCycleA(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let firstEl = _getObj('#focusOnNextCycleStart');
 	let secondEl = _getObj('#focusOnNextCycleSecond');
@@ -24,42 +24,42 @@ function checkFocusOnNextCycleA(o) {
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkFocusOnNextCycleB(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let firstEl = _getObj('#focusOnNextCycleStart');
 
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
 	}
 }
 
 function checkFocusOnNextCycleC(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let secondEl = _getObj('#focusOnNextCycleSecond');
 
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnNextCycleFinal(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let thirdEl = _getObj('#focusOnNextCycleEnd');
 
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnNextCycleEl);
 	} else {
-		_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleEnd is not in focus at the end');
 	}
 }

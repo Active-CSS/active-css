@@ -1,13 +1,13 @@
 function checkCreateConditionalFail(o) {
-	let testEl = _initTest('checkCreateConditional');
-	if (!testEl) return;
+	let checkCreateConditionalEl = _initTest('checkCreateConditional');
+	if (!checkCreateConditionalEl) return;
 
-	_fail(testEl, 'Test failed because it did not evaluate the conditional correctly.');
+	_fail(checkCreateConditionalEl, 'Test failed because it did not evaluate the conditional correctly.');
 }
 
 function checkCreateConditionalFinal(o) {
-	let testEl = _initTest('checkCreateConditional');
-	if (!testEl) return;
+	let checkCreateConditionalEl = _initTest('checkCreateConditional');
+	if (!checkCreateConditionalEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkCreateConditionalEl);
 }

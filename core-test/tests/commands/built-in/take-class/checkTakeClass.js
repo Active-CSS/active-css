@@ -1,16 +1,16 @@
 function checkTakeClassA(o) {
-	let testEl = _initTest('checkTakeClass');
-	if (!testEl) return;
+	let checkTakeClassEl = _initTest('checkTakeClass');
+	if (!checkTakeClassEl) return;
 
 	// Check if the orange option is selected. That's all we ned to do at this point.
 	if (!_hasClassObj(_getObj('#takeClassOrange'), 'taken')) {
-		_fail(testEl, 'The orange fruit did not get the class.');
+		_fail(checkTakeClassEl, 'The orange fruit did not get the class.');
 	}
 }
 
 function checkTakeClassFinal(o) {
-	let testEl = _initTest('checkTakeClass');
-	if (!testEl) return;
+	let checkTakeClassEl = _initTest('checkTakeClass');
+	if (!checkTakeClassEl) return;
 
 	// Loop fruits and check that the only one selected is lime.
 	let success = false;
@@ -23,14 +23,14 @@ function checkTakeClassFinal(o) {
 			} else {
 				quit = true;
 				success = false;
-				_fail(testEl, 'Some fruit other than lime still has the class.');
+				_fail(checkTakeClassEl, 'Some fruit other than lime still has the class.');
 			}
 		}
 	});
 	if (quit) return;
 	if (!success) {
-		_fail(testEl, 'The lime fruit did not get the class.');
+		_fail(checkTakeClassEl, 'The lime fruit did not get the class.');
 		return;
 	}
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkTakeClassEl);
 }

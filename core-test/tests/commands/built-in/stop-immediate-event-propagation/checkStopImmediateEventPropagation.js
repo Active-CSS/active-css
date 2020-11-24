@@ -1,11 +1,10 @@
 function checkStopImmediateEventPropagation(o, pars) {
-	let testEl = _initTest('checkStopImmediateEventPropagation');
-	if (!testEl) return;
+	let checkStopImmediateEventPropagationEl = _initTest('checkStopImmediateEventPropagation');
+	if (!checkStopImmediateEventPropagationEl) return;
 
-	console.log();
 	if (pars[0] === true) {
-		_fail(testEl, 'It failed to stop immediate propagation and ran the following class event on the same element.');
+		_fail(checkStopImmediateEventPropagationEl, 'It failed to stop-immediate-event-propagation and ran the class event on the same element.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkStopImmediateEventPropagationEl);
 	}
 }

@@ -10,49 +10,49 @@
 */
 
 function checkClickOnPreviousA(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let firstEl = _getObj('#clickOnPreviousStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnPreviousB(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML != 'orange') {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousC(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML != 'green') {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousFinal(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML == 'green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnPreviousEl);
 	} else {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "green".');
 	}
 }

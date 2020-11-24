@@ -53,7 +53,7 @@ ActiveCSS._returnTree = el => {
 			
 		}
 		if (act == 'mouseover' || act == 'click') {
-			if (el.tagName == 'A' && el['data-active-nav'] !== 1) {
+			if (el.tagName == 'A' && !el._acssNavDrawn) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				_setUpNavAttrs(el);
 			}

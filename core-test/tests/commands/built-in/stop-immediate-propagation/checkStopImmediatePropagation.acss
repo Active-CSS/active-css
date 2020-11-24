@@ -3,10 +3,25 @@
 }
 
 @component checkStopImmediatePropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopImmedPropFail false;
+	}
+	&:componentOpen {
+		#checkStopImmedPropA {
+			/* Don't run any more target selectors after this. */
+			stop-immediate-propagation: true;
+
+			/* after stack is important here, as we want to know the class event didn't run. */
+			func: checkStopImmediatePropagation {checkStopImmedPropFail} after 1s;
+		}
+		.checkStopImmedPropClass {
+			var: checkStopImmedPropFail true;
+		}
+	}
 	html {
+		<div id="checkStopImmedPropA" class="checkStopImmedPropClass"></div>
+		<div class="checkStopImmedPropClass"></div>
 	}
 }
-
 #checkStopImmediatePropagation:test {
-	func: checkStopImmediatePropagation;
 }

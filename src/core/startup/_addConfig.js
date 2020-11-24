@@ -7,11 +7,19 @@ const _addConfig = (str, o) => {
 		newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
 	}
 	str = newStr;
-	concatConfig += str;
 	concatConfigCo++;
 
+	let configItems = _parseConfig(str, o.inlineActiveID);
+
+	configBox.push({ file: o.file, styles: configItems });
+
+	let tmpParse = {};
+	parsedConfig = Object.assign(tmpParse, parsedConfig, configItems);
+
 	// If this is last file, run the config generator.
-	if (concatConfigCo >= concatConfigLen) _readSiteMap();
+	if (concatConfigCo >= concatConfigLen) {
+		_readSiteMap();
+	}
 
 	if (concatConfigCo > concatConfigLen) {
 		if (o.actName == 'load-config') {
@@ -30,8 +38,9 @@ const _addConfig = (str, o) => {
 				}
 			}
 		}
-		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig', eve: o.e });
-		_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		if (o.actName == 'load-config') {
+			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		}
 	}
 };

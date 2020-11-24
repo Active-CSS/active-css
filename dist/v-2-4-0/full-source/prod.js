@@ -9,6 +9,7 @@
 	const PARSEEND = 2;
 	const PARSEATTR = 3;
 	const PARSEDEBUG = 4;
+	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
@@ -42,10 +43,11 @@
 		configArr = [],
 		configLine = '',
 		configFile = '',
+		configBox = [],
 		lazyConfig = [],
-		concatConfig = '',
 		concatConfigCo = 0,
 		concatConfigLen = 0,
+		masterConfigCo = 0,
 		currentPage = '',
 		ajaxResLocations = {},
 		pageList = [],
@@ -105,7 +107,6 @@
 		preSetupEvents = [],
 		nonPassiveEvents = [],
 		passiveEvents = true,
-		inlineConfigTags = null,
 		supportsShadow = true,
 		idMap = [],
 		varMap = [],
@@ -115,7 +116,12 @@
 		mainEventCounter = -1,
 		taEv = [],
 		targetEventCounter = -1,
-		elementObserver;
+		elementObserver,
+		pageStore,
+		pagesDisplayed = [],
+		inlineRefCo = 0,
+		inlineRefArr = [],
+		inlineIDArr = [];
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -342,6 +348,7 @@ _a.CreateCommand = o => {
 	// function.
 
 	if (_a[funcName]) return;	// If this command already exists, do nothing more.
+
 	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
 	funcContent = _handleVarsInJS(funcContent);
 
@@ -420,15 +427,11 @@ _a.CreateElement = o => {
 	splitAV = aV.split(' ');
 	tag = splitAV[0];
 	upperTag = tag.toUpperCase();
-	if (customTags.includes(upperTag)) return;	// The custom tag is already declared - skip it.
 
-	// Get attributes. Cater for the possibility of multiple spaces in attr() list in actVal.
-	attrArr = _getParVal(aV, 'observe').split(' ');
-	for (attr of attrArr) {
-		if (!attr) continue;
-		attrs += "'" + attr.trim() + "',";
+	let addedThisBefore = false;
+	if (customTags.includes(upperTag)) {
+		addedThisBefore = true;
 	}
-	customTags.push(upperTag);
 
 	// This is always need here. This should work on pre-rendered elements as long as the create-element is in preInit.
 	// We need to remember this, and use it in _handleevents, as we won't run a component delineated event, we will run this main event draw event. Still without
@@ -447,10 +450,29 @@ _a.CreateElement = o => {
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
 		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}"' };
-		// Put the draw event render command at the beginning of any draw event that might already be there for this element.
-		config[tag].draw[0][0].unshift(secSel);
-		_setupEvent('draw', tag);
+
+		// Don't add it if it's already there.
+		if (!addedThisBefore || typeof config[tag].draw[0][0][0] === 'undefined' ||
+				typeof config[tag].draw[0][0][0]['&'] === 'undefined' ||
+				typeof config[tag].draw[0][0][0]['&'][0] === 'undefined' ||
+				config[tag].draw[0][0][0]['&'][0].name != 'render' ||
+				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}"'
+			) {
+			// Put the draw event render command at the beginning of any draw event that might already be there for this element.
+			config[tag].draw[0][0].unshift(secSel);
+			_setupEvent('draw', tag);
+		}
 	}
+
+	if (addedThisBefore) return;
+
+	// Get attributes. Cater for the possibility of multiple spaces in attr() list in actVal.
+	attrArr = _getParVal(aV, 'observe').split(' ');
+	for (attr of attrArr) {
+		if (!attr) continue;
+		attrs += "'" + attr.trim() + "',";
+	}
+	customTags.push(upperTag);
 
 	// Create the custom tag.
 	customTagClass = tag._ACSSConvFunc();
@@ -1184,7 +1206,6 @@ _a.StopEventPropagation = o => {
 	// Short variable names are used here as there are a lot of passing around of variables and it help keeps the core small.
 	// maEv = main event object, o._maEvCo = main event object counter
 	// taEv = target event object, o._taEvCo = target event object counter
-	if (typeof taEv[o._taEvCo] !== 'undefined') taEv[o._taEvCo]._acssStopEventProp = true;
 	if (typeof maEv[o._maEvCo] !== 'undefined') maEv[o._maEvCo]._acssStopEventProp = true;
 };
 
@@ -1638,6 +1659,22 @@ const _actionValLoop = (oCopy, pars, obj, runButElNotThere) => {
 	}
 };
 
+const _addInlinePriorToRender = (str) => {
+	// Unescape all single opening curlies for inline Active CSS and JavaScript prior to insertion into the DOM.
+	str = str.replace(/_ACSS_later_brace_start/g, '{');
+
+	// Now add config to the DOM.
+	if (str.indexOf('<style ') !== -1 && str.indexOf('"text/acss"') !== -1) {
+		// There's a good chance there is inline Active CSS to add to the config. Do that here.
+		let fragRoot = document.createElement('div');
+		fragRoot.innerHTML = str;
+		let inlineConfigTags = fragRoot.querySelectorAll('style[type="text/acss"]');
+		if (inlineConfigTags) _getInline(inlineConfigTags);
+	}
+
+	return str;
+};
+
 const _cloneAttrs = (el, srcEl) => {
 	let attr, attrs = Array.prototype.slice.call(srcEl.attributes);
 	for (attr of attrs) {
@@ -1650,6 +1687,18 @@ const _cloneAttrs = (el, srcEl) => {
 		}
 	}
 	el.setAttribute('data-active-nav', '1');
+};
+
+const _escapeInline = (str, start) => {
+	// Escape all single opening curlies so that the parser will not substitute any variables into the inline Active CSS or JS.
+	// This runs immediately on an ajax return string for use by {$STRING} and the result is stored, so it is only ever run once for speed.
+	// This gets unescaped prior to insertion into the DOM.
+	let end = start.split(' ')[0];
+	let reg = new RegExp('<' + start + '([\\s\\S]*?)>([\\s\\S]*?)</' + end + '>', 'gi');
+	str = str.replace(reg, function(_, inn, inn2) {
+		return '<' + start + inn + '>' + inn2.replace(/\{/g, '_ACSS_later_brace_start') + '</' + end + '>';
+	});
+	return str;
 };
 
 const _handleClickOutside = (el, e) => {
@@ -1838,7 +1887,6 @@ const _handleEvents = evObj => {
 							};
 							_performSecSel(loopObj);
 							if (typeof maEv[_maEvCo] !== 'undefined' && maEv[_maEvCo]._acssStopImmedEvProp) {
-//							if (typeof obj == 'object' && obj._acssStopImmedEvProp) {
 								break eventLoop;
 							}
 						}
@@ -1852,6 +1900,7 @@ const _handleEvents = evObj => {
 
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
+
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
@@ -2138,7 +2187,6 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			_setUpNavAttrs(el);
 		}
 	}
-
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
@@ -2189,21 +2237,66 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() {
-		maEv = maEv.filter(function(obj, ind) { return ind != mainEventCounter; });
-	}, 10000);
+	setTimeout(function() { maEv = maEv.filter(function(_, i) { return i != mainEventCounter; }); }, 10000);
 };
 
-// This function is incomplete and mentioned in an outstanding ticket.
+// This has been set up to only run when Active CSS setup has fully loaded and completed.
 ActiveCSS._nodeMutations = function(mutations) {
 	mutations.forEach(mutation => {
-		if (mutation.type == 'childList' && mutation.removedNodes) {
-			mutation.removedNodes.forEach(nod => {
-				let activeID = nod.acssActiveID;
+		if (mutation.type == 'childList') {
+			if (mutation.removedNodes) {
+				mutation.removedNodes.forEach(nod => {
+					if (!(nod instanceof HTMLElement)) return;
+					// We only get the top-level removed node, so we have to do some searching for childnodes and clean-up.
+					idMap.splice(idMap.indexOf(nod), 1);
+					varInStyleMap.splice(varInStyleMap.indexOf(nod._acssActiveID), 1);
 
-				idMap.splice(idMap.indexOf(nod), 1);
-				varInStyleMap.splice(varInStyleMap.indexOf(activeID), 1);
-			});
+					// Handle the removal of inline Active CSS styles from the config. This works with DevTools and also when navigating via SPA tools.
+					if (_isACSSStyleTag(nod)) {
+						_regenConfig(nod, 'remove');
+					} else {
+						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+							_regenConfig(obj, 'remove');
+						});
+					}
+				});
+			}
+
+			if (mutation.addedNodes) {
+				mutation.addedNodes.forEach(nod => {
+					if (!(nod instanceof HTMLElement)) return;
+
+					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+					if (_isACSSStyleTag(nod) && !_isInlineLoaded(nod)) {
+						_regenConfig(nod, 'addDevTools');
+					} else {
+						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+							if (!_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+						});
+					}
+				});
+			}
+		} else if (mutation.type == 'characterData') {
+			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
+			// This will be sufficient to set off the processes to sort out the config.
+			let el = mutation.target;
+			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
+				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
+				setTimeout(function() {
+					// This is an inline Active CSS tag. Replace it so it triggers off the config changes.
+					let parEl = el.parentElement;
+					let newTag = '<style type="text/acss">' + parEl.innerText + '</style>';
+					// Remove from the config first. If we remove the element after we've changed the content we get the scenario of the removal happening
+					// after the addition and it buggers things up. So just do a manual removal.
+					_regenConfig(parEl, 'remove');
+					// Now we can safely add it.
+					parEl.insertAdjacentHTML('beforebegin', newTag);	// Can't do a straight replace with a real node because of br tags being inserted.
+					// Now change the type of the element so it doesn't get picked up in mutations.
+					parEl.type = 'text/dummy';
+					// Now it's safe to remove - it's not going to trigger a delete mutation.
+					parEl.remove();
+				}, 0);
+			}
 		}
 	});
 };
@@ -2600,9 +2693,7 @@ const _performSecSel = (loopObj) => {
 
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() {
-		taEv = taEv.filter(function(obj, ind) { return ind != targetEventCounter; });
-	}, 10000);
+	setTimeout(function() { taEv = taEv.filter(function(_, i) { return i != targetEventCounter; }); }, 10000);
 
 };
 
@@ -2731,7 +2822,6 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[compRef] = parentCompDetails;
 	compPrivEvs[compRef] = privateEvents;
-
 	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
@@ -2856,6 +2946,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
+	
+	// We only do this next one from the document scope and only once.
+	if (!o.component) {
+		content = _addInlinePriorToRender(content);
+	}
 
 	if (o.renderPos) {
 		if (o.renderPos == 'replace') {
@@ -3019,6 +3114,14 @@ const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 	return [doc, targSel, iframeID];
 };
 
+const _addACSSStyleTag = (acssTag) => {
+	let activeID = _getActiveID(acssTag);
+	inlineIDArr.push(activeID);
+	concatConfigLen++;
+	_addConfig(acssTag.innerHTML, { file: '_inline_' + activeID, inlineActiveID: activeID });
+	return activeID;
+};
+
 const _addConfig = (str, o) => {
 	// Concatenate the config files before processing.
 	// Before we add the config, we want to add line numbers for debug.
@@ -3028,11 +3131,19 @@ const _addConfig = (str, o) => {
 		newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
 	}
 	str = newStr;
-	concatConfig += str;
 	concatConfigCo++;
 
+	let configItems = _parseConfig(str, o.inlineActiveID);
+
+	configBox.push({ file: o.file, styles: configItems });
+
+	let tmpParse = {};
+	parsedConfig = Object.assign(tmpParse, parsedConfig, configItems);
+
 	// If this is last file, run the config generator.
-	if (concatConfigCo >= concatConfigLen) _readSiteMap();
+	if (concatConfigCo >= concatConfigLen) {
+		_readSiteMap();
+	}
 
 	if (concatConfigCo > concatConfigLen) {
 		if (o.actName == 'load-config') {
@@ -3051,9 +3162,10 @@ const _addConfig = (str, o) => {
 				}
 			}
 		}
-		_handleEvents({ obj: '~_acssSystem', evType: 'afterLoadConfig', eve: o.e });
-		_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		if (o.actName == 'load-config') {
+			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		}
 	}
 };
 
@@ -3172,7 +3284,6 @@ const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 		obj.removeEventListener(ev, ActiveCSS._theEventFunction, { capture: true });
 	}
 	obj.addEventListener(ev, ActiveCSS._theEventFunction, opts);
-
 };
 
 // Keep this in here. The only reason it needs to be scoped to the root of Active CSS is because we need to remove an identical event listener, and we can only
@@ -3243,9 +3354,10 @@ const _checkPassiveState = (componentName, ev) => {
 	}
 };
 // Credit goes to to https://github.com/aramk/CSSJSON for the initial regex parser technique that started this whole project off.
-const _convConfig = (cssString, totOpenCurlies, co=0) => {
+const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 	// Note: By this point in initialisation the config should be compatible for parsing in a similar fashion to CSS.
 	let node = {}, match = null, count = 0, bits, sel, name, value, obj, newNode, commSplit;
+	let topLevel = (!co);
 	while ((match = PARSEREGEX.exec(cssString)) !== null) {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
@@ -3261,16 +3373,19 @@ const _convConfig = (cssString, totOpenCurlies, co=0) => {
 			co++;
 			name = match[PARSESEL].trim();
 			name = name.replace(/\*debugfile[\s\S]*?\*/g, '');
-			newNode = _convConfig(cssString, totOpenCurlies, co);
+			newNode = _convConfig(cssString, totOpenCurlies, co, inlineActiveID);
 			if (newNode === false) return false;	// There's been a syntax error.
 			obj = {};
 			obj.name = _sortOutEscapeChars(name);
+			if (inlineActiveID) obj.name = obj.name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
 			obj.value = newNode;
 			obj.line = configLine;
 			obj.file = configFile;
 			obj.intID = intIDCounter++;
 			obj.type = 'rule';
-			node[count++] = obj;
+			// If this is the top-level, assign an incrementing master value than spans all config files. If not, use the inner loop counter.
+			let counterToUse = (topLevel) ? masterConfigCo++ : count++;
+			node[counterToUse] = obj;
 		} else if (match[PARSEEND]) { return node;	// Found closing brace
 		} else if (match[PARSEATTR]) {
 			// Handle attributes.
@@ -3298,12 +3413,47 @@ const _convConfig = (cssString, totOpenCurlies, co=0) => {
 	return node;
 };
 
+const _getInline = (inlineConfigTags) => {
+	// Initial inline style type="text/acss" detection prior to any user config.
+	inlineConfigTags.forEach(acssTag => {
+		_addACSSStyleTag(acssTag);	// This function as well as adding the config returns the applicable Active ID for use in running the loaded event.
+	});
+};
+
 ActiveCSS._getPosOfRule = (list, item) => {
 	return _getValFromList(list, item, true);
 };
 
 const _initScriptTrack = () => {
-	document.querySelectorAll('script').forEach(function (obj, index) { scriptTrack.push(obj.src); });
+	document.querySelectorAll('script').forEach(function (obj, index) {
+		if (scriptTrack.indexOf(obj.src) === -1) scriptTrack.push(obj.src);
+	});
+};
+
+const _isFromFile = (fileToRemove, configPart) => {
+	let item, i, configPartLen = configPart.length, key;
+	if (configPartLen == 0) {
+		for (key in configPart) {
+			if (_isFromFile(fileToRemove, configPart[key])) {
+				return true;
+			}
+		}
+	} else {
+		for (i = 0; i < configPartLen; i++) {
+			item = configPart[i];
+			if (Array.isArray(item)) {
+				if (_isFromFile(fileToRemove, item)) {
+					return true;
+				}
+			} else {
+				let thisFile = item.file;
+				if (thisFile === fileToRemove) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 };
 
 const _iterateConditionals = (conditions, rules, sel) => {
@@ -3322,25 +3472,37 @@ const _iterateConditionals = (conditions, rules, sel) => {
 	return conditions;
 };
 
-const _iteratePageList = pages => {
+const _iteratePageList = (pages, removeState=false) => {
 	if (!('content' in document.createElement('template'))) {
 		console.log('Browser does not support html5. Cannot instantiate page navigation.');
 		return;
 	}
-	let templ = document.createElement('template');
-	templ.id = 'data-active-pages';
+	let templ = document.getElementById('data-active-pages');
+	if (!templ) {
+		templ = document.createElement('template');
+		templ.id = 'data-active-pages';
+		document.body.appendChild(templ);
+	}
 	var counter, page, attrs, el;
 	let rand = Math.floor(Math.random() * 10000000);
 	Object.keys(pages).forEach(function(key) {
 		page = pages[key].name;
 		if (!page) return;
-		if (pageList.indexOf(page) !== -1) {
-			console.log('Config error: Page ' + page + ' is referenced twice.');
-		}
 		attrs = pages[key].value.replace(/\{\$RAND\}/g, rand);
-		templ.insertAdjacentHTML('beforeend', '<a href=' + page.trim() + ' ' + attrs.trim() + '>');
+		let cleanPage = page.replace(/"/g, '').trim();
+		let pConcat = cleanPage + ' ' + attrs.trim();
+		let pos = pagesDisplayed.indexOf(cleanPage);
+		if (pos !== -1) {
+			if (removeState) {
+				pagesDisplayed.splice(pos, 1);
+				let el = templ.querySelector('[href="' + cleanPage + '"]');
+				if (el) el.remove();
+			}
+			return;
+		}
+		pagesDisplayed.push(cleanPage);
+		templ.insertAdjacentHTML('beforeend', '<a href=' + pConcat + '>');
 	});
-	document.body.appendChild(templ);
 };
 
 const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null) => {
@@ -3394,11 +3556,13 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 	return compConfig;
 };
 
-const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLoop=null) => {
+const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, removeState=false, fileToRemove='') => {
 	// Loop through the config, splitting up multi selectors and giving them their own entry. Put this into the config.
+	// There is also now an option to remove a set of config settings declared in parsedConfig by setting the removeState par to true.
 	var pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	var str, strLength, i, strTrimmed, strTrimCheck, isComponent;
 	var selectorName, evSplit, ev, sel, isConditional;
+	let inlineActiveID = fileToRemove.substr(8);
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
@@ -3423,70 +3587,87 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 					if (componentName) {
 						condName = '|' + componentName + '|' + condName;
 					}
-					conditionals[condName] = (conditionals[condName] === undefined) ? [] : conditionals[condName];
-					conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
+					if (!removeState) {
+						conditionals[condName] = (conditionals[condName] === undefined) ? [] : conditionals[condName];
+						conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
+					} else {
+						delete conditionals[condName];	// Safe removal. There is no length property on the conditionals object.
+					}
 					isConditional = true;
 					break;
 
 				case '@':
 					if (strTrimmed == '@pages') {
 						// This is a page list declaration. Append it to any others previously found.
-						_iteratePageList(pConfig[key].value);
+						_iteratePageList(pConfig[key].value, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
 						let compName = strTrimmed.split(' ')[1].trim();
-						if (!components[compName]) components[compName] = {};
-						components[compName].mode = null;
-						components[compName].shadow = false;
-						components[compName].scoped = false;
-//						components[compName].scoped = true;		// All components are scoped by default now.
-						components[compName].privEvs = false;
-						let checkStr = strTrimmed + ' ';
-						// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
-						if (checkStr.indexOf(' shadow ') !== -1) {
-							components[compName].shadow = true;
-							components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
-						}
-						if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVariables ') !== -1) {	// "private" is deprecated as of v2.4.0
-							components[compName].privVars = true;
-							// Private variable areas are always scoped, as they need their own area.
-							// We get a performance hit with scoped areas, so we try and limit this to where needed.
-							// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
-							components[compName].scoped = true;
-						}
-						if (checkStr.indexOf(' privateEvents ') !== -1) {
-							components[compName].privEvs = true;
+						if (!removeState) {
+							if (!components[compName]) components[compName] = {};
+							components[compName].mode = null;
+							components[compName].shadow = false;
+							components[compName].scoped = false;
+							components[compName].privEvs = false;
+							let checkStr = strTrimmed + ' ';
+							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
+							if (checkStr.indexOf(' shadow ') !== -1) {
+								components[compName].shadow = true;
+								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
+							}
+							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVariables ') !== -1) {	// "private" is deprecated as of v2.4.0
+								components[compName].privVars = true;
+								// Private variable areas are always scoped, as they need their own area.
+								// We get a performance hit with scoped areas, so we try and limit this to where needed.
+								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
+								components[compName].scoped = true;
+							}
+							if (checkStr.indexOf(' privateEvents ') !== -1) {
+								components[compName].privEvs = true;
+							}
 						}
 						// Recurse and set up componentness.
-						_makeVirtualConfig(pConfig[key].value, '', compName);
-						// Handle no html content.
-						if (components[compName].data === undefined) {
-							components[compName].data = '';
-							components[compName].file = '';
-							components[compName].line = '';
-							components[compName].intID = '';
+						_makeVirtualConfig(pConfig[key].value, '', compName, removeState, fileToRemove);
+						if (!removeState) {
+							// Handle no html content.
+							if (components[compName].data === undefined) {
+								components[compName].data = '';
+								components[compName].file = '';
+								components[compName].line = '';
+								components[compName].intID = '';
+							}
+							// Reset the component name, otherwise this will get attached to all the remaining events.
+						} else {
+							delete components[compName];
 						}
-						// Reset the component name, otherwise this will get attached to all the remaining events.
 						compName = '';
 					} else {
-						// This is a media query. Set it up and call the config routine again so the internal media query name can be attached to the events.
-						mqlName = _setupMediaQueryHandler(strTrimmed.slice(7).trim());
-						// Recurse and set up a conditional node.
-						_makeVirtualConfig(pConfig[key].value, mqlName);
-						// Reset the media query name, otherwise this will get attached to all the remaining events.
+						if (!removeState) {
+							// This is a media query. Set it up and call the config routine again so the internal media query name can be attached to the events.
+							mqlName = _setupMediaQueryHandler(strTrimmed.slice(7).trim());
+							// Recurse and set up a conditional node.
+							_makeVirtualConfig(pConfig[key].value, mqlName, null, removeState, fileToRemove);
+							// Reset the media query name, otherwise this will get attached to all the remaining events.
+						} else {
+							// For the moment, media queries do not get deleted.
+						}
 						mqlName = '';
 					}
 					break;
 
 				default:
 					if (strTrimmed == 'html') {
-						if (componentName) {
-							// This is component html.
-							components[componentName].data = pConfig[key].value[0].value.slice(1, -1);	// remove outer quotes;
-							components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');
-							components[componentName].file = pConfig[key].value[0].file;
-							components[componentName].line = pConfig[key].value[0].line;
-							components[componentName].intID = pConfig[key].value[0].intID;
+						if (!removeState) {
+							if (componentName) {
+								// This is component html.
+								components[componentName].data = pConfig[key].value[0].value.slice(1, -1);	// remove outer quotes;
+								components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');
+								components[componentName].file = pConfig[key].value[0].file;
+								components[componentName].line = pConfig[key].value[0].line;
+								components[componentName].intID = pConfig[key].value[0].intID;
+							}
+						} else {
+							if (componentName) delete components[componentName];
 						}
 					} else {
 						// This is an event.
@@ -3500,6 +3681,12 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						}
 						sel = evSplit.shift();	// Get the main selector (get the beginning clause and remove from array)
 
+						if (removeState) {
+							if (sel == '~_inlineTag_' + inlineActiveID) {
+								delete config[sel];
+								continue;
+							}
+						}
 						ev = evSplit.pop();	// Get the event (get the last clause and remove from array)
 						ev = ev.trim();
 
@@ -3529,14 +3716,22 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 						// If this is an event for a component, it gets a special handling compared to the main document. It gets a component prefix.
 						if (componentName) {
 							sel = '|' + componentName + ':' + sel;
-							shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
-							shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
-							// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
-							// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
-							components[componentName].scoped = true;
+							if (!removeState) {
+								shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
+								shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
+								// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
+								// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
+								components[componentName].scoped = true;
+							} else {
+								delete shadowSels[componentName];
+								delete components[componentName];
+							}
 						}
-						config[sel] = (config[sel] === undefined) ? {} : config[sel];
-						config[sel][ev] = (config[sel][ev] === undefined) ? {} : config[sel][ev];
+
+						if (!removeState) {
+							config[sel] = (config[sel] === undefined) ? {} : config[sel];
+							config[sel][ev] = (config[sel][ev] === undefined) ? {} : config[sel][ev];
+						}
 
 						let conditionName;
 						if (conds.length === 0) {
@@ -3545,17 +3740,44 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, eachLo
 							// Concat the conditions with a space.
 							conditionName = conds.join(' ');
 						}
-						preSetupEvents.push({ ev, sel });
-						if (config[sel] === undefined) {	// needed for DevTools.
-							config[sel] = {};
+
+						if (!removeState) {
+							preSetupEvents.push({ ev, sel });
+							if (config[sel] === undefined) {	// needed for DevTools.
+								config[sel] = {};
+							}
+							if (config[sel][ev] === undefined) {	// needed for DevTools.
+								config[sel][ev] = {};
+							}
+							if (config[sel][ev][conditionName] === undefined) {
+								config[sel][ev][conditionName] = [];
+							}
 						}
-						if (config[sel][ev] === undefined) {	// needed for DevTools.
-							config[sel][ev] = {};
+
+						if (!removeState) {
+							config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
+						} else {
+							// Find and remove items from config based on file value.
+							let i, len = config[sel][ev][conditionName].length;
+							let toRemove = [];
+							for (i = 0; i < len; i++) {
+								if (_isFromFile(fileToRemove, config[sel][ev][conditionName][i])) {
+									toRemove.push(i);
+								}
+							}
+							for (i of toRemove) {
+								config[sel][ev][conditionName].splice(i, 1);
+							}
+							if (config[sel][ev][conditionName].length == 0) {
+								delete config[sel][ev][conditionName];
+							}
+							if (Object.keys(config[sel][ev]).length === 0) {
+								delete config[sel][ev];
+							}
+							if (Object.keys(config[sel]).length === 0) {
+								delete config[sel];
+							}
 						}
-						if (config[sel][ev][conditionName] === undefined) {
-							config[sel][ev][conditionName] = [];
-						}
-						config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
 					}
 			}
 		}
@@ -3596,7 +3818,7 @@ ActiveCSS._mapRegexReturn = (mapObj, str, mapObj2=null) => {
 	return str;
 };
 
-const _parseConfig = str => {
+const _parseConfig = (str, inlineActiveID=null) => {
 	// Keep the parsing regex for the config arrays as simple as practical.
 	// The purpose of this script is to escape characters that may get in the way of evaluating the config sanely during _makeVirtualConfig.
 	// There may be edge cases that cause this to fail, if so let us know, but it's usually pretty solid for practical use.
@@ -3606,20 +3828,30 @@ const _parseConfig = str => {
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	// Remove all comments.
-	str = str.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
+	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n\t]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
-		systemInitConfig += '~_acssSystem:' + ((!setupEnded) ? 'init' : 'afterLoadConfig') + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		let sel, ev;
+		if (inlineActiveID) {
+			sel = '~_inlineTag_' + inlineActiveID;
+			ev = 'loaded';
+		} else {
+			sel = '~_acssSystem';
+			ev = !setupEnded ? 'init' : 'afterLoadConfig';
+		}
+		systemInitConfig += sel + ':' + ev + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
 		return '';
 	});
 	str += systemInitConfig;
+
 	// Sort out raw JavaScript in the config so it doesn't clash with the rest of the config. The raw javascript needs to get put back to normal at evaluation time,
 	// and not before, otherwise things go weird with the extensions.
 	// With the extensions, there is a similar routine to put these escaped characters back in after a modification from there - it's not the same thing though,
@@ -3635,7 +3867,10 @@ const _parseConfig = str => {
 		}
 		return '_ACSS_subst_equal_brace_start' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '_ACSS_subst_equal_brace_end';
 	});
-	str = str.replace(/<style>([\s\S]*?)<\/style>/gim, function(_, innards) {
+	// Handle any inline Active CSS style tags and convert to regular style tags.
+	str = str.replace(/acss\-style/gi, 'style');
+	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
+	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
@@ -3672,7 +3907,7 @@ const _parseConfig = str => {
 	str = str.replace(/\\{/g, '_ACSS_brace_start');
 	str = str.replace(/\\}/g, '_ACSS_brace_end');
 	// Now we can match the component accurately. The regex below should match all components.
-	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\u00BF-\u1FFF\u2C00-\uD7FF\w_\- ]+{)([\s\S]*?)}/gi, function(_, startBit, innards) {
+	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
 		// Replace existing escaped quote placeholder with literally escaped quotes.
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
@@ -3710,9 +3945,9 @@ const _parseConfig = str => {
 	let totOpenCurlies = str.split('{').length;
 
 	// Now run the actual parser now that we have sane content.
-	str = _convConfig(str, totOpenCurlies);
-	if (!str['0']) {
-		console.log('Active CSS: Either your config is empty or there is a structural syntax error.');
+	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
+	if (!Object.keys(str).length) {
+		console.log('Active CSS: Either your config is empty or there is a structural syntax error. str:', str);
 	}
 	return str;
 };
@@ -3721,9 +3956,6 @@ const _readSiteMap = () => {
 	// We have the config file loaded. Go through the config file and sort out the website objects and properties.
 	// This is an SPA so we do everything first in a speedy fashion - we only do this once.
 	// Don't forget that load-config runs this too, so anything for first initialization needs to be with the !setupEnded condition.
-	parsedConfig = _parseConfig(concatConfig);
-	concatConfig = '';	// We may need to add to this config later, so keep it in memory.
-
 	var debugConfig = (debugMode) ? _doDebug('parser') : false;
 	if (debugConfig) console.log(parsedConfig);
 
@@ -3734,6 +3966,9 @@ const _readSiteMap = () => {
 
 	// Make a new virtual config, which has split up selectors. We do this so we can do quick finding of event handlers and not have to iterate anything.
 	_makeVirtualConfig();
+
+	// Reset the parsed config array so it is ready for new config to be added later.
+	parsedConfig = {};
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
@@ -3746,17 +3981,12 @@ const _readSiteMap = () => {
 
 	if (!setupEnded) {
 		_startMainListen();
+	}
 
-		// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
-		_initScriptTrack();
+	// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
+	_initScriptTrack();
 
-		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
-		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
-		elementObserver.observe(document.body, {
-			childList: true,
-			subtree: true
-		});
-
+	if (!setupEnded) {
 		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
 		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
 
@@ -3764,6 +3994,9 @@ const _readSiteMap = () => {
 		_handleEvents({ obj: 'body', evType: 'preInit' });
 
 		_handleEvents({ obj: 'body', evType: 'init' });
+
+		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
+		if (inlineIDArr.length > 0) _runInlineLoaded();
 
 		// Iterate items on this page and do any draw events.
 		_runInnerEvent(null, '*', 'draw', document, true);
@@ -3781,7 +4014,42 @@ const _readSiteMap = () => {
 				}
 			}, 1000);
 		}
+	} else {
+		// Now run the loaded events for each inline Active CSS tag on the page.
+		if (inlineIDArr.length > 0) {
+			_runInlineLoaded();
+		}
 	}
+};
+
+const _regenConfig = (styleTag, opt) => {
+	// Regenerate the config at the end of the current stack so we don't get a condition in the event flow that actions no longer exist.
+	setTimeout(function() {
+		let activeID = styleTag._acssActiveID;
+		switch (opt) {
+			case 'remove':
+				// Remove the tag details from the config.
+				parsedConfig = configBox.find(item => item.file == '_inline_' + activeID).styles;
+				// Now run _makeVirtualConfig() with the option to remove matching config.
+				_makeVirtualConfig('', '', null, true, '_inline_' + activeID);
+				// Now remove the tag from configBox.
+				concatConfigCo--;
+				concatConfigLen--;
+				configBox = configBox.filter(item => item.file != '_inline_' + activeID);
+				parsedConfig = {};
+				break;
+
+			case 'addDevTools':
+				_addACSSStyleTag(styleTag);
+		}
+	}, 0);
+};
+
+const _runInlineLoaded = () => {
+	inlineIDArr.forEach(activeID => {
+		_handleEvents({ obj: '~_inlineTag_' + activeID, evType: 'loaded' });
+	});
+	inlineIDArr = [];
 };
 
 const _setupEvent = (ev, sel, component) => {
@@ -3837,7 +4105,14 @@ const _setupMediaQueryHandler = str => {
 	// worry about that for the moment - sounds well dodgy.
 
 	str = str.trim();
-	if (mediaQueriesOrig[str]) return mediaQueriesOrig[str];	// Return the name of the already existing media query.
+	let medQName = mediaQueriesOrig[str];
+	if (typeof medQName !== 'undefined') {
+		if (typeof conditionals[medQName] === 'undefined') {
+			conditionals[medQName] = [];
+			conditionals[medQName].push({ 'name': 'mql-true', 'value': medQName });
+		}
+		return medQName;	// Return the name of the already existing media query.
+	}
 	// It doesn't already exist, set up new references and the media query event listener.
 	// Set up name of media query in an array for quick referencing later. It will store the current state of the media query.
 	let leng = mediaQueries.length + 1;
@@ -3961,19 +4236,28 @@ const _wrapUpStart = () => {
 	let url = _resolveURL(window.location.href);
 	window.history.replaceState(url, document.title, url);
 	setupEnded = true;
+
+	// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+	elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+	elementObserver.observe(document.body, {
+		characterData: true,
+		childList: true,
+		subtree: true
+	});
+
 	document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 };
 
 ActiveCSS.init = (config) => {
 	config = config || {};
 	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
-	inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
+	let inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,
 			// then obviously the initialization events will not run.
 			lazyConfig = '';
-			_initGetInline();	// function is at the bottom of this script.
+			_getInline(inlineConfigTags);
 		}
 		autoStartInit = false;
 	} else {
@@ -3995,22 +4279,14 @@ ActiveCSS.init = (config) => {
 		let thisFile;
 		let configArrTmp = config.configLocation.split(',');
 		concatConfigLen = configArrTmp.length;
-		if (inlineConfigTags) _initGetInline();	// function is at the bottom of this script.
+
+		if (inlineConfigTags) _getInline(inlineConfigTags);
 		for (thisFile of configArrTmp) {
 			thisFile = thisFile.trim();
 			configArr.push(_getBaseURL(thisFile));	// Build up the initial config list without anything after and including the "?".
 			_getFile(thisFile, 'txt', { file: thisFile });
 		}
 	}
-};
-
-const _initGetInline = () => {
-	// Initial inline style type="text/acss" detection prior to any user config.
-	concatConfigLen += inlineConfigTags.length;
-	inlineConfigTags.forEach(acssTag => {
-		_addConfig(acssTag.innerHTML, { file: 'inline' });
-	});
-	inlineConfigTags = null;
 };
 
 // Store the rendered location of the attribute for quick DOM lookup when state changes. It doesn't have wrapping comments so it needs an extra reference location.
@@ -4800,6 +5076,7 @@ const _removeVarPlaceholders = obj => {
 		obj,
 		NodeFilter.SHOW_COMMENT
 	);
+
 	// Iterate tree and find unique ref enclosures, mark content node directly with var reference and remove comment nodes.
 	let nodesToRemove = [];
 	let thisNode, thisVar, insertedNode;
@@ -4822,13 +5099,14 @@ const _removeVarPlaceholders = obj => {
 			nodesToRemove.push(thisNode);	// Mark for removal. Don't remove them yet as it buggers up the treewalker.
 		}
 	}
+
 	nodesToRemove.forEach(nod => {	// jshint ignore:line
 		nod.remove();
 	});
 
 
 	/**
-	* Handle style tags.
+	* Handle style tags (but not inline Active CSS).
 	*/
 	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).
 	treeWalker = document.createTreeWalker(
@@ -4836,34 +5114,36 @@ const _removeVarPlaceholders = obj => {
 		NodeFilter.SHOW_ELEMENT
 	);
 	let str, el;
-	while (treeWalker.nextNode()) {
-		if (treeWalker.currentNode.tagName != 'STYLE') continue;
-		el = treeWalker.currentNode;
-		if (!el._acssActiveID) _getActiveID(el);
-		str = treeWalker.currentNode.textContent;
-		// Store the original contents of the style tag with variable placeholders.
-		if (varInStyleMap[el._acssActiveID] === undefined) varInStyleMap[el._acssActiveID] = str;
 
-		// Now set up references for the reactive variable to link to the style tag. This way we only update style tags that have changed.
-		// Remove the variable placeholders at the same time.
-		str = varInStyleMap[el._acssActiveID].replace(STYLEREGEX, function(_, wot, wot2, wot3) {	// jshint ignore:line
-			if (varStyleMap[wot] === undefined) varStyleMap[wot] = [];
-			varStyleMap[wot].push(el);
-			let thisColonPos = wot.indexOf('HOST');
-			if (thisColonPos !== -1) {
-				let varName = wot.substr(thisColonPos + 4);
-				let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
-				if (!varHost || !varHost.hasAttribute(varName)) return '';
-				return varHost.getAttribute(varName);
-			} else {
-				// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-				let val = _get(scopedVars, wot);
-				return (val) ? val : '';
-			}
-			return wot2 || '';
-		});
-		el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
-	}
+	do {
+		el = treeWalker.currentNode;
+		if (el.tagName == 'STYLE' && !_isACSSStyleTag(el)) {
+			if (!el._acssActiveID) _getActiveID(el);
+			str = treeWalker.currentNode.textContent;
+			// Store the original contents of the style tag with variable placeholders.
+			if (varInStyleMap[el._acssActiveID] === undefined) varInStyleMap[el._acssActiveID] = str;
+
+			// Now set up references for the reactive variable to link to the style tag. This way we only update style tags that have changed.
+			// Remove the variable placeholders at the same time.
+			str = varInStyleMap[el._acssActiveID].replace(STYLEREGEX, function(_, wot, wot2, wot3) {	// jshint ignore:line
+				if (varStyleMap[wot] === undefined) varStyleMap[wot] = [];
+				varStyleMap[wot].push(el);
+				let thisColonPos = wot.indexOf('HOST');
+				if (thisColonPos !== -1) {
+					let varName = wot.substr(thisColonPos + 4);
+					let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
+					if (!varHost || !varHost.hasAttribute(varName)) return '';
+					return varHost.getAttribute(varName);
+				} else {
+					// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
+					let val = _get(scopedVars, wot);
+					return (val) ? val : '';
+				}
+				return wot2 || '';
+			});
+			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+		}
+	} while (treeWalker.nextNode());
 
 };
 
@@ -5228,7 +5508,8 @@ const _replaceStringVars = (o, str, compRef) => {
 };
 
 const _resolveAjaxVars = o => {
-	if (typeof o.res === 'object' && !o.preGet) {
+	let typeORes = typeof o.res;
+	if (typeORes === 'object' && !o.preGet) {
 		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
@@ -5240,6 +5521,10 @@ const _resolveAjaxVars = o => {
 			}, 0);	// jshint ignore:line
 			return;
 		}
+	} else if (typeORes === 'string') {
+		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
+		o.res = _escapeInline(o.res, 'script');
+		o.res = _escapeInline(o.res, 'style type="text/acss"');
 	}
 	_ajaxCallbackDisplay(o);
 };
@@ -5248,7 +5533,6 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
-		// Convert escaped new lines from json into real new lines because you can't pass new lines through json. I'm not saying anything.
 		_set(scopedVars, compScope + '.' + v, res[v]);
 	}
 };
@@ -6302,6 +6586,15 @@ ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is
 	let elTop = rect.top;
 	let elBot = rect.bottom;
 	return (tot) ? (elTop >= 0) && (elBot <= window.innerHeight) : elTop < window.innerHeight && elBot >= 0;
+};
+
+const _isACSSStyleTag = (nod) => {
+	return (nod.tagName == 'STYLE' && nod.hasAttribute('type') && nod.getAttribute('type') == 'text/acss');
+};
+
+const _isInlineLoaded = nod => {
+	let fullFile = '_inline_' + _getActiveID(nod);
+	return configBox.find(item => item.file === fullFile);
 };
 
 const _mimicReset = e => {

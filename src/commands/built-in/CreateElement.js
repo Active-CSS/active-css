@@ -3,15 +3,11 @@ _a.CreateElement = o => {
 	splitAV = aV.split(' ');
 	tag = splitAV[0];
 	upperTag = tag.toUpperCase();
-	if (customTags.includes(upperTag)) return;	// The custom tag is already declared - skip it.
 
-	// Get attributes. Cater for the possibility of multiple spaces in attr() list in actVal.
-	attrArr = _getParVal(aV, 'observe').split(' ');
-	for (attr of attrArr) {
-		if (!attr) continue;
-		attrs += "'" + attr.trim() + "',";
+	let addedThisBefore = false;
+	if (customTags.includes(upperTag)) {
+		addedThisBefore = true;
 	}
-	customTags.push(upperTag);
 
 	// This is always need here. This should work on pre-rendered elements as long as the create-element is in preInit.
 	// We need to remember this, and use it in _handleevents, as we won't run a component delineated event, we will run this main event draw event. Still without
@@ -30,10 +26,29 @@ _a.CreateElement = o => {
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
 		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}"' };
-		// Put the draw event render command at the beginning of any draw event that might already be there for this element.
-		config[tag].draw[0][0].unshift(secSel);
-		_setupEvent('draw', tag);
+
+		// Don't add it if it's already there.
+		if (!addedThisBefore || typeof config[tag].draw[0][0][0] === 'undefined' ||
+				typeof config[tag].draw[0][0][0]['&'] === 'undefined' ||
+				typeof config[tag].draw[0][0][0]['&'][0] === 'undefined' ||
+				config[tag].draw[0][0][0]['&'][0].name != 'render' ||
+				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}"'
+			) {
+			// Put the draw event render command at the beginning of any draw event that might already be there for this element.
+			config[tag].draw[0][0].unshift(secSel);
+			_setupEvent('draw', tag);
+		}
 	}
+
+	if (addedThisBefore) return;
+
+	// Get attributes. Cater for the possibility of multiple spaces in attr() list in actVal.
+	attrArr = _getParVal(aV, 'observe').split(' ');
+	for (attr of attrArr) {
+		if (!attr) continue;
+		attrs += "'" + attr.trim() + "',";
+	}
+	customTags.push(upperTag);
 
 	// Create the custom tag.
 	customTagClass = tag._ACSSConvFunc();

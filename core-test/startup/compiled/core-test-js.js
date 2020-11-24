@@ -6,10 +6,22 @@ function _addSuccessClass(objOrStr) {
 	el.classList.add('success');
 }
 
-function _fail(testEl, message=null, par1=null, par2=null, par3=null) {
+function _fail(testEl, message=null, par1=null, par2=null, par3=null, par4=null, par5=null, par6=null, par7=null) {
+	// This could be optimized...
+	if (!testEl) {
+		console.log('Failed to fail test because main element is missing - message:' + message, par1, par2, par3, par4, par5, par6, par7);
+	}
 	testEl.classList.add('failed');
 	if (message) {
-		if (par3) {
+		if (par7) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3, par4, par5, par6, par7);
+		} else if (par6) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3, par4, par5, par6);
+		} else if (par5) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3, par4, par5);
+		} else if (par4) {
+			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3, par4);
+		} else if (par3) {
 			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2, par3);
 		} else if (par2) {
 			console.log('Failure in ' + testEl.id + ': ' + message, par1, par2);
@@ -67,125 +79,125 @@ function _initTest(testID) {
 }
 
 function checkCancelTimerAllA(o) {
-	let testEl = _initTest('checkCancelTimerAll');
-	if (!testEl) return;
+	let checkCancelTimerAllEl = _initTest('checkCancelTimerAll');
+	if (!checkCancelTimerAllEl) return;
 
 	let el = _getObj('#cancelTimerAllDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerAllDiv not present to perform first cancel-timer-all command command.');
+		_fail(checkCancelTimerAllEl, '#cancelTimerAllDiv not present to perform first cancel-timer-all command command.');
 	} else {
 		if (el.style.backgroundColor == 'green') {
-			_fail(testEl, 'Green color exists for first test and it shouldn\'t. Element:', el);
+			_fail(checkCancelTimerAllEl, 'Green color exists for first test and it shouldn\'t. Element:', el);
 		}
 		if (_hasClassObj(el, 'testAddition')) {
-			_fail(testEl, 'testAddition class exists for first test and it shouldn\'t be there. Element:', el);
+			_fail(checkCancelTimerAllEl, 'testAddition class exists for first test and it shouldn\'t be there. Element:', el);
 		}
 	}
 }
 
 function checkCancelTimerAllB(o) {
-	let testEl = _initTest('checkCancelTimerAll');
-	if (!testEl) return;
+	let checkCancelTimerAllEl = _initTest('checkCancelTimerAll');
+	if (!checkCancelTimerAllEl) return;
 
 	let el = _getObj('#cancelTimerAllDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerAllDiv not present to perform second cancel-timer-all command command.');
+		_fail(checkCancelTimerAllEl, '#cancelTimerAllDiv not present to perform second cancel-timer-all command command.');
 	} else {
 		if (el.style.backgroundColor == 'green') {
-			_fail(testEl, 'Green color exists for second test and it shouldn\'t. Element:', el);
+			_fail(checkCancelTimerAllEl, 'Green color exists for second test and it shouldn\'t. Element:', el);
 		}
 		if (_hasClassObj(el, 'testAddition')) {
-			_fail(testEl, 'testAddition class exists for second test and it shouldn\'t be there. Element:', el);
+			_fail(checkCancelTimerAllEl, 'testAddition class exists for second test and it shouldn\'t be there. Element:', el);
 		}
 	}
 }
 
 function checkCancelTimerAllC(o) {
-	let testEl = _initTest('checkCancelTimerAll');
-	if (!testEl) return;
+	let checkCancelTimerAllEl = _initTest('checkCancelTimerAll');
+	if (!checkCancelTimerAllEl) return;
 
 	let el = _getObj('#cancelTimerAllDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerAllDiv not present to perform third cancel-timer-all command command.');
+		_fail(checkCancelTimerAllEl, '#cancelTimerAllDiv not present to perform third cancel-timer-all command command.');
 	} else {
 		if (el.style.backgroundColor == 'green') {
-			_fail(testEl, 'Green color exists for third test and it shouldn\'t. Element:', el);
+			_fail(checkCancelTimerAllEl, 'Green color exists for third test and it shouldn\'t. Element:', el);
 		}
 		if (_hasClassObj(el, 'testAddition')) {
-			_fail(testEl, 'testAddition class exists for third test and it shouldn\'t be there. Element:', el);
+			_fail(checkCancelTimerAllEl, 'testAddition class exists for third test and it shouldn\'t be there. Element:', el);
 		}
 	}
 }
 
 function checkCancelTimerAllFinal(o) {
-	let testEl = _initTest('checkCancelTimerAll');
-	if (!testEl) return;
+	let checkCancelTimerAllEl = _initTest('checkCancelTimerAll');
+	if (!checkCancelTimerAllEl) return;
 
 	let el = _getObj('#cancelTimerAllDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerAllDiv not present to perform fourth cancel-timer-all command command.');
+		_fail(checkCancelTimerAllEl, '#cancelTimerAllDiv not present to perform fourth cancel-timer-all command command.');
 	} else {
 		if (el.style.backgroundColor == 'green') {
-			_fail(testEl, 'Green color exists for fourth test and it shouldn\'t. Element:', el);
+			_fail(checkCancelTimerAllEl, 'Green color exists for fourth test and it shouldn\'t. Element:', el);
 		}
 		if (_hasClassObj(el, 'testAddition')) {
-			_fail(testEl, 'testAddition class exists for fourth test and it shouldn\'t be there. Element:', el);
+			_fail(checkCancelTimerAllEl, 'testAddition class exists for fourth test and it shouldn\'t be there. Element:', el);
 		}
-		_addSuccessClass(testEl);	// A failed marking will stop a test from passing even if this line is here.
+		_addSuccessClass(checkCancelTimerAllEl);	// A failed marking will stop a test from passing even if this line is here.
 	}
 }
 
 // No js needed for this checkAddClass test.
 function checkAjaxPreGetA(o, pars) {
-	let testEl = _initTest('checkAjaxPreGet');
-	if (!testEl) return;
+	let checkAjaxPreGetEl = _initTest('checkAjaxPreGet');
+	if (!checkAjaxPreGetEl) return;
 
 	if (o.ajaxObj.res.checkAjaxPreGetTitle != 'Rod' || o.ajaxObj.res.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Ajax-pre-get command not getting the values from the file in o.res.');
+		_fail(checkAjaxPreGetEl, 'Ajax-pre-get command not getting the values from the file in o.res.');
 	}
 
 	if (o.vars.checkAjaxPreGetTitle == 'Rod' || o.vars.checkAjaxPreGetAddress == '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Variables are getting set as scoped variables prior to ajax command and they shouldn\'t be.');
+		_fail(checkAjaxPreGetEl, 'Variables are getting set as scoped variables prior to ajax command and they shouldn\'t be.');
 	}
 
 	let testTitle = _getObj('#checkAjaxPreGetTestTitle');
 	let testAddress = _getObj('#checkAjaxPreGetTestAddress');
 
 	if (testTitle.innerHTML == 'Rod' || testAddress.innerHTML == '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Ajax-pre-get command is not only updating variables but updating the page and it shouldn\'t.');
+		_fail(checkAjaxPreGetEl, 'Ajax-pre-get command is not only updating variables but updating the page and it shouldn\'t.');
 	}
 }
 
 function checkAjaxPreGetFinal(o, pars) {
-	let testEl = _initTest('checkAjaxPreGet');
-	if (!testEl) return;
+	let checkAjaxPreGetEl = _initTest('checkAjaxPreGet');
+	if (!checkAjaxPreGetEl) return;
 
 	if (o.vars.checkAjaxPreGetTitle != 'Rod' || o.vars.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Variables are not getting set as scoped variables after the ajax command and they should be.');
+		_fail(checkAjaxPreGetEl, 'Variables are not getting set as scoped variables after the ajax command and they should be.');
 	}
 
 	let testTitle = _getObj('#checkAjaxPreGetTestTitle');
 	let testAddress = _getObj('#checkAjaxPreGetTestAddress');
 
 	if (testTitle.innerHTML != 'Rod' || testAddress.innerHTML != '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Ajax command failed to update variables on the page after the prior ajax-pre-get.');
+		_fail(checkAjaxPreGetEl, 'Ajax command failed to update variables on the page after the prior ajax-pre-get.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkAjaxPreGetEl);
 }
 
 function checkAjax(o) {
-	let testEl = _initTest('checkAjax');
-	if (!testEl) return;
+	let checkAjaxEl = _initTest('checkAjax');
+	if (!checkAjaxEl) return;
 
 	let testTitle = _getObj('#checkAjaxTestTitle');
 	let testAddress = _getObj('#checkAjaxTestAddress');
 
 	if (testTitle.innerHTML != 'Rod' || testAddress.innerHTML != '27 Madeup Road, Blithering, Ploushershire.') {
-		_fail(testEl, 'Ajax command failed to update variables automatically.');
+		_fail(checkAjaxEl, 'Ajax command failed to update variables automatically.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkAjaxEl);
 
 }
 
@@ -198,77 +210,77 @@ window.alert = function(idToMarkSuccessFul) {
 };
 
 function checkBlurA(o) {
-	let testEl = _initTest('checkBlur');
-	if (!testEl) return;
+	let checkBlurEl = _initTest('checkBlur');
+	if (!checkBlurEl) return;
 
 	let el = _getObj('#blurField');
 
 	if (!el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#blurField is not in focus for the first test and it should be.');
+		_fail(checkBlurEl, '#blurField is not in focus for the first test and it should be.');
 	}
 }
 
 function checkBlurFinal(o) {
-	let testEl = _initTest('checkBlur');
-	if (!testEl) return;
+	let checkBlurEl = _initTest('checkBlur');
+	if (!checkBlurEl) return;
 
 	let el = _getObj('#blurField');
 
 	if (!el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkBlurEl);
 	} else {
-		_fail(testEl, '#blurField in not out of focus at the end.');
+		_fail(checkBlurEl, '#blurField in not out of focus at the end.');
 	}
 }
 
 function checkCancelTimerA(o) {
-	let testEl = _initTest('checkCancelTimer');
-	if (!testEl) return;
+	let checkCancelTimerEl = _initTest('checkCancelTimer');
+	if (!checkCancelTimerEl) return;
 
 	let el = _getObj('#cancelTimerDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerDiv not present to perform first cancel-timer command command.');
+		_fail(checkCancelTimerEl, '#cancelTimerDiv not present to perform first cancel-timer command command.');
 	} else if (el.style.backgroundColor == 'green') {
-		_fail(testEl, 'Green color exists for first test and it shouldn\'t. Element:', el);
+		_fail(checkCancelTimerEl, 'Green color exists for first test and it shouldn\'t. Element:', el);
 	}
 }
 
 function checkCancelTimerB(o) {
-	let testEl = _initTest('checkCancelTimer');
-	if (!testEl) return;
+	let checkCancelTimerEl = _initTest('checkCancelTimer');
+	if (!checkCancelTimerEl) return;
 
 	let el = _getObj('#cancelTimerDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerDiv not present to perform second cancel-timer command command.');
+		_fail(checkCancelTimerEl, '#cancelTimerDiv not present to perform second cancel-timer command command.');
 	} else if (el.style.backgroundColor == 'green') {
-		_fail(testEl, 'Green color exists for second test and it shouldn\'t. Element:', el);
+		_fail(checkCancelTimerEl, 'Green color exists for second test and it shouldn\'t. Element:', el);
 	}
 }
 
 function checkCancelTimerC(o) {
-	let testEl = _initTest('checkCancelTimer');
-	if (!testEl) return;
+	let checkCancelTimerEl = _initTest('checkCancelTimer');
+	if (!checkCancelTimerEl) return;
 
 	let el = _getObj('#cancelTimerDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerDiv not present to perform third cancel-timer command command.');
+		_fail(checkCancelTimerEl, '#cancelTimerDiv not present to perform third cancel-timer command command.');
 	} else if (el.style.backgroundColor == 'green') {
-		_fail(testEl, 'Green color exists for third test and it shouldn\'t. Element:', el);
+		_fail(checkCancelTimerEl, 'Green color exists for third test and it shouldn\'t. Element:', el);
 	}
 }
 
 function checkCancelTimerFinal(o) {
-	let testEl = _initTest('checkCancelTimer');
-	if (!testEl) return;
+	let checkCancelTimerEl = _initTest('checkCancelTimer');
+	if (!checkCancelTimerEl) return;
 
 	let el = _getObj('#cancelTimerDiv');
 	if (!el) {
-		_fail(testEl, '#cancelTimerDiv not present to perform fourth cancel-timer command command.');
+		_fail(checkCancelTimerEl, '#cancelTimerDiv not present to perform fourth cancel-timer command command.');
 	} else if (el.style.backgroundColor == 'green') {
-		_fail(testEl, 'Green color exists for fourth test and it shouldn\'t. Element:', el);
+		_fail(checkCancelTimerEl, 'Green color exists for fourth test and it shouldn\'t. Element:', el);
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkCancelTimerEl);
 	}
 }
 
@@ -284,28 +296,28 @@ function checkCancelTimerFinal(o) {
 */
 
 function checkClickOnFirstA(o) {
-	let testEl = _initTest('checkClickOnFirst');
-	if (!testEl) return;
+	let checkClickOnFirstEl = _initTest('checkClickOnFirst');
+	if (!checkClickOnFirstEl) return;
 
 	let el = _getObj('#clickOnFirstP');
 
 	if (el.innerHTML != '') {
-		_fail(testEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
+		_fail(checkClickOnFirstEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
 	}
 }
 
 function checkClickOnFirstFinal(o) {
-	let testEl = _initTest('checkClickOnFirst');
-	if (!testEl) return;
+	let checkClickOnFirstEl = _initTest('checkClickOnFirst');
+	if (!checkClickOnFirstEl) return;
 
 	let el = _getObj('#clickOnFirstP');
 
 	// Now we want in focus.
 	if (el.innerHTML == 'green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnFirstEl);
 	} else {
-		_fail(testEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnFirstEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
 	}
 }
 
@@ -321,27 +333,27 @@ function checkClickOnFirstFinal(o) {
 */
 
 function checkClickOnLastA(o) {
-	let testEl = _initTest('checkClickOnLast');
-	if (!testEl) return;
+	let checkClickOnLastEl = _initTest('checkClickOnLast');
+	if (!checkClickOnLastEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
 	if (el.innerHTML != '') {
-		_fail(testEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
+		_fail(checkClickOnLastEl, '#clickOnLastP is not empty. It contains the text "' + el.innerHTML + '"');
 	}
 }
 
 function checkClickOnLastFinal(o) {
-	let testEl = _initTest('checkClickOnLast');
-	if (!testEl) return;
+	let checkClickOnLastEl = _initTest('checkClickOnLast');
+	if (!checkClickOnLastEl) return;
 
 	let el = _getObj('#clickOnLastP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnLastEl);
 	} else {
-		_fail(testEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
+		_fail(checkClickOnLastEl, '#clickOnLastP does not contain the test "purple and green" and it should by now.');
 	}
 }
 
@@ -357,54 +369,54 @@ function checkClickOnLastFinal(o) {
 */
 
 function checkClickOnNextCycleA(o) {
-	let testEl = _initTest('checkClickOnNextCycle');
-	if (!testEl) return;
+	let checkClickOnNextCycleEl = _initTest('checkClickOnNextCycle');
+	if (!checkClickOnNextCycleEl) return;
 
 	let firstEl = _getObj('#clickOnNextCycleStart');
 	let el = _getObj('#clickOnNextCycleP');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnNextCycleStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnNextCycleEl, '#clickOnNextCycleStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnNextCycleB(o) {
-	let testEl = _initTest('checkClickOnNextCycle');
-	if (!testEl) return;
+	let checkClickOnNextCycleEl = _initTest('checkClickOnNextCycle');
+	if (!checkClickOnNextCycleEl) return;
 
 	let firstEl = _getObj('#clickOnNextCycleStart');
 	let el = _getObj('#clickOnNextCycleP');
 
 	if (el.innerHTML != 'yellow') {
-		_fail(testEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
+		_fail(checkClickOnNextCycleEl, '#clickOnNextCycleP does not contain the test "yellow" and it should by now.');
 	}
 }
 
 function checkClickOnNextCycleC(o) {
-	let testEl = _initTest('checkClickOnNextCycle');
-	if (!testEl) return;
+	let checkClickOnNextCycleEl = _initTest('checkClickOnNextCycle');
+	if (!checkClickOnNextCycleEl) return;
 
 	let firstEl = _getObj('#clickOnNextCycleStart');
 	let el = _getObj('#clickOnNextCycleP');
 
 	if (el.innerHTML != 'purple and green') {
-		_fail(testEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
+		_fail(checkClickOnNextCycleEl, '#clickOnNextCycleP does not contain the test "purple and green" and it should by now.');
 	}
 }
 
 function checkClickOnNextCycleFinal(o) {
-	let testEl = _initTest('checkClickOnNextCycle');
-	if (!testEl) return;
+	let checkClickOnNextCycleEl = _initTest('checkClickOnNextCycle');
+	if (!checkClickOnNextCycleEl) return;
 
 	let firstEl = _getObj('#clickOnNextCycleStart');
 	let el = _getObj('#clickOnNextCycleP');
 
 	if (el.innerHTML == 'green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnNextCycleEl);
 	} else {
-		_fail(testEl, '#clickOnNextCycleP does not contain the test "green".');
+		_fail(checkClickOnNextCycleEl, '#clickOnNextCycleP does not contain the test "green".');
 	}
 }
 
@@ -420,51 +432,51 @@ function checkClickOnNextCycleFinal(o) {
 */
 
 function checkClickOnNextA(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let firstEl = _getObj('#clickOnNextStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnNextEl, '#clickOnNextStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnNextB(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	if (el.innerHTML != 'yellow') {
-		_fail(testEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "yellow" and it should by now.');
 	}
 }
 
 function checkClickOnNextC(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	// We want not in focus at start.
 	if (el.innerHTML != 'purple and green') {
-		_fail(testEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "purple and green" and it should by now.');
 	}
 }
 
 function checkClickOnNextFinal(o) {
-	let testEl = _initTest('checkClickOnNext');
-	if (!testEl) return;
+	let checkClickOnNextEl = _initTest('checkClickOnNext');
+	if (!checkClickOnNextEl) return;
 
 	let el = _getObj('#clickOnNextP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnNextEl);
 	} else {
-		_fail(testEl, '#clickOnNextP does not contain the test "purple and green".');
+		_fail(checkClickOnNextEl, '#clickOnNextP does not contain the test "purple and green".');
 	}
 }
 
@@ -480,50 +492,50 @@ function checkClickOnNextFinal(o) {
 */
 
 function checkClickOnPreviousCycleA(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycleEl = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let firstEl = _getObj('#clickOnPreviousCycleStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnPreviousCycleB(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML != 'orange') {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "orange" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousCycleC(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML != 'green') {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "green" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousCycleFinal(o) {
-	let testEl = _initTest('checkClickOnPreviousCycle');
-	if (!testEl) return;
+	let checkClickOnPreviousCycle = _initTest('checkClickOnPreviousCycle');
+	if (!checkClickOnPreviousCycle) return;
 
 	let el = _getObj('#clickOnPreviousCycleP');
 
 	if (el.innerHTML == 'purple and green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnPreviousCycle);
 	} else {
-		_fail(testEl, '#clickOnPreviousCycleP does not contain the test "purple and green".');
+		_fail(checkClickOnPreviousCycle, '#clickOnPreviousCycleP does not contain the test "purple and green".');
 	}
 }
 
@@ -539,68 +551,68 @@ function checkClickOnPreviousCycleFinal(o) {
 */
 
 function checkClickOnPreviousA(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let firstEl = _getObj('#clickOnPreviousStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousStart is in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkClickOnPreviousB(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML != 'orange') {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "orange" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousC(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML != 'green') {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "green" and it should by now.');
 	}
 }
 
 function checkClickOnPreviousFinal(o) {
-	let testEl = _initTest('checkClickOnPrevious');
-	if (!testEl) return;
+	let checkClickOnPreviousEl = _initTest('checkClickOnPrevious');
+	if (!checkClickOnPreviousEl) return;
 
 	let el = _getObj('#clickOnPreviousP');
 
 	if (el.innerHTML == 'green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnPreviousEl);
 	} else {
-		_fail(testEl, '#clickOnPreviousP does not contain the test "green".');
+		_fail(checkClickOnPreviousEl, '#clickOnPreviousP does not contain the test "green".');
 	}
 }
 
 function checkClickoutsideEvent(o) {
-	let testEl = _initTest('checkClickoutsideEvent');
-	if (!testEl) return;
+	let checkClickoutsideEventEl = _initTest('checkClickoutsideEvent');
+	if (!checkClickoutsideEventEl) return;
 
 	let bod = document.body;
 
 	if (!_hasClassObj(bod, 'clickoutside1')) {
-		_fail(testEl, 'The clickoutside1 class has not been set and should have been.');
+		_fail(checkClickoutsideEventEl, 'The clickoutside1 class has not been set and should have been.');
 	}
 
 	if (!_hasClassObj(bod, 'clickoutside2')) {
-		_fail(testEl, 'The clickoutside2 class has not been set and should have been.');
+		_fail(checkClickoutsideEventEl, 'The clickoutside2 class has not been set and should have been.');
 	}
 		
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkClickoutsideEventEl);
 }
 
 /* Pended until clone/restore-clone issue 36 has been resolved.
@@ -628,118 +640,118 @@ function checkCloneBefore(o) {
 }
 */
 function checkCreateCommand(o) {
-	let testEl = _initTest('checkCreateCommand');
-	if (!testEl) return;
+	let checkCreateCommandEl = _initTest('checkCreateCommand');
+	if (!checkCreateCommandEl) return;
 
 	let el = _getObj('#checkCreateCommandDiv');
 	if (!el) {
-		_fail(testEl, '#checkCreateCommandDiv not present to run create-command test.');
+		_fail(checkCreateCommandEl, '#checkCreateCommandDiv not present to run create-command test.');
 	}
 
 	if (el.style.backgroundColor != 'blue') {
-		_fail(testEl, '#checkCreateCommandDiv does not have a blue background-color and it should.');
+		_fail(checkCreateCommandEl, '#checkCreateCommandDiv does not have a blue background-color and it should.');
 	}
 
 	if (el.style.color != 'yellow') {
-		_fail(testEl, '#checkCreateCommandDiv does not have yellow color and it should.');
+		_fail(checkCreateCommandEl, '#checkCreateCommandDiv does not have yellow color and it should.');
 	}
 
 	if (el.style.height != '100px') {
-		_fail(testEl, '#checkCreateCommandDiv does not have height of 100px and it should.');
+		_fail(checkCreateCommandEl, '#checkCreateCommandDiv does not have height of 100px and it should.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkCreateCommandEl);
 }
 
 function checkCreateConditionalFail(o) {
-	let testEl = _initTest('checkCreateConditional');
-	if (!testEl) return;
+	let checkCreateConditionalEl = _initTest('checkCreateConditional');
+	if (!checkCreateConditionalEl) return;
 
-	_fail(testEl, 'Test failed because it did not evaluate the conditional correctly.');
+	_fail(checkCreateConditionalEl, 'Test failed because it did not evaluate the conditional correctly.');
 }
 
 function checkCreateConditionalFinal(o) {
-	let testEl = _initTest('checkCreateConditional');
-	if (!testEl) return;
+	let checkCreateConditionalEl = _initTest('checkCreateConditional');
+	if (!checkCreateConditionalEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkCreateConditionalEl);
 }
 
 function checkCreateElement(o, pars) {
-	let testEl = _initTest('checkCreateElement');
-	if (!testEl) return;
+	let checkCreateElementEl = _initTest('checkCreateElement');
+	if (!checkCreateElementEl) return;
 
 	let el = _getObj('#checkCreateElementDiv');
 	if (!el) {
-		_fail(testEl, '#checkCreateElementDiv not there to perform test.');
+		_fail(checkCreateElementEl, '#checkCreateElementDiv not there to perform test.');
 	}
 
 	if (el.innerHTML != 'test1 test2 stringtest') {
-		_fail(testEl, 'Reactive attributes did not get rendered correctly in custom element. el.innerHTML:', el.innerHTML);
+		_fail(checkCreateElementEl, 'Reactive attributes did not get rendered correctly in custom element. el.innerHTML:', el.innerHTML);
 	}
 
 	if (typeof pars[0] === 'undefined' || pars[0] !== true) {
-		_fail(testEl, 'Connected callback did not invoke. pars[0]:', pars[0]);
+		_fail(checkCreateElementEl, 'Connected callback did not invoke. pars[0]:', pars[0]);
 	}
 
 	if (typeof pars[1] === 'undefined' || pars[1] !== true) {
-		_fail(testEl, 'Disconnected callback did not invoke. pars[1]:', pars[1], ', wrapper:', _getObj('#createElementTagsWrapper'));
+		_fail(checkCreateElementEl, 'Disconnected callback did not invoke. pars[1]:', pars[1], ', wrapper:', _getObj('#createElementTagsWrapper'));
 	}
 
 	if (typeof pars[2] === 'undefined' || pars[2] !== true) {
-		_fail(testEl, 'Attribute change callback did not invoke. pars[2]:', pars[2], ', wrapper:', _getObj('#createElementAttrChange'));
+		_fail(checkCreateElementEl, 'Attribute change callback did not invoke. pars[2]:', pars[2], ', wrapper:', _getObj('#createElementAttrChange'));
 	}
 
 	let el2 = _getObj('#createElementAttrChange');
 	if (!el2) {
-		_fail(testEl, '#createElementAttrChange not there to perform attribute test.');
+		_fail(checkCreateElementEl, '#createElementAttrChange not there to perform attribute test.');
 	} else {
 		if (el2.getAttribute('cetaga') != 'cheesey wotsits') {
-			_fail(testEl, '#createElementAttrChange does not contain the string "cheesey wotsits" at the end of the test.');
+			_fail(checkCreateElementEl, '#createElementAttrChange does not contain the string "cheesey wotsits" at the end of the test.');
 		}
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkCreateElementEl);
 }
 
 function checkEval(o) {
-	let testEl = _initTest('checkEval');
-	if (!testEl) return;
+	let checkEvalEl = _initTest('checkEval');
+	if (!checkEvalEl) return;
 
 	if (typeof window.evalResult !== undefined) {
 		if (window.evalResult === 2) {
-			_addSuccessClass(testEl);
+			_addSuccessClass(checkEvalEl);
 		} else {
-			_fail(testEl, 'window.evalResult is being defined in eval check but result doesn\'t equal 2.');
+			_fail(checkEvalEl, 'window.evalResult is being defined in eval check but result doesn\'t equal 2.');
 		}
 	} else {
-		_fail(testEl, 'window.evalResult not being defined in eval check.');
+		_fail(checkEvalEl, 'window.evalResult not being defined in eval check.');
 	}
 }
 
 // Note: This is the same test as the blur command but with different timings - focus-off is an alternative syntax.
 function checkFocusOffA(o) {
-	let testEl = _initTest('checkFocusOff');
-	if (!testEl) return;
+	let checkFocusOffEl = _initTest('checkFocusOff');
+	if (!checkFocusOffEl) return;
 
 	let el = _getObj('#focusOffField');
 
 	if (!el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOffField is not in focus for the first test and it should be.');
+		_fail(checkFocusOffEl, '#focusOffField is not in focus for the first test and it should be.');
 	}
 }
 
 function checkFocusOffFinal(o) {
-	let testEl = _initTest('checkFocusOff');
-	if (!testEl) return;
+	let checkFocusOffEl = _initTest('checkFocusOff');
+	if (!checkFocusOffEl) return;
 
 	let el = _getObj('#focusOffField');
 
 	if (!el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOffEl);
 	} else {
-		_fail(testEl, '#focusOffField in not out of focus at the end.');
+		_fail(checkFocusOffEl, '#focusOffField in not out of focus at the end.');
 	}
 }
 
@@ -754,28 +766,28 @@ function checkFocusOffFinal(o) {
 */
 
 function checkFocusOnFirstA(o) {
-	let testEl = _initTest('checkFocusOnFirst');
-	if (!testEl) return;
+	let checkFocusOnFirstEl = _initTest('checkFocusOnFirst');
+	if (!checkFocusOnFirstEl) return;
 
 	let el = _getObj('#focusOnFirstTarget');
 
 	// We want not in focus at start.
 	if (el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
+		_fail(checkFocusOnFirstEl, '#focusOnFirstTarget is in focus at the start of the test and shouldn\'t be to get a valid test.');
 	}
 }
 
 function checkFocusOnFirstFinal(o) {
-	let testEl = _initTest('checkFocusOnFirst');
-	if (!testEl) return;
+	let checkFocusOnFirstEl = _initTest('checkFocusOnFirst');
+	if (!checkFocusOnFirstEl) return;
 
 	let el = _getObj('#focusOnFirstTarget');
 
 	if (el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnFirstEl);
 	} else {
-		_fail(testEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
+		_fail(checkFocusOnFirstEl, '#focusOnFirstTarget is not in focus at the end and it should be.');
 	}
 }
 
@@ -790,29 +802,29 @@ function checkFocusOnFirstFinal(o) {
 */
 
 function checkFocusOnLastA(o) {
-	let testEl = _initTest('checkFocusOnLast');
-	if (!testEl) return;
+	let checkFocusOnLastEl = _initTest('checkFocusOnLast');
+	if (!checkFocusOnLastEl) return;
 
 	// Initially #focusOnLastTarget not in focus. Activates after 3.5s.
 	let el = _getObj('#focusOnLastTarget');
 
 	// We want not in focus at start.
 	if (el.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
+		_fail(checkFocusOnLastEl, '#focusOnLastTarget is in focus at the start and shouldn\'t be to get a valid test.');
 	}
 }
 
 function checkFocusOnLastFinal(o) {
-	let testEl = _initTest('checkFocusOnLast');
-	if (!testEl) return;
+	let checkFocusOnLastEl = _initTest('checkFocusOnLast');
+	if (!checkFocusOnLastEl) return;
 
 	let el = _getObj('#focusOnLastTarget');
 
 	if (el.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnLastEl);
 	} else {
-		_fail(testEl, '#focusOnLastTarget is not in focus at the end and it should be.');
+		_fail(checkFocusOnLastEl, '#focusOnLastTarget is not in focus at the end and it should be.');
 	}
 }
 
@@ -833,8 +845,8 @@ function checkFocusOnLastFinal(o) {
 */
 
 function checkFocusOnNextCycleA(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let firstEl = _getObj('#focusOnNextCycleStart');
 	let secondEl = _getObj('#focusOnNextCycleSecond');
@@ -842,43 +854,43 @@ function checkFocusOnNextCycleA(o) {
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleStart in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkFocusOnNextCycleB(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let firstEl = _getObj('#focusOnNextCycleStart');
 
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleStart is not in focus after 4s and it should be.');
 	}
 }
 
 function checkFocusOnNextCycleC(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let secondEl = _getObj('#focusOnNextCycleSecond');
 
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextCycleSecond has not moved into focus');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnNextCycleFinal(o) {
-	let testEl = _initTest('checkFocusOnNextCycle');
-	if (!testEl) return;
+	let checkFocusOnNextCycleEl = _initTest('checkFocusOnNextCycle');
+	if (!checkFocusOnNextCycleEl) return;
 
 	let thirdEl = _getObj('#focusOnNextCycleEnd');
 
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnNextCycleEl);
 	} else {
-		_fail(testEl, '#focusOnNextCycleEnd is not in focus at the end');
+		_fail(checkFocusOnNextCycleEl, '#focusOnNextCycleEnd is not in focus at the end');
 	}
 }
 
@@ -899,62 +911,62 @@ function checkFocusOnNextCycleFinal(o) {
 */
 
 function checkFocusOnNextA(o) {
-	let testEl = _initTest('checkFocusOnNext');
-	if (!testEl) return;
+	let checkFocusOnNextEl = _initTest('checkFocusOnNext');
+	if (!checkFocusOnNextEl) return;
 
 	let firstEl = _getObj('#focusOnNextStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextStart is in focus at the start and shouldn\'t be to get a valid test.');
+		_fail(checkFocusOnNextEl, '#focusOnNextStart is in focus at the start and shouldn\'t be to get a valid test.');
 	}
 }
 
 function checkFocusOnNextB(o) {
-	let testEl = _initTest('checkFocusOnNext');
-	if (!testEl) return;
+	let checkFocusOnNextEl = _initTest('checkFocusOnNext');
+	if (!checkFocusOnNextEl) return;
 
 	let firstEl = _getObj('#focusOnNextStart');
 
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextStart has not moved into focus.');
+		_fail(checkFocusOnNextEl, '#focusOnNextStart has not moved into focus.');
 	}
 }
 
 function checkFocusOnNextC(o) {
-	let testEl = _initTest('checkFocusOnNext');
-	if (!testEl) return;
+	let checkFocusOnNextEl = _initTest('checkFocusOnNext');
+	if (!checkFocusOnNextEl) return;
 
 	let secondEl = _getObj('#focusOnNextSecond');
 
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextSecond has not moved into focus');
+		_fail(checkFocusOnNextEl, '#focusOnNextSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnNextD(o) {
-	let testEl = _initTest('checkFocusOnNext');
-	if (!testEl) return;
+	let checkFocusOnNextEl = _initTest('checkFocusOnNext');
+	if (!checkFocusOnNextEl) return;
 
 	let thirdEl = _getObj('#focusOnNextEnd');
 
 	if (!thirdEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnNextEnd has not moved into focus');
+		_fail(checkFocusOnNextEl, '#focusOnNextEnd has not moved into focus');
 	}
 }
 
 function checkFocusOnNextFinal(o) {
-	let testEl = _initTest('checkFocusOnNext');
-	if (!testEl) return;
+	let checkFocusOnNextEl = _initTest('checkFocusOnNext');
+	if (!checkFocusOnNextEl) return;
 
 	let thirdEl = _getObj('#focusOnNextEnd');
 
 	// Is it still on the last element when it gets to the end and not something else?
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnNextEl);
 	} else {
-		_fail(testEl, '#focusOnNextEnd is not in focus at the end');
+		_fail(checkFocusOnNextEl, '#focusOnNextEnd is not in focus at the end');
 	}
 }
 
@@ -975,50 +987,50 @@ function checkFocusOnNextFinal(o) {
 */
 
 function checkFocusOnPreviousCycleA(o) {
-	let testEl = _initTest('checkFocusOnPreviousCycle');
-	if (!testEl) return;
+	let checkFocusOnPreviousCycleEl = _initTest('checkFocusOnPreviousCycle');
+	if (!checkFocusOnPreviousCycleEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousCycleStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
+		_fail(checkFocusOnPreviousCycleEl, '#focusOnPreviousCycleStart in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkFocusOnPreviousCycleB(o) {
-	let testEl = _initTest('checkFocusOnPreviousCycle');
-	if (!testEl) return;
+	let checkFocusOnPreviousCycleEl = _initTest('checkFocusOnPreviousCycle');
+	if (!checkFocusOnPreviousCycleEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousCycleStart');
 
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
+		_fail(checkFocusOnPreviousCycleEl, '#focusOnPreviousCycleStart is not in focus after 4s and it should be.');
 	}
 }
 
 function checkFocusOnPreviousCycleC(o) {
-	let testEl = _initTest('checkFocusOnPreviousCycle');
-	if (!testEl) return;
+	let checkFocusOnPreviousCycleEl = _initTest('checkFocusOnPreviousCycle');
+	if (!checkFocusOnPreviousCycleEl) return;
 
 	let secondEl = _getObj('#focusOnPreviousCycleSecond');
 
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousCycleSecond has not moved into focus');
+		_fail(checkFocusOnPreviousCycleEl, '#focusOnPreviousCycleSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnPreviousCycleFinal(o) {
-	let testEl = _initTest('checkFocusOnPreviousCycle');
-	if (!testEl) return;
+	let checkFocusOnPreviousCycleEl = _initTest('checkFocusOnPreviousCycle');
+	if (!checkFocusOnPreviousCycleEl) return;
 
 	let thirdEl = _getObj('#focusOnPreviousCycleEnd');
 
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnPreviousCycleEl);
 	} else {
-		_fail(testEl, '#focusOnPreviousCycleEnd is not in focus at the end');
+		_fail(checkFocusOnPreviousCycleEl, '#focusOnPreviousCycleEnd is not in focus at the end');
 	}
 }
 
@@ -1039,65 +1051,65 @@ function checkFocusOnPreviousCycleFinal(o) {
 */
 
 function checkFocusOnPreviousA(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkFocusOnPreviousB(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousStart');
 
 	// We want not in focus at start.
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
 	}
 }
 
 function checkFocusOnPreviousC(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let secondEl = _getObj('#focusOnPreviousSecond');
 
 	// We want not in focus at start.
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousSecond has not moved into focus');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnPreviousD(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let thirdEl = _getObj('#focusOnPreviousEnd');
 
 	// We want not in focus at start.
 	if (!thirdEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousEnd is not in focus at the end');
 	}
 }
 
 function checkFocusOnPreviousFinal(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let thirdEl = _getObj('#focusOnPreviousEnd');
 
 	// Is it still on the last element when it gets to the end and not something else?
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnPreviousEl);
 	} else {
-		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousEnd is not in focus at the end');
 	}
 }
 
@@ -1124,57 +1136,57 @@ function checkFormEls() {
 }
 
 function checkFormResetA(o) {
-	let testEl = _initTest('checkFormReset');
-	if (!testEl) return;
+	let checkFormResetEl = _initTest('checkFormReset');
+	if (!checkFormResetEl) return;
 
 	let els = checkFormEls();
 
 	if (els.regularField !== 'changedResult') {
-		_fail(testEl, '#checkFormRegularField is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormRegularField is not "changedResult" on the change');
 	}
 	if (els.firstMimicField !== 'changedResult') {
-		_fail(testEl, '#checkFormMimicField1 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormMimicField1 is not "changedResult" on the change');
 	}
 	if (els.secondMimicField !== 'changedResult') {
-		_fail(testEl, '#checkFormMimicField2 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormMimicField2 is not "changedResult" on the change');
 	}
 	if (els.firstResultField !== 'changedResult') {
-		_fail(testEl, '#checkFormResultOfMimic1 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic1 is not "changedResult" on the change');
 	}
 	if (els.secondResultField !== 'changedResult') {
-		_fail(testEl, '#checkFormResultOfMimic2 is not "changedResult" on the change');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic2 is not "changedResult" on the change');
 	}
 	if (els.pageTitle !== 'New page title') {
-		_fail(testEl, 'document.title is not "New page title" on the change');
+		_fail(checkFormResetEl, 'document.title is not "New page title" on the change');
 	}
 }
 
 function checkFormResetFinal(o) {
-	let testEl = _initTest('checkFormReset');
-	if (!testEl) return;
+	let checkFormResetEl = _initTest('checkFormReset');
+	if (!checkFormResetEl) return;
 
 	let els = checkFormEls();
 
 	if (els.regularField !== 'Bert') {
-		_fail(testEl, '#checkFormRegularField is not "Bert" on the reset');
+		_fail(checkFormResetEl, '#checkFormRegularField is not "Bert" on the reset');
 	}
 	if (els.firstMimicField !== 'Cheryl') {
-		_fail(testEl, '#checkFormMimicField1 is not "Cheryl" on the reset');
+		_fail(checkFormResetEl, '#checkFormMimicField1 is not "Cheryl" on the reset');
 	}
 	if (els.secondMimicField !== 'Bob') {
-		_fail(testEl, '#checkFormMimicField2 is not "Bob" on the reset');
+		_fail(checkFormResetEl, '#checkFormMimicField2 is not "Bob" on the reset');
 	}
 	if (els.firstResultField !== 'Cheryl') {
-		_fail(testEl, '#checkFormResultOfMimic1 is not "Cheryl" on the reset');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic1 is not "Cheryl" on the reset');
 	}
 	if (els.secondResultField !== 'Bob') {
-		_fail(testEl, '#checkFormResultOfMimic2 is not "Bob" on the reset');
+		_fail(checkFormResetEl, '#checkFormResultOfMimic2 is not "Bob" on the reset');
 	}
 	if (els.pageTitle !== 'cheeseyness') {
-		_fail(testEl, 'document.title is not "cheeseyness" on the reset');
+		_fail(checkFormResetEl, 'document.title is not "cheeseyness" on the reset');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkFormResetEl);
 }
 
 /*
@@ -1190,46 +1202,48 @@ function checkFormResetFinal(o) {
 // func: checkFuncNum 8;
 function checkFuncNum(o, pars) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkFunc');
-	if (!testEl) return;
+	let checkFuncEl = _initTest('checkFunc');
+	if (!checkFuncEl) return;
 
-	if (pars[0] !== 8) _fail(testEl, 'Did not receive the number 8 in checkFuncNum().');
+	if (pars[0] !== 8) _fail(checkFuncEl, 'Did not receive the number 8 in checkFuncNum().');
 }
 
 // func: checkFuncStr "test string";
 function checkFuncStr(o, pars) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkFunc');
-	if (!testEl) return;
+	let checkFuncEl = _initTest('checkFunc');
+	if (!checkFuncEl) return;
 
-	if (pars[0] !== "test string") _fail(testEl, 'Did not receive the string "test string" in checkFuncStr().');
+	if (pars[0] !== "test string") _fail(checkFuncEl, 'Did not receive the string "test string" in checkFuncStr().');
 }
 
 // func: checkFuncTrue true;
 function checkFuncTrue(o, pars) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkFunc');
-	if (!testEl) return;
+	let checkFuncEl = _initTest('checkFunc');
+	if (!checkFuncEl) return;
 
-	if (pars[0] !== true) _fail(testEl, 'Did not receive boolean true in checkFuncTrue().');
+	if (pars[0] !== true) _fail(checkFuncEl, 'Did not receive boolean true in checkFuncTrue().');
 }
 
 // func: checkFuncFalse false;
 function checkFuncFalse(o, pars) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkFunc');
-	if (!testEl) return;
+	let checkFuncEl = _initTest('checkFunc');
+	if (!checkFuncEl) return;
 
-	if (pars[0] !== false) _fail(testEl, 'Did not receive boolean false in checkFuncTrue().');
+	if (pars[0] !== false) _fail(checkFuncEl, 'Did not receive boolean false in checkFuncTrue().');
 }
 
 function checkFuncFinal(o) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkFunc');
-	if (!testEl) return;
+	let checkFuncEl = _initTest('checkFunc');
+	if (!checkFuncEl) return;
 
-	_addSuccessClass(testEl);	// Only adds a success class if it hasn't specifically failed already.
+	_addSuccessClass(checkFuncEl);	// Only adds a success class if it hasn't specifically failed already.
 }
+
+// Note: If this test is inexplicably failing, it could be something else like timings on delayed tests happening elsewhere, such as the test for load-config.
 
 function checkIframeGetInnerHTML() {
     let frameObj = _getObj('#checkIframeIframe');
@@ -1238,39 +1252,45 @@ function checkIframeGetInnerHTML() {
 }
 
 function checkIframeReloadA(o) {
+	let checkIframeReloadEl = _initTest('checkIframeReload');
+	if (!checkIframeReloadEl) return;
+
 	if (checkIframeGetInnerHTML() !== '<p>iframe test</p>') {
-		_fail(testEl, 'Iframe body does not contain "<p>iframe test</p>" prior to test.');
+		_fail(checkIframeReloadEl, 'Iframe body does not contain "<p>iframe test</p>" prior to test.');
 	}
 }
 
 function checkIframeReloadB(o) {
+	let checkIframeReloadEl = _initTest('checkIframeReload');
+	if (!checkIframeReloadEl) return;
+
 	if (checkIframeGetInnerHTML() !== '<p>some new text</p>') {
-		_fail(testEl, 'Iframe body does not contain "<p>some new text</p>" after change.');
+		_fail(checkIframeReloadEl, 'Iframe body does not contain "<p>some new text</p>" after change.');
 	}
 }
 
 function checkIframeReloadFinal(o) {
-	let testEl = _initTest('checkIframeReload');
-	if (!testEl) return;
+	let checkIframeReloadEl = _initTest('checkIframeReload');
+	if (!checkIframeReloadEl) return;
 
 	if (checkIframeGetInnerHTML() !== '<p>iframe test</p>') {
-		_fail(testEl, 'Iframe body does not contain "<p>iframe test</p>" after reload.');
+		_fail(checkIframeReloadEl, 'Iframe body does not contain "<p>iframe test</p>" after reload.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkIframeReloadEl);
 }
 
 function checkLoadConfig(o) {
-	let testEl = _initTest('checkLoadConfig');
-	if (!testEl) return;
+	let checkLoadConfigEl = _initTest('checkLoadConfig');
+	if (!checkLoadConfigEl) return;
 
 	let el = _getObj('#checkLoadConfig div');
 	if (!el) {
-		_fail(testEl, 'The test div was not drawn prior to the load-config command before run.');
+		_fail(checkLoadConfigEl, 'The test div was not drawn prior to the load-config command before run.');
 	} else if (el.innerHTML !== 'Here is some text.') {
-		_fail(testEl, 'The div did not contain the text "Here is some text." after the test was run.');
+		_fail(checkLoadConfigEl, 'The div did not contain the text "Here is some text." after the test was run.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadConfigEl);
 	}
 }
 
@@ -1283,66 +1303,66 @@ function checkLoadConfig(o) {
 */
 
 function checkLoadImages(o) {
-	let testEl = _initTest('checkLoadImages');
-	if (!testEl) return;
+	let checkLoadImagesEl = _initTest('checkLoadImages');
+	if (!checkLoadImagesEl) return;
 
 	let el1 = _getObj('#checkLoadImagesImg1');
 	let el2 = _getObj('#checkLoadImagesPicSrc1');
 	let el3 = _getObj('#checkLoadImagesImg2');
 
 	if (!el1 || !el2 || !el3) {
-		_fail(testEl, 'Image elements failed to load prior to test.');
+		_fail(checkLoadImagesEl, 'Image elements failed to load prior to test.');
 
 	} else {
 		if (_getFileName(el1.src) !== 'cat3.gif') {
-			_fail(testEl, '#checkLoadImagesImg1 did not contain the lazy-loaded image. el1.src:', el1.src);
+			_fail(checkLoadImagesEl, '#checkLoadImagesImg1 did not contain the lazy-loaded image. el1.src:', el1.src);
 		}
 		if (_getFileName(el2.srcset) !== 'building-cliff-clouds-67235-tn.jpg') {
-			_fail(testEl, '#checkLoadImagesPicSrc1 did not contain the lazy-loaded image. el2.srcset:', el2.srcset);
+			_fail(checkLoadImagesEl, '#checkLoadImagesPicSrc1 did not contain the lazy-loaded image. el2.srcset:', el2.srcset);
 		}
 		if (_getFileName(el3.src) !== 'cat2.gif') {
-			_fail(testEl, '#checkLoadImagesImg2 did not contain the lazy-loaded image. el3.src:', el3.src);
+			_fail(checkLoadImagesEl, '#checkLoadImagesImg2 did not contain the lazy-loaded image. el3.src:', el3.src);
 		}
 
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadImagesEl);
 	}
 }
 
 function checkLoadScript(o) {
-	let testEl = _initTest('checkLoadScript');
-	if (!testEl) return;
+	let checkLoadScriptEl = _initTest('checkLoadScript');
+	if (!checkLoadScriptEl) return;
 
 	if (window._acssTestLoadScriptVar !== true) {
-		_fail(testEl, 'window._acssTestLoadScriptVar is not set === true after the test script has loaded.');
+		_fail(checkLoadScriptEl, 'window._acssTestLoadScriptVar is not set === true after the test script has loaded.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadScriptEl);
 	}
 }
 
 function checkLoadStyleDocument(o) {
-	let testEl = _initTest('checkLoadStyle');
-	if (!testEl) return;
+	let checkLoadStyleEl = _initTest('checkLoadStyle');
+	if (!checkLoadStyleEl) return;
 
 	// Test in the document scope.
 	let el = _getObj('#checkLoadStyle div');
 	let styles = window.getComputedStyle(el);	// Remember - el.style.color can only be used for inline styles.
 
 	if (!el) {
-		_fail(testEl, 'Test div not there to run test.');
+		_fail(checkLoadStyleEl, 'Test div not there to run test.');
 	} else if (styles.color !== 'rgb(0, 0, 255)') {
-		_fail(testEl, 'Color of test div has not been set to "rgb(0, 0, 255)" from the load-style stylesheet. styles.color:', styles.color);
+		_fail(checkLoadStyleEl, 'Color of test div has not been set to "rgb(0, 0, 255)" from the load-style stylesheet. styles.color:', styles.color);
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadStyleEl);
 	}
 
 }
 
 function checkLoadStyleShadow(o) {
-	let testEl = _initTest('checkLoadStyleShad');
-	if (!testEl) return;
+	let checkLoadStyleShadEl = _initTest('checkLoadStyleShad');
+	if (!checkLoadStyleShadEl) return;
 
 	// Second, test in the shadow scope.
-	let testDiv = testEl.shadowRoot.querySelector('div');
+	let testDiv = checkLoadStyleShadEl.shadowRoot.querySelector('div');
 	let styles = window.getComputedStyle(testDiv);	// Remember - el.style.color can only be used for inline styles.
 
 	if (!testDiv) {
@@ -1350,17 +1370,17 @@ function checkLoadStyleShadow(o) {
 	} else if (styles.color !== 'rgb(255, 0, 0)') {
 		_fail(testDiv, 'Color of test div has not been set to "rgb(255, 0, 0)" from the load-style stylesheet. styles.color:', styles.color);
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadStyleShadEl);
 	}
 
 }
 
 function checkLoadStyleShadow2(o) {
-	let testEl = _initTest('checkLoadStyleShad2');
-	if (!testEl) return;
+	let checkLoadStyleShad2El = _initTest('checkLoadStyleShad2');
+	if (!checkLoadStyleShad2El) return;
 
 	// Third, test the with the same stylesheet again in a second shadow scope.
-	let testDiv = testEl.shadowRoot.querySelector('div');
+	let testDiv = checkLoadStyleShad2El.shadowRoot.querySelector('div');
 	let styles = window.getComputedStyle(testDiv);	// Remember - el.style.color can only be used for inline styles.
 
 	if (!testDiv) {
@@ -1368,51 +1388,51 @@ function checkLoadStyleShadow2(o) {
 	} else if (styles.color !== 'rgb(255, 0, 0)') {
 		_fail(testDiv, 'Color of test div has not been set to "rgb(255, 0, 0)" from the load-style stylesheet. styles.color:', styles.color);
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkLoadStyleShad2El);
 	}
 
 }
 
 function checkPreventDefault(o) {
-	let testEl = _initTest('checkPreventDefault');
-	if (!testEl) return;
+	let checkPreventDefaultEl = _initTest('checkPreventDefault');
+	if (!checkPreventDefaultEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkPreventDefaultEl);
 }
 
 function checkPreventDefaultShadow(o) {
-	let testEl = _initTest('checkPreventDefaultShadow');
-	if (!testEl) return;
+	let checkPreventDefaultShadowEl = _initTest('checkPreventDefaultShadow');
+	if (!checkPreventDefaultShadowEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkPreventDefaultShadowEl);
 }
 
 function checkRemoveAttribute(o) {
-	let testEl = _initTest('checkRemoveAttribute');
-	if (!testEl) return;
+	let checkRemoveAttributeEl = _initTest('checkRemoveAttribute');
+	if (!checkRemoveAttributeEl) return;
 
 	let el = _getObj('#removeAttributeDiv');
 	if (!el) {
-		_fail(testEl, '#removeAttributeDiv not present to perform remove-attribute command.');
+		_fail(checkRemoveAttributeEl, '#removeAttributeDiv not present to perform remove-attribute command.');
 	}
 
 	if (!el.hasAttribute('data-test')) {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkRemoveAttributeEl);
 	} else {
-		_fail(testEl, 'Failed to remove the attribute "data-test" from #removeAttributeDiv. Element:', el);
+		_fail(checkRemoveAttributeEl, 'Failed to remove the attribute "data-test" from #removeAttributeDiv. Element:', el);
 	}
 }
 
 function checkRemoveClass(o) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkRemoveClass');
-	if (!testEl) return;
+	let checkRemoveClassEl = _initTest('checkRemoveClass');
+	if (!checkRemoveClassEl) return;
 
 	// Check if the class is no longer there.
-	if (_hasClassObj(testEl, 'removeClassToRemove')) {
+	if (_hasClassObj(checkRemoveClassEl, 'removeClassToRemove')) {
 		return;
 	}
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkRemoveClassEl);
 }
 
 /* Pended until clone/restore-clone issue 36 has been resolved.
@@ -1426,181 +1446,181 @@ function checkRemoveClone(o) {
 }
 */
 function checkRemoveCookieA(o) {
-	let testEl = _initTest('checkRemoveCookie');
-	if (!testEl) return;
+	let checkRemoveCookieEl = _initTest('checkRemoveCookie');
+	if (!checkRemoveCookieEl) return;
 
 	let removeCookieTest1 = _getCookie('removeCookieTest1');
 
 	if (removeCookieTest1 != 'Y') {
-		_fail(testEl, 'removeCookieTest1 cookie is not set at the beginning and it should be.');
+		_fail(checkRemoveCookieEl, 'removeCookieTest1 cookie is not set at the beginning and it should be.');
 	}
 }
 
 function checkRemoveCookieFinal(o) {
-	let testEl = _initTest('checkRemoveCookie');
-	if (!testEl) return;
+	let checkRemoveCookieEl = _initTest('checkRemoveCookie');
+	if (!checkRemoveCookieEl) return;
 
 	let removeCookieTest1 = _getCookie('removeCookieTest1');
 
 	if (removeCookieTest1 == 'Y') {
-		_fail(testEl, 'removeCookieTest1 cookie is still there and it shouldn\'t be.');
+		_fail(checkRemoveCookieEl, 'removeCookieTest1 cookie is still there and it shouldn\'t be.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkRemoveCookieEl);
 }
 
 function checkRemoveProperty(o) {
-	let testEl = _initTest('checkRemoveProperty');
-	if (!testEl) return;
+	let checkRemovePropertyEl = _initTest('checkRemoveProperty');
+	if (!checkRemovePropertyEl) return;
 
 	let el = _getObj('#removePropertyDiv');
 	if (!el) {
-		_fail(testEl, '#removePropertyDiv not present to perform remove-property command.');
+		_fail(checkRemovePropertyEl, '#removePropertyDiv not present to perform remove-property command.');
 	}
 
 	if (el.style.backgroundColor != 'green') {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkRemovePropertyEl);
 	} else {
-		_fail(testEl, 'Failed to remove the background-color property from #removePropertyDiv. Element:', el);
+		_fail(checkRemovePropertyEl, 'Failed to remove the background-color property from #removePropertyDiv. Element:', el);
 	}
 }
 
 function checkRemovePropertyBefore(o) {
-	let testEl = _initTest('checkRemoveProperty');
-	if (!testEl) return;
+	let checkRemovePropertyEl = _initTest('checkRemoveProperty');
+	if (!checkRemovePropertyEl) return;
 
 	let el = _getObj('#removePropertyDiv');
 	if (!el) {
-		_fail(testEl, '#removePropertyDiv not present to perform remove-property command.');
+		_fail(checkRemovePropertyEl, '#removePropertyDiv not present to perform remove-property command.');
 	}
 
 	if (el.style.backgroundColor != 'green') {
-		_fail(testEl, '#removePropertyDiv does not have a background-color of green before the test of remove-property begins.');
+		_fail(checkRemovePropertyEl, '#removePropertyDiv does not have a background-color of green before the test of remove-property begins.');
 	}
 }
 
 function checkRemove(o) {
-	let testEl = _initTest('checkRemove');
-	if (!testEl) return;
+	let checkRemoveEl = _initTest('checkRemove');
+	if (!checkRemoveEl) return;
 
 	let el = _getObj('#removeToRemove');
 	if (!el) {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkRemoveEl);
 	} else {
-		_fail(testEl, '#removeToRemove did not get removed by the remove command.');
+		_fail(checkRemoveEl, '#removeToRemove did not get removed by the remove command.');
 	}
 }
 
 function checkRemoveBefore(o) {
-	let testEl = _initTest('checkRemove');
-	if (!testEl) return;
+	let checkRemoveEl = _initTest('checkRemove');
+	if (!checkRemoveEl) return;
 
 	let el = _getObj('#removeToRemove');
 	if (!el) {
-		_fail(testEl, '#removeToRemove is not present in order to perform the remove test.');
+		_fail(checkRemoveEl, '#removeToRemove is not present in order to perform the remove test.');
 	}
 }
 
 /* This test is covered by the clone command test, as they work together. */
 
 function checkRun(o) {
-	let testEl = _initTest('checkRun');
-	if (!testEl) return;
+	let checkRunEl = _initTest('checkRun');
+	if (!checkRunEl) return;
 
 	if (typeof window.runResult !== undefined) {
 		if (window.runResult === 2) {
-			_addSuccessClass(testEl);
+			_addSuccessClass(checkRunEl);
 		} else {
-			_fail(testEl, 'window.runResult is being defined in run check but result doesn\'t equal 2.');
+			_fail(checkRunEl, 'window.runResult is being defined in run check but result doesn\'t equal 2.');
 		}
 	} else {
-		_fail(testEl, 'window.runResult not being defined in run check.');
+		_fail(checkRunEl, 'window.runResult not being defined in run check.');
 	}
 }
 
 function checkSetAttribute(o) {
-	let testEl = _initTest('checkSetAttribute');
-	if (!testEl) return;
+	let checkSetAttributeEl = _initTest('checkSetAttribute');
+	if (!checkSetAttributeEl) return;
 
 	let el = _getObj('#setAttributeDiv');
 	if (!el) {
-		_fail(testEl, '#setAttributeDiv not present to perform set-attribute command.');
+		_fail(checkSetAttributeEl, '#setAttributeDiv not present to perform set-attribute command.');
 	}
 
 	if (el.hasAttribute('data-test')) {
 		if (el.getAttribute('data-test') == 'some data') {
-			_addSuccessClass(testEl);
+			_addSuccessClass(checkSetAttributeEl);
 		} else {
-			_fail(testEl, 'Added attribute "data-test" to #setAttributeDiv but it does not contain the text "some data". Element:', el);
+			_fail(checkSetAttributeEl, 'Added attribute "data-test" to #setAttributeDiv but it does not contain the text "some data". Element:', el);
 		}
 	} else {
-		_fail(testEl, 'Failed to add the attribute "data-test" to #setAttributeDiv. Element:', el);
+		_fail(checkSetAttributeEl, 'Failed to add the attribute "data-test" to #setAttributeDiv. Element:', el);
 	}
 }
 
 // set-class: "classes with .quotes";
 // func: checkSetClassA;
 function checkSetClassA(o) {
-	let testEl = _initTest('checkSetClass');
-	if (!testEl) return;
+	let checkSetClassEl = _initTest('checkSetClass');
+	if (!checkSetClassEl) return;
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		_fail(testEl, 'Element to test (#setClassBox) is not there.');
+		_fail(checkSetClassEl, 'Element to test (#setClassBox) is not there.');
 		return;
 	}
 
 	if (!_hasClassObj(el, 'classes') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'quotes')) {
-		_fail(testEl, 'The classes with .quotes test failed. Element:', el);
+		_fail(checkSetClassEl, 'The classes with .quotes test failed. Element:', el);
 	}
 
 	// Check if the old classes are still there. This tests a full replacement.
 	if (_hasClassObj(el, 'some') || _hasClassObj(el, 'randomClasses') || _hasClassObj(el, 'in') || _hasClassObj(el, 'here')) {
-		_fail(testEl, 'The classes with .quotes test failed because the old classes are still there. Element:', el);
+		_fail(checkSetClassEl, 'The classes with .quotes test failed because the old classes are still there. Element:', el);
 	}
 }
 
 // set-class: .someclasses .without .thequotes;
 // func: checkSetClassB;
 function checkSetClassB(o) {
-	let testEl = _initTest('checkSetClass');
-	if (!testEl) return;
+	let checkSetClassEl = _initTest('checkSetClass');
+	if (!checkSetClassEl) return;
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
+		_fail(checkSetClassEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'someclasses') || !_hasClassObj(el, 'without') || !_hasClassObj(el, 'thequotes')) {
-		_fail(testEl, 'The .someclasses .without .thequotes test failed. Element:', el);
+		_fail(checkSetClassEl, 'The .someclasses .without .thequotes test failed. Element:', el);
 	}
 }
 
 // set-class: moreclasses with no dots;
 // func: checkSetClassFinal;
 function checkSetClassFinal(o) {
-	let testEl = _initTest('checkSetClass');
-	if (!testEl) return;
+	let checkSetClassEl = _initTest('checkSetClass');
+	if (!checkSetClassEl) return;
 
 	let el = _getObj('#setClassBox');
 	if (!el) {
-		_fail(testEl, 'Element to test (#setClassBox) is not there. Element:', el);
+		_fail(checkSetClassEl, 'Element to test (#setClassBox) is not there. Element:', el);
 		return;
 	}
 
 	// Check for the new classes.
 	if (!_hasClassObj(el, 'moreclasses') || !_hasClassObj(el, 'with') || !_hasClassObj(el, 'no') || !_hasClassObj(el, 'dots')) {
-		_fail(testEl, 'The moreclasses with no dots test failed. Element:', el);
+		_fail(checkSetClassEl, 'The moreclasses with no dots test failed. Element:', el);
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkSetClassEl);
 }
 
 function checkSetCookie(o) {
-	let testEl = _initTest('checkSetCookie');
-	if (!testEl) return;
+	let checkSetCookieEl = _initTest('checkSetCookie');
+	if (!checkSetCookieEl) return;
 
 	let test1 = _getCookie('test1');
 	let test2 = _getCookie('test2');
@@ -1611,126 +1631,159 @@ function checkSetCookie(o) {
 	let test7 = _getCookie('test7');
 
 	if (test1 != 'Y') {
-		_fail(testEl, 'test1 cookie is not set to "Y"');
+		_fail(checkSetCookieEl, 'test1 cookie is not set to "Y"');
 	}
 
 	if (test2 != 'some%20info%22\'') {
-		_fail(testEl, 'test2 cookie is not set to "some%20info%22\'"');
+		_fail(checkSetCookieEl, 'test2 cookie is not set to "some%20info%22\'"');
 	}
 
 	if (test3 == 'fred') {	// This shouldn't exist!
-		_fail(testEl, 'test3 cookie is set to "Fred" but shouldn\'t be - it should be expired.');
+		_fail(checkSetCookieEl, 'test3 cookie is set to "Fred" but shouldn\'t be - it should be expired.');
 	}
 
 	if (test4 == 'expired%20cookie' || test5 != 'non-expired%20cookie') {
 		// Both these checks need to occur to ascertain whether a correctly formatted string date test works.
-		_fail(testEl, 'Cookie straight date test failed.');
+		_fail(checkSetCookieEl, 'Cookie straight date test failed.');
 	}
 
 	if (test6 == 'expression%20expired' || test7 != 'expression%20not%20expired') {
 		// Both these checks need to occur to ascertain whether an expression inserted as an expiry date with "{= =}" test works.
-		_fail(testEl, 'Cookie expression date test failed.');
+		_fail(checkSetCookieEl, 'Cookie expression date test failed.');
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkSetCookieEl);
 }
 
 function checkSetProperty(o) {
-	let testEl = _initTest('checkSetProperty');
-	if (!testEl) return;
+	let checkSetPropertyEl = _initTest('checkSetProperty');
+	if (!checkSetPropertyEl) return;
 
 	let el = _getObj('#setPropertyInput');
 	if (!el) {
-		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+		_fail(checkSetPropertyEl, '#setPropertyInput not present to perform set-property command.');
 	}
 
 	if (!el.disabled) {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkSetPropertyEl);
 	} else {
-		_fail(testEl, 'Failed to remove the disabled property from #setPropertyInput. Element:', el);
+		_fail(checkSetPropertyEl, 'Failed to remove the disabled property from #setPropertyInput. Element:', el);
 	}
 }
 
 function checkSetPropertyBefore(o) {
-	let testEl = _initTest('checkSetProperty');
-	if (!testEl) return;
+	let checkSetPropertyEl = _initTest('checkSetProperty');
+	if (!checkSetPropertyEl) return;
 
 	let el = _getObj('#setPropertyInput');
 	if (!el) {
-		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+		_fail(checkSetPropertyEl, '#setPropertyInput not present to perform set-property command.');
 	}
 
 	if (!el.disabled) {
-		_fail(testEl, '#setPropertyInput is not disabled before the test of set-property begins and it shouldn\'t be.');
+		_fail(checkSetPropertyEl, '#setPropertyInput is not disabled before the test of set-property begins and it shouldn\'t be.');
 	}
 }
 
-function checkStopEventPropagation(o) {
-	let testEl = _initTest('checkStopEventPropagation');
-	if (!testEl) return;
+function checkStopEventPropagation(o, pars) {
+	let checkStopEventPropagationEl = _initTest('checkStopEventPropagation');
+	if (!checkStopEventPropagationEl) return;
 
-//	_fail(testEl, 'message');
+	if (pars[0] !== 1 || pars[1] !== 1) {
+		_fail(checkStopEventPropagationEl, 'It failed to handle stop-event-propagation correctly. pars[0]:', pars[0], 'pars[1]:', pars[1]);
+	} else {
+		_addSuccessClass(checkStopEventPropagationEl);
+	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkStopEventPropagationEl);
 }
 
 function checkStopImmediateEventPropagation(o, pars) {
-	let testEl = _initTest('checkStopImmediateEventPropagation');
-	if (!testEl) return;
+	let checkStopImmediateEventPropagationEl = _initTest('checkStopImmediateEventPropagation');
+	if (!checkStopImmediateEventPropagationEl) return;
 
-	console.log();
 	if (pars[0] === true) {
-		_fail(testEl, 'It failed to stop immediate propagation and ran the following class event on the same element.');
+		_fail(checkStopImmediateEventPropagationEl, 'It failed to stop-immediate-event-propagation and ran the class event on the same element.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkStopImmediateEventPropagationEl);
 	}
 }
 
-function checkStopImmediatePropagation(o) {
-	let testEl = _initTest('checkStopImmediatePropagation');
-	if (!testEl) return;
+// This needs to be setup here before Active CSS starts up for a valid test.
+// This is very similar to the stop-immediate-event-propagation test. It's good enough if it does the same thing in practice. If it didn't pass this then
+// something would be wrong with the way the browser itself was handling it - as long as Active CSS runs event.stopImmediatePropagation() correctly.
+window.checkStopImmedPropagationRealClickVarDiv = 0;
 
-//	_fail(testEl, 'message');
+document.body.addEventListener('click', function (e) {
+	let stopImmedPropEl = _getObj('#checkStopImmedPropA');
+	if (stopImmedPropEl && e.target == stopImmedPropEl) {
+		window.checkStopImmedPropagationRealClickVarDiv = 1;
+	}
+}, { capture: true });
 
-	_addSuccessClass(testEl);
+function checkStopImmediatePropagation(o, pars) {
+	let checkStopImmediatePropagationEl = _initTest('checkStopImmediatePropagation');
+	if (!checkStopImmediatePropagationEl) return;
+
+	let divVar = window.checkStopImmedPropagationRealClickVarDiv;
+
+	if (pars[0] === true || divVar == 1) {
+		_fail(checkStopImmediatePropagationEl, 'It failed to stop-immediate-propagation and ran the class event on the same element.');
+	} else {
+		_addSuccessClass(checkStopImmediatePropagationEl);
+	}
 }
 
-function checkStopPropagation(o) {
-	let testEl = _initTest('checkStopPropagation');
-	if (!testEl) return;
+// This needs to be setup here before Active CSS starts up for a valid test.
+window.checkStopPropagationRealClickVarDiv = 0;
 
-//	_fail(testEl, 'message');
+document.body.addEventListener('click', function (e) {
+	let stopPropEl = _getObj('#checkStopPropagationDiv');
+	if (stopPropEl && e.target == stopPropEl) {
+		window.checkStopPropagationRealClickVarDiv = 1;
+	}
+}, { capture: true });
 
-	_addSuccessClass(testEl);
+function checkStopPropagation(o, pars) {
+	let checkStopPropagationEl = _initTest('checkStopPropagation');
+	if (!checkStopPropagationEl) return;
+
+	let divVar = window.checkStopPropagationRealClickVarDiv;
+
+	if (pars[0] !== 1 || pars[1] !== 1 || divVar === 1) {
+		_fail(checkStopPropagationEl, 'It failed to handle stop-propagation correctly. pars[0]:', pars[0], 'pars[1]:', pars[1], 'divVar:', divVar);
+	} else {
+		_addSuccessClass(checkStopPropagationEl);
+	}
 }
 
 function checkStyle(o) {
 	// Check that the element to remove the class from is definitely there.
-	let testEl = _initTest('checkStyle');
-	if (!testEl) return;
+	let checkStyleEl = _initTest('checkStyle');
+	if (!checkStyleEl) return;
 
 	// Check if the class is no longer there.
-	if (testEl.style.backgroundColor != 'green') {
-		_fail(testEl, 'Green was not set as the background color of the test element.');
+	if (checkStyleEl.style.backgroundColor != 'green') {
+		_fail(checkStyleEl, 'Green was not set as the background color of the test element.');
 		return;
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkStyleEl);
 }
 
 function checkTakeClassA(o) {
-	let testEl = _initTest('checkTakeClass');
-	if (!testEl) return;
+	let checkTakeClassEl = _initTest('checkTakeClass');
+	if (!checkTakeClassEl) return;
 
 	// Check if the orange option is selected. That's all we ned to do at this point.
 	if (!_hasClassObj(_getObj('#takeClassOrange'), 'taken')) {
-		_fail(testEl, 'The orange fruit did not get the class.');
+		_fail(checkTakeClassEl, 'The orange fruit did not get the class.');
 	}
 }
 
 function checkTakeClassFinal(o) {
-	let testEl = _initTest('checkTakeClass');
-	if (!testEl) return;
+	let checkTakeClassEl = _initTest('checkTakeClass');
+	if (!checkTakeClassEl) return;
 
 	// Loop fruits and check that the only one selected is lime.
 	let success = false;
@@ -1743,52 +1796,52 @@ function checkTakeClassFinal(o) {
 			} else {
 				quit = true;
 				success = false;
-				_fail(testEl, 'Some fruit other than lime still has the class.');
+				_fail(checkTakeClassEl, 'Some fruit other than lime still has the class.');
 			}
 		}
 	});
 	if (quit) return;
 	if (!success) {
-		_fail(testEl, 'The lime fruit did not get the class.');
+		_fail(checkTakeClassEl, 'The lime fruit did not get the class.');
 		return;
 	}
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkTakeClassEl);
 }
 
 function checkToggleClassA(o) {
-	let testEl = _initTest('checkToggleClass');
-	if (!testEl) return;
+	let checkToggleClassEl = _initTest('checkToggleClass');
+	if (!checkToggleClassEl) return;
 
 	if (!_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		_fail(testEl, 'The first toggle did not add the class.');
+		_fail(checkToggleClassEl, 'The first toggle did not add the class.');
 	}
 }
 
 
 
 function checkToggleClassFinal(o) {
-	let testEl = _initTest('checkToggleClass');
-	if (!testEl) return;
+	let checkToggleClassEl = _initTest('checkToggleClass');
+	if (!checkToggleClassEl) return;
 
 	if (_hasClassObj(_getObj('#toggleClassBox'), 'butNotReally')) {
-		_fail(testEl, 'The second toggle did not remove the class.');
+		_fail(checkToggleClassEl, 'The second toggle did not remove the class.');
 		return;
 	}
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkToggleClassEl);
 }
 
 function checkTriggerReal(o) {
-	let testEl = _initTest('checkTriggerReal');
-	if (!testEl) return;
+	let checkTriggerRealEl = _initTest('checkTriggerReal');
+	if (!checkTriggerRealEl) return;
 
 	let el = _getObj('#checkTriggerReal p');
 	if (!el) {
-		_fail(testEl, '#checkTriggerReal p not there for the test.');
+		_fail(checkTriggerRealEl, '#checkTriggerReal p not there for the test.');
 	} else if (el.innerHTML !== 'Hello. Is it me you\'re looking for too?') {
-		_fail(testEl, 'target div does not contain "Hello. Is it me you\'re looking for too?" after test.');
+		_fail(checkTriggerRealEl, 'target div does not contain "Hello. Is it me you\'re looking for too?" after test.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkTriggerRealEl);
 	}
 }
 
@@ -1800,38 +1853,38 @@ function checkTriggerRealSetUpDocumentEvent(o) {
 }
 
 function checkTrigger(o) {
-	let testEl = _initTest('checkTrigger');
-	if (!testEl) return;
+	let checkTriggerEl = _initTest('checkTrigger');
+	if (!checkTriggerEl) return;
 
 	let el = _getObj('#checkTrigger p');
 	if (!el) {
-		_fail(testEl, '#checkTrigger p not there for the test.');
+		_fail(checkTriggerEl, '#checkTrigger p not there for the test.');
 	} else if (el.innerHTML !== 'Hello. Is it me you\'re looking for?') {
-		_fail(testEl, 'target div does not contain "Hello. Is it me you\'re looking for?" after test.');
+		_fail(checkTriggerEl, 'target div does not contain "Hello. Is it me you\'re looking for?" after test.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkTriggerEl);
 	}
 }
 
 function checkUrlChange(o) {
-	let testEl = _initTest('checkUrlChange');
-	if (!testEl) return;
+	let checkUrlChangeEl = _initTest('checkUrlChange');
+	if (!checkUrlChangeEl) return;
 
 	let urlTestOk = false, titleTestOk = false;
 
 	if (window.location.pathname === '/test/funky/url') {
 		urlTestOk = true;
 	} else {
-		_fail(testEl, 'url-change failed to change the URL to "/test/funky/url"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the URL to "/test/funky/url"');
 	}
 
 	if (document.title === 'Funky test URL') {
 		titleTestOk = true;
 	} else {
-		_fail(testEl, 'url-change failed to change the document.title to "Funky test URL"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the document.title to "Funky test URL"');
 	}
 
 	if (urlTestOk && titleTestOk) {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkUrlChangeEl);
 	}
 }

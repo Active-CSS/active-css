@@ -4,7 +4,7 @@
 
 @component checkStopImmediateEventPropagationHTML {
 	&:beforeComponentOpen {
-		var: checkStopImmedPropFail false;
+		var: checkStopImmedEvPropFail false;
 	}
 	&:componentOpen {
 		#checkStopImmedPropA {
@@ -12,10 +12,10 @@
 			stop-immediate-event-propagation: true;
 
 			/* after stack is important here, as we want to know the class event didn't run. */
-			func: checkStopImmediateEventPropagation {checkStopImmedPropFail} after stack;
+			func: checkStopImmediateEventPropagation {checkStopImmedEvPropFail} after stack;
 		}
 		.checkStopImmedPropClass {
-			var: checkStopImmedPropFail true;
+			var: checkStopImmedEvPropFail true;
 		}
 	}
 	html {

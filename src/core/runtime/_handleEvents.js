@@ -161,7 +161,6 @@ const _handleEvents = evObj => {
 							};
 							_performSecSel(loopObj);
 							if (typeof maEv[_maEvCo] !== 'undefined' && maEv[_maEvCo]._acssStopImmedEvProp) {
-//							if (typeof obj == 'object' && obj._acssStopImmedEvProp) {
 								break eventLoop;
 							}
 						}

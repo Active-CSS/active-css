@@ -174,8 +174,6 @@ const _performSecSel = (loopObj) => {
 
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() {
-		taEv = taEv.filter(function(obj, ind) { return ind != targetEventCounter; });
-	}, 10000);
+	setTimeout(function() { taEv = taEv.filter(function(_, i) { return i != targetEventCounter; }); }, 10000);
 
 };

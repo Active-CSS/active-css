@@ -1,14 +1,14 @@
 function checkTriggerReal(o) {
-	let testEl = _initTest('checkTriggerReal');
-	if (!testEl) return;
+	let checkTriggerRealEl = _initTest('checkTriggerReal');
+	if (!checkTriggerRealEl) return;
 
 	let el = _getObj('#checkTriggerReal p');
 	if (!el) {
-		_fail(testEl, '#checkTriggerReal p not there for the test.');
+		_fail(checkTriggerRealEl, '#checkTriggerReal p not there for the test.');
 	} else if (el.innerHTML !== 'Hello. Is it me you\'re looking for too?') {
-		_fail(testEl, 'target div does not contain "Hello. Is it me you\'re looking for too?" after test.');
+		_fail(checkTriggerRealEl, 'target div does not contain "Hello. Is it me you\'re looking for too?" after test.');
 	} else {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkTriggerRealEl);
 	}
 }
 

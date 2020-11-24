@@ -1,6 +1,6 @@
 function checkPreventDefaultShadow(o) {
-	let testEl = _initTest('checkPreventDefaultShadow');
-	if (!testEl) return;
+	let checkPreventDefaultShadowEl = _initTest('checkPreventDefaultShadow');
+	if (!checkPreventDefaultShadowEl) return;
 
-	_addSuccessClass(testEl);
+	_addSuccessClass(checkPreventDefaultShadowEl);
 }

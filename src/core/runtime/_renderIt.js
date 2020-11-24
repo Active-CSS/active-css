@@ -22,6 +22,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
+	
+	// We only do this next one from the document scope and only once.
+	if (!o.component) {
+		content = _addInlinePriorToRender(content);
+	}
 
 	if (o.renderPos) {
 		if (o.renderPos == 'replace') {

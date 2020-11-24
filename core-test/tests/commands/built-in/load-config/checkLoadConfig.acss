@@ -1,5 +1,5 @@
 #content:draw {
-	render-before-end: "<div id=\"checkLoadConfig\" data-desc=\"Basic load-config command\" class=\"coreTest\">{|checkLoadConfigHTML}</div>";
+	render-before-end: "<div id=\"checkLoadConfig\" data-desc=\"Basic load-config command\" class=\"coreTest\">{|checkLoadConfigHTML}</div>" after {window.delayTimes.loadConfig[0]}s;
 }
 
 @component checkLoadConfigHTML {

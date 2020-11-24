@@ -1,29 +1,29 @@
 function checkSetProperty(o) {
-	let testEl = _initTest('checkSetProperty');
-	if (!testEl) return;
+	let checkSetPropertyEl = _initTest('checkSetProperty');
+	if (!checkSetPropertyEl) return;
 
 	let el = _getObj('#setPropertyInput');
 	if (!el) {
-		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+		_fail(checkSetPropertyEl, '#setPropertyInput not present to perform set-property command.');
 	}
 
 	if (!el.disabled) {
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkSetPropertyEl);
 	} else {
-		_fail(testEl, 'Failed to remove the disabled property from #setPropertyInput. Element:', el);
+		_fail(checkSetPropertyEl, 'Failed to remove the disabled property from #setPropertyInput. Element:', el);
 	}
 }
 
 function checkSetPropertyBefore(o) {
-	let testEl = _initTest('checkSetProperty');
-	if (!testEl) return;
+	let checkSetPropertyEl = _initTest('checkSetProperty');
+	if (!checkSetPropertyEl) return;
 
 	let el = _getObj('#setPropertyInput');
 	if (!el) {
-		_fail(testEl, '#setPropertyInput not present to perform set-property command.');
+		_fail(checkSetPropertyEl, '#setPropertyInput not present to perform set-property command.');
 	}
 
 	if (!el.disabled) {
-		_fail(testEl, '#setPropertyInput is not disabled before the test of set-property begins and it shouldn\'t be.');
+		_fail(checkSetPropertyEl, '#setPropertyInput is not disabled before the test of set-property begins and it shouldn\'t be.');
 	}
 }

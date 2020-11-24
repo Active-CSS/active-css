@@ -15,64 +15,64 @@
 */
 
 function checkFocusOnPreviousA(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousStart');
 
 	// We want not in focus at start.
 	if (firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousStart in focus at the start and it shouldn\'t be.');
 	}
 }
 
 function checkFocusOnPreviousB(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let firstEl = _getObj('#focusOnPreviousStart');
 
 	// We want not in focus at start.
 	if (!firstEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousStart is not in focus after 4s and it should be.');
 	}
 }
 
 function checkFocusOnPreviousC(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let secondEl = _getObj('#focusOnPreviousSecond');
 
 	// We want not in focus at start.
 	if (!secondEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousSecond has not moved into focus');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousSecond has not moved into focus');
 	}
 }
 
 function checkFocusOnPreviousD(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let thirdEl = _getObj('#focusOnPreviousEnd');
 
 	// We want not in focus at start.
 	if (!thirdEl.isSameNode(document.activeElement)) {
-		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousEnd is not in focus at the end');
 	}
 }
 
 function checkFocusOnPreviousFinal(o) {
-	let testEl = _initTest('checkFocusOnPrevious');
-	if (!testEl) return;
+	let checkFocusOnPreviousEl = _initTest('checkFocusOnPrevious');
+	if (!checkFocusOnPreviousEl) return;
 
 	let thirdEl = _getObj('#focusOnPreviousEnd');
 
 	// Is it still on the last element when it gets to the end and not something else?
 	if (thirdEl.isSameNode(document.activeElement)) {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkFocusOnPreviousEl);
 	} else {
-		_fail(testEl, '#focusOnPreviousEnd is not in focus at the end');
+		_fail(checkFocusOnPreviousEl, '#focusOnPreviousEnd is not in focus at the end');
 	}
 }

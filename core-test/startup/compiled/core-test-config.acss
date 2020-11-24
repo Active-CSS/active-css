@@ -8,7 +8,8 @@ body:init {
 	*/
 
 	var: window.delayTimes {
-		clickoutsideEvent: [1000, 1500]
+		clickoutsideEvent: [1000, 1500],
+		loadConfig: [5000],	/* This test must be run last, otherwise it can clash with delayed results. */
 	};
 	
 	/* This has to go at the end if stuff goes above it :) */
@@ -844,7 +845,7 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
-	render-before-end: "<div id=\"checkLoadConfig\" data-desc=\"Basic load-config command\" class=\"coreTest\">{|checkLoadConfigHTML}</div>";
+	render-before-end: "<div id=\"checkLoadConfig\" data-desc=\"Basic load-config command\" class=\"coreTest\">{|checkLoadConfigHTML}</div>" after {window.delayTimes.loadConfig[0]}s;
 }
 
 @component checkLoadConfigHTML {
@@ -957,7 +958,6 @@ create-element-tag:connectedCallback {
 		prevent-default: true;
 	}
 	a:draw {
-		console-log: "If there is an error of \"Some of your tests did a full page reload!\" below then there is an error with the prevent-default test. Otherwise, ignore this message.";
 		trigger-real: click;
 	}
 	a:afterTriggerReal {
@@ -980,7 +980,6 @@ create-element-tag:connectedCallback {
 		prevent-default: true;
 	}
 	a:draw {
-		console-log: "If there is an error of \"Some of your tests did a full page reload!\" below then there is an error with the prevent-default in shadow DOM test. Otherwise, ignore this message.";
 		trigger-real: click;
 	}
 	a:afterTriggerReal {
@@ -1165,12 +1164,33 @@ create-element-tag:connectedCallback {
 }
 
 @component checkStopEventPropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopEventPropagationVar 0, checkStopEventPropagationAdditionalVar 0;
+	}
+	#checkStopEventPropagationDiv:draw {
+		trigger-real: click;
+		func: checkStopEventPropagation {checkStopEventPropagationVar} {checkStopEventPropagationAdditionalVar} after 1s;
+	}
+	#checkStopEventPropagationDiv:click {
+		var: checkStopEventPropagationVar 1;
+		stop-event-propagation: true;
+	}
+	.checkStopEventPropagationRunToo:click {
+		/* This should get called also, as it's in the same element as the first click. */
+		var: checkStopEventPropagationAdditionalVar 1;
+	}
+	#checkStopEventPropagationWrapper:click {
+		/* This should not get called - if this is called then the event bubbled, which is not what we want here. */
+		var: checkStopEventPropagationVar 10;
+	}
 	html {
+		<div id="checkStopEventPropagationWrapper">
+			<div id="checkStopEventPropagationDiv" class="checkStopEventPropagationRunToo"></div>
+		</div>
 	}
 }
 
 #checkStopEventPropagation:test {
-	func: checkStopEventPropagation;
 }
 
 #content:draw {
@@ -1179,7 +1199,7 @@ create-element-tag:connectedCallback {
 
 @component checkStopImmediateEventPropagationHTML {
 	&:beforeComponentOpen {
-		var: checkStopImmedPropFail false;
+		var: checkStopImmedEvPropFail false;
 	}
 	&:componentOpen {
 		#checkStopImmedPropA {
@@ -1187,10 +1207,10 @@ create-element-tag:connectedCallback {
 			stop-immediate-event-propagation: true;
 
 			/* after stack is important here, as we want to know the class event didn't run. */
-			func: checkStopImmediateEventPropagation {checkStopImmedPropFail} after stack;
+			func: checkStopImmediateEventPropagation {checkStopImmedEvPropFail} after stack;
 		}
 		.checkStopImmedPropClass {
-			var: checkStopImmedPropFail true;
+			var: checkStopImmedEvPropFail true;
 		}
 	}
 	html {
@@ -1207,12 +1227,27 @@ create-element-tag:connectedCallback {
 }
 
 @component checkStopImmediatePropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopImmedPropFail false;
+	}
+	&:componentOpen {
+		#checkStopImmedPropA {
+			/* Don't run any more target selectors after this. */
+			stop-immediate-propagation: true;
+
+			/* after stack is important here, as we want to know the class event didn't run. */
+			func: checkStopImmediatePropagation {checkStopImmedPropFail} after 1s;
+		}
+		.checkStopImmedPropClass {
+			var: checkStopImmedPropFail true;
+		}
+	}
 	html {
+		<div id="checkStopImmedPropA" class="checkStopImmedPropClass"></div>
+		<div class="checkStopImmedPropClass"></div>
 	}
 }
-
 #checkStopImmediatePropagation:test {
-	func: checkStopImmediatePropagation;
 }
 
 #content:draw {
@@ -1220,12 +1255,33 @@ create-element-tag:connectedCallback {
 }
 
 @component checkStopPropagationHTML {
+	&:beforeComponentOpen {
+		var: checkStopPropagationVar 0, checkStopPropagationAdditionalVar 0;
+	}
+	#checkStopPropagationDiv:draw {
+		trigger-real: click;
+		func: checkStopPropagation {checkStopPropagationVar} {checkStopPropagationAdditionalVar} after 1s;
+	}
+	#checkStopPropagationDiv:click {
+		var: checkStopPropagationVar 1;
+		stop-propagation: true;
+	}
+	.checkStopPropagationRunToo:click {
+		/* This should get called also, as it's in the same element as the first click. */
+		var: checkStopPropagationAdditionalVar 1;
+	}
+	#checkStopPropagationWrapper:click {
+		/* This should not get called - if this is called then the event bubbled, which is not what we want here. */
+		var: checkStopPropagationVar 10;
+	}
 	html {
+		<div id="checkStopPropagationWrapper">
+			<div id="checkStopPropagationDiv" class="checkStopPropagationRunToo"></div>
+		</div>
 	}
 }
 
 #checkStopPropagation:test {
-	func: checkStopPropagation;
 }
 
 #content:draw {

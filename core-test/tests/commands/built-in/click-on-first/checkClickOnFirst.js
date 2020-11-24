@@ -10,27 +10,27 @@
 */
 
 function checkClickOnFirstA(o) {
-	let testEl = _initTest('checkClickOnFirst');
-	if (!testEl) return;
+	let checkClickOnFirstEl = _initTest('checkClickOnFirst');
+	if (!checkClickOnFirstEl) return;
 
 	let el = _getObj('#clickOnFirstP');
 
 	if (el.innerHTML != '') {
-		_fail(testEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
+		_fail(checkClickOnFirstEl, '#clickOnFirstP is not empty. It contains the text "' + el.innerHTML + '"');
 	}
 }
 
 function checkClickOnFirstFinal(o) {
-	let testEl = _initTest('checkClickOnFirst');
-	if (!testEl) return;
+	let checkClickOnFirstEl = _initTest('checkClickOnFirst');
+	if (!checkClickOnFirstEl) return;
 
 	let el = _getObj('#clickOnFirstP');
 
 	// Now we want in focus.
 	if (el.innerHTML == 'green') {
 		// That looked good.
-		_addSuccessClass(testEl);
+		_addSuccessClass(checkClickOnFirstEl);
 	} else {
-		_fail(testEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
+		_fail(checkClickOnFirstEl, '#clickOnFirstP does not contain the test "green" and it should by now.');
 	}
 }

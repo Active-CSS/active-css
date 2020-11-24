@@ -1,5 +1,6 @@
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
+
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {

@@ -47,7 +47,6 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[compRef] = parentCompDetails;
 	compPrivEvs[compRef] = privateEvents;
-
 	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
