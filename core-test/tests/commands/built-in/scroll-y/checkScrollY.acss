@@ -1,0 +1,44 @@
+#content:draw {
+	render-before-end: "<div id=\"checkScrollY\" data-desc=\"Basic scroll-y command\" class=\"coreTest\">{|checkScrollYHTML}</div>";
+}
+
+@component checkScrollYHTML {
+	#scrollYBox:draw {
+		trigger: scrollings after stack;
+	}
+	#scrollYBox:scrollings {
+		scroll-y: bottom;
+		func: checkScrollYBottom;
+		scroll-y: 415;
+		func: checkScrollYHalfway;
+		scroll-y: top;
+		func: checkScrollYFinal;
+	}
+	html {
+		<style>
+		#scrollYBox {
+			width: 200px;
+			height: 200px;
+			overflow-y: scroll;
+		}
+
+		#scrollYBoxInner {
+			position: relative;
+			height: 1000px;
+		}
+		</style>
+
+		<div id="scrollYWrap">
+			<div id="scrollYBox">
+				<div id="scrollYBoxInner">
+					<p style="position: absolute; top: 0;">Top text</p>
+					<p style="position: absolute; top: 46%;">About half-way</p>
+					<p style="position: absolute; bottom: 0;">Bottom text</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+#checkScrollY:test {
+}

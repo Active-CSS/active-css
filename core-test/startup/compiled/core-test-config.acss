@@ -1089,6 +1089,96 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkScrollX\" data-desc=\"Basic scroll-x command\" class=\"coreTest\">{|checkScrollXHTML}</div>";
+}
+
+@component checkScrollXHTML {
+	#scrollXBox:draw {
+		trigger: scrollings after stack;
+	}
+	#scrollXBox:scrollings {
+		scroll-x: right;
+		func: checkScrollXRight;
+		scroll-x: 415;
+		func: checkScrollXHalfway;
+		scroll-x: left;
+		func: checkScrollXFinal;
+	}
+	html {
+		<style>
+		#scrollXBox {
+			width: 200px;
+			height: 200px;
+			overflow-x: scroll;
+		}
+
+		#scrollXBoxInner {
+			position: relative;
+			width: 1000px;
+		}
+		</style>
+
+		<div id="scrollXWrap">
+			<div id="scrollXBox">
+				<div id="scrollXBoxInner">
+					<p style="position: absolute; left: 0;">Left text</p>
+					<p style="position: absolute; left: 46%;">About half-way</p>
+					<p style="position: absolute; right: 0;">Right text</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+#checkScrollX:test {
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkScrollY\" data-desc=\"Basic scroll-y command\" class=\"coreTest\">{|checkScrollYHTML}</div>";
+}
+
+@component checkScrollYHTML {
+	#scrollYBox:draw {
+		trigger: scrollings after stack;
+	}
+	#scrollYBox:scrollings {
+		scroll-y: bottom;
+		func: checkScrollYBottom;
+		scroll-y: 415;
+		func: checkScrollYHalfway;
+		scroll-y: top;
+		func: checkScrollYFinal;
+	}
+	html {
+		<style>
+		#scrollYBox {
+			width: 200px;
+			height: 200px;
+			overflow-y: scroll;
+		}
+
+		#scrollYBoxInner {
+			position: relative;
+			height: 1000px;
+		}
+		</style>
+
+		<div id="scrollYWrap">
+			<div id="scrollYBox">
+				<div id="scrollYBoxInner">
+					<p style="position: absolute; top: 0;">Top text</p>
+					<p style="position: absolute; top: 46%;">About half-way</p>
+					<p style="position: absolute; bottom: 0;">Bottom text</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+#checkScrollY:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkSetAttribute\" data-desc=\"Basic set-attribute command\" class=\"coreTest\">{|checkSetAttributeHTML}</div>";
 }
 
