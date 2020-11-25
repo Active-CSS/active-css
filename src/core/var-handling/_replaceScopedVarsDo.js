@@ -1,3 +1,4 @@
+// This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, compRef=null) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 	if (str.indexOf('{') !== -1) {
@@ -18,7 +19,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					isHost = true;
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot), func);
+						res = _escapeItem(shadHost.getAttribute(wot));
 						let hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {

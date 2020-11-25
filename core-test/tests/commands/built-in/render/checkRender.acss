@@ -1,0 +1,26 @@
+#content:draw {
+    var: renderHackA "<script>createHavoc()</script>";
+	render-before-end: "<div id=\"checkRender\" data-desc=\"Basic render command\" class=\"coreTest\">{|checkRenderHTML}</div>";
+}
+
+@component checkRenderHTML {
+	&:beforeComponentOpen {
+	    var: renderHackB "<script>doMoreHavoc()</script>";
+	}
+	&:componentOpen {
+	    #renderHTMLExample {
+	        render: "<span id=\"checkRenderTestDiv\"><strong>render</strong></span>";
+			func: checkRender;
+	    }
+		#renderEscapePTag {
+	        render-after-end: "<span id=\"checkRenderAttrSubHack\">{@data-hackA}</span>" after stack;
+			func: checkRenderEscaping after 1s;
+		}
+	}
+    html {
+        <div class="renderHTMLWrap">
+            <p id="renderHTMLExample">Text will be inserted in relation to this element. Note variables cannot contain HTML tags with render.</p>
+            <p id="renderEscapePTag" data-hackA="{renderHackA}" data-hackB="{renderHackB}">Check for escaped variable: {renderHackA} {{renderHackB}}. You should see the tag here in text form.</p>
+        </div>
+    }
+}

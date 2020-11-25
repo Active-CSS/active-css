@@ -4314,8 +4314,7 @@ const _addScopedCID = (wot, obj, scopeRef) => {
 	return cid;
 };
 
-const _escapeItem = (str, func) => {
-	if (['Render', 'RenderAfterBegin', 'RenderAfterEnd', 'RenderBeforeBegin', 'RenderBeforeEnd', 'SetAttribute'].indexOf(func) === -1) return str;
+const _escapeItem = (str) => {
 	// This is for putting content directly into html.
 	let div = document.createElement('div');
 	div.textContent = str.replace(/\{\=|\=\}/gm, '');
@@ -5383,6 +5382,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	return str;
 };
 
+// This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, compRef=null) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 	if (str.indexOf('{') !== -1) {
@@ -5403,7 +5403,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					isHost = true;
 					wot = wot.replace(hostColon, '');
 					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot), func);
+						res = _escapeItem(shadHost.getAttribute(wot));
 						let hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
@@ -5727,7 +5727,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				varMap[change.currentPath].splice(i, 1);
 			} else {
 				// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
-				nod.textContent = refObj;
+				nod.textContent = _escapeItem(refObj);
 			}
 		});
 	}
@@ -5759,7 +5759,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 						}
 					}
 				});
-				nod.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+				nod.textContent = _escapeItem(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 			}
 		});
 	}

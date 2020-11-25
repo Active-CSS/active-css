@@ -128,7 +128,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				varMap[change.currentPath].splice(i, 1);
 			} else {
 				// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
-				nod.textContent = refObj;
+				nod.textContent = _escapeItem(refObj);
 			}
 		});
 	}
@@ -160,7 +160,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 						}
 					}
 				});
-				nod.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+				nod.textContent = _escapeItem(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 			}
 		});
 	}

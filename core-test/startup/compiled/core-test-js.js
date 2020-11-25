@@ -1540,6 +1540,119 @@ function checkRemoveBefore(o) {
 	}
 }
 
+function checkRenderAfterBegin(o) {
+	let checkRenderAfterBeginEl = _initTest('checkRenderAfterBegin');
+	if (!checkRenderAfterBeginEl) return;
+
+	// Check basic render-after-begin command results.
+	let el = _getObj('#renderAfterBeginHTMLDiv');
+
+	if (el.innerHTML !== '<span id="checkRenderAfterBeginTestDiv">render-after-begin</span>Text will be inserted in relation to this element.') {
+		_fail(checkRenderAfterBeginEl, 'Render did not render correctly in the render-after-begin command test area. #renderAfterBeginHTMLDiv.innerHTML:', el.innerHTML);
+	}
+
+	_addSuccessClass(checkRenderAfterBeginEl);
+}
+
+function checkRenderAfterEnd(o) {
+	let checkRenderAfterEndEl = _initTest('checkRenderAfterEnd');
+	if (!checkRenderAfterEndEl) return;
+
+	// Check basic render-after-end command results.
+	let el = _getObj('#renderAfterEndHTMLDiv').nextSibling;
+
+	if (el.outerHTML !== '<span id="checkRenderAfterEndTestDiv">render-after-end</span>') {
+		_fail(checkRenderAfterEndEl, 'Render did not render correctly in the render-after-end command test area. #renderAfterEndHTMLDiv.nextSibling.outerHTML:', el.outerHTML);
+	}
+
+	_addSuccessClass(checkRenderAfterEndEl);
+}
+
+function checkRenderBeforeBegin(o) {
+	let checkRenderBeforeBeginEl = _initTest('checkRenderBeforeBegin');
+	if (!checkRenderBeforeBeginEl) return;
+
+	// Check basic render-before-begin command results.
+	let el = _getObj('#renderBeforeBeginHTMLDiv').previousSibling;
+
+	if (el.outerHTML !== '<span id="checkRenderBeforeBeginTestDiv">render-before-begin</span>') {
+		_fail(checkRenderBeforeBeginEl, 'Render did not render correctly in the render-before-begin command test area. #renderBeforeBeginHTMLDiv.previousSibling.outerHTML:', el.outerHTML);
+	}
+
+	_addSuccessClass(checkRenderBeforeBeginEl);
+}
+
+function checkRenderBeforeEnd(o) {
+	let checkRenderBeforeEndEl = _initTest('checkRenderBeforeEnd');
+	if (!checkRenderBeforeEndEl) return;
+
+	// Check basic render-before-end command results.
+	let el = _getObj('#renderBeforeEndHTMLDiv');
+
+	if (el.innerHTML !== 'Text will be inserted in relation to this element.<span id="checkRenderBeforeEndTestDiv">render-before-end</span>') {
+		_fail(checkRenderBeforeEndEl, 'Render did not render correctly in the render-before-end command test area. #renderBeforeEndHTMLDiv.innerHTML:', el.innerHTML);
+	}
+
+	_addSuccessClass(checkRenderBeforeEndEl);
+}
+
+function checkRenderReplace(o) {
+	let checkRenderReplaceEl = _initTest('checkRenderReplace');
+	if (!checkRenderReplaceEl) return;
+
+	// Check basic render-replace command results.
+	let el = _getObj('#renderReplaceOuterDiv');
+
+	if (el.innerHTML !== '<div id="checkRenderReplaceTestDiv">render-replace</div><div><p id="renderReplaceHTMLDiv">Text will be inserted in relation to this element.</p></div>') {
+		_fail(checkRenderReplaceEl, 'Render did not render correctly in the render-replace command test area. #renderReplaceOuterDiv.innerHTML:', el.innerHTML);
+	}
+
+	_addSuccessClass(checkRenderReplaceEl);
+}
+
+function checkRender(o) {
+	let checkRenderEl = _initTest('checkRender');
+	if (!checkRenderEl) return;
+
+	// Check basic render command results.
+	let el = _getObj('#renderHTMLExample');
+	if (el.innerHTML !== '<span id="checkRenderTestDiv"><strong>render</strong></span>') {
+		_fail(checkRenderEl, 'Render did not render correctly in the render command test area. #renderHTMLExample.innerHTML:', el.innerHTML);
+	}
+}
+
+function checkRenderEscaping(o) {
+	let checkRenderEl = _initTest('checkRender');
+	if (!checkRenderEl) return;
+
+	// First check escape rendering.
+	let pTag = _getObj('#renderEscapePTag');
+
+	if (pTag.textContent !== 'Check for escaped variable: &lt;script&gt;createHavoc()&lt;/script&gt; &lt;script&gt;doMoreHavoc()&lt;/script&gt;. You should see the tag here in text form.') {
+		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. #renderEscapePTag.textContent:', pTag.textContent);
+	}
+
+	let attrA = pTag.getAttribute('data-hackA');
+	let attrB = pTag.getAttribute('data-hackB');
+
+	if (attrA !== '&lt;script&gt;createHavoc()&lt;/script&gt;') {
+		_fail(checkRenderEl, 'Render did not properly escape the one-off variable in the test attribute.');
+	}
+
+	if (attrB !== '&lt;script&gt;doMoreHavoc()&lt;/script&gt;') {
+		_fail(checkRenderEl, 'Render did not properly escape the reactive variable in the test attribute.');
+	}
+
+	// Test inserted attribute substitution inside a render.
+	let attrHackTag = _getObj('#checkRenderAttrSubHack');
+
+	if (attrHackTag.textContent !== '&lt;script&gt;createHavoc()&lt;/script&gt;') {
+		_fail(checkRenderEl, 'Render did not properly escape the insert attribute variable into the test content area. #checkRenderAttrSubHack.textContent:', attrHackTag.textContent);
+	}
+
+	_addSuccessClass(checkRenderEl);
+}
+
 /* This test is covered by the clone command test, as they work together. */
 
 function checkRun(o) {

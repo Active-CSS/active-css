@@ -1,0 +1,15 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRenderBeforeBegin\" data-desc=\"Basic render-before-begin command\" class=\"coreTest\">{|checkRenderBeforeBeginHTML}</div>";
+}
+
+@component checkRenderBeforeBeginHTML {
+	&:componentOpen {
+	    #renderBeforeBeginHTMLDiv {
+	        render-before-begin: "<span id=\"checkRenderBeforeBeginTestDiv\">render-before-begin</span>";
+			func: checkRenderBeforeBegin;
+	    }
+	}
+    html {
+		<p id="renderBeforeBeginHTMLDiv">Text will be inserted in relation to this element.</p>
+    }
+}
