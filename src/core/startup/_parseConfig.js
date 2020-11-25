@@ -10,7 +10,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Remove all comments.
 	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
-	str = str.replace(/[\r\n\t]+/g, '');
+	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
@@ -92,9 +92,16 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
 		innards = innards.replace(/"/g, '_ACSS_escaped_quote');
+		// Escape all tabs, as after this we're going to remove all tabs from everywhere else in the config and change to spaces, but not in here.
+		innards = innards.replace(/\t/g, '_ACSS_tab');
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
 		return startBit + '{component: "' + innards + '";}';
 	});
+	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
+	str = str.replace(/\t+/g, ' ');
+	// Unconvert spaces in component html back to tabs so that HTML can render as per HTML rules.
+	str = str.replace(/_ACSS_tab/g, '\t');
+
 	// Now we have valid quotes, etc., we want to replace all the key characters we are using in the cjs config within
 	// quotes with something else, to be put back later. This is so we can keep the parsing simple when we generate the
 	// tree structure. We need to escape all the key characters that the json parser uses to work out the structure.

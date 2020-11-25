@@ -660,8 +660,10 @@ _a.FullscreenOn = o => {
 
 _a.Func = o => {
 	let pars = [];
+
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();
+
 	let spl = o.actVal.trim().split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {
@@ -902,7 +904,7 @@ _a.RemoveCookie = o => {
 	// Eg. remove-cookie: name("cookieName") path("/") domain("sdfkjh.com");
 
 	// Double-quotes are optional for the syntax.
-	let aV = o.actVal._ACSSRepQuo(), cookieName, cookieDomain, cookiePath, str;
+	let aV = o.actVal._ACSSRepAllQuo(), cookieName, cookieDomain, cookiePath, str;
 
 	// Cookie name.
 	cookieName = encodeURIComponent(_getParVal(aV, 'name'));
@@ -3830,7 +3832,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Remove all comments.
 	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
-	str = str.replace(/[\r\n\t]+/g, '');
+	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
@@ -3912,9 +3914,16 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
 		innards = innards.replace(/"/g, '_ACSS_escaped_quote');
+		// Escape all tabs, as after this we're going to remove all tabs from everywhere else in the config and change to spaces, but not in here.
+		innards = innards.replace(/\t/g, '_ACSS_tab');
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
 		return startBit + '{component: "' + innards + '";}';
 	});
+	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
+	str = str.replace(/\t+/g, ' ');
+	// Unconvert spaces in component html back to tabs so that HTML can render as per HTML rules.
+	str = str.replace(/_ACSS_tab/g, '\t');
+
 	// Now we have valid quotes, etc., we want to replace all the key characters we are using in the cjs config within
 	// quotes with something else, to be put back later. This is so we can keep the parsing simple when we generate the
 	// tree structure. We need to escape all the key characters that the json parser uses to work out the structure.
@@ -6764,9 +6773,14 @@ String.prototype._ACSSConvFunc = function() {
 	return this._ACSSCapitalizeAttr().replace(/\-/g, '');
 };
 
+String.prototype._ACSSRepAllQuo = function() {
+	return this.replace(/"/g, '');
+};
+
 String.prototype._ACSSRepQuo = function() {
 	var html = this.replace(/\\"/g, '_ACSS*�%_');
-	html = html.replace(/"/g, '');
+//	html = html.replace(/"/g, '');
+	html = html.replace(/(^")|("$)/g, '');
 	html = html.replace(/_ACSS\*�%_/g, '"');
 	return html;
 };

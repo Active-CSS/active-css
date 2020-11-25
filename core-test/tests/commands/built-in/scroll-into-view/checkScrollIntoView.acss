@@ -1,0 +1,21 @@
+#content:draw {
+	render-before-end: "<div id=\"checkScrollIntoView\" data-desc=\"Basic scroll-into-view command\" class=\"coreTest\">{|checkScrollIntoViewHTML}</div>";
+}
+
+@component checkScrollIntoViewHTML {
+	&:componentOpen {
+		func: checkScrollIntoViewA;
+		#checkScrollIntoViewDiv {
+			scroll-into-view: true;
+		}
+		func: checkScrollIntoViewFinal;
+	}
+	html {
+		<div style="position: relative; height: 2000px;">
+			<div id="checkScrollIntoViewDiv" style="position: absolute; bottom: 0; height: 50px; width: 50px"></div>
+		<div>
+	}
+}
+
+#checkScrollIntoView:test {
+}

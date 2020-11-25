@@ -78,6 +78,25 @@ function _initTest(testID) {
 	return testEl;
 }
 
+// This checks if an element is at least partially visible. Used for testing the scroll-into-view command.
+function _isPartiallyVisible(el) {
+	let rect = el.getBoundingClientRect();
+	let elTop = rect.top;
+	let elBot = rect.bottom;
+	return (elTop < window.innerHeight && elBot >= 0);
+}
+
+// This compares a variable against a value and gives an error to the test element if it fails.
+// Successes are skipped. A test will fail if receiving a failing test flag regardless of whether or not a success flag is added for a test.
+function _shouldBe(testEl, varName, varVal, comparisonVal) {
+	let checkVarEl = _initTest('checkVar');
+	if (!checkVarEl) return;
+
+	if (varVal !== comparisonVal) {
+		_fail(checkVarEl, 'The variable "' + varName + '" does not exactly equal ' + comparisonVal + ' it equals:', typeof varVal, varVal);
+	}
+}
+
 function checkCancelTimerAllA(o) {
 	let checkCancelTimerAllEl = _initTest('checkCancelTimerAll');
 	if (!checkCancelTimerAllEl) return;
@@ -1538,6 +1557,30 @@ function checkRun(o) {
 	}
 }
 
+function checkScrollIntoViewA(o) {
+	let checkScrollIntoViewEl = _initTest('checkScrollIntoView');
+	if (!checkScrollIntoViewEl) return;
+
+	let el = _getObj('#checkScrollIntoViewDiv');
+
+	if (_isPartiallyVisible(el)) {
+		_fail(checkScrollIntoViewEl, 'Test element #checkScrollIntoViewDiv should not be visible prior to test.');
+	}
+}
+
+function checkScrollIntoViewFinal(o) {
+	let checkScrollIntoViewEl = _initTest('checkScrollIntoView');
+	if (!checkScrollIntoViewEl) return;
+
+	let el = _getObj('#checkScrollIntoViewDiv');
+
+	if (!_isPartiallyVisible(el)) {
+		_fail(checkScrollIntoViewEl, 'Test element #checkScrollIntoViewDiv is not in view at the end of the test.');
+	}
+
+	_addSuccessClass(checkScrollIntoViewEl);
+}
+
 function checkScrollXRight(o) {
 	let checkScrollXEl = _initTest('checkScrollX');
 	if (!checkScrollXEl) return;
@@ -1957,4 +2000,25 @@ function checkUrlChange(o) {
 	if (urlTestOk && titleTestOk) {
 		_addSuccessClass(checkUrlChangeEl);
 	}
+}
+
+function checkVar(o, pars) {
+	let checkVarEl = _initTest('checkVar');
+	if (!checkVarEl) return;
+
+	_shouldBe(checkVarEl, 'varTestString', pars[0], 'Hi, "dude".');
+	_shouldBe(checkVarEl, 'varTestBooleanTrue', pars[1], true);
+	_shouldBe(checkVarEl, 'varTestBooleanFalse', pars[2], false);
+	_shouldBe(checkVarEl, 'varTestBooleanDigitPositive', pars[3], 10);
+	_shouldBe(checkVarEl, 'varTestBooleanDigitNegative', pars[4], -20);
+	_shouldBe(checkVarEl, 'varTestEvaluatedNumber', pars[5], 8);
+
+	// This syntax isn't supported yet - there's a ticket on it:
+	// https://github.com/Active-CSS/active-css/issues/34
+
+//	_shouldBe(checkVarEl, 'window.varTestWinVar as a parameter', pars[6], 'hello');
+//	_shouldBe(checkVarEl, 'window.varTestWinVar', window.varTestWinVar, 'hello');
+
+	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
+	_addSuccessClass(checkVarEl);
 }

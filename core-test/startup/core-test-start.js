@@ -11,6 +11,8 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = (timeToRunTestsInSeconds + browserSetupInSeco
 
 describe('Set up core to test', function() {
 	beforeAll(async function() {
+		// Set the viewport size before initializing Active CSS.
+		viewport.set(viewportWidth, viewportHeight);
 		// Note, Karma uses /base as the starting point for all ajax loads in headless browsers.
 		await ActiveCSS.init({
 			configLocation: '/base/core-test/startup/compiled/core-test-config.acss'	// *Never* edit this file directly. It is auto-generated from the tests dir.

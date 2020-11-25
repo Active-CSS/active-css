@@ -1089,6 +1089,28 @@ create-element-tag:connectedCallback {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkScrollIntoView\" data-desc=\"Basic scroll-into-view command\" class=\"coreTest\">{|checkScrollIntoViewHTML}</div>";
+}
+
+@component checkScrollIntoViewHTML {
+	&:componentOpen {
+		func: checkScrollIntoViewA;
+		#checkScrollIntoViewDiv {
+			scroll-into-view: true;
+		}
+		func: checkScrollIntoViewFinal;
+	}
+	html {
+		<div style="position: relative; height: 2000px;">
+			<div id="checkScrollIntoViewDiv" style="position: absolute; bottom: 0; height: 50px; width: 50px"></div>
+		<div>
+	}
+}
+
+#checkScrollIntoView:test {
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkScrollX\" data-desc=\"Basic scroll-x command\" class=\"coreTest\">{|checkScrollXHTML}</div>";
 }
 
@@ -1476,4 +1498,32 @@ create-element-tag:connectedCallback {
 #checkUrlChange:test {
 	url-change: "/test/funky/url" "Funky test URL";
 	func: checkUrlChange;
+}
+
+#content:draw {
+	render-before-end: "<div id=\"checkVar\" data-desc=\"Basic var command\" class=\"coreTest\">{|checkVarHTML}</div>";
+}
+
+@component checkVarHTML {
+	&:componentOpen {
+		var: varTestString "Hi, \"dude\".",
+			varTestBooleanTrue true,
+			varTestBooleanFalse false,
+			varTestBooleanDigitPositive 10,
+			varTestBooleanDigitNegative -20,
+			varTestEvaluatedNumber 1 * 2 + 6,
+			window.varTestWinVar "hello"	/* not yet supported - leave this here for the moment - an issue has been created for it. */
+		;
+		func: checkVar "{varTestString}"
+			{varTestBooleanTrue}
+			{varTestBooleanFalse}
+			{varTestBooleanDigitPositive}
+			{varTestBooleanDigitNegative}
+			{varTestEvaluatedNumber}
+			"{window.varTestWinVar}"	/* not yet supported - leave this here for the moment - an issue has been created for it. */
+		;
+	}
+	html {
+		<div>{|checkVarPrivateHTML}</div>
+	}
 }

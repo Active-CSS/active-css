@@ -1,7 +1,9 @@
 _a.Func = o => {
 	let pars = [];
+
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();
+
 	let spl = o.actVal.trim().split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {

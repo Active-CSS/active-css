@@ -4,7 +4,7 @@ _a.RemoveCookie = o => {
 	// Eg. remove-cookie: name("cookieName") path("/") domain("sdfkjh.com");
 
 	// Double-quotes are optional for the syntax.
-	let aV = o.actVal._ACSSRepQuo(), cookieName, cookieDomain, cookiePath, str;
+	let aV = o.actVal._ACSSRepAllQuo(), cookieName, cookieDomain, cookiePath, str;
 
 	// Cookie name.
 	cookieName = encodeURIComponent(_getParVal(aV, 'name'));

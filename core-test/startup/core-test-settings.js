@@ -38,3 +38,7 @@ const timeToRunTestsInSeconds = 8;
 
 // If your server is really slow, you might want to change this.
 const generalServerSlownessInSeconds = 0;
+
+// Specify viewport size for testing.
+const viewportWidth = 1000;
+const viewportHeight = 1000;

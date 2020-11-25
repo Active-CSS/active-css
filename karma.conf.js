@@ -12,7 +12,6 @@
 */
 
 module.exports = function(config) {
-
 	/* Core version */
 	const activeCSSVersion = '2-4-0';
 
@@ -31,7 +30,7 @@ module.exports = function(config) {
 
 		// See here for available frameworks: https://npmjs.org/browse/keyword/karma-adapter
 		// Note that frameworks are loaded from right to left.
-		frameworks: ['jasmine', 'es6-shim'],
+		frameworks: ['jasmine', 'es6-shim', 'viewport'],
 
 		// list of files / patterns to load in the browser
 		files: [
