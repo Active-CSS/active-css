@@ -30,6 +30,8 @@
 	};
 
 	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
+	const SELFREGEX = /\{\$SELF\}/g;
 
 	window.ActiveCSS = {};
 
@@ -438,7 +440,7 @@ _a.CreateElement = o => {
 	// leaving the component scope though. We just want this check in one little place in handleEvents and it should all work.
 	// We have the customTags already in an array. If the event is a draw event and the element tag is in the array, we run the main draw event.
 
-	if (splitAV[1].indexOf('observe(') === -1) {
+	if (splitAV[1] && splitAV[1].indexOf('observe(') === -1) {
 		component = splitAV[1];
 		if (config[tag] === undefined) config[tag] = {};
 		if (config[tag].draw === undefined) config[tag].draw = {};
@@ -1284,7 +1286,7 @@ _a.Trigger = o => {
 
 _a.TriggerReal = o => {
 	// Simulate a real event, not just a programmatical one.
-	if (!o.secSelObj.isConnected) {
+	if (!_isConnected(o.secSelObj)) {
 		// Skip it if it's no longer there and cancel all Active CSS bubbling.
 		_a.StopPropagation(o);
 		return;
@@ -1853,6 +1855,7 @@ const _handleEvents = evObj => {
 		}
 	}
 	clauseCo = 0;
+
 	eventLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
 			if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
@@ -1902,14 +1905,13 @@ const _handleEvents = evObj => {
 
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
-
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
 		// Note: re runButElNotThere) {
 		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
 		// If the original object that has been removed is referenced in the code, this is an error by the user.
-		if (!runButElNotThere && !o.secSelObj.isConnected) {
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) {
 			// Skip it if the object is no longer there and cancel all Active CSS bubbling.
 			if (delayActiveID) {
 				// Cleanup any delayed actions if the element is no longer there.
@@ -2020,7 +2022,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!runButElNotThere && !o.secSelObj.isConnected) o.secSelObj = undefined;
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
@@ -2702,20 +2704,36 @@ const _performSecSel = (loopObj) => {
 const _prepSelector = (sel, obj, doc) => {
 	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
 	// Returns a collection of unique objects for iterating as target selectors.
-	let attrActiveID;
+	let attrActiveID, origSel = sel;
 	if (sel.indexOf('&') !== -1) {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
 		if (sel.substr(0, 1) == '&') {
-			// Substitute the active ID into the selector.
-			attrActiveID = _getActiveID(obj);
-			// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
-			obj.setAttribute('data-activeid', attrActiveID);
-			sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+			switch (sel) {
+				case 'window':
+					sel = window;
+					break;
+				case 'body':
+					sel = document.body;
+					break;
+				default:
+					// Substitute the active ID into the selector.
+					attrActiveID = _getActiveID(obj);
+					// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
+					obj.setAttribute('data-activeid', attrActiveID);
+					sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+			}
 		}
 	}
 	if (sel.indexOf('<') === -1) {
-		let res = doc.querySelectorAll(sel);
+		let res;
+		if (origSel == 'window') {
+			return [ window ];
+		} else if (origSel == 'body') {
+			return [ document.body ];
+		} else {
+			res = doc.querySelectorAll(sel);
+		}
 		if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
 		return res;
 	}
@@ -2996,7 +3014,9 @@ const _renderRefElements = (str, htmlStr, refType) => {
 	// Replace any reference to {$CHILDREN} or {$SELF} with the child nodes of the custom element.
 	if (str.indexOf('{$' + refType + '}') !== -1) {
 		// This needs to not count escaped references to this variable.
-		str = str.replace(new RegExp('\\{\\$' + refType + '\\}', 'g'), htmlStr);
+		let regex = (refType == 'CHILDREN') ? CHILDRENREGEX : SELFREGEX;
+//		str = str.replace(new RegExp('\\{\\$' + refType + '\\}', 'g'), htmlStr);
+		str = str.replace(regex, htmlStr);
 	}
 	return str;
 };
@@ -3617,7 +3637,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 							}
-							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVariables ') !== -1) {	// "private" is deprecated as of v2.4.0
+							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
 								components[compName].privVars = true;
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
@@ -7275,6 +7295,10 @@ ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is
 
 const _isACSSStyleTag = (nod) => {
 	return (nod.tagName == 'STYLE' && nod.hasAttribute('type') && nod.getAttribute('type') == 'text/acss');
+};
+
+const _isConnected = obj => {
+	return (obj.isConnected || obj === self || obj === document.body);
 };
 
 const _isInlineLoaded = nod => {

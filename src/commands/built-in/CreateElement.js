@@ -14,7 +14,7 @@ _a.CreateElement = o => {
 	// leaving the component scope though. We just want this check in one little place in handleEvents and it should all work.
 	// We have the customTags already in an array. If the event is a draw event and the element tag is in the array, we run the main draw event.
 
-	if (splitAV[1].indexOf('observe(') === -1) {
+	if (splitAV[1] && splitAV[1].indexOf('observe(') === -1) {
 		component = splitAV[1];
 		if (config[tag] === undefined) config[tag] = {};
 		if (config[tag].draw === undefined) config[tag].draw = {};

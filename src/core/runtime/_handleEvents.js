@@ -125,6 +125,7 @@ const _handleEvents = evObj => {
 		}
 	}
 	clauseCo = 0;
+
 	eventLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
 			if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {

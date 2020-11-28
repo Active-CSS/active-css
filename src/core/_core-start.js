@@ -30,6 +30,8 @@
 	};
 
 	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
+	const SELFREGEX = /\{\$SELF\}/g;
 
 	window.ActiveCSS = {};
 

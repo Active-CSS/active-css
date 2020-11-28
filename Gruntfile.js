@@ -150,8 +150,8 @@
 
 		// Comment out for no babel.
 //		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser', 'karma' ]);
-		grunt.registerTask('default', ['concat', 'jshint', 'terser', 'karma' ]);
-//		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
+//		grunt.registerTask('default', ['concat', 'jshint', 'terser', 'karma' ]);
+		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
 	};
 
 }());

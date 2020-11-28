@@ -57,7 +57,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 							}
-							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVariables ') !== -1) {	// "private" is deprecated as of v2.4.0
+							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
 								components[compName].privVars = true;
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.

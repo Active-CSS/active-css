@@ -1,20 +1,36 @@
 const _prepSelector = (sel, obj, doc) => {
 	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
 	// Returns a collection of unique objects for iterating as target selectors.
-	let attrActiveID;
+	let attrActiveID, origSel = sel;
 	if (sel.indexOf('&') !== -1) {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
 		if (sel.substr(0, 1) == '&') {
-			// Substitute the active ID into the selector.
-			attrActiveID = _getActiveID(obj);
-			// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
-			obj.setAttribute('data-activeid', attrActiveID);
-			sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+			switch (sel) {
+				case 'window':
+					sel = window;
+					break;
+				case 'body':
+					sel = document.body;
+					break;
+				default:
+					// Substitute the active ID into the selector.
+					attrActiveID = _getActiveID(obj);
+					// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
+					obj.setAttribute('data-activeid', attrActiveID);
+					sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+			}
 		}
 	}
 	if (sel.indexOf('<') === -1) {
-		let res = doc.querySelectorAll(sel);
+		let res;
+		if (origSel == 'window') {
+			return [ window ];
+		} else if (origSel == 'body') {
+			return [ document.body ];
+		} else {
+			res = doc.querySelectorAll(sel);
+		}
 		if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
 		return res;
 	}

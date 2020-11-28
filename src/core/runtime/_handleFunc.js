@@ -1,13 +1,12 @@
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
-
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
 		// Note: re runButElNotThere) {
 		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
 		// If the original object that has been removed is referenced in the code, this is an error by the user.
-		if (!runButElNotThere && !o.secSelObj.isConnected) {
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) {
 			// Skip it if the object is no longer there and cancel all Active CSS bubbling.
 			if (delayActiveID) {
 				// Cleanup any delayed actions if the element is no longer there.
@@ -118,7 +117,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!runButElNotThere && !o.secSelObj.isConnected) o.secSelObj = undefined;
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
