@@ -1,5 +1,5 @@
 const _getComponentDetails = rootNode => {
-	let rootNodeHost, component, compDoc, compRef, privateEvs;
+	let rootNodeHost, component, compDoc, varScope, privateEvs;
 	if (!rootNode.isSameNode(document)) {
 		// Get the component variables so we can run this element's events in context.
 		rootNodeHost = rootNode;
@@ -8,13 +8,13 @@ const _getComponentDetails = rootNode => {
 		}
 		component = rootNodeHost._acssComponent;
 		compDoc = rootNode;
-		compRef = rootNodeHost._acssCompRef;
+		varScope = rootNodeHost._acssVarScope;
 		privateEvs = rootNodeHost._acssPrivEvs;
 	} else {
 		component = null;
 		compDoc = null;
-		compRef = null;
+		varScope = null;
 		privateEvs = null;
 	}
-	return { component, compDoc, compRef, privateEvs };
+	return { component, compDoc, varScope, privateEvs };
 };

@@ -1,9 +1,9 @@
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, compRef=null) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null) => {
 	let res;
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
-		wot = _replaceScopedVarsExpr(wot, compRef);
+		wot = _replaceScopedVarsExpr(wot, varScope);
 		
 		try {
 			res = Function('scopedVars', '"use strict";return (' + wot + ');')(scopedVars);		// jshint ignore:line

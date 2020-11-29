@@ -4,7 +4,7 @@ const _performSecSel = (loopObj) => {
 	let obj = loopObj.obj;
 	let compDoc = loopObj.compDoc || document;
 	let evType = loopObj.evType;
-	let compRef = loopObj.compRef;
+	let varScope = loopObj.varScope;
 	let evObj = loopObj.evObj;
 	let otherObj = loopObj.otherObj;
 	let passCond = loopObj.passCond;
@@ -20,12 +20,12 @@ const _performSecSel = (loopObj) => {
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
-		compRef = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
+		varScope = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
 		// This must be a scoped component.
-		compRef = '_' + compDoc._acssActiveID.replace(/id\-/, '');
+		varScope = '_' + compDoc._acssActiveID.replace(/id\-/, '');
 	} else {
-		compRef = (evObj.compRef) ? evObj.compRef : null;
+		varScope = (evObj.varScope) ? evObj.varScope : null;
 	}
 
 	// Get the selectors this event is going to apply to.
@@ -55,7 +55,7 @@ const _performSecSel = (loopObj) => {
 						obj,
 						compDoc,
 						evType,
-						compRef,
+						varScope,
 						evObj,
 						otherObj,
 						passCond,
@@ -82,9 +82,9 @@ const _performSecSel = (loopObj) => {
 				// passTargSel is the string of the target selector that now goes through some changes.
 				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
 
-				passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, compRef);
+				passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, varScope);
 				// See if there are any left that can be populated by the passed otherObj.
-				passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, compRef);
+				passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, varScope);
 				// Handle functions being run on self.
 				if (meMap.includes(passTargSel)) {
 					// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
@@ -116,7 +116,7 @@ const _performSecSel = (loopObj) => {
 							obj,
 							compDoc,
 							evType,
-							compRef,
+							varScope,
 							evObj,
 							otherObj,
 							passCond,
@@ -160,7 +160,7 @@ const _performSecSel = (loopObj) => {
 						line: chilsObj[secSelLoops][secSelCounter][targetSelector][m].line,
 						intID: chilsObj[secSelLoops][secSelCounter][targetSelector][m].intID,
 						activeID: activeTrackObj,
-						compRef,	// unique counter of the shadow element rendered - used for variable scoping.
+						varScope,	// unique counter of the shadow element rendered - used for variable scoping.
 						compDoc,
 						component,
 						loopVars,

@@ -48,7 +48,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
 			let oCopy = Object.assign({}, o);
 			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.compRef);
+				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}

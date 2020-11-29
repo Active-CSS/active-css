@@ -37,12 +37,12 @@ const _replaceComponents = (o, str) => {
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
 				// removed from the pending array once drawn.
 				compCount++;
-				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
+				let varScope = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
 				compPending[compCount] = ret;
-				// Replace the fully rendered component instance with the compRef placeholder.
-				ret = compRef;
+				// Replace the fully rendered component instance with the varScope placeholder.
+				ret = varScope;
 			} else {
-				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.compRef);
+				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.varScope);
 				ret = _replaceStringVars(o.ajaxObj, ret);
 			}
 			return (ret) ? ret : '';

@@ -26,13 +26,13 @@ ActiveCSS._theEventFunction = e => {
 	let ev = e.type;
 	let component = e.target._acssComponent;
 	let compDoc = (e.target instanceof ShadowRoot) ? e.target : null;
-	let compRef = e.target._acssCompRef;
+	let varScope = e.target._acssVarScope;
 	if (!setupEnded) return;	// Wait for the config to fully load before any events start.
 	let fsDet = _fullscreenDetails();
 	switch (ev) {
 		case 'click':
 			if (!e.ctrlKey && !e.metaKey) {	// Allow default behaviour if control/meta key is used.
-				_mainEventLoop('click', e, component, compDoc, compRef);
+				_mainEventLoop('click', e, component, compDoc, varScope);
 			}
 			break;
 
@@ -53,20 +53,20 @@ ActiveCSS._theEventFunction = e => {
 				case '?': funcKey = 'Question'; shiftCheck = ''; break;
 				case '!': funcKey = 'Exclamation'; shiftCheck = ''; break;
 			}
-			_mainEventLoop(ev + metaCheck + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, compRef);
-			_mainEventLoop(ev, e, component, compDoc, compRef);
+			_mainEventLoop(ev + metaCheck + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, varScope);
+			_mainEventLoop(ev, e, component, compDoc, varScope);
 			break;
 
 		case fsDet[1] + 'fullscreenchange':
-			_mainEventLoop(ev, e, component, compDoc, compRef);
+			_mainEventLoop(ev, e, component, compDoc, varScope);
 			if (fsDet[0]) {
-				_mainEventLoop('fullscreenEnter', e, component, compDoc, compRef);
+				_mainEventLoop('fullscreenEnter', e, component, compDoc, varScope);
 			} else {
-				_mainEventLoop('fullscreenExit', e, component, compDoc, compRef);
+				_mainEventLoop('fullscreenExit', e, component, compDoc, varScope);
 			}
 			break;
 
 		default:
-			_mainEventLoop(ev, e, component, compDoc, compRef);
+			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
 };

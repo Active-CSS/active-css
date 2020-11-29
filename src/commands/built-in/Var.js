@@ -22,8 +22,8 @@ _a.Var = o => {
 	}
 
 	// Add in correct scoped variable locations.
-	varName = _prefixScopedVars(varName, o.compRef, 'varname');
-	varDetails = _prefixScopedVars(varDetails, o.compRef);
+	varName = _prefixScopedVars(varName, o.varScope, 'varname');
+	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
@@ -33,7 +33,7 @@ _a.Var = o => {
 		scopedVar = varName;
 	} else {
 		scopedVar = varName;
-		let prefix = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main';
+		let prefix = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
 		scopedVar = scopedVar.replace('scopedVars.' + prefix + '.', '');	// We don't want the first part of the left-hand variable to contain "scopedVars.".
 		scopedVar = prefix + '.' + scopedVar;
 		// Note: That may look weird, but it needs to do the above in order to correctly handle initially undefined variables that will not get the prefix from
@@ -47,7 +47,7 @@ _a.Var = o => {
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedVars." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
-	let expr = _replaceJSExpression(varDetails, true, null, o.compRef);	// realVal=false, quoteIfString=false
+	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
 
 	// Set the variable in the correct scope.
 	if (isWindowVar) {

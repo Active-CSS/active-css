@@ -8,7 +8,7 @@ _c.IfVar = o => {
 	let spl = actVal.split(' ');
 	if (spl.length == 1) {
 		// Run if-var-true.
-		return _ifVarTrue(o.actVal, o.compRef);
+		return _ifVarTrue(o.actVal, o.varScope);
 	} else {
 		let varName = spl.shift();	// Remove the first element from the array.
 		let compareVal = spl.join(' ')._ACSSSpaceQuoOut();
@@ -18,7 +18,7 @@ _c.IfVar = o => {
 		} else {
 			compareVal = compareVal._ACSSRepQuo();
 		}
-		let scopedVar = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main') + '.' + varName;
+		let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
 		let varValue = _get(scopedVars, scopedVar);
 		if (varValue === undefined) {
 			varValue = window[varName];

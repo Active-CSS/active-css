@@ -1,4 +1,4 @@
-const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
+const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 	if (e.target.id == 'cause-js-elements-ext') return;	// Internally triggered by extension to get bubble state. Don't run anything.
 	let el;
 	let bod = (e.target == self || e.target.body);
@@ -61,7 +61,7 @@ const _mainEventLoop = (typ, e, component, compDoc, compRef) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, compRef: compDetails.compRef, _maEvCo: mainEventCounter });
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, _maEvCo: mainEventCounter });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;		// el can be deleted during the handleEvent.
 		}
 		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });

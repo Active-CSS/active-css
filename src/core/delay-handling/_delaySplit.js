@@ -1,4 +1,4 @@
-const _delaySplit = (str, typ, compRef) => {
+const _delaySplit = (str, typ, varScope) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
@@ -8,7 +8,7 @@ const _delaySplit = (str, typ, compRef) => {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
 			delayValue = delayValue.replace(/[\{\}]+/g, '');
 			// Replace any scoped variables that may be in the timer value.
-			convTime = _replaceJSExpression('{=' + delayValue + '=}', true, false, compRef) + delayType;
+			convTime = _replaceJSExpression('{=' + delayValue + '=}', true, false, varScope) + delayType;
 		} else {
 			convTime = wot2;
 		}

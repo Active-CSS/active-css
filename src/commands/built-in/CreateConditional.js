@@ -23,7 +23,7 @@ _a.CreateConditional = o => {
 		'component = o.component,' + 
 		'compDoc = o.compDoc,' + 
 		'carriedEventObject = o.ajaxObj,' +
-		'_activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : "main";' +
+		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
 		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.

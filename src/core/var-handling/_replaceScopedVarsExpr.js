@@ -1,4 +1,4 @@
-const _replaceScopedVarsExpr = (str, compRef=null) => {
+const _replaceScopedVarsExpr = (str, varScope=null) => {
 	// This function attempts to locate and replace any internal variables in a JavaScript expression or "run" function.
 	let res, origWot, firstVar;
 	str = str.replace(/([\u00BF-\u1FFF\u2C00-\uD7FFa-z][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\[\]]+)(?!\u00BF-\u1FFF\u2C00-\uD7FF\w)/gim, function(_, wot) {
@@ -15,8 +15,8 @@ const _replaceScopedVarsExpr = (str, compRef=null) => {
 				wot = wot.replace(/^scopedVars\./, '');
 			}
 		}
-		// Prefix with sub-scope (main or _compRef).
-		wot = (compRef && privVarScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
+		// Prefix with sub-scope (main or _varScope).
+		wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
 		res = _get(scopedVars, wot);
 		if (res !== undefined) {
 			// Variable definitely exists in some form.

@@ -5,7 +5,7 @@ const _ajaxCallbackDisplay = (o) => {
 	}
 	if (!o.error && o.preGet) {
 		// Run the afterAjaxPreGet event.
-		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
 		// Run the post event - success or failure.
 		_ajaxDisplay(o);

@@ -1,7 +1,7 @@
 const _resolveAjaxVars = o => {
 	let typeORes = typeof o.res;
 	if (typeORes === 'object' && !o.preGet) {
-		let compScope = ((o.compRef && privVarScopes[o.compRef]) ? o.compRef : 'main');
+		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
 		} else {

@@ -1,4 +1,4 @@
-const _replaceStringVars = (o, str, compRef) => {
+const _replaceStringVars = (o, str, varScope) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
@@ -12,7 +12,7 @@ const _replaceStringVars = (o, str, compRef) => {
 			return res;
 		} else if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 			// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
-			let scopedVar = ((compRef && privVarScopes[compRef]) ? compRef : 'main') + '.' + innards;
+			let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
 			res = _get(scopedVars, scopedVar);
 			return res || '';
 		} else {

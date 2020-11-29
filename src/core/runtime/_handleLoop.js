@@ -1,6 +1,6 @@
 const _handleLoop = (loopObj) => {
 	let originalLoops = loopObj.originalLoops;
-	let compRef = loopObj.compRef;
+	let varScope = loopObj.varScope;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let existingLoopVars = (loopObj.loopVars) ? loopObj.loopVars : [];
 
@@ -20,7 +20,7 @@ const _handleLoop = (loopObj) => {
 		}
 		let rightVar = originalLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let thisScope = ((compRef && privVarScopes[compRef]) ? compRef : 'main') + '.';
+		let thisScope = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 		let rightVarReal = thisScope + rightVar;
 
 		let rightVarVal;

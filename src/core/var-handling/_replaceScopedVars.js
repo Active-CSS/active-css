@@ -1,4 +1,4 @@
-const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, compRef=null) => {
+const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null) => {
 	// Evaluate and insert scoped variables. This could be a HTML string containing nodes.
 	// This should only happen after attribute substitution has occurred, otherwise binding in attributes won't work fully.
 	// Eg.: set-attribute: data-name "{{firstName}} {@id}{{surname}} {{surname}}". Simply put, the ID is not easily obtainable when updating the attribute with
@@ -33,7 +33,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 			actualHost = (thisHost) ? thisHost : shadHost;
 			for (attr of attrs) {
 				if (['data-activeid'].indexOf(attr.nodeName) !== -1) continue;
-				let newAttr = _replaceScopedVarsDo(attr.nodeValue, null, 'SetAttribute', { secSelObj: el, actVal: attr.nodeName + ' ' + attr.nodeValue }, true, actualHost, compRef);
+				let newAttr = _replaceScopedVarsDo(attr.nodeValue, null, 'SetAttribute', { secSelObj: el, actVal: attr.nodeName + ' ' + attr.nodeValue }, true, actualHost, varScope);
 				el.setAttribute(attr.nodeName, newAttr);
 			}
 		}
@@ -51,7 +51,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 			txt = el.textContent;
 			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
 			actualHost = (thisHost) ? thisHost : shadHost;
-			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, compRef);
+			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, varScope);
 		}
 
 		// Convert the fragment back into a string.
@@ -63,7 +63,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	} else {
 		// Come in from an var change or there are no nodes - so no point creating a tree and going through all that stuff to set up sub Active IDs and all that
 		// sort of thing.
-		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, compRef);
+		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, varScope);
 	}
 	return str;
 };

@@ -7,10 +7,10 @@ const _handleEvents = evObj => {
 	let afterEv = evObj.afterEv;
 	let origObj = evObj.origObj;
 	let runButElNotThere = evObj.runButElNotThere;
-	let compRef, thisDoc;
+	let varScope, thisDoc;
 	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
-	let topCompRef = evObj.compRef;
+	let topVarScope = evObj.varScope;
 	let _maEvCo = evObj._maEvCo;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
@@ -43,7 +43,7 @@ const _handleEvents = evObj => {
 			// We bomb out immediately if the developer has used the prevent-event-default action command.
 			// This is all managed before running any events on an object. We make a valid event selector list first and then do the work.
 			// This next bit creates the valid list.
-			let checkCompRef = topCompRef, checkComponent = component, privateEvents = compPrivEvs[topCompRef], parentComponentDetails;
+			let checkVarScope = topVarScope, checkComponent = component, privateEvents = compPrivEvs[topVarScope], parentComponentDetails;
 			while (true) {
 				for (i = 0; i < selectorListLen; i++) {
 					compSelCheckPos = selectors[evType][i].indexOf(':');
@@ -65,10 +65,10 @@ const _handleEvents = evObj => {
 						}
 					}
 				}
-				parentComponentDetails = compParents[checkCompRef];
+				parentComponentDetails = compParents[checkVarScope];
 				if (!privateEvents && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
-					if (parentComponentDetails.compRef) {
-						checkCompRef = parentComponentDetails.compRef;
+					if (parentComponentDetails.varScope) {
+						checkVarScope = parentComponentDetails.varScope;
 						checkComponent = '|' + parentComponentDetails.component;
 						privateEvents = parentComponentDetails.privateEvs;	// If the next component mode is set to closed, we won't go any higher than this.
 						continue;
@@ -117,7 +117,7 @@ const _handleEvents = evObj => {
 			if (onlyCheck) return true;	// Just checking something is there. Now we have established this, go back.
 			for (clause in config[selectorList[sel]][evType]) {
 				clauseCo++;
-				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topCompRef, component, eve, compDoc)) {
+				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topVarScope, component, eve, compDoc)) {
 					// This condition passed. Remember it for the next bit.
 					clauseArr[clauseCo] = clause;
 				}
@@ -149,7 +149,7 @@ const _handleEvents = evObj => {
 								obj,
 								compDoc,
 								evType,
-								compRef: topCompRef,
+								varScope: topVarScope,
 								evObj,
 								otherObj,
 								passCond,

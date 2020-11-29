@@ -1,4 +1,4 @@
-ActiveCSS.trigger = (sel, ev, compRef, compDoc, component) => {
+ActiveCSS.trigger = (sel, ev, varScope, compDoc, component) => {
 	/* API command */
 	/* Possibilities:
 	ActiveCSS.trigger('~restoreAfterTinyMCE', 'custom');		// Useful for calling random events.
@@ -9,8 +9,8 @@ ActiveCSS.trigger = (sel, ev, compRef, compDoc, component) => {
 	// Subject to conditionals.
 	if (typeof sel == 'object') {
 		// This is an object that was passed.
-		_handleEvents({ obj: sel, evType: ev, compRef: compRef, compDoc: compDoc, component: component });
+		_handleEvents({ obj: sel, evType: ev, varScope: varScope, compDoc: compDoc, component: component });
 	} else {
-		_a.Trigger({ secSel: sel, actVal: ev, compRef: compRef, compDoc: compDoc, component: component });
+		_a.Trigger({ secSel: sel, actVal: ev, varScope: varScope, compDoc: compDoc, component: component });
 	}
 };

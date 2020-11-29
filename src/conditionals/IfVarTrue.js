@@ -1,1 +1,1 @@
-_c.IfVarTrue = o => { return _ifVarTrue(o.actVal, o.compRef); };
+_c.IfVarTrue = o => { return _ifVarTrue(o.actVal, o.varScope); };

@@ -39,7 +39,7 @@ _a.CreateCommand = o => {
 		'component = o.component,' +				// The name of the component, if applicable.
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
-		'_activeVarScope = (o.compRef && privVarScopes[o.compRef]) ? o.compRef : "main";' +
+		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
 		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.

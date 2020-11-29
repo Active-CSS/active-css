@@ -1,5 +1,5 @@
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, compRef=null) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
@@ -45,8 +45,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 						wot = wot.replace(/^scopedVars\./, '');
 					}
 				}
-				// Prefix with sub-scope (main or _CompRef).
-				wot = (compRef && privVarScopes[compRef]) ? compRef + '.' + wot : 'main.' + wot;
+				// Prefix with sub-scope (main or _VarScope).
+				wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
 				res = _get(scopedVars, wot);
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res, func) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
@@ -55,7 +55,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
-				_addScopedCID(realWot, obj, compRef);
+				_addScopedCID(realWot, obj, varScope);
 				let retLT, retGT;
 				if (obj.tagName == 'STYLE') {
 					retLT = (walker) ? '_cj_s_lts_' : '/*';
@@ -68,7 +68,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					_addScopedAttr(realWot, o, originalStr, walker, compRef);
+					_addScopedAttr(realWot, o, originalStr, walker, varScope);
 				}
 				// Send the regular scoped variable back.
 				return res;
