@@ -15,8 +15,47 @@ const _selCompare = (o, opt) => {
 	} 
 	let el;
 	el = _getSel(o, spl);
+	let widthHeightEl = false;
+	if (opt.indexOf('W') !== -1 || opt.indexOf('H') !== -1) {
+		widthHeightEl = true;
+	}
 	if (!el) {
+		if (widthHeightEl) {
+			// When referencing height or width we need an element. If it isn't there then return false.
+			return false;
+		}
 		el = spl;
+	}
+	if (widthHeightEl) {
+		compareVal = compareVal.replace('px', '');
+		let styleVal, prop;
+		switch (opt) {	// optimized for dynamic speed more than maintainability.
+			case 'maW':
+			case 'miW':
+				prop = 'width';
+				break;
+			case 'maH':
+			case 'miH':
+				prop = 'height';
+		}
+		if (prop) {
+			let s = el.style[prop];
+			if (!s) {
+				let rect = el.getBoundingClientRect();
+				styleVal = (rect && rect[prop]) ? rect[prop] : 0;
+			} else {
+				styleVal = s.replace('px', '');
+			}
+		}
+		switch (opt) {
+			case 'maW':
+			case 'maH':
+				return (styleVal <= compareVal);
+			case 'miW':
+			case 'miH':
+				return (styleVal >= compareVal);
+		}
+		return res;
 	}
 	switch (opt) {
 		case 'eM':
@@ -24,7 +63,7 @@ const _selCompare = (o, opt) => {
 		case 'miL':
 			// _c.IfEmpty, _c.IfMaxLength, _c.IfMinLength
 			let firstVal;
-			if (el && el.nodeType && el.nodeType == Node.ELEMENT_NODE) {
+			if (el && !widthHeightEl && el.nodeType && el.nodeType == Node.ELEMENT_NODE) {
 				let valWot = _getFieldValType(el);
 				firstVal = el[valWot];
 			} else {

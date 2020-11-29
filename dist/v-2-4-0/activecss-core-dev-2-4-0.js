@@ -1257,6 +1257,7 @@ _a.ToggleClass = o => {
 };
 
 _a.Trigger = o => {
+/*	I'm pretty sure this isn't needed any more. Leave it here for the moment, as if put back it will need changing to secsel.
 	if (typeof o.obj === 'string' && o.obj.indexOf('{@') === -1 && o.obj.indexOf('{$') === -1 && !['~', '|'].includes(o.obj.substr(0, 1))) {
 		// This is a string, and we need the real objects, so do a queryselectorall.
 		o.doc.querySelectorAll(o.obj).forEach(function (obj, i) {
@@ -1269,6 +1270,7 @@ _a.Trigger = o => {
 			}
 		});
 	} else {
+*/
 		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
 			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
@@ -1281,7 +1283,7 @@ _a.Trigger = o => {
 				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			}
 		}
-	}
+//	}
 };
 
 _a.TriggerReal = o => {
@@ -1479,7 +1481,11 @@ _c.IfInnerHtml = o => { return (_selCompare(o, 'iH')); };	// Used in core unit t
 
 _c.IfInnerText = o => { return (_selCompare(o, 'iT')); };
 
+_c.IfMaxHeight = o => { return (_selCompare(o, 'maH')); };
+
 _c.IfMaxLength = o => { return (_selCompare(o, 'maL')); };
+
+_c.IfMaxWidth = o => { return (_selCompare(o, 'maW')); };
 
 _c.IfMediaMaxWidth = o => {
 	// This could get stored in a variable with an event listener rather than running each time. Probably not worth the overhead though.
@@ -1493,7 +1499,11 @@ _c.IfMediaMinWidth = o => {
 	return mq.matches;
 };
 
+_c.IfMinHeight = o => { return (_selCompare(o, 'miH')); };
+
 _c.IfMinLength = o => { return (_selCompare(o, 'miL')); };
+
+_c.IfMinWidth = o => { return (_selCompare(o, 'miW')); };
 
 _c.IfScrolltopGreater = o => {
 	if (o.obj == 'body') {
@@ -2345,8 +2355,9 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 
 				condVals = aV.split('_ACSSComma');
 				condValsLen = condVals.length;
+
 				for (n = 0; n < condValsLen; n++) {
-					if (_c[func]({
+					let cObj = {
 						'func': func,
 						'actName': commandName,
 						'secSel': 'conditional',
@@ -2361,7 +2372,11 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 						'component': component,
 						'compDoc': compDoc,
 						'compRef': compRef
-					}, scopedVars, privVarScopes) !== actionBoolState) {
+					};
+
+console.log('_passesConditional, cObj:', cObj);
+
+					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}
@@ -5209,6 +5224,9 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', compRef=null) 
 						el = obj.shadowRoot;
 					} else {
 						el = _getSel(o, elRef);
+
+console.log('_replaceAttrs, el:', el);
+
 					}
 					let wat = wot.substr(colon + 1);
 					if (el.tagName == 'IFRAME' && wat == 'url') {
@@ -7111,7 +7129,8 @@ const _getObj = (str) => {
 	let targArr = _splitIframeEls(str);
 	if (!targArr) return false;	// invalid target.
 	try {
-		return targArr[0].querySelector(targArr[1]);
+		let obj = targArr[0].querySelector(targArr[1]);
+		return obj;
 	} catch(err) {
 		return false;
 	}
@@ -7390,8 +7409,47 @@ const _selCompare = (o, opt) => {
 	} 
 	let el;
 	el = _getSel(o, spl);
+	let widthHeightEl = false;
+	if (opt.indexOf('W') !== -1 || opt.indexOf('H') !== -1) {
+		widthHeightEl = true;
+	}
 	if (!el) {
+		if (widthHeightEl) {
+			// When referencing height or width we need an element. If it isn't there then return false.
+			return false;
+		}
 		el = spl;
+	}
+	if (widthHeightEl) {
+		compareVal = compareVal.replace('px', '');
+		let styleVal, prop;
+		switch (opt) {	// optimized for dynamic speed more than maintainability.
+			case 'maW':
+			case 'miW':
+				prop = 'width';
+				break;
+			case 'maH':
+			case 'miH':
+				prop = 'height';
+		}
+		if (prop) {
+			let s = el.style[prop];
+			if (!s) {
+				let rect = el.getBoundingClientRect();
+				styleVal = (rect && rect[prop]) ? rect[prop] : 0;
+			} else {
+				styleVal = s.replace('px', '');
+			}
+		}
+		switch (opt) {
+			case 'maW':
+			case 'maH':
+				return (styleVal <= compareVal);
+			case 'miW':
+			case 'miH':
+				return (styleVal >= compareVal);
+		}
+		return res;
 	}
 	switch (opt) {
 		case 'eM':
@@ -7399,7 +7457,7 @@ const _selCompare = (o, opt) => {
 		case 'miL':
 			// _c.IfEmpty, _c.IfMaxLength, _c.IfMinLength
 			let firstVal;
-			if (el && el.nodeType && el.nodeType == Node.ELEMENT_NODE) {
+			if (el && !widthHeightEl && el.nodeType && el.nodeType == Node.ELEMENT_NODE) {
 				let valWot = _getFieldValType(el);
 				firstVal = el[valWot];
 			} else {

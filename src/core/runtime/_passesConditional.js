@@ -38,8 +38,9 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 
 				condVals = aV.split('_ACSSComma');
 				condValsLen = condVals.length;
+
 				for (n = 0; n < condValsLen; n++) {
-					if (_c[func]({
+					let cObj = {
 						'func': func,
 						'actName': commandName,
 						'secSel': 'conditional',
@@ -54,7 +55,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 						'component': component,
 						'compDoc': compDoc,
 						'compRef': compRef
-					}, scopedVars, privVarScopes) !== actionBoolState) {
+					};
+					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}

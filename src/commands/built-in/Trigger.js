@@ -1,4 +1,5 @@
 _a.Trigger = o => {
+/*	I'm pretty sure this isn't needed any more. Leave it here for the moment, as if put back it will need changing to secsel.
 	if (typeof o.obj === 'string' && o.obj.indexOf('{@') === -1 && o.obj.indexOf('{$') === -1 && !['~', '|'].includes(o.obj.substr(0, 1))) {
 		// This is a string, and we need the real objects, so do a queryselectorall.
 		o.doc.querySelectorAll(o.obj).forEach(function (obj, i) {
@@ -11,6 +12,7 @@ _a.Trigger = o => {
 			}
 		});
 	} else {
+*/
 		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
 			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
@@ -23,5 +25,5 @@ _a.Trigger = o => {
 				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, compRef: o.compRef, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			}
 		}
-	}
+//	}
 };
