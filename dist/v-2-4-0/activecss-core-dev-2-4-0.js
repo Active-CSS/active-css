@@ -492,11 +492,11 @@ _a.CreateElement = o => {
 			'}' +
 			'connectedCallback() {' +
 				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'connectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope });' +
+				'_handleEvents({ obj: this, evType: \'connectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
 			'}' +
 			'disconnectedCallback() {' +
 				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'disconnectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, runButElNotThere: true });' +	// true = run when not there.
+				'_handleEvents({ obj: this, evType: \'disconnectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, runButElNotThere: true });' +	// true = run when not there.
 			'}';
 	if (attrs) {
 		createTagJS +=
@@ -506,7 +506,7 @@ _a.CreateElement = o => {
 				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope });' +
+				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
 			'}';
 	}
 	createTagJS +=
@@ -707,7 +707,7 @@ _a.LoadConfig = o => {
 		_getFile(o.actVal, 'txt', o);
 	} else {
 		// Run the success script - we should still do this, we just didn't need to load the config.
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 };
 
@@ -737,7 +737,7 @@ _a.LoadScript = (o, opt) => {
 		}
 		scrip[srcTag] = scr;
 		scrip.onload = function() {
-			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), eve: o.e, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		};
 		if (forShadow) {
 			o.compDoc.appendChild(scrip);
@@ -1273,14 +1273,14 @@ _a.Trigger = o => {
 */
 		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
 			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		} else {
 			// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
 			// Is this a draw event? If so, we also want to run all draw events for elements within.
 			if (o.actVal == 'draw') {
 				_runInnerEvent(o, null, 'draw');
 			} else {
-				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 			}
 		}
 //	}
@@ -1396,7 +1396,7 @@ ActiveCSS.previousCycle = sel => {
 	return _focusOn({ actVal: sel }, 'pcc', true);
 };
 
-ActiveCSS.trigger = (sel, ev, varScope, compDoc, component) => {
+ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope) => {
 	/* API command */
 	/* Possibilities:
 	ActiveCSS.trigger('~restoreAfterTinyMCE', 'custom');		// Useful for calling random events.
@@ -1407,9 +1407,9 @@ ActiveCSS.trigger = (sel, ev, varScope, compDoc, component) => {
 	// Subject to conditionals.
 	if (typeof sel == 'object') {
 		// This is an object that was passed.
-		_handleEvents({ obj: sel, evType: ev, varScope: varScope, compDoc: compDoc, component: component });
+		_handleEvents({ obj: sel, evType: ev, varScope: varScope, evScope: evScope, compDoc: compDoc, component: component });
 	} else {
-		_a.Trigger({ secSel: sel, actVal: ev, varScope: varScope, compDoc: compDoc, component: component });
+		_a.Trigger({ secSel: sel, actVal: ev, varScope: varScope, evScope: evScope, compDoc: compDoc, component: component });
 	}
 };
 
@@ -1748,6 +1748,7 @@ const _handleEvents = evObj => {
 	let origObj = evObj.origObj;
 	let runButElNotThere = evObj.runButElNotThere;
 	let varScope, thisDoc;
+	let evScope = evObj.evScope;
 	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
@@ -1805,10 +1806,10 @@ const _handleEvents = evObj => {
 						}
 					}
 				}
-				parentComponentDetails = compParents[checkVarScope];
 				if (!privateEvents && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
-					if (parentComponentDetails.varScope) {
-						checkVarScope = parentComponentDetails.varScope;
+					parentComponentDetails = compParents[evScope];
+					if (parentComponentDetails && parentComponentDetails.evScope) {
+						checkVarScope = parentComponentDetails.evScope;
 						checkComponent = '|' + parentComponentDetails.component;
 						privateEvents = parentComponentDetails.privateEvs;	// If the next component mode is set to closed, we won't go any higher than this.
 						continue;
@@ -1890,6 +1891,7 @@ const _handleEvents = evObj => {
 								compDoc,
 								evType,
 								varScope: topVarScope,
+								evScope,
 								evObj,
 								otherObj,
 								passCond,
@@ -2033,7 +2035,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
 };
@@ -2243,7 +2245,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, _maEvCo: mainEventCounter });
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;		// el can be deleted during the handleEvent.
 		}
 		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
@@ -2540,6 +2542,7 @@ const _performSecSel = (loopObj) => {
 	let compDoc = loopObj.compDoc || document;
 	let evType = loopObj.evType;
 	let varScope = loopObj.varScope;
+	let evScope = loopObj.evScope;
 	let evObj = loopObj.evObj;
 	let otherObj = loopObj.otherObj;
 	let passCond = loopObj.passCond;
@@ -2591,6 +2594,7 @@ const _performSecSel = (loopObj) => {
 						compDoc,
 						evType,
 						varScope,
+						evScope,
 						evObj,
 						otherObj,
 						passCond,
@@ -2652,6 +2656,7 @@ const _performSecSel = (loopObj) => {
 							compDoc,
 							evType,
 							varScope,
+							evScope,
 							evObj,
 							otherObj,
 							passCond,
@@ -2696,6 +2701,7 @@ const _performSecSel = (loopObj) => {
 						intID: chilsObj[secSelLoops][secSelCounter][targetSelector][m].intID,
 						activeID: activeTrackObj,
 						varScope,	// unique counter of the shadow element rendered - used for variable scoping.
+						evScope,
 						compDoc,
 						component,
 						loopVars,
@@ -2806,7 +2812,7 @@ const _renderCompDomsClean = varScope => {
 };
 
 const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, componentName, template, shadow, shadPar, shadEv;
+	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -2837,6 +2843,17 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		return;
 	}
 
+// this looks like it is the place where things got confused. The varscope needs to be the private scope - not the component scope.
+// it needs to be in the higher level component scope if it isn't private, which should have been passed in as an o.varScope variable.
+
+// That's the first thing to sort out.
+
+// But we still need the varScope variable to handle events. We should probably replace all event scoping with an eventScope variable instead of a varScope
+// variable.
+
+// The second thing to sort out, which will be new, is to accumulate an array of varscopes that are accessible when getting the variable, as all varscopes
+// above in the component tree should be accessible.
+
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
@@ -2844,23 +2861,26 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		scopedVars[varScope] = {};
 	}
 
-	// Set up a private scope reference if it is one so we don't have to pass around this figure.
+	evScope = varScope;		// This needs to be per component for finding event per component when looping.
+
+// this next bit isn't going to cut it if we want sub-components to share the same scope.
+
+	// Set up a private variable scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the varScope, is not the same as the component name. The varScope is the reference of the unique scope.
-	// Hence we need to do this at this point in the code.
 	privVarScopes[varScope] = components[componentName].privVars ? true: false;
 
 	// Get the parent component details for event bubbling (not element bubbling).
 	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
-	compParents[varScope] = parentCompDetails;
-	compPrivEvs[varScope] = privateEvents;
+	compParents[evScope] = parentCompDetails;
+	compPrivEvs[evScope] = privateEvents;
 	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
-	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScope);
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -2912,7 +2932,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// Remove the variable placeholders.
 		_removeVarPlaceholders(shadow);
 
-		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope: varScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope, evScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
@@ -2921,7 +2941,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope, evScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}, 0);
 
@@ -3009,13 +3029,13 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			_replaceTempActiveID(obj);
 		});
 		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
-		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
 			// We can potentially have the same element running a draw event twice. Like the first draw event can add content inside any divs in the first object, which
 			// could run this script again. When it finishes that run, it would then come back and run the loop below. And thereby running the draw event twice.
 			// So we mark the element as drawn and don't run it twice. It gets marked as drawn in _handleEvents.
 			if (obj._acssDrawn || obj.tagName == 'DATA-ACSS-COMPONENT') return;		// Skip pending data-acss-component tags. Note that node may have changed.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}
 
@@ -3198,7 +3218,7 @@ const _addConfig = (str, o) => {
 		}
 		if (o.actName == 'load-config') {
 			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
-			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		}
 	}
 };
@@ -3753,9 +3773,17 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							if (!removeState) {
 								shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
 								shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
+
+
+// This is wrong. All components must not be scoped. Scoped refers to the data-active-scoped attribute that should be just for variables.
+// Event scoping is something else and that needs to be kept *separate*.
+
 								// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
 								// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
 								components[componentName].scoped = true;
+
+
+
 							} else {
 								delete shadowSels[componentName];
 								delete components[componentName];
@@ -5301,10 +5329,10 @@ const _replaceComponents = (o, str) => {
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
 				// removed from the pending array once drawn.
 				compCount++;
-				let varScope = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
+				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
 				compPending[compCount] = ret;
-				// Replace the fully rendered component instance with the varScope placeholder.
-				ret = varScope;
+				// Replace the fully rendered component instance with the compRef placeholder.
+				ret = compRef;
 			} else {
 				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.varScope);
 				ret = _replaceStringVars(o.ajaxObj, ret);
@@ -6609,7 +6637,7 @@ const _ajaxCallbackDisplay = (o) => {
 	}
 	if (!o.error && o.preGet) {
 		// Run the afterAjaxPreGet event.
-		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
 		// Run the post event - success or failure.
 		_ajaxDisplay(o);
@@ -6635,7 +6663,7 @@ const _ajaxCallbackErr = (str, resp, o) => {
 const _ajaxDisplay = o => {
 	let ev = 'afterAjax' + ((o.formSubmit) ? 'Form' + (o.formPreview ? 'Preview' : o.formSubmit ? 'Submit' : '') : '');
 	if (o.error) ev += o.errorCode;
-	_handleEvents({ obj: o.obj, evType: ev, eve: o.e, otherObj: o, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+	_handleEvents({ obj: o.obj, evType: ev, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	if (o.hash !== '') {
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;
@@ -7046,7 +7074,7 @@ const _getBaseURL = str => {
 };
 
 const _getComponentDetails = rootNode => {
-	let rootNodeHost, component, compDoc, varScope, privateEvs;
+	let rootNodeHost, component, compDoc, varScope, evScope, privateEvs;
 	if (!rootNode.isSameNode(document)) {
 		// Get the component variables so we can run this element's events in context.
 		rootNodeHost = rootNode;
@@ -7056,14 +7084,16 @@ const _getComponentDetails = rootNode => {
 		component = rootNodeHost._acssComponent;
 		compDoc = rootNode;
 		varScope = rootNodeHost._acssVarScope;
+		evScope = rootNodeHost._acssEvScope;
 		privateEvs = rootNodeHost._acssPrivEvs;
 	} else {
 		component = null;
 		compDoc = null;
 		varScope = null;
+		evScope = null;
 		privateEvs = null;
 	}
-	return { component, compDoc, varScope, privateEvs };
+	return { component, compDoc, varScope, evScope, privateEvs };
 };
 
 const _getComponentRoot = (obj) => {
@@ -7404,7 +7434,7 @@ const _selCompare = (o, opt) => {
 	let el;
 	el = _getSel(o, spl);
 	let widthHeightEl = false;
-	if (opt.indexOf('W') !== -1 || opt.indexOf('H') !== -1) {
+	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
 	}
 	if (!el) {
@@ -7443,7 +7473,6 @@ const _selCompare = (o, opt) => {
 			case 'miH':
 				return (styleVal >= compareVal);
 		}
-		return res;
 	}
 	switch (opt) {
 		case 'eM':

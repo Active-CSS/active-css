@@ -8,6 +8,7 @@ const _handleEvents = evObj => {
 	let origObj = evObj.origObj;
 	let runButElNotThere = evObj.runButElNotThere;
 	let varScope, thisDoc;
+	let evScope = evObj.evScope;
 	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
@@ -65,10 +66,10 @@ const _handleEvents = evObj => {
 						}
 					}
 				}
-				parentComponentDetails = compParents[checkVarScope];
 				if (!privateEvents && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
-					if (parentComponentDetails.varScope) {
-						checkVarScope = parentComponentDetails.varScope;
+					parentComponentDetails = compParents[evScope];
+					if (parentComponentDetails && parentComponentDetails.evScope) {
+						checkVarScope = parentComponentDetails.evScope;
 						checkComponent = '|' + parentComponentDetails.component;
 						privateEvents = parentComponentDetails.privateEvs;	// If the next component mode is set to closed, we won't go any higher than this.
 						continue;
@@ -150,6 +151,7 @@ const _handleEvents = evObj => {
 								compDoc,
 								evType,
 								varScope: topVarScope,
+								evScope,
 								evObj,
 								otherObj,
 								passCond,

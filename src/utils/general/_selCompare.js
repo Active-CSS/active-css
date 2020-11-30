@@ -16,7 +16,7 @@ const _selCompare = (o, opt) => {
 	let el;
 	el = _getSel(o, spl);
 	let widthHeightEl = false;
-	if (opt.indexOf('W') !== -1 || opt.indexOf('H') !== -1) {
+	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
 	}
 	if (!el) {
@@ -55,7 +55,6 @@ const _selCompare = (o, opt) => {
 			case 'miH':
 				return (styleVal >= compareVal);
 		}
-		return res;
 	}
 	switch (opt) {
 		case 'eM':

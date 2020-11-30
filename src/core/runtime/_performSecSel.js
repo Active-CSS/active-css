@@ -5,6 +5,7 @@ const _performSecSel = (loopObj) => {
 	let compDoc = loopObj.compDoc || document;
 	let evType = loopObj.evType;
 	let varScope = loopObj.varScope;
+	let evScope = loopObj.evScope;
 	let evObj = loopObj.evObj;
 	let otherObj = loopObj.otherObj;
 	let passCond = loopObj.passCond;
@@ -56,6 +57,7 @@ const _performSecSel = (loopObj) => {
 						compDoc,
 						evType,
 						varScope,
+						evScope,
 						evObj,
 						otherObj,
 						passCond,
@@ -117,6 +119,7 @@ const _performSecSel = (loopObj) => {
 							compDoc,
 							evType,
 							varScope,
+							evScope,
 							evObj,
 							otherObj,
 							passCond,
@@ -161,6 +164,7 @@ const _performSecSel = (loopObj) => {
 						intID: chilsObj[secSelLoops][secSelCounter][targetSelector][m].intID,
 						activeID: activeTrackObj,
 						varScope,	// unique counter of the shadow element rendered - used for variable scoping.
+						evScope,
 						compDoc,
 						component,
 						loopVars,

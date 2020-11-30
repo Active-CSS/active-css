@@ -161,9 +161,17 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							if (!removeState) {
 								shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
 								shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
+
+
+// This is wrong. All components must not be scoped. Scoped refers to the data-active-scoped attribute that should be just for variables.
+// Event scoping is something else and that needs to be kept *separate*.
+
 								// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
 								// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
 								components[componentName].scoped = true;
+
+
+
 							} else {
 								delete shadowSels[componentName];
 								delete components[componentName];
