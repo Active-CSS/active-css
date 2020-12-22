@@ -17,7 +17,7 @@ const _replaceStringVars = (o, str, varScope) => {
 			case '$HTML':
 				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
 				res = _get(scopedVars, scopedVar);
-				if (!res) {
+				if (!res && typeof res !== 'string') {
 					res = '{' + innards + '}';
 				}
 				return res;

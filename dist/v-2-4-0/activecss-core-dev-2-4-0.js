@@ -5855,7 +5855,7 @@ const _replaceStringVars = (o, str, varScope) => {
 			case '$HTML':
 				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
 				res = _get(scopedVars, scopedVar);
-				if (!res) {
+				if (!res && typeof res !== 'string') {
 					res = '{' + innards + '}';
 				}
 				return res;
@@ -5892,12 +5892,7 @@ const _resolveAjaxVars = o => {
 		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
-
-		_set(scopedVars, compScope + '.__acssHTML', o.res);
-		// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
-		_set(scopedVars, compScope + '.__acssHTML_NOVARS', _escNoVars(o.res));
-		// Escape HTML and curlies with safe HTML entities.
-		_set(scopedVars, compScope + '.__acssHTML_ESCAPED', _safeTags(o.res));
+		_setHTMLVars(o);
 	}
 	_ajaxCallbackDisplay(o);
 };
@@ -6006,6 +6001,19 @@ const _resolvePath = (path, obj=self, separator='.') => {
 	var properties = Array.isArray(path) ? path : path.split(separator);
 	properties.reduce((prev, curr) => prev && prev[curr], obj);
 	return obj;
+};
+
+const _setHTMLVars = (o, isEmptyStr=false) => {
+	let str = (isEmptyStr) ? '' : o.res;
+	let escStr = (isEmptyStr) ? '' : _escNoVars(o.res);
+	let safeStr = (isEmptyStr) ? '' : _safeTags(o.res);
+	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
+
+	_set(scopedVars, compScope + '.__acssHTML', str);
+	// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
+	_set(scopedVars, compScope + '.__acssHTML_NOVARS', escStr);
+	// Escape HTML and curlies with safe HTML entities.
+	_set(scopedVars, compScope + '.__acssHTML_ESCAPED', safeStr);
 };
 
 ActiveCSS._sortOutFlowEscapeChars = str => {
@@ -6991,6 +6999,7 @@ const _ajaxCallback = (str, o) => {
 		// _ajaxCallbackDisplay(o); is called from _resolveAjaxVars, as it needs to account for the asyncronyousness of the shadow DOM.
 	} else {
 		o.res = '';
+		_setHTMLVars(o, true);	// true for empty string.
 		// Commenting out for now - this will be for ajax return feedback.
 //		if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
 //			_debugOutput(o);	//	'', 'ajax' + ((o.preGet) ? '-pre-get' : ''));
@@ -7268,14 +7277,6 @@ const _convertToMS = (tim, errMess) => {
 	var n = parseFloat(match[1]);
 	var type = (match[2] || 'ms').toLowerCase();
 	return (type == 's') ? n * 1000 : n;
-};
-
-const _copyAttrs = (obj, attrs) => {
-	let i = 0, attrsLen = attrs.length, attr;
-	for (i; i < attrsLen; i++) {
-		obj.setAttribute(attrs[i].name, attrs[i].value);
-	}
-	return obj;
 };
 
 ActiveCSS._decodeHTML = str => {
