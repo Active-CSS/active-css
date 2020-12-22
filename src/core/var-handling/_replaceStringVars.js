@@ -19,6 +19,8 @@ const _replaceStringVars = (o, str, varScope) => {
 				res = _get(scopedVars, scopedVar);
 				if (!res && typeof res !== 'string') {
 					res = '{' + innards + '}';
+				} else {
+					res = ActiveCSS._sortOutFlowEscapeChars(res);
 				}
 				return res;
 
