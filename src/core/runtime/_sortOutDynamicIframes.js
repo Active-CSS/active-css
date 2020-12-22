@@ -4,13 +4,16 @@ const _sortOutDynamicIframes = str => {
 	// This routine sorts all that out. It should ignore standard iframe format (minus the scenario where iframes are not supported which this doesn't
 	// currently handle).
 
+	str = str.replace(/\r|\n/gm, '').replace(/\t/gm, ' ');
+
 	let iframes = [], ref = 0, arr = str.split('<iframe'), endPos, concatStr = '', i = 0, arrLen = arr.length, mainTag, innards, innerCount = 0,
-		accumInnards = '', outerTag = '', useOuterTag, closingChar, closingArr, closingArrLen, cl;
+		accumInnards = '', outerTag = '', useOuterTag, closingChar, closingArr, closingArrLen, cl, openingChar;
 
 	let foundContentInIframe = false;
 	for (i; i < arrLen; i++) {
 		if (arr[i].trim() == '') continue;
 		endPos = arr[i].indexOf('</iframe>');
+
 		if (innerCount == 0 && endPos !== -1) {
 			if (i == 0) {
 				concatStr += arr[0].substr(0, endPos);
@@ -39,16 +42,24 @@ const _sortOutDynamicIframes = str => {
 			closingArrLen = closingArr.length;
 			cl = 0;
 			for (cl; cl < closingArrLen; cl++) {
-				if (closingArr[cl].trim() == '') continue;
+				if (closingArr[cl].trim() == '') {
+					accumInnards += '</iframe>';
+					continue;
+				}
 				if (innerCount == 0) {
 					// We're now on the top level and we've found the correct outer closing tag
 					closingChar = closingArr[cl].indexOf('>');
+					openingChar = closingArr[cl].indexOf('<');
 					if (arr[i].substr(closingChar + 1, endPos - closingChar - 1).trim() == '') continue;	// This is an iframe with no content. Ignore completely.
 					foundContentInIframe = true;
 					concatStr += '<data-acss-iframe data-ref="' + ref + '"></data-acss-iframe>';
 					mainTag = '<iframe ' + outerTag;
 					outerTag = '';
-					innards = accumInnards + closingArr[cl].substr(closingChar + 1);
+					if (openingChar < closingChar) {
+						innards = accumInnards + closingArr[cl];
+					} else {
+						innards = accumInnards + closingArr[cl].substr(closingChar + 1);
+					}
 					iframes[ref] = { mainTag, innards };
 					accumInnards = '';
 					ref++;
