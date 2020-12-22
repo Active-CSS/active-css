@@ -6,13 +6,15 @@ _a.Render = o => {
 	// Make a copy of the target selector.
 	// The child nodes of the target element can be referenced and output in inner components by referencing {$CHILDREN}.
 	// The actual node itself can be referenced and output in inner components by referencing {$SELF}.
-	let copyOfSecSelObj = o.secSelObj.cloneNode(true);
-	let selfTree;
-	if (content.indexOf('{$SELF}') !== -1) {
-		selfTree = copyOfSecSelObj.outerHTML;
-		o.renderPos = 'replace';
+	let selfTree = '', childTree = '';
+	if (o.secSelObj.nodeType === Node.ELEMENT_NODE) {
+		let copyOfSecSelObj = o.secSelObj.cloneNode(true);
+		if (content.indexOf('{$SELF}') !== -1) {
+			selfTree = copyOfSecSelObj.outerHTML;
+			o.renderPos = 'replace';
+		}
+		childTree = copyOfSecSelObj.innerHTML;
 	}
-	let childTree = copyOfSecSelObj.innerHTML;
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	content = _replaceComponents(o, content);
@@ -21,10 +23,10 @@ _a.Render = o => {
 	content = _replaceStringVars(o.ajaxObj, content);
 
 	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
-	content = _renderRefElements(content, childTree, 'CHILDREN');
+	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
 
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
-	content = _renderRefElements(content, selfTree, 'SELF');
+	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
 	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 

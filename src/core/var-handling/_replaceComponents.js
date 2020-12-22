@@ -6,13 +6,7 @@ const _replaceComponents = (o, str) => {
 		co++;
 
 		// Handle ID tag content insertion first.
-		// "jshint" thinks this function in a loop may cause semantic confusion. It doesn't in practical terms, and we need it, hence we need the ignore line.
-		str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-_]+)\}/gi, function(_, c) {	// jshint ignore:line
-			let el = document.getElementById(c);
-			if (el) return el.innerHTML;
-			// Return it as it is if the element is not there.
-			return '{#' + c + '}';
-		});
+		str = _replaceHTMLVars(o, str);
 
 		// Now handle real component insertion.
 		// See create-element code for why this is used: "_acss-host_' + tag + '_"

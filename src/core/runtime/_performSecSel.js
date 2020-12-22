@@ -1,22 +1,7 @@
 const _performSecSel = (loopObj) => {
-	let chilsObj = loopObj.chilsObj;
-	let secSelLoops = loopObj.secSelLoops;
-	let obj = loopObj.obj;
+	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
 	let compDoc = loopObj.compDoc || document;
-	let evType = loopObj.evType;
-	let varScope = loopObj.varScope;
-	let evScope = loopObj.evScope;
-	let evObj = loopObj.evObj;
-	let otherObj = loopObj.otherObj;
-	let passCond = loopObj.passCond;
-	let sel = loopObj.sel;
-	let component = loopObj.component;
-	let selectorList = loopObj.selectorList;
-	let eve = loopObj.eve;
-	let loopVars = loopObj.loopVars;
-	let _maEvCo = loopObj._maEvCo;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
-	let runButElNotThere = loopObj.runButElNotThere;
 
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
@@ -63,7 +48,7 @@ const _performSecSel = (loopObj) => {
 						passCond,
 						sel,
 						component,
-						selectorList,
+						primSel,
 						eve,
 						_maEvCo,
 						_taEvCo: targetEventCounter,
@@ -75,8 +60,8 @@ const _performSecSel = (loopObj) => {
 
 					continue;
 				}
-				// Get the correct document/iframe/shadow for this target.
-				targs = _splitIframeEls(targetSelector, obj, compDoc);	// Note - here it is compDoc as we are doing this in relation to the 
+				// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
+				targs = _splitIframeEls(targetSelector, { obj, compDoc });
 				if (!targs) continue;	// invalid target.
 				doc = targs[0];
 				passTargSel = targs[1];
@@ -125,7 +110,7 @@ const _performSecSel = (loopObj) => {
 							passCond,
 							sel,
 							component,
-							selectorList,
+							primSel,
 							eve,
 							_maEvCo,
 							_taEvCo: targetEventCounter,
@@ -150,7 +135,7 @@ const _performSecSel = (loopObj) => {
 						origSecSel: targetSelector,	// Used for debugging only.
 						actVal: actionValue,
 						origActVal: actionValue,
-						primSel: selectorList[sel],
+						primSel,
 						rules: chilsObj[secSelLoops][secSelCounter][targetSelector],
 						obj,
 						doc,

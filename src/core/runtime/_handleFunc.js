@@ -1,5 +1,6 @@
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
+
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
@@ -90,7 +91,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	}
 
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope);
+	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {

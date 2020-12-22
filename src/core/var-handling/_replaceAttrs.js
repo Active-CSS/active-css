@@ -1,6 +1,8 @@
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
 // config on different objects as they are needed. Also replace JavaScript expressions {= expression}.
-const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null) => {
+// Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
+
+const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null, evType='') => {
 	// Note, obj could sometimes be a string with no attributes if this is a trigger.
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
@@ -27,9 +29,16 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null)
 				if (colon !== -1) {
 					// This should be an id followed by an attribute, or innerText, or it's a shadow DOM host attribute.
 					let elRef = wot.substr(0, colon), el;
-					if (elRef == 'host' && (!o || ['beforeComponentOpen', 'componentOpen'].indexOf(o.event) === -1)) {
-						if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
-						el = obj.shadowRoot;
+					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
+					if (elRef == 'host') {
+						let oEvIsCompOpen = (o && compOpenArr.indexOf(o.event) !== -1);
+						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
+							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
+							el = obj;
+						} else if (!o || !oEvIsCompOpen) {
+							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
+							el = obj.shadowRoot;
+						}
 					} else {
 						el = _getSel(o, elRef);
 					}

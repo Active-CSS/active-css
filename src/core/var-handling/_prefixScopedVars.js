@@ -8,8 +8,8 @@ const _prefixScopedVars = function(str, varScope=null) {
 	*/
 	let mapObj = {}, mapObj2 = {}, scopedVar, varEval;
 
-	str = str.replace(/(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)(\\"|"(?:\\"|[^"])*"|[\u00BF-\u1FFF\u2C00-\uD7FF\w_\.]+)(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)/gim, function(_, wot) {
-		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return wot;	// This is a full quoted so is an invalid match - ignore it.
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.]+)\}/gim, function(_, wot) {
+		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
 		if (wot.indexOf('.') !== -1) {
 			// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
@@ -19,9 +19,13 @@ const _prefixScopedVars = function(str, varScope=null) {
 			if (firstVar == 'window' || firstVar == 'scopedVars') return wot;
 		}
 		scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + wot;
+		// Sort out if the left-hand var is an inherited variable or not.
+		let scopedVarObj = _resolveInheritance(scopedVar);
+		scopedVar = scopedVarObj.name;
 		varEval = _get(scopedVars, scopedVar);
 		// Only return the variable if it actually exists.
-		return (varEval) ? 'scopedVars.' + scopedVar : wot;
+		return (typeof varEval !== 'undefined') ? 'scopedVars.' + scopedVar : wot;
 	});
+
 	return str;
 };

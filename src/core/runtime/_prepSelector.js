@@ -11,7 +11,7 @@ const _prepSelector = (sel, obj, doc) => {
 					sel = window;
 					break;
 				case 'body':
-					sel = document.body;
+					sel = doc.body;
 					break;
 				default:
 					// Substitute the active ID into the selector.
@@ -27,7 +27,7 @@ const _prepSelector = (sel, obj, doc) => {
 		if (origSel == 'window') {
 			return [ window ];
 		} else if (origSel == 'body') {
-			return [ document.body ];
+			return [ doc.body ];
 		} else {
 			res = doc.querySelectorAll(sel);
 		}

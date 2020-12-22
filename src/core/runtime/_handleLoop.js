@@ -1,6 +1,5 @@
 const _handleLoop = (loopObj) => {
-	let originalLoops = loopObj.originalLoops;
-	let varScope = loopObj.varScope;
+	let {originalLoops, varScope} = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let existingLoopVars = (loopObj.loopVars) ? loopObj.loopVars : [];
 

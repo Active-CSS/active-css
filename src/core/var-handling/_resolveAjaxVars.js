@@ -1,7 +1,7 @@
 const _resolveAjaxVars = o => {
 	let typeORes = typeof o.res;
+	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 	if (typeORes === 'object' && !o.preGet) {
-		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
 		} else {
@@ -16,6 +16,12 @@ const _resolveAjaxVars = o => {
 		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
+
+		_set(scopedVars, compScope + '.__acssHTML', o.res);
+		// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
+		_set(scopedVars, compScope + '.__acssHTML_NOVARS', _escNoVars(o.res));
+		// Escape HTML and curlies with safe HTML entities.
+		_set(scopedVars, compScope + '.__acssHTML_ESCAPED', _safeTags(o.res));
 	}
 	_ajaxCallbackDisplay(o);
 };

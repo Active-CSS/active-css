@@ -1,8 +1,10 @@
 const _removeVarPlaceholders = obj => {
 	/**
 	* Handle text nodes.
+	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// Remove variable placeholders. If there is no content yet, leave an empty text node.
+
 	let treeWalker = document.createTreeWalker(
 		obj,
 		NodeFilter.SHOW_COMMENT
@@ -38,6 +40,7 @@ const _removeVarPlaceholders = obj => {
 
 	/**
 	* Handle style tags (but not inline Active CSS).
+	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).
 	treeWalker = document.createTreeWalker(

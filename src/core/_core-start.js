@@ -9,7 +9,8 @@
 	const PARSEEND = 2;
 	const PARSEATTR = 3;
 	const PARSEDEBUG = 4;
-	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+//	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;	// This doesn't handle user content very well. May do something else later - leave here for ref.
+	const COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm;
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
@@ -98,6 +99,7 @@
 		compParents = [],
 		compPrivEvs = [],
 		privVarScopes = [],
+		strictPrivVarScopes = [],
 		shadowSels = [],
 		shadowDoms = {},
 		actualDoms = {},
@@ -123,7 +125,9 @@
 		pagesDisplayed = [],
 		inlineRefCo = 0,
 		inlineRefArr = [],
-		inlineIDArr = [];
+		inlineIDArr = [],
+		inIframe = (window.location !== window.parent.location),
+		htmlRawMap = [];
 
 	ActiveCSS.customHTMLElements = {};
 

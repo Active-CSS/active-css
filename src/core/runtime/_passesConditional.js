@@ -33,7 +33,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
+				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
 				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 				condVals = aV.split('_ACSSComma');

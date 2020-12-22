@@ -127,7 +127,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				// Clean-up.
 				varMap[change.currentPath].splice(i, 1);
 			} else {
-				// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
+				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
 				nod.textContent = _escapeItem(refObj);
 			}
 		});

@@ -19,7 +19,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 		);
 		while (treeWalker.nextNode()) {
 			if (customTags.includes(treeWalker.currentNode.tagName)) {
-				// Scope all custom tags by default. This happens anyway for all components. It's needed here to set a reference for host attribute variables.
+				// Scope all custom tags by default.
 				treeWalker.currentNode.setAttribute('data-active-scoped', '');
 			}
 		}

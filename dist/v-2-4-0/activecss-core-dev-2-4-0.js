@@ -9,7 +9,8 @@
 	const PARSEEND = 2;
 	const PARSEATTR = 3;
 	const PARSEDEBUG = 4;
-	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;
+//	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;	// This doesn't handle user content very well. May do something else later - leave here for ref.
+	const COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm;
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
@@ -98,6 +99,7 @@
 		compParents = [],
 		compPrivEvs = [],
 		privVarScopes = [],
+		strictPrivVarScopes = [],
 		shadowSels = [],
 		shadowDoms = {},
 		actualDoms = {},
@@ -123,7 +125,9 @@
 		pagesDisplayed = [],
 		inlineRefCo = 0,
 		inlineRefArr = [],
-		inlineIDArr = [];
+		inlineIDArr = [],
+		inIframe = (window.location !== window.parent.location),
+		htmlRawMap = [];
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -559,7 +563,7 @@ const _focusOn = (o, wot, justObj=false) => {
 			}
 		} else {
 			// This will only ever run once, as moveNum will always be one.
-			let targArr = _splitIframeEls(val);
+			let targArr = _splitIframeEls(val, o);
 			if (!targArr) return false;	// invalid target.
 			nodes = targArr[0].querySelectorAll(targArr[1]) || null;
 		}
@@ -877,7 +881,7 @@ _a.Remove = o => {
 		// This is self or a host element.
 		ActiveCSS._removeObj(thisObj);
 	} else {
-		let targArr = _splitIframeEls(o.actVal, o.obj, o.compDoc);
+		let targArr = _splitIframeEls(o.actVal, o);
 		if (!targArr) return false;	// invalid target.
 		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
 			ActiveCSS._removeObj(obj);
@@ -936,13 +940,15 @@ _a.Render = o => {
 	// Make a copy of the target selector.
 	// The child nodes of the target element can be referenced and output in inner components by referencing {$CHILDREN}.
 	// The actual node itself can be referenced and output in inner components by referencing {$SELF}.
-	let copyOfSecSelObj = o.secSelObj.cloneNode(true);
-	let selfTree;
-	if (content.indexOf('{$SELF}') !== -1) {
-		selfTree = copyOfSecSelObj.outerHTML;
-		o.renderPos = 'replace';
+	let selfTree = '', childTree = '';
+	if (o.secSelObj.nodeType === Node.ELEMENT_NODE) {
+		let copyOfSecSelObj = o.secSelObj.cloneNode(true);
+		if (content.indexOf('{$SELF}') !== -1) {
+			selfTree = copyOfSecSelObj.outerHTML;
+			o.renderPos = 'replace';
+		}
+		childTree = copyOfSecSelObj.innerHTML;
 	}
-	let childTree = copyOfSecSelObj.innerHTML;
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	content = _replaceComponents(o, content);
@@ -951,10 +957,10 @@ _a.Render = o => {
 	content = _replaceStringVars(o.ajaxObj, content);
 
 	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
-	content = _renderRefElements(content, childTree, 'CHILDREN');
+	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
 
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
-	content = _renderRefElements(content, selfTree, 'SELF');
+	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
 	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 
@@ -1241,10 +1247,6 @@ _a.Style = o => {
 };
 
 _a.TakeClass = o => {
-	if (o.doc != document) {
-		console.log('Active CSS error - you cannot take a class if the element clicked on is not going to take the class. With iframes, use give-class instead.');
-		return false;
-	}
 	// Take class away from any element that has it.
 	let cl = o.actVal.substr(1);
 	_eachRemoveClass(cl, cl, o.doc);
@@ -1257,33 +1259,22 @@ _a.ToggleClass = o => {
 };
 
 _a.Trigger = o => {
-/*	I'm pretty sure this isn't needed any more. Leave it here for the moment, as if put back it will need changing to secsel.
-	if (typeof o.obj === 'string' && o.obj.indexOf('{@') === -1 && o.obj.indexOf('{$') === -1 && !['~', '|'].includes(o.obj.substr(0, 1))) {
-		// This is a string, and we need the real objects, so do a queryselectorall.
-		o.doc.querySelectorAll(o.obj).forEach(function (obj, i) {
-			if (['~'].includes(o.secSel.substr(0,1))) {
-				// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: obj, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
-			} else {
-				// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
-				_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
-			}
-		});
+	if (typeof o.secSel == 'string' && o.secSel.substr(0, 1) == '~') {
+		// This is a trigger on a custom selector. Pass the available objects in case they are needed.
+		_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
-*/
-		if (typeof o.secSel == 'string' && ['~'].includes(o.secSel.substr(0, 1))) {
-			// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-			_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
+		// Is this a draw event? If so, we also want to run all draw events for elements within.
+		if (o.actVal == 'draw') {
+			_runInnerEvent(o, null, 'draw');
+		} else if (o.secSel == 'body' || o.secSel == 'window') {
+			// Run any events on the body, followed by the window.
+			_handleEvents({ obj: 'body', evType: o.actVal });
+			_handleEvents({ obj: 'window', evType: o.actVal });
 		} else {
-			// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
-			// Is this a draw event? If so, we also want to run all draw events for elements within.
-			if (o.actVal == 'draw') {
-				_runInnerEvent(o, null, 'draw');
-			} else {
-				_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
-			}
+			_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		}
-//	}
+	}
 };
 
 _a.TriggerReal = o => {
@@ -1327,14 +1318,13 @@ _a.Var = o => {
 		// A right-hand expression is needed, unless it a ++ or a -- operator is being used.
 		if (varName.endsWith('++')) {
 			varName = varName.slice(0, -2);
-			varDetails = varName + '+1';
+			varDetails = '{' + varName + '}+1';
 		} else if (varName.endsWith('--')) {
 			varName = varName.slice(0, -2);
-			varDetails = varName + '-1';
+			varDetails = '{' + varName + '}-1';
 		} else {
-			// Display an error and barf out.
-			console.log('Active CSS error: Invalid command "var: ' + varName + ';" needs an expression to be assigned.');
-			return;
+			// Assign to null if no assignment.
+			varDetails = 'null';
 		}
 	}
 
@@ -1344,36 +1334,46 @@ _a.Var = o => {
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
-	if (varName.substr(0, 7) == 'window.') {
+	if (varName.startsWith('window.')) {
 		// Leave it as it is - it's a variable in the window scope.
 		isWindowVar = true;
+		scopedVar = varName;
+		scopedVar = _resolveInnerBracketVars(scopedVar);
+	} else if (varName.startsWith('scopedVars.')) {
 		scopedVar = varName;
 	} else {
 		scopedVar = varName;
 		let prefix = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
 		scopedVar = scopedVar.replace('scopedVars.' + prefix + '.', '');	// We don't want the first part of the left-hand variable to contain "scopedVars.".
 		scopedVar = prefix + '.' + scopedVar;
+		scopedVar = _resolveInnerBracketVars(scopedVar);
+		// Sort out if the left-hand var is an inherited variable or not.
+		let scopedVarObj = _resolveInheritance(scopedVar);
+		scopedVar = scopedVarObj.name;
 		// Note: That may look weird, but it needs to do the above in order to correctly handle initially undefined variables that will not get the prefix from
 		// _prefixScopedVars() the first time the var command is run, because the left-hand variable is undefined.
 		// Only a defined variable gets the scoped prefix when _prefixScopedVars() is run on it.
 		// So we have to do the above to ensure the prefix is there the first time the var is declared.
 	}
+	scopedVar = scopedVar.replace('scopedVars.', '');	// We don't want the first part of the left-hand variable to contain "scopedVars.".
+
 	// Resolve inner bracket variables (only) with their true values on the left-hand of the equation now that they are scoped.
-	scopedVar = _resolveInnerBracketVars(scopedVar);
+	varDetails = _replaceHTMLVars(o, varDetails);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedVars." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
+
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
 
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.
-//		console.log('Set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('_a.Var, set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(window, scopedVar, expr);
 	} else {
 		// Active CSS component/document scopes.
-//		console.log('Set ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('_a.Var, set ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(scopedVars, scopedVar, expr);
 	}
 };
@@ -1532,7 +1532,6 @@ _c.IfVar = o => {
 	// First parameter is the variable name.
 	// Second parameter is a string, number or boolean. Any JavaScript expression ({= ... =} clauses) has already been evaluated.
 	// This also takes only one parameter, in which case it is checked for evaluating to boolean true.
-
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl = actVal.split(' ');
 	if (spl.length == 1) {
@@ -1542,13 +1541,17 @@ _c.IfVar = o => {
 		let varName = spl.shift();	// Remove the first element from the array.
 		let compareVal = spl.join(' ')._ACSSSpaceQuoOut();
 		compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
-		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			compareVal = Number(compareVal._ACSSRepQuo());
-		} else {
-			compareVal = compareVal._ACSSRepQuo();
+		if (typeof compareVal !== 'boolean') {
+			if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
+				compareVal = Number(compareVal._ACSSRepQuo());
+			} else {
+				compareVal = compareVal._ACSSRepQuo();
+			}
 		}
 		let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
-		let varValue = _get(scopedVars, scopedVar);
+		scopedVar = _resolveInnerBracketVars(scopedVar);
+		let scopedVarObj = _resolveInheritance(scopedVar);
+		let varValue = scopedVarObj.val;
 		if (varValue === undefined) {
 			varValue = window[varName];
 		}
@@ -1556,7 +1559,10 @@ _c.IfVar = o => {
 	}
 };
 
-_c.IfVarTrue = o => { return _ifVarTrue(o.actVal, o.varScope); };
+_c.IfVarTrue = o => {
+	o.actVal += ' true';
+	return _c.IfVar(o);
+};
 
 _c.IfVisible = o => { return ActiveCSS._ifVisible(o); };	// Used by extensions.
 
@@ -1689,6 +1695,21 @@ const _addInlinePriorToRender = (str) => {
 	return str;
 };
 
+const _checkScopeForEv = (evScope) => {
+	let parentComponentDetails = compParents[evScope];
+	if (parentComponentDetails && parentComponentDetails.evScope && parentComponentDetails.evScope != evScope) {
+		// Events need to run in the component context they are in. Hence these do need to be set per selector check.
+		return {
+			compDoc: parentComponentDetails.compDoc,
+			topVarScope: parentComponentDetails.varScope,
+			evScope: parentComponentDetails.evScope,
+			component: ((parentComponentDetails.component) ? '|' + parentComponentDetails.component : null),
+			privateEvs: parentComponentDetails.privateEvs
+		};
+	}
+	return false;
+};
+
 const _cloneAttrs = (el, srcEl) => {
 	let attr, attrs = Array.prototype.slice.call(srcEl.attributes);
 	for (attr of attrs) {
@@ -1708,7 +1729,7 @@ const _escapeInline = (str, start) => {
 	// This runs immediately on an ajax return string for use by {$STRING} and the result is stored, so it is only ever run once for speed.
 	// This gets unescaped prior to insertion into the DOM.
 	let end = start.split(' ')[0];
-	let reg = new RegExp('<' + start + '([\\s\\S]*?)>([\\s\\S]*?)</' + end + '>', 'gi');
+	let reg = new RegExp('<' + start + '([\\s\\S]*?)>([\\s\\S]*?)</' + end + '>', 'gmi');
 	str = str.replace(reg, function(_, inn, inn2) {
 		return '<' + start + inn + '>' + inn2.replace(/\{/g, '_ACSS_later_brace_start') + '</' + end + '>';
 	});
@@ -1739,20 +1760,10 @@ const _handleClickOutside = (el, e) => {
 };
 
 const _handleEvents = evObj => {
-	let obj = evObj.obj;
-	let evType = evObj.evType;
-	let onlyCheck = evObj.onlyCheck;
-	let otherObj = evObj.otherObj;
-	let eve = evObj.eve;
-	let afterEv = evObj.afterEv;
-	let origObj = evObj.origObj;
-	let runButElNotThere = evObj.runButElNotThere;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
 	let varScope, thisDoc;
-	let evScope = evObj.evScope;
-	let compDoc = evObj.compDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
-	let _maEvCo = evObj._maEvCo;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
@@ -1761,90 +1772,100 @@ const _handleEvents = evObj => {
 	let selectorListLen = selectors[evType].length;
 	let i, testSel, debugNot = '', compSelCheckPos;
 	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
-	if (typeof obj !== 'string') {
-		let runGlobalScopeEvents = true;
-		if (component && !(evType == 'draw' && customTags.indexOf(obj.tagName) !== -1)) {
-			// Split for speed. It could be split into document/shadow areas to make even faster, at the times of adding config.
-			// Don't bother optimizing by trying to remember the selectors per event the first time so they can be reused later on. Been down that route already.
-			// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
-			// on a per object basis. It is fine as it is working dynamically. If you do have a go, you will need to consider things like routing affecting DOM
-			// attributes, adding/removing attributes, properties, plus monitoring all objects for any external manipulation. It's really not worth it. This code is
-			// short and fast enough on most devices.
 
-			// Events have an additional action in Active CSS. They can bubble up per component. So a selector in a higher component will be inherited by a lower
-			// component if the mode of the lower component is set to open. If set to closed, only that component's event will be processed. The developer can
-			// stop this event hierarchy bubbling by using the Active CSS prevent-event-default action command. It's like DOM bubbling, but for events.
-			// In a function-based language using native event listeners this would be confusing, but in Active CSS it makes *visual* sense to do this as we are
-			// not using native event listeners. Which is nice.
-			// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components. It is *not* element bubbling. It is event bubbling.
-			// Element bubbling follows native rules. In non-shadow DOM components element bubbling is not affected by the mode of the component.
-			// There is a component tree array, which is used to track if we've hit the document in our references. If we have we bomb out after that.
-			// We stop a component going up the tree after we hit a component mode of "closed". Everything inside a closed component is isolated from anything
-			// higher up.
-			// We bomb out immediately if the developer has used the prevent-event-default action command.
-			// This is all managed before running any events on an object. We make a valid event selector list first and then do the work.
-			// This next bit creates the valid list.
-			let checkVarScope = topVarScope, checkComponent = component, privateEvents = compPrivEvs[topVarScope], parentComponentDetails;
-			while (true) {
-				for (i = 0; i < selectorListLen; i++) {
-					compSelCheckPos = selectors[evType][i].indexOf(':');
-					if (selectors[evType][i].substr(0, compSelCheckPos) !== checkComponent) continue;
-					testSel = selectors[evType][i].substr(compSelCheckPos + 1);
-					// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-					testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
-					if (testSel.indexOf('<') === -1 && !selectorList.includes(selectors[evType][i])) {
-					    if (testSel == '&') {
-							selectorList.push(selectors[evType][i]);
-					    } else {
+	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
+	let componentRefs = { compDoc, topVarScope, evScope, component, privateEvs: compPrivEvs[evScope] };
+	let initialComponentRefs = componentRefs;
+
+	let runGlobalScopeEvents = true;
+	if (component && !(typeof obj !== 'string' && evType == 'draw' && customTags.indexOf(obj.tagName) !== -1)) {
+		// Split for speed. It could be split into document/shadow areas to make even faster, at the times of adding config.
+		// Don't bother optimizing by trying to remember the selectors per event the first time so they can be reused later on. Been down that route already.
+		// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
+		// on a per object basis. It is fine as it is working dynamically. If you do have a go, you will need to consider things like routing affecting DOM
+		// attributes, adding/removing attributes, properties, plus monitoring all objects for any external manipulation. It's really not worth it. This code is
+		// short and fast enough on most devices.
+
+		// Events have an additional action in Active CSS. They can bubble up per component. So a selector in a higher component will be inherited by a lower
+		// component if the mode of the lower component is set to open. If set to closed, only that component's event will be processed. The developer can
+		// stop this event hierarchy bubbling by using the Active CSS prevent-event-default action command. It's like DOM bubbling, but for events.
+		// In a function-based language using native event listeners this would be confusing, but in Active CSS it makes *visual* sense to do this as we are
+		// not using native event listeners. Which is nice.
+		// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components. It is *not* element bubbling. It is event bubbling.
+		// Element bubbling follows native rules. In non-shadow DOM components element bubbling is not affected by the mode of the component.
+		// There is a component tree array, which is used to track if we've hit the document in our references. If we have we bomb out after that.
+		// This is all managed before running any events on an object. We make a valid event selector list first and then do the work.
+		// This next bit creates the valid list.
+
+		while (true) {
+			for (i = 0; i < selectorListLen; i++) {
+				let primSel = selectors[evType][i];
+				compSelCheckPos = primSel.indexOf(':');
+				if (primSel.substr(0, compSelCheckPos) !== componentRefs.component) continue;
+				testSel = primSel.substr(compSelCheckPos + 1);
+				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
+				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
+				testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
+				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
+				    if (testSel == '&') {
+						selectorList.push({ primSel, componentRefs });
+				    } else {
+						if (typeof obj !== 'string') {
 						    try {
 								if (obj.matches(testSel)) {
-									selectorList.push(selectors[evType][i]);
+									selectorList.push({ primSel, componentRefs });
 						    	}
 						    } catch(err) {
 						        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 							}
+						} else {
+							if (obj == testSel) {
+								selectorList.push({ primSel, componentRefs });
+							}
 						}
 					}
 				}
-				if (!privateEvents && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
-					parentComponentDetails = compParents[evScope];
-					if (parentComponentDetails && parentComponentDetails.evScope) {
-						checkVarScope = parentComponentDetails.evScope;
-						checkComponent = '|' + parentComponentDetails.component;
-						privateEvents = parentComponentDetails.privateEvs;	// If the next component mode is set to closed, we won't go any higher than this.
-						continue;
-					}
-				} else {
-					// This component is closed. We don't go any higher.
-					runGlobalScopeEvents = false;
-				}
-				break;
 			}
-    	}
-    	if (runGlobalScopeEvents) {
-			for (i = 0; i < selectorListLen; i++) {
-				if (['~', '|'].includes(selectors[evType][i].substr(0, 1))) continue;
-				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				testSel = (afterEv && origObj) ? _replaceAttrs(origObj, selectors[evType][i]) : selectors[evType][i];
-				if (testSel.indexOf('<') === -1 && !selectorList.includes(selectors[evType][i])) {
+			if (!componentRefs.privateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+				componentRefs = _checkScopeForEv(componentRefs.evScope);
+				if (componentRefs !== false) continue;
+			} else {
+				// This component is closed. We don't go any higher.
+				runGlobalScopeEvents = false;
+			}
+			break;
+		}
+   	}
+   	if (runGlobalScopeEvents) {
+		componentRefs = initialComponentRefs;
+		for (i = 0; i < selectorListLen; i++) {
+			let primSel = selectors[evType][i];
+			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
+			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
+			testSel = (afterEv && origObj) ? _replaceAttrs(origObj, primSel) : primSel;
+			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
+				if (typeof obj !== 'string') {
 				    try {
 						if (obj.matches(testSel)) {
-							selectorList.push(selectors[evType][i]);
+							selectorList.push({ primSel, componentRefs });
 				    	}
 				    } catch(err) {
 				        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 					}
+				} else {
+					if (obj == testSel) {
+						selectorList.push({ primSel, componentRefs });
+					}
 				}
 			}
 		}
-	} else {
-		// This has taken in a string to select - just search for that string. Note this could be a shadow DOM element, which for speed has come in as a string sel.
-		selectorList.push(obj);
+	}
+	if (typeof obj === 'string') {
+		// handle events has been called with a string rather than an object in this case. Use the original real object if there is one.
 		obj = (origObj) ? origObj : obj;
 	}
 
 	let sel, chilsObj;
-	component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
 
 	selectorListLen = selectorList.length;
 	let actionName, ifrSplit, ifrObj, conds = [], cond, condSplit, passCond;
@@ -1854,9 +1875,12 @@ const _handleEvents = evObj => {
 	// Having conditionals dynamically checked before each run of actions means the actions cancel out. So therein lies confusion. So all conditionals
 	// must be for a specific event on a selector *before* all actions. We get two "for" loops, but I don't see an alternative right now.
 	for (sel = 0; sel < selectorListLen; sel++) {
-		if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
+		let primSel = selectorList[sel].primSel;
+		let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
+		component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
+		if (config[primSel] && config[primSel][evType]) {
 			if (onlyCheck) return true;	// Just checking something is there. Now we have established this, go back.
-			for (clause in config[selectorList[sel]][evType]) {
+			for (clause in config[primSel][evType]) {
 				clauseCo++;
 				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topVarScope, component, eve, compDoc)) {
 					// This condition passed. Remember it for the next bit.
@@ -1869,8 +1893,11 @@ const _handleEvents = evObj => {
 
 	eventLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
-			if (config[selectorList[sel]] && config[selectorList[sel]][evType]) {
-				for (clause in config[selectorList[sel]][evType]) {
+			let primSel = selectorList[sel].primSel;
+			let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
+			component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
+			if (config[primSel] && config[primSel][evType]) {
+				for (clause in config[primSel][evType]) {
 					clauseCo++;
 					passCond = '';
 					if (clause != '0') {	// A conditional is there.
@@ -1878,7 +1905,7 @@ const _handleEvents = evObj => {
 						// This conditional passed earlier - we can run it.
 						passCond = clauseArr[clauseCo];
 					}
-					chilsObj = config[selectorList[sel]][evType][clause];
+					chilsObj = config[primSel][evType][clause];
 					if (chilsObj !== false) {
 						// Secondary selector loops go here.
 						let secSelLoops, loopObj;
@@ -1917,6 +1944,7 @@ const _handleEvents = evObj => {
 
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
+
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
@@ -2007,7 +2035,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	}
 
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope);
+	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -2041,8 +2069,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 };
 
 const _handleLoop = (loopObj) => {
-	let originalLoops = loopObj.originalLoops;
-	let varScope = loopObj.varScope;
+	let {originalLoops, varScope} = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let existingLoopVars = (loopObj.loopVars) ? loopObj.loopVars : [];
 
@@ -2352,7 +2379,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
+				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
 				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 				condVals = aV.split('_ACSSComma');
@@ -2536,24 +2563,9 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 };
 
 const _performSecSel = (loopObj) => {
-	let chilsObj = loopObj.chilsObj;
-	let secSelLoops = loopObj.secSelLoops;
-	let obj = loopObj.obj;
+	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
 	let compDoc = loopObj.compDoc || document;
-	let evType = loopObj.evType;
-	let varScope = loopObj.varScope;
-	let evScope = loopObj.evScope;
-	let evObj = loopObj.evObj;
-	let otherObj = loopObj.otherObj;
-	let passCond = loopObj.passCond;
-	let sel = loopObj.sel;
-	let component = loopObj.component;
-	let selectorList = loopObj.selectorList;
-	let eve = loopObj.eve;
-	let loopVars = loopObj.loopVars;
-	let _maEvCo = loopObj._maEvCo;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
-	let runButElNotThere = loopObj.runButElNotThere;
 
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
 	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
@@ -2600,7 +2612,7 @@ const _performSecSel = (loopObj) => {
 						passCond,
 						sel,
 						component,
-						selectorList,
+						primSel,
 						eve,
 						_maEvCo,
 						_taEvCo: targetEventCounter,
@@ -2612,8 +2624,8 @@ const _performSecSel = (loopObj) => {
 
 					continue;
 				}
-				// Get the correct document/iframe/shadow for this target.
-				targs = _splitIframeEls(targetSelector, obj, compDoc);	// Note - here it is compDoc as we are doing this in relation to the 
+				// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
+				targs = _splitIframeEls(targetSelector, { obj, compDoc });
 				if (!targs) continue;	// invalid target.
 				doc = targs[0];
 				passTargSel = targs[1];
@@ -2662,7 +2674,7 @@ const _performSecSel = (loopObj) => {
 							passCond,
 							sel,
 							component,
-							selectorList,
+							primSel,
 							eve,
 							_maEvCo,
 							_taEvCo: targetEventCounter,
@@ -2687,7 +2699,7 @@ const _performSecSel = (loopObj) => {
 						origSecSel: targetSelector,	// Used for debugging only.
 						actVal: actionValue,
 						origActVal: actionValue,
-						primSel: selectorList[sel],
+						primSel,
 						rules: chilsObj[secSelLoops][secSelCounter][targetSelector],
 						obj,
 						doc,
@@ -2732,7 +2744,7 @@ const _prepSelector = (sel, obj, doc) => {
 					sel = window;
 					break;
 				case 'body':
-					sel = document.body;
+					sel = doc.body;
 					break;
 				default:
 					// Substitute the active ID into the selector.
@@ -2748,7 +2760,7 @@ const _prepSelector = (sel, obj, doc) => {
 		if (origSel == 'window') {
 			return [ window ];
 		} else if (origSel == 'body') {
-			return [ document.body ];
+			return [ doc.body ];
 		} else {
 			res = doc.querySelectorAll(sel);
 		}
@@ -2812,7 +2824,7 @@ const _renderCompDomsClean = varScope => {
 };
 
 const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv;
+	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -2822,6 +2834,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	componentName = obj.getAttribute('data-name');
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
+	strictVars = components[componentName].strictVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -2843,17 +2856,6 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		return;
 	}
 
-// this looks like it is the place where things got confused. The varscope needs to be the private scope - not the component scope.
-// it needs to be in the higher level component scope if it isn't private, which should have been passed in as an o.varScope variable.
-
-// That's the first thing to sort out.
-
-// But we still need the varScope variable to handle events. We should probably replace all event scoping with an eventScope variable instead of a varScope
-// variable.
-
-// The second thing to sort out, which will be new, is to accumulate an array of varscopes that are accessible when getting the variable, as all varscopes
-// above in the component tree should be accessible.
-
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
@@ -2863,30 +2865,47 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	evScope = varScope;		// This needs to be per component for finding event per component when looping.
 
-// this next bit isn't going to cut it if we want sub-components to share the same scope.
-
 	// Set up a private variable scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the varScope, is not the same as the component name. The varScope is the reference of the unique scope.
 	privVarScopes[varScope] = components[componentName].privVars ? true: false;
+
+	// Set up map per component of higher-level variable scopes to iterate when getting or setting vars. This is for non-"strictlyPrivateVars" components.
+	// It should be only necessary to reference the fact that the current component has a sharing parent.
+	// If there is no parent because this the document scope, then there is no parent.
+	// If the parent is the document scope, there may be no o.varscope, so it is marked as "main" to show it is available.
+
+	let varScopeToPassIn = (privVarScopes[varScope]) ? varScope : (o.varScope) ? o.varScope : null;
+	o.varScope = varScopeToPassIn;
 
 	// Get the parent component details for event bubbling (not element bubbling).
 	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
+
 	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
+	strictPrivVarScopes[evScope] = strictVars;
+
+	// Store the component name in the element itself. We don't need to be able to select with it internally, so it is just a property so we don't clutter the
+	// html more than we have to. It is used by the Elements extension for locating related events, which requires the component name, and we have the element at
+	// that point so we don't need to search for it.
+	shadowParent._acssComponent = componentName;
+	shadowParent._acssVarScope = varScopeToPassIn;
+	shadowParent._acssPrivEvs = privateEvents;
+	shadowParent._acssStrictVars = strictVars;
+	shadowParent._acssEvScope = evScope;
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
-	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
-	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScope);
+	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScopeToPassIn);
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
 	// Now we can go through the shadow DOM contents and handle any host attribute references now that the host is set up.
-	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, varScope);
+	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, varScopeToPassIn);
 
 	// Lastly, handle any {$STRING} value from ajax content if it exists. This must be done last, otherwise we risk var replacement changing content of the $STRING.
 	compPending[shadRef] = _replaceStringVars(o.ajaxObj, compPending[shadRef]);
@@ -2909,12 +2928,22 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		shadow._acssScoped = true;
 	}
 
-	// Store the component name in the element itself. We don't need to be able to select with it internally, so it is just a property so we don't clutter the
-	// html more than we have to. It is used by the Elements extension for locating related events, which requires the component name, and we have the element at
-	// that point so we don't need to search for it.
-	shadowParent._acssComponent = componentName;
-	shadowParent._acssVarScope = varScope;
-	shadowParent._acssPrivEvs = privateEvents;
+	// Set the top level event scope which is used to search for target selectors in the correct scope.
+	// If the component is within a private event scope then that is the scope unless it's further down inside a shadow DOM.
+	// Otherwise it's in the inner shadow DOM scope or the document scope.
+	if (isShadow) {
+		// The shadow is the top level doc.
+		shadowParent._acssTopEvDoc = shadow;
+	} else if (privateEvents) {
+		// The parent is the top level doc.
+		shadowParent._acssTopEvDoc = shadowParent;
+	} else if (parentCompDetails.topEvDoc) {
+		// Set the top level event scope for this component for quick reference.
+		shadowParent._acssTopEvDoc = parentCompDetails.topEvDoc;
+	} else {
+		// The document is the top level doc.
+		shadowParent._acssTopEvDoc = document;
+	}
 
 	shadowDoms[varScope] = shadow;
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
@@ -2927,12 +2956,14 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		_replaceTempActiveID(obj);
 	});
 
+	let docToPass = (isShadow || privateEvents) ? shadow : o.doc;
+
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
 		// Remove the variable placeholders.
 		_removeVarPlaceholders(shadow);
 
-		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope, evScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
 		shadow.querySelectorAll('*').forEach(function(obj) {
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
@@ -2941,7 +2972,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope, evScope, compDoc: shadow, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}, 0);
 
@@ -2982,13 +3013,34 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// which new elements have been drawn, and manually set off the draw event for each new element as they get drawn. This way we shouldn't get multiple draw
 	// events on the same element.
 
+	let isIframe, drawArr = [];
+	isIframe = (o.secSelObj.tagName == 'IFRAME') ? true : false;
+	// If true this is a direct render into an iframe. Iframe components can be rendered within a rendered string also with wrap-around iframe tags.
+	// If it has been rendered within a component, the whole iframe and contents will be available in the content string.
+	// Handle both scenarios here. There may be multiple iframes output in a single render embedded in the render string, so this need to work on
+	// all of those. Probably best to render the content without the inner iframe stuff first, and then attach create the iframes after that.
+
+	// run something that extracts the iframe content and returns a temporary array with iframe activeids and contents and a content string without the
+	// iframe insides. Also if there is a src tag, rename that to something else and make sure it goes back after generating the iframe.
+	// If isIframe is true, then instead create the temporary tag results and generate iframe here and skip the remainder of this script entirely.
+
+	// don't forget to handle target selector insertion after this too.
+
+	let iframes = [];
+	if (content.indexOf('<iframe') !== -1) {
+		// Prepare dynamic iframes for later rendering if it looks like they might be there.
+		let contentObj = _sortOutDynamicIframes(content);
+		content = contentObj.str;
+		iframes = contentObj.iframes;
+	}
+
 	let container = document.createElement('div');
 	container.innerHTML = content;
 
+	let cid;
 	// Make a list of all immediate children via a reference to their Active IDs. After rendering we then iterate the list and run the draw event.
 	// We do this to make sure we only run the draw events on the new items.
 	// There are positions - it isn't always a straight inner render. And there can be more than one immediate child element.
-	let drawArr = [], item, cid;
 	container.childNodes.forEach(function (nod) {	// This should only be addressing the top-level children.
 		if (nod.nodeType !== Node.ELEMENT_NODE) return;		// Skip non-elements.
 		if (nod.tagName == 'DATA-ACSS-COMPONENT') return;	// Skip pending data-acss-component tags.
@@ -2998,13 +3050,16 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
-	
+
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
 		content = _addInlinePriorToRender(content);
 	}
 
-	if (o.renderPos) {
+	// Unescape any $HTML_NOVARS escaped curlies now that rendering is occurring and iframe content is removed.
+	content = _unEscNoVars(content);
+
+	if (o.renderPos && !isIframe) {
 		if (o.renderPos == 'replace') {
 			o.secSelObj.insertAdjacentHTML('beforebegin', content);	// Can't replace a node with potentially multiple nodes.
 			o.secSelObj.remove();
@@ -3015,26 +3070,42 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		o.secSelObj.innerHTML = content;
 	}
 
+	// Create any iframes that are needed from the temporary iframe array.
+	if (iframes.length > 0) {
+		_resolveDynamicIframes(iframes, o);
+	}
+
+	if (isIframe) return;
+
 	if (drawArr.length == 0) {
 		// What was rendered was the inner contents of an element only, so we need to remove var placeholders on the node itself.
 		// May as well use the parent of the target selector to ensure we got it. This could be tweaked to be more exact.
 		_removeVarPlaceholders(o.secSelObj.parentNode);
 	}
 
+	let item, el;
 	for (item of drawArr) {
-		let el = o.doc.querySelector('[data-activeid=' + item + ']');
-		_removeVarPlaceholders(el);
-		_replaceTempActiveID(el);
+		el = o.doc.querySelector('[data-activeid=' + item + ']');
+		if (!el) continue;
+
+		if (el.tagName != 'IFRAME') {
+			_removeVarPlaceholders(el);
+			_replaceTempActiveID(el);
+		}
 		el.querySelectorAll('[data-activeid]').forEach(function(obj) {	// jshint ignore:line
+			if (obj.tagName == 'IFRAME') return;
 			_replaceTempActiveID(obj);
 		});
-		if (!el || el.shadow || el.scoped) continue;		// We can skip tags that already have shadow or scoped components.
+
+		if (!el || el.shadow || el.scoped || el.tagName == 'IFRAME') continue;		// We can skip tags that already have shadow or scoped components.
+
 		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+
 		el.querySelectorAll('*').forEach(function(obj) {	// jshint ignore:line
 			// We can potentially have the same element running a draw event twice. Like the first draw event can add content inside any divs in the first object, which
 			// could run this script again. When it finishes that run, it would then come back and run the loop below. And thereby running the draw event twice.
 			// So we mark the element as drawn and don't run it twice. It gets marked as drawn in _handleEvents.
-			if (obj._acssDrawn || obj.tagName == 'DATA-ACSS-COMPONENT') return;		// Skip pending data-acss-component tags. Note that node may have changed.
+			if (obj._acssDrawn || ['DATA-ACSS-COMPONENT', 'IFRAME'].indexOf(obj.tagName) !== -1) return;		// Skip pending data-acss-component tags. Note that node may have changed.
 			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		});
 	}
@@ -3047,9 +3118,55 @@ const _renderRefElements = (str, htmlStr, refType) => {
 	if (str.indexOf('{$' + refType + '}') !== -1) {
 		// This needs to not count escaped references to this variable.
 		let regex = (refType == 'CHILDREN') ? CHILDRENREGEX : SELFREGEX;
-//		str = str.replace(new RegExp('\\{\\$' + refType + '\\}', 'g'), htmlStr);
 		str = str.replace(regex, htmlStr);
 	}
+	return str;
+};
+
+const _replaceHTMLVars = (o, str) => {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:_]+)\}/gi, function(_, c) {
+		let doc, noVars, escaped, unEscaped;
+		let noVarsPos = c.indexOf(':NOVARS');
+		if (noVarsPos !== -1) {
+			noVars = true;
+			c = c.replace(/\:NOVARS/, '');
+		}
+		let escapedPos = c.indexOf(':ESCAPED');
+		if (escapedPos !== -1) {
+			escaped = true;
+			c = c.replace(/\:ESCAPED/, '');
+		}
+		let unEscapedPos = c.indexOf(':UNESCAPED');
+		if (unEscapedPos !== -1) {
+			unEscaped = true;
+			c = c.replace(/\:UNESCAPED/, '');
+		}
+		if (c.startsWith('document:')) {
+			c = c.substr(9);
+			doc = document;
+		} else {
+			doc = _resolveDocObj(o.doc);
+		}
+		let el = doc.getElementById(c);
+		if (el) {
+			let res;
+			switch (el.tagName) {
+				case 'INPUT':
+				case 'TEXTAREA':
+					res = el.value;
+					break;
+
+				default:
+					res = el.innerHTML;
+			}
+			if (noVars) res = _escNoVars(res);
+			if (escaped) res = _safeTags(res);
+			if (unEscaped) res = _unSafeTags(res);
+			return res;
+		}
+		// Return it as it is if the element is not there.
+		return '{#' + c + '}';
+	});
 	return str;
 };
 
@@ -3071,6 +3188,34 @@ const _replaceLoopingVars = (str, loopVars) => {
 		});
 	}
 	return str;
+};
+
+const _resolveDocObj = (doc) => {
+	return (doc.nodeType !== Node.DOCUMENT_NODE) ? doc.getRootNode() : doc;
+};
+
+const _resolveDynamicIframes = (iframes, o) => {
+	o.doc.querySelectorAll('data-acss-iframe').forEach(function(obj) {	// jshint ignore:line
+		_resolveDynamicIframesDo(obj, iframes);
+	});
+};
+
+const _resolveDynamicIframesDo = (el, iframes) => {
+	// Get temporary non-DOM container.
+	let tmpDiv = document.createElement('div');
+
+	// Create base iframe. This gives the original defined iframe without the content
+	let ref = el.getAttribute('data-ref');
+	tmpDiv.innerHTML = _unEscNoVars(iframes[ref].mainTag);
+	let iframe = tmpDiv.firstChild;
+
+	iframes[ref].innards = _unEscNoVars(iframes[ref].innards);
+
+	// Attach content to srcdoc.
+	iframe.srcdoc = iframes[ref].innards;
+
+	// Replace placeholder with completed iframe.
+	el.parentNode.replaceChild(iframe, el);
 };
 
 const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
@@ -3100,9 +3245,94 @@ const _setUpNavAttrs = (el) => {
 	}
 };
 
-const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
+const _sortOutDynamicIframes = str => {
+	// We want only outer iframes, and we want the inner contents that could contain iframes placed into a placeholder.
+	// There can be more than one outer iframe, and also surrounding text bits scattered about around the iframes.
+	// This routine sorts all that out. It should ignore standard iframe format (minus the scenario where iframes are not supported which this doesn't
+	// currently handle).
+
+	let iframes = [], ref = 0, arr = str.split('<iframe'), endPos, concatStr = '', i = 0, arrLen = arr.length, mainTag, innards, innerCount = 0,
+		accumInnards = '', outerTag = '', useOuterTag, closingChar, closingArr, closingArrLen, cl;
+
+	let foundContentInIframe = false;
+	for (i; i < arrLen; i++) {
+		if (arr[i].trim() == '') continue;
+		endPos = arr[i].indexOf('</iframe>');
+		if (innerCount == 0 && endPos !== -1) {
+			if (i == 0) {
+				concatStr += arr[0].substr(0, endPos);
+			}
+			// We're on the top level and we've found the correct outer closing tag
+			closingChar = arr[i].indexOf('>');
+			if (arr[i].substr(closingChar + 1, endPos - closingChar - 1).trim() == '') continue;	// This is an iframe with no content. Ignore completely.
+			foundContentInIframe = true;
+			concatStr += '<data-acss-iframe data-ref="' + ref + '"></data-acss-iframe>';
+			if (outerTag != '') {
+				useOuterTag = outerTag;
+			} else {
+				useOuterTag = arr[i].substr(0, closingChar + 1);
+			}
+			mainTag = '<iframe ' + useOuterTag;
+			innards = accumInnards + arr[i].substr(closingChar + 1, endPos - closingChar - 1);
+			useOuterTag = '';
+			concatStr += arr[i].substr(endPos + 10);
+			iframes[ref] = { mainTag, innards };
+			accumInnards = '';
+			ref++;
+		} else if (endPos !== -1) {
+			// Found a closing tag. Is there only one?
+			accumInnards += '<iframe ';
+			closingArr = arr[i].split('</iframe>');
+			closingArrLen = closingArr.length;
+			cl = 0;
+			for (cl; cl < closingArrLen; cl++) {
+				if (closingArr[cl].trim() == '') continue;
+				if (innerCount == 0) {
+					// We're now on the top level and we've found the correct outer closing tag
+					closingChar = closingArr[cl].indexOf('>');
+					if (arr[i].substr(closingChar + 1, endPos - closingChar - 1).trim() == '') continue;	// This is an iframe with no content. Ignore completely.
+					foundContentInIframe = true;
+					concatStr += '<data-acss-iframe data-ref="' + ref + '"></data-acss-iframe>';
+					mainTag = '<iframe ' + outerTag;
+					outerTag = '';
+					innards = accumInnards + closingArr[cl].substr(closingChar + 1);
+					iframes[ref] = { mainTag, innards };
+					accumInnards = '';
+					ref++;
+				} else {
+					accumInnards += closingArr[cl];
+					if (cl < closingArrLen - 1) {
+						accumInnards += '</iframe>';
+					}
+				}
+				innerCount--;
+			}
+			// Concat anything left after the last iframe. Put in test code for this.
+			concatStr += accumInnards;
+			accumInnards = '';
+		} else {
+			if (innerCount == 0 && i == 0) {
+				concatStr += arr[0];
+			} else {
+				// There's another iframe inside so we just ignore it and wait to add it to a map when innerCount gets back to 0.
+				closingChar = arr[i].indexOf('>');
+				outerTag = arr[i].substr(0, closingChar + 1);
+				accumInnards += arr[i].substr(closingChar + 1);
+				innerCount++;
+			}
+		}
+	}
+	str = (foundContentInIframe) ? concatStr: str;
+
+	return { str, iframes };
+};
+
+const _splitIframeEls = (sel, o) => {
+	let relatedObj = o.obj;
+	let compDoc = o.compDoc;
 	let targSel, iframeID;
 	let root = (relatedObj && typeof relatedObj == 'object') ? _getRootNode(relatedObj) : null;
+
 	let doc = document, hostIsShadow = false, hostIsScoped = false, splitSel = false;
 	if (root && !root.isSameNode(document)) {
 		// This was called from within a shadow or scoped component object. The doc defaults to the shadowRoot or the scoped host.
@@ -3124,10 +3354,12 @@ const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 			if (co == refSplit.length) break;	// Break before we get to the last one.
 			if (ref == 'document') {
 				doc = document;
+			} else if (ref == 'shadow') {
+				doc = relatedObj.shadowRoot;
 			} else if (ref == 'parent') {
 				if (hostIsShadow) {
 					root = _getRootNode(root.host);
-					doc = root;
+					doc = shadowRoot;
 				} else if (!hostIsScoped) {
 					// The parent is the host is the root in a scoped component, and doc is already set to the root.
 				} else if (window.parent.document) {
@@ -3138,12 +3370,10 @@ const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 				}
 			} else {
 				relatedObj = doc.querySelector(ref);
-				if (relatedObj.shadowRoot) {
-					doc = relatedObj.shadowRoot;
-				} else if (relatedObj.tagName == 'IFRAME') {
+				if (relatedObj.tagName == 'IFRAME') {
 					doc = relatedObj.contentWindow.document;
 					iframeID = ref;
-				} else {
+				} else if (!relatedObj) {
 					console.log('ref ' + ref + ' is unknown.');
 					return false;
 				}
@@ -3163,8 +3393,11 @@ const _splitIframeEls = (sel, relatedObj=null, compDoc=null) => {
 	} else if (compDoc && !splitSel) {
 		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
 		doc = compDoc;
+		if (doc && doc.nodeType !== Node.DOCUMENT_NODE) {
+			let compDetails = _getComponentDetails(doc);
+			doc = compDetails.topEvDoc;
+		}
 	}
-
 	return [doc, targSel, iframeID];
 };
 
@@ -3197,29 +3430,6 @@ const _addConfig = (str, o) => {
 	// If this is last file, run the config generator.
 	if (concatConfigCo >= concatConfigLen) {
 		_readSiteMap();
-	}
-
-	if (concatConfigCo > concatConfigLen) {
-		if (o.actName == 'load-config') {
-			configArr.push(o.avRaw);	// Add the file without anything after and including the "?".
-			// Handle updating the extensions. Either or not of them could be showing, so they either get an immediate update, or a flag is set for them to
-			// update if they received the onShown event. Similar to the config update to the Panel whenever an element is edited in Elements.
-			// It's slightly different in that we need the additional optional step of the immediate update instead of the onShown triggered update, plus
-			// we need to update both Elements and Panel here, and not only the Panel as in the case of the edited element in Elements.
-			if (setupEnded) {
-				// Send a message to the extensions to update the config display. This goes to both extensions.
-				if (debuggerActive) {
-					_tellPanelToUpdate();
-				}
-				if (evEditorActive) {
-					_tellElementsToUpdate();
-				}
-			}
-		}
-		if (o.actName == 'load-config') {
-			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
-			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
-		}
 	}
 };
 
@@ -3364,6 +3574,7 @@ ActiveCSS._theEventFunction = e => {
 			let shiftCheck = (e.shiftKey) ? 'Shift' : '';
 			let funcKey = e.key;
 			switch (e.key) {
+				case ' ': funcKey = 'Space'; break;
 				case ':': funcKey = 'Colon'; shiftCheck = ''; break;
 				case ';': funcKey = 'Semicolon'; shiftCheck = ''; break;
 				case '{': funcKey = 'OpenCurly'; shiftCheck = ''; break;
@@ -3663,20 +3874,25 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							components[compName].shadow = false;
 							components[compName].scoped = false;
 							components[compName].privEvs = false;
+							components[compName].strictVars = false;
 							let checkStr = strTrimmed + ' ';
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 							}
-							if (checkStr.indexOf(' private ') !== -1 || checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
+							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
+								components[compName].strictVars = true;
+								components[compName].privVars = true;
+								components[compName].scoped = true;
+							} else if (checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
 								components[compName].privVars = true;
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
 								components[compName].scoped = true;
 							}
-							if (checkStr.indexOf(' privateEvents ') !== -1) {
+							if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {	// "private" is deprecated as of v2.4.0
 								components[compName].privEvs = true;
 							}
 						}
@@ -3726,14 +3942,22 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 					} else {
 						// This is an event.
 						// Could be colons in selector functions which we need to ignore in the split.
+						// But there could be a colon at the beginning, in which case the first item in the array will be empty and it will not be an
+						// internal conditional.
 						evSplit = strTrimmed.split(/:(?![^\(\[]*[\]\)])/);
+
 						// The first item in the array will always be the main selector, and the last will always be the event.
 						// The middle can be a mixture of conditions.
 						if (!evSplit[1]) {	// This has no split selector entry and is an error.
 							console.log('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
 							continue;
 						}
-						sel = evSplit.shift();	// Get the main selector (get the beginning clause and remove from array)
+						if (evSplit[0] == '') {
+							evSplit.shift();	// Get rid of the empty item.
+							sel = ':' + evSplit.shift();	// Get the first selector part and put the colon back in.
+						} else {
+							sel = evSplit.shift();	// Get the first selector part (get the beginning clause and remove from array)
+						}
 
 						if (removeState) {
 							if (sel == '~_inlineTag_' + inlineActiveID) {
@@ -3774,16 +3998,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 								shadowSels[componentName] = (shadowSels[componentName] === undefined) ? [] : shadowSels[componentName];
 								shadowSels[componentName][ev] = true;	// We only want to know if there is one event type per shadow.
 
-
-// This is wrong. All components must not be scoped. Scoped refers to the data-active-scoped attribute that should be just for variables.
-// Event scoping is something else and that needs to be kept *separate*.
-
 								// Targeted events get set up only when a shadow is drawn, as they are attached to the shadow, not the document. No events to set up now.
 								// All non-shadow components are now scoped so that events can occur in any component, if there are any events.
 								components[componentName].scoped = true;
-
-
-
 							} else {
 								delete shadowSels[componentName];
 								delete components[componentName];
@@ -3956,7 +4173,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_hash_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
@@ -4045,6 +4262,10 @@ const _readSiteMap = () => {
 	for (evSet of preSetupEvents) {
 		_setupEvent(evSet.ev, evSet.sel);
 	}
+	if (!selectors.click && selectors.clickoutside) {
+		// Need at least one click event for clickoutside to work and there isn't one set. Set up a dummy event so it goes through the regular flow.
+		_setupEvent('click', 'body');
+	}
 	// Clean up. If we run load-config, we'll run this function again and only attempt to add the new events loaded.
 	preSetupEvents = [];
 
@@ -4055,40 +4276,7 @@ const _readSiteMap = () => {
 	// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 	_initScriptTrack();
 
-	if (!setupEnded) {
-		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
-		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
-
-		// Handle any developer initialization events
-		_handleEvents({ obj: 'body', evType: 'preInit' });
-
-		_handleEvents({ obj: 'body', evType: 'init' });
-
-		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
-		if (inlineIDArr.length > 0) _runInlineLoaded();
-
-		// Iterate items on this page and do any draw events.
-		_runInnerEvent(null, '*', 'draw', document, true);
-
-		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
-
-		_wrapUpStart();
-
-		// Lazy load config.
-		if (lazyConfig !== '') {
-			setTimeout(function() {
-				let arr = lazyConfig.split(','), configFile;
-				for (configFile of arr) {
-					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
-				}
-			}, 1000);
-		}
-	} else {
-		// Now run the loaded events for each inline Active CSS tag on the page.
-		if (inlineIDArr.length > 0) {
-			_runInlineLoaded();
-		}
-	}
+	_wrapUpStart();
 };
 
 const _regenConfig = (styleTag, opt) => {
@@ -4302,19 +4490,82 @@ const _wrapUpStart = () => {
 	// actions necessary to redraw the page. The page has just been loaded or reloaded, so there was no object clicked on to perform any actions yet.
 	// So we need to find the href in the page that has the url, and based on that, we assume that clicking on this object will perform the correct actions
 	// to redraw the page when necessary.
-	let url = _resolveURL(window.location.href);
-	window.history.replaceState(url, document.title, url);
-	setupEnded = true;
 
-	// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
-	elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
-	elementObserver.observe(document.body, {
-		characterData: true,
-		childList: true,
-		subtree: true
-	});
+	if (!setupEnded) {
+		if (document.readyState && document.readyState != 'complete') {
+			// Initial document loading not completely ready, come back to this in 20ms.
+			setTimeout(_wrapUpStart, 20);
+			return;
+		}
 
-	document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
+		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
+		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
+
+		// Handle any developer initialization events
+		_handleEvents({ obj: 'body', evType: 'preInit' });
+
+		_handleEvents({ obj: 'body', evType: 'init' });
+
+		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
+		if (inlineIDArr.length > 0) _runInlineLoaded();
+
+		// Iterate items on this page and do any draw events.
+		_runInnerEvent(null, '*', 'draw', document, true);
+
+		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
+
+		if (!inIframe) {
+			let url = _resolveURL(window.location.href);
+			window.history.replaceState(url, document.title, url);
+		}
+		setupEnded = true;
+
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			characterData: true,
+			childList: true,
+			subtree: true
+		});
+
+		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
+
+		// Lazy load config.
+		if (lazyConfig !== '') {
+			setTimeout(function() {
+				let arr = lazyConfig.split(','), configFile;
+				for (configFile of arr) {
+					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
+				}
+			}, 1000);
+		}
+	} else {
+		// Now run the loaded events for each inline Active CSS tag on the page.
+		if (inlineIDArr.length > 0) {
+			_runInlineLoaded();
+		}
+	}
+
+	if (concatConfigCo > concatConfigLen) {
+		if (o.actName == 'load-config') {
+			configArr.push(o.avRaw);	// Add the file without anything after and including the "?".
+			// Handle updating the extensions. Either or not of them could be showing, so they either get an immediate update, or a flag is set for them to
+			// update if they received the onShown event. Similar to the config update to the Panel whenever an element is edited in Elements.
+			// It's slightly different in that we need the additional optional step of the immediate update instead of the onShown triggered update, plus
+			// we need to update both Elements and Panel here, and not only the Panel as in the case of the edited element in Elements.
+			if (setupEnded) {
+				// Send a message to the extensions to update the config display. This goes to both extensions.
+				if (debuggerActive) {
+					_tellPanelToUpdate();
+				}
+				if (evEditorActive) {
+					_tellElementsToUpdate();
+				}
+			}
+			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		}
+	}
 };
 
 ActiveCSS.init = (config) => {
@@ -4374,10 +4625,11 @@ const _addScopedCID = (wot, obj, scopeRef) => {
 	return cid;
 };
 
-const _escapeItem = (str) => {
-	// This is for putting content directly into html.
+const _escapeItem = (str='', varName=null) => {
+	// This is for putting content directly into html. It needs to be in string format and may not come in as such.
+	if (varName && varName.substr(0, 1) == '$' && varName !== '$HTML_ESCAPED') return str;		// Don't escape html variables.
 	let div = document.createElement('div');
-	div.textContent = str.replace(/\{\=|\=\}/gm, '');
+	div.textContent = ('' + str).replace(/\{\=|\=\}/gm, '');
 	// Remove possibility of JavaScript evaluation later on in a random place.
 	return div.innerHTML;
 };
@@ -5117,8 +5369,8 @@ const _prefixScopedVars = function(str, varScope=null) {
 	*/
 	let mapObj = {}, mapObj2 = {}, scopedVar, varEval;
 
-	str = str.replace(/(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)(\\"|"(?:\\"|[^"])*"|[\u00BF-\u1FFF\u2C00-\uD7FF\w_\.]+)(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)/gim, function(_, wot) {
-		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return wot;	// This is a full quoted so is an invalid match - ignore it.
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.]+)\}/gim, function(_, wot) {
+		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
 		if (wot.indexOf('.') !== -1) {
 			// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
@@ -5128,18 +5380,24 @@ const _prefixScopedVars = function(str, varScope=null) {
 			if (firstVar == 'window' || firstVar == 'scopedVars') return wot;
 		}
 		scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + wot;
+		// Sort out if the left-hand var is an inherited variable or not.
+		let scopedVarObj = _resolveInheritance(scopedVar);
+		scopedVar = scopedVarObj.name;
 		varEval = _get(scopedVars, scopedVar);
 		// Only return the variable if it actually exists.
-		return (varEval) ? 'scopedVars.' + scopedVar : wot;
+		return (typeof varEval !== 'undefined') ? 'scopedVars.' + scopedVar : wot;
 	});
+
 	return str;
 };
 
 const _removeVarPlaceholders = obj => {
 	/**
 	* Handle text nodes.
+	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// Remove variable placeholders. If there is no content yet, leave an empty text node.
+
 	let treeWalker = document.createTreeWalker(
 		obj,
 		NodeFilter.SHOW_COMMENT
@@ -5175,6 +5433,7 @@ const _removeVarPlaceholders = obj => {
 
 	/**
 	* Handle style tags (but not inline Active CSS).
+	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).
 	treeWalker = document.createTreeWalker(
@@ -5217,7 +5476,9 @@ const _removeVarPlaceholders = obj => {
 
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
 // config on different objects as they are needed. Also replace JavaScript expressions {= expression}.
-const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null) => {
+// Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
+
+const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null, evType='') => {
 	// Note, obj could sometimes be a string with no attributes if this is a trigger.
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
@@ -5244,9 +5505,16 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null)
 				if (colon !== -1) {
 					// This should be an id followed by an attribute, or innerText, or it's a shadow DOM host attribute.
 					let elRef = wot.substr(0, colon), el;
-					if (elRef == 'host' && (!o || ['beforeComponentOpen', 'componentOpen'].indexOf(o.event) === -1)) {
-						if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
-						el = obj.shadowRoot;
+					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
+					if (elRef == 'host') {
+						let oEvIsCompOpen = (o && compOpenArr.indexOf(o.event) !== -1);
+						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
+							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
+							el = obj;
+						} else if (!o || !oEvIsCompOpen) {
+							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
+							el = obj.shadowRoot;
+						}
 					} else {
 						el = _getSel(o, elRef);
 					}
@@ -5298,13 +5566,7 @@ const _replaceComponents = (o, str) => {
 		co++;
 
 		// Handle ID tag content insertion first.
-		// "jshint" thinks this function in a loop may cause semantic confusion. It doesn't in practical terms, and we need it, hence we need the ignore line.
-		str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-_]+)\}/gi, function(_, c) {	// jshint ignore:line
-			let el = document.getElementById(c);
-			if (el) return el.innerHTML;
-			// Return it as it is if the element is not there.
-			return '{#' + c + '}';
-		});
+		str = _replaceHTMLVars(o, str);
 
 		// Now handle real component insertion.
 		// See create-element code for why this is used: "_acss-host_' + tag + '_"
@@ -5347,27 +5609,39 @@ const _replaceComponents = (o, str) => {
 
 const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null) => {
 	let res;
+
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		wot = _replaceScopedVarsExpr(wot, varScope);
-		
+		let q = '';
+		if (quoteIfString) {
+			q = '"';
+		}
+		// If this contains tabs or lines then it better be a string. It won't evaluate with those characters.
+		if (["\t", "\n", "\r"].some(v => wot.includes(v))) {
+			res = (quoteIfString) ? q + wot + q : wot;
+			return res;
+		}
+
 		try {
 			res = Function('scopedVars', '"use strict";return (' + wot + ');')(scopedVars);		// jshint ignore:line
 		} catch (err) {
-			console.log('JavaScript expression error (' + err + '): ' + sel);
-			console.log('Actual expression evaluated: ' + wot);
+			try {
+				res = Function('scopedVars', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedVars);		// jshint ignore:line
+			} catch (err) {
+				// Try as a string.
+				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');
+				console.log('Actual expression evaluated: ' + wot);
+			}
 		}
 		if (!realVal) {		// If realVal is set to true, we want to return the actual expression result in this case, so do nothing here.
 			// Res should always be a string in the config, even if evaluated into a conditional. This is because the config is made up of strings.
-			let q = '';
-			if (quoteIfString) {
-				q = '"';
-			}
-			res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? q + res + q : (typeof res === 'number') ? res.toString() : 'Invalid expression (' + wot.trim() + ')';
+			res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? q + res + q : (typeof res === 'number') ? res.toString() : 'Invalid expression (' + wot.trim() + ')';
 		}
 		return res;
 	});
+
 	// Return the result rather than the string if realVal is set to true.
 	return (realVal) ? res : sel;
 };
@@ -5393,7 +5667,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 		);
 		while (treeWalker.nextNode()) {
 			if (customTags.includes(treeWalker.currentNode.tagName)) {
-				// Scope all custom tags by default. This happens anyway for all components. It's needed here to set a reference for host attribute variables.
+				// Scope all custom tags by default.
 				treeWalker.currentNode.setAttribute('data-active-scoped', '');
 			}
 		}
@@ -5445,14 +5719,17 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
+
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+			if ([ '$HTML', '$HTML_ESCAPED', '$STRING', '$RAND' ].includes(wot)) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
 				// Remove the outer parentheses now that we know this needs binding.
 				wot = wot.slice(1,-1);
 			}
+			let origVar = wot;	// We don't want the outer curlies - just the variable name before scoping.
 			if (wot[0] == '@') {
 				// This is an attribute not handled earlier. It's hopefully a shadow DOM host attribute as regular bound attribute vars are not yet supported.
 				if (!shadHost) return _;	// Shouldn't handle this yet. Only handle it when called from _renderCompDoms.
@@ -5467,8 +5744,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 						let hostCID = _getActiveID(shadHost).replace('d-', '');
 						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 					} else {
-						console.log('Component host attribute ' + wot + ' not found. Looking in host element: ', shadHost);
-						return _;
+						return '';
 					}
 				} else {
 					console.log('Non component attribution substitution is not yet supported.');
@@ -5476,8 +5752,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 			} else {
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
-				wot = wot.replace(/\[/, '.');
-				wot = wot.replace(/\]/, '');
+				wot = wot.replace(/\[[\'\"]?/g, '.').replace(/[\'\"]?\]/g, '');
 				// Evaluate the JavaScript expression.
 				if (wot.indexOf('.') !== -1) {
 					// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
@@ -5491,9 +5766,11 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 				// Prefix with sub-scope (main or _VarScope).
 				wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
-				res = _get(scopedVars, wot);
+				wot = _resolveInnerBracketVars(wot);
+				let scopedVarObj = _resolveInheritance(wot);
+				res = scopedVarObj.val;
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (typeof res === 'string') ? _escapeItem(res, func) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = wot;
 			}
 			if (isBound && func.indexOf('Render') !== -1) {
@@ -5524,8 +5801,11 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 const _replaceScopedVarsExpr = (str, varScope=null) => {
 	// This function attempts to locate and replace any internal variables in a JavaScript expression or "run" function.
+	if (str == 'true' || str == 'false' || str == 'null') return str;		// See isNaN MDN for interesting rules.
+
 	let res, origWot, firstVar;
-	str = str.replace(/([\u00BF-\u1FFF\u2C00-\uD7FFa-z][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\[\]]+)(?!\u00BF-\u1FFF\u2C00-\uD7FF\w)/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)\}/gim, function(_, wot) {
+		if ([ '$HTML', '$HTML_ESCAPED', '$STRING', '$RAND' ].includes(wot)) return wot;
 		origWot = wot;
 		// Don't convert to dot format as JavaScript barfs on dot notation in evaluation.
 		// Evaluate the JavaScript expression.
@@ -5534,21 +5814,25 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 			// This is separated from the main regex as we will be adding further scoping options later on, and so it will easier to keep this separate.
 			firstVar = wot.split('.')[0];
 			// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use "scopedVars", but do a handling for that anyway.
-			if (firstVar == 'window') return wot;
-			if (firstVar == 'scopedVars') {
-				wot = wot.replace(/^scopedVars\./, '');
+			if (firstVar == 'window') return '{' + wot + '}';
+			if (firstVar.startsWith('scopedVars')) {
+				wot = wot.replace('scopedVars.', '');
 			}
 		}
 		// Prefix with sub-scope (main or _varScope).
 		wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
-		res = _get(scopedVars, wot);
-		if (res !== undefined) {
+		wot = _resolveInnerBracketVars(wot);
+		let scopedVarObj = _resolveInheritance(wot);
+		res = scopedVarObj.val;
+		if (typeof res !== 'undefined') {
 			// Variable definitely exists in some form.
-			return 'scopedVars.' + wot;
+			return res;
 		} else {
-			return origWot;
+			return '{' + origWot + '}';
 		}
 	});
+
+	// By this point the result is a string or a reference to a variable.
 	return str;
 };
 
@@ -5557,20 +5841,34 @@ const _replaceStringVars = (o, str, varScope) => {
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\[\]\.\$]+)\}/gi, function(_, innards) {
-		if (innards == '$STRING') {
-			if (o && o.res) {
-				res = o.res;
-			} else {
-				res = '{$STRING}';
-			}
-			return res;
-		} else if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
-			// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
-			let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
-			res = _get(scopedVars, scopedVar);
-			return res || '';
-		} else {
-			return '{' + innards + '}';
+		switch (innards) {
+			case '$STRING':
+				if (o && o.res) {
+					res = o.res;
+				} else {
+					res = '{$STRING}';
+				}
+				return res;
+
+			case '$HTML_NOVARS':
+			case '$HTML_ESCAPED':
+			case '$HTML':
+				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
+				res = _get(scopedVars, scopedVar);
+				if (!res) {
+					res = '{' + innards + '}';
+				}
+				return res;
+
+			default:
+				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
+					// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
+					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
+					res = _get(scopedVars, scopedVar);
+					return res || '';
+				} else {
+					return '{' + innards + '}';
+				}
 		}
 	});
 	return str;
@@ -5578,8 +5876,8 @@ const _replaceStringVars = (o, str, varScope) => {
 
 const _resolveAjaxVars = o => {
 	let typeORes = typeof o.res;
+	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 	if (typeORes === 'object' && !o.preGet) {
-		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 		if (compScope == 'main') {
 			_resolveAjaxVarsDecl(o.res, compScope);
 		} else {
@@ -5594,6 +5892,12 @@ const _resolveAjaxVars = o => {
 		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
+
+		_set(scopedVars, compScope + '.__acssHTML', o.res);
+		// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
+		_set(scopedVars, compScope + '.__acssHTML_NOVARS', _escNoVars(o.res));
+		// Escape HTML and curlies with safe HTML entities.
+		_set(scopedVars, compScope + '.__acssHTML_ESCAPED', _safeTags(o.res));
 	}
 	_ajaxCallbackDisplay(o);
 };
@@ -5606,18 +5910,83 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	}
 };
 
+// Takes a scoped variable reference and returns the true scope.
+const _resolveInheritance = scopedVar => {
+	// Rules:
+	// If it exists in this scope it returns the original scope.
+	// If it doesn't exist in this scope it will bubble up the component variables scopes until it reaches the document scope or a strictlyPrivateVars scope.
+	// As soon as it finds somewhere the variable exists, it returns the variable reference in that scope.
+	// If it doesn't find the variable there, it returns the original scope.
+
+	// Is this already in the "main", or do we already have a value in the current scope? If so, we don't go any higher - return the original scope reference.
+
+	scopedVar = scopedVar.replace(/\[[\'\"]?/g, '.').replace(/[\'\"]?\]/g, '');
+	let val = _get(scopedVars, scopedVar);
+	let origValObj = { 'name': scopedVar, 'val': val };
+	if (scopedVar.startsWith('main.') || typeof val !== 'undefined' || scopedVar.startsWith('window.')) {
+		return origValObj;
+	}
+
+	// Get the current scope so it is a separate item when bubbling up components.
+	let i = scopedVar.indexOf('.');
+	let currScope = scopedVar.substr(0, i);
+	let varName = scopedVar.substr(i + 1);
+
+	// It isn't in the current scope, or this isn't the document scope, so find out if this exists as an inherited variable.
+	let actualScopeObj = _resolveInheritanceBubble(currScope, varName);
+
+	// If there is no inherited variable then we assume this is a new variable appearing in the scope the variable is used in,
+	// so return the original scope reference. "actualScopeObj" will be false if the variable is not inherited.
+	if (!actualScopeObj) return origValObj;
+
+	// This variable is inherited from a higher scope, return the higher scope reference.
+	return actualScopeObj;
+};
+
+// Works with the _resolveInheritance function to establish the correct scope of a variable.
+// This is a recursive function. It is run by calling _resolveInheritance with the variable to resolve. The result is a object with name/val properties.
+const _resolveInheritanceBubble = (scope, varName) => {
+
+	// Is this a "strictlyPrivateVars" or "private" (deprecated) scope? If so, we go no higher also.
+	// Get component details by scope. We need to check if this a strictlyPrivateVars component or in the main document scope.
+	let hostObj = strictPrivVarScopes[scope];
+	if (typeof hostObj === 'undefined' || hostObj) {
+		// We don't go any higher. And we know the value is undefined already so we return false.
+		return false;
+	}
+
+	// If it isn't strictlyPrivateVars we go to the parent scope and see if it is there.
+	// Get parent component details by scope.
+	let parentCompDetails = compParents[scope];
+	let parentScope = (parentCompDetails && parentCompDetails.varScope) ? parentCompDetails.varScope : 'main';
+
+	// If there, return it immediately.
+	let val = _get(scopedVars, parentScope + '.' + varName);
+
+	if (typeof val !== 'undefined') return { name: parentScope + '.' + varName, val };
+
+	// Call this function again with the parent scope until we get false or a name/value object.
+	let actualScopeObj = _resolveInheritanceBubble(parentScope, varName);
+	if (actualScopeObj) {
+		return actualScopeObj;
+	}
+
+	return false;
+};
+
 const _resolveInnerBracketVars = str => {
 	// Takes a scoped variable string and replaces the variables within brackets into true values.
 	// Used in the var command so it can work with _set in the correct scope.
+
 	if (str.indexOf('[') !== -1) {
 		str = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/gm, function(_, innerVariable) {
 			// Is this a scoped variable?
 			let res;
 			if (innerVariable.substr(0, 11) == 'scopedVars.') {
-				// Yes. Remove the scoped prefix.
+				// Sort out if the left-hand var is an inherited variable or not.
 				innerVariable = innerVariable.substr(11);
-				// Get the variable value - should always be a string or a number.
-				res = _get(scopedVars, innerVariable);
+				let scopedVarObj = _resolveInheritance(innerVariable);
+				res = scopedVarObj.val;
 			} else if (innerVariable.substr(0, 7) == 'window.') {
 				// Remove the window prefix.
 				innerVariable = innerVariable.substr(7);
@@ -5786,7 +6155,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				// Clean-up.
 				varMap[change.currentPath].splice(i, 1);
 			} else {
-				// Update node. By this point, all comments nodes surrounding the actual variable placeholder have been removed.
+				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
 				nod.textContent = _escapeItem(refObj);
 			}
 		});
@@ -6901,6 +7270,14 @@ const _convertToMS = (tim, errMess) => {
 	return (type == 's') ? n * 1000 : n;
 };
 
+const _copyAttrs = (obj, attrs) => {
+	let i = 0, attrsLen = attrs.length, attr;
+	for (i; i < attrsLen; i++) {
+		obj.setAttribute(attrs[i].name, attrs[i].value);
+	}
+	return obj;
+};
+
 ActiveCSS._decodeHTML = str => {
 	// This is use in the mimic command to work with updating the title. It's not the same as _escapeItem().
 	let doc = new DOMParser().parseFromString(str, 'text/html');
@@ -7030,6 +7407,10 @@ function _escCommaBrackClean(str, mapObj2) {
 	return str;
 }
 
+const _escNoVars = str => {
+	return str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly');
+};
+
 const _fullscreenDetails = () => {
 	let arr;
 	if ('MSGesture' in window) {
@@ -7074,26 +7455,35 @@ const _getBaseURL = str => {
 };
 
 const _getComponentDetails = rootNode => {
-	let rootNodeHost, component, compDoc, varScope, evScope, privateEvs;
+	let rootNodeHost;
 	if (!rootNode.isSameNode(document)) {
 		// Get the component variables so we can run this element's events in context.
 		rootNodeHost = rootNode;
 		if (supportsShadow && rootNode instanceof ShadowRoot) {
 			rootNodeHost = rootNode.host;
 		}
-		component = rootNodeHost._acssComponent;
-		compDoc = rootNode;
-		varScope = rootNodeHost._acssVarScope;
-		evScope = rootNodeHost._acssEvScope;
-		privateEvs = rootNodeHost._acssPrivEvs;
+		return {
+			component: rootNodeHost._acssComponent,
+			compDoc: rootNode,
+			varScope: rootNodeHost._acssVarScope,
+			evScope: rootNodeHost._acssEvScope,
+			privateEvs: rootNodeHost._acssPrivEvs,
+			strictVars: rootNodeHost._acssStrictVars,
+			topEvDoc: rootNodeHost._acssTopEvDoc
+//			compHost: rootNodeHost._acssHost
+		};
 	} else {
-		component = null;
-		compDoc = null;
-		varScope = null;
-		evScope = null;
-		privateEvs = null;
+		return {
+			component: null,
+			compDoc: null,
+			varScope: null,
+			evScope: null,
+			privateEvs: null,
+			strictVars: null,
+			topEvDoc: null
+//			compHost: null
+		};
 	}
-	return { component, compDoc, varScope, evScope, privateEvs };
 };
 
 const _getComponentRoot = (obj) => {
@@ -7135,7 +7525,7 @@ const _getFieldValType = obj => {
 const _getFocusedOfNodes = (sel, o) => {
 	// Find the current focused node in the list, if there is one.
 	let targArr, nodes, obj, i = -1, useI = -1;
-	targArr = _splitIframeEls(sel, o.obj, o.compDoc);
+	targArr = _splitIframeEls(sel, o);
 	if (!targArr) return false;	// invalid target.
 	if (targArr[0].activeElement === null) return -1;
 	nodes = targArr[0].querySelectorAll(targArr[1]) || null;
@@ -7149,8 +7539,8 @@ const _getFocusedOfNodes = (sel, o) => {
 	return [ nodes, useI ];
 };
 
-const _getObj = (str) => {
-	let targArr = _splitIframeEls(str);
+const _getObj = (str, o) => {
+	let targArr = _splitIframeEls(str, o);
 	if (!targArr) return false;	// invalid target.
 	try {
 		let obj = targArr[0].querySelector(targArr[1]);
@@ -7245,7 +7635,7 @@ const _getSel = (o, sel, priorToGrabAll) => {
 			return (rootNode._acssScoped) ? rootNode : rootNode.host;
 		default:
 			// Grab the element or the first in the group specified.
-			return (priorToGrabAll !== true) ? _getObj(sel) : false;
+			return (priorToGrabAll !== true) ? _getObj(sel, o) : false;
 	}
 };
 
@@ -7310,22 +7700,6 @@ const _ifFocus = (o, first=true) => {
 	} else {
 		return (arr[1] == arr[0].length - 1);
 	}
-};
-
-const _ifVarTrue = (val, varScope) => {
-	// This needs to cater for scoped variables and also window variables.
-	if (val == 'true') {
-		return true;
-	} else if (val == 'false') {
-		return false;
-	}
-	let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + val;
-	let res = _get(scopedVars, scopedVar);
-	if (res === undefined) {
-		// If the value wasn't a variable, check if it's a window variable. If not, then just set it to its original value.
-		res = window[val];
-	}
-	return (!res) ? false : true;
 };
 
 ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is partially visible. Used by extensions.
@@ -7409,11 +7783,24 @@ const _replaceTempActiveID = obj => {
 };
 
 const _resolveURL = url => {
-    let orig = document.location.href, st = history.state, t = document.title;
-    history.replaceState(st, t, url);
-    let resUrl = document.location.href;
-    history.replaceState(st, t, orig);
-    return resUrl;
+	if (inIframe) return url;	// Won't allow changing the URL from an iframe.
+	let orig = document.location.href, st = history.state, t = document.title;
+	history.replaceState(st, t, url);
+	let resUrl = document.location.href;
+	history.replaceState(st, t, orig);
+	return resUrl;
+};
+
+const _safeTags = str => {
+	let mapObj = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'/': '&sol;',
+		'{': '&#123;',
+		'}': '&#125;',
+	};
+	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
 
 const _selCompare = (o, opt) => {
@@ -7424,7 +7811,7 @@ const _selCompare = (o, opt) => {
 		// There can be only one (parameter).
 		if (!actVal) return true;	// No point going further - this could be a variable substitution that equates to empty.
 		if (actVal && actVal == '__object') return false;	// No point going further - this is not empty - it is an array or a variable object.
-		spl = actVal._ACSSSpaceQuoOut();
+		spl = actVal._ACSSSpaceQuoOut()._ACSSRepQuo();
 	} else {
 		// There are two parameters with this conditional.
 		spl = actVal.split(' ');
@@ -7529,7 +7916,24 @@ const _toggleClassObj = (obj, str) => {
 	obj.classList.toggle(str);
 };
 
+const _unEscNoVars = str => {
+	return str.replace(/__ACSSnoVarsOpCurly/gim, '{').replace(/__ACSSnoVarsClCurly/gim, '}');
+};
+
+const _unSafeTags = str => {
+	let mapObj = {
+		'&amp;': '&',
+		'&lt;': '<',
+		'&gt;': '>',
+		'&sol;': '/',
+		'&#123;': '{',
+		'&#125;': '}',
+	};
+	return ActiveCSS._mapRegexReturn(mapObj, str);
+};
+
 const _urlTitle = (url, titl, o) => {
+	if (inIframe) return;
 	url = url.replace(/"/g, '');
 	titl = titl.replace(/"/g, '');
 	url = _resolveURL(url);

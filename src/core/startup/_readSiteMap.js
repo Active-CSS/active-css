@@ -22,6 +22,10 @@ const _readSiteMap = () => {
 	for (evSet of preSetupEvents) {
 		_setupEvent(evSet.ev, evSet.sel);
 	}
+	if (!selectors.click && selectors.clickoutside) {
+		// Need at least one click event for clickoutside to work and there isn't one set. Set up a dummy event so it goes through the regular flow.
+		_setupEvent('click', 'body');
+	}
 	// Clean up. If we run load-config, we'll run this function again and only attempt to add the new events loaded.
 	preSetupEvents = [];
 
@@ -32,38 +36,5 @@ const _readSiteMap = () => {
 	// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 	_initScriptTrack();
 
-	if (!setupEnded) {
-		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
-		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
-
-		// Handle any developer initialization events
-		_handleEvents({ obj: 'body', evType: 'preInit' });
-
-		_handleEvents({ obj: 'body', evType: 'init' });
-
-		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
-		if (inlineIDArr.length > 0) _runInlineLoaded();
-
-		// Iterate items on this page and do any draw events.
-		_runInnerEvent(null, '*', 'draw', document, true);
-
-		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
-
-		_wrapUpStart();
-
-		// Lazy load config.
-		if (lazyConfig !== '') {
-			setTimeout(function() {
-				let arr = lazyConfig.split(','), configFile;
-				for (configFile of arr) {
-					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
-				}
-			}, 1000);
-		}
-	} else {
-		// Now run the loaded events for each inline Active CSS tag on the page.
-		if (inlineIDArr.length > 0) {
-			_runInlineLoaded();
-		}
-	}
+	_wrapUpStart();
 };

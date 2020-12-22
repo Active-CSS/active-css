@@ -59,6 +59,13 @@ describe('Set up core to test', function() {
 				});
 				// window.testsRun is set up in the Active CSS config. See /core-test/tests/core-test-config-base.acss.
 				let descs = "\n\n" + 'The following tests were run:' + "\n\n";
+				if (!window.testsRun) {
+					failedTests = "\n" + 'Tests may have run, but window.testsRun is not defined and that is set by the "var" command in Active CSS so something is wrong...' + "\n\n";
+					allSuccess = false;
+				} else if (window.testsRun.length == 0) {
+					failedTests = "\n" + 'Tests may have run, but the window.testsRun array is empty and that is set using the "var" command in Active CSS so something is wrong...' + "\n\n";
+					allSuccess = false;
+				}
 				window.testsRun.forEach(i => {
 					descs += i.desc + "\n";
 				});

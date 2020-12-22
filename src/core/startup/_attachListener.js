@@ -44,6 +44,7 @@ ActiveCSS._theEventFunction = e => {
 			let shiftCheck = (e.shiftKey) ? 'Shift' : '';
 			let funcKey = e.key;
 			switch (e.key) {
+				case ' ': funcKey = 'Space'; break;
 				case ':': funcKey = 'Colon'; shiftCheck = ''; break;
 				case ';': funcKey = 'Semicolon'; shiftCheck = ''; break;
 				case '{': funcKey = 'OpenCurly'; shiftCheck = ''; break;
