@@ -2474,9 +2474,6 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 
 const _performAction = (o, runButElNotThere=false) => {
 	// All attr... actions pass through here.
-
-
-//console.log('o.doc:', o.doc);
 	if (o.doc.readyState && o.doc.readyState != 'complete') {
 		// Iframe not ready, come back to this in 200ms.
 		setTimeout(_performAction.bind(this, o), 200);
@@ -3190,6 +3187,10 @@ const _replaceHTMLVars = (o, str) => {
 	return str;
 };
 
+const _replaceIframeEsc = str => {
+	return str.replace(/_ACSS_lt/gm, '<').replace(/_ACSS_gt/gm, '>');
+};
+
 const _replaceLoopingVars = (str, loopVars) => {
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+)(\}|\.|\[)/gm, function(_, wot, endBit) {
@@ -3305,7 +3306,7 @@ const _sortOutDynamicIframes = str => {
 			innards = accumInnards + arr[i].substr(closingChar + 1, endPos - closingChar - 1);
 			useOuterTag = '';
 			concatStr += arr[i].substr(endPos + 10);
-			iframes[ref] = { mainTag, innards };
+			iframes[ref] = { mainTag: _replaceIframeEsc(mainTag), innards: _replaceIframeEsc(innards) };
 			accumInnards = '';
 			ref++;
 		} else if (endPos !== -1) {
@@ -3333,7 +3334,7 @@ const _sortOutDynamicIframes = str => {
 					} else {
 						innards = accumInnards + closingArr[cl].substr(closingChar + 1);
 					}
-					iframes[ref] = { mainTag, innards };
+					iframes[ref] = { mainTag: _replaceIframeEsc(mainTag), innards: _replaceIframeEsc(innards) };
 					accumInnards = '';
 					ref++;
 				} else {
@@ -3362,11 +3363,7 @@ const _sortOutDynamicIframes = str => {
 	str = (foundContentInIframe) ? concatStr: str;
 
 	// Put tag chars back.
-	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
-		innards = innards.replace(/_ACSS_lt/gm, '<').replace(/_ACSS_gt/gm, '>');
-		return '"' + innards + '"';
-	});
-
+	str = _replaceIframeEsc(str);
 
 	return { str, iframes };
 };

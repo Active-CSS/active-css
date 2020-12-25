@@ -38,7 +38,7 @@ const _sortOutDynamicIframes = str => {
 			innards = accumInnards + arr[i].substr(closingChar + 1, endPos - closingChar - 1);
 			useOuterTag = '';
 			concatStr += arr[i].substr(endPos + 10);
-			iframes[ref] = { mainTag, innards };
+			iframes[ref] = { mainTag: _replaceIframeEsc(mainTag), innards: _replaceIframeEsc(innards) };
 			accumInnards = '';
 			ref++;
 		} else if (endPos !== -1) {
@@ -66,7 +66,7 @@ const _sortOutDynamicIframes = str => {
 					} else {
 						innards = accumInnards + closingArr[cl].substr(closingChar + 1);
 					}
-					iframes[ref] = { mainTag, innards };
+					iframes[ref] = { mainTag: _replaceIframeEsc(mainTag), innards: _replaceIframeEsc(innards) };
 					accumInnards = '';
 					ref++;
 				} else {
@@ -95,11 +95,7 @@ const _sortOutDynamicIframes = str => {
 	str = (foundContentInIframe) ? concatStr: str;
 
 	// Put tag chars back.
-	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
-		innards = innards.replace(/_ACSS_lt/gm, '<').replace(/_ACSS_gt/gm, '>');
-		return '"' + innards + '"';
-	});
-
+	str = _replaceIframeEsc(str);
 
 	return { str, iframes };
 };
