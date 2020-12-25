@@ -22,12 +22,6 @@ _a.Render = o => {
 	// Handle any ajax strings.
 	content = _replaceStringVars(o.ajaxObj, content);
 
-	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
-	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
-
-	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
-	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
-
 	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 
 	_renderIt(o, content, childTree, selfTree);

@@ -2,7 +2,7 @@
 	render-before-end: "<div id=\"checkPreventDefaultShadow\" data-desc=\"Basic prevent-default in shadow command\" class=\"coreTest\">{|checkPreventDefaultHTMLShadow}</div>";
 }
 
-@component checkPreventDefaultHTML shadow {
+@component checkPreventDefaultHTMLShadow shadow {
 	a:click {
 		prevent-default: true;
 	}

@@ -6,6 +6,7 @@ const _handleEvents = evObj => {
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
+
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
@@ -99,6 +100,7 @@ const _handleEvents = evObj => {
 			}
 		}
 	}
+
 	if (typeof obj === 'string') {
 		// handle events has been called with a string rather than an object in this case. Use the original real object if there is one.
 		obj = (origObj) ? origObj : obj;

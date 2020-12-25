@@ -23,6 +23,12 @@
 
 #checkClickOnNext:test {
 	func: checkClickOnNextA;
+	~customClickOnNext {
+		trigger: startTheTest after {window.delayTimes.clickOnNext[0]}ms;
+	}
+}
+
+~customClickOnNext:startTheTest {
 	focus-on: #clickOnNextStart;
 	click-on-next: #clickOnNextDiv a;
 	func: checkClickOnNextB;

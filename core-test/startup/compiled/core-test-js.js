@@ -1603,7 +1603,7 @@ function checkRenderReplace(o) {
 	// Check basic render-replace command results.
 	let el = _getObj('#renderReplaceOuterDiv');
 
-	if (el.innerHTML !== '<div id="checkRenderReplaceTestDiv">render-replace</div><div><p id="renderReplaceHTMLDiv">Text will be inserted in relation to this element.</p></div>') {
+	if (el.innerHTML !== '<div id=\"checkRenderReplaceTestDiv\">render-replace</div>') {
 		_fail(checkRenderReplaceEl, 'Render did not render correctly in the render-replace command test area. #renderReplaceOuterDiv.innerHTML:', el.innerHTML);
 	}
 
@@ -2101,13 +2101,13 @@ function checkUrlChange(o) {
 	if (window.location.pathname === '/test/funky/url') {
 		urlTestOk = true;
 	} else {
-		_fail(checkUrlChangeEl, 'url-change failed to change the URL to "/test/funky/url"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the URL to "/test/funky/url", window.location.pathname:', window.location.pathname);
 	}
 
 	if (document.title === 'Funky test URL') {
 		titleTestOk = true;
 	} else {
-		_fail(checkUrlChangeEl, 'url-change failed to change the document.title to "Funky test URL"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the document.title to "Funky test URL", document.title:', document.title);
 	}
 
 	if (urlTestOk && titleTestOk) {

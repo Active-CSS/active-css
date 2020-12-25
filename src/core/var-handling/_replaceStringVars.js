@@ -26,7 +26,7 @@ const _replaceStringVars = (o, str, varScope) => {
 
 			default:
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
-					// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
+					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
 					res = _get(scopedVars, scopedVar);
 					return res || '';

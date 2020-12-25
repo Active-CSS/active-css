@@ -23,6 +23,6 @@
 
 #checkClickOnFirst:test {
 	func: checkClickOnFirstA;
-	click-on-first: #clickOnFirstDiv a;
-	func: checkClickOnFirstFinal;
+	click-on-first: #clickOnFirstDiv a after {window.delayTimes.clickOnFirst[0]}ms;
+	func: checkClickOnFirstFinal after {window.delayTimes.clickOnFirst[1]}ms;
 }

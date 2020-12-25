@@ -61,10 +61,16 @@ const _performSecSel = (loopObj) => {
 					continue;
 				}
 				// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
-				targs = _splitIframeEls(targetSelector, { obj, compDoc });
-				if (!targs) continue;	// invalid target.
-				doc = targs[0];
-				passTargSel = targs[1];
+				if (evType == 'disconnectedCallback' && meMap.includes(targetSelector)) {
+					// The element won't be there. Just run the event anyway.
+					doc = compDoc;
+					passTargSel = targetSelector;
+				} else {
+					targs = _splitIframeEls(targetSelector, { obj, compDoc });
+					if (!targs) continue;	// invalid target.
+					doc = targs[0];
+					passTargSel = targs[1];
+				}
 
 				// passTargSel is the string of the target selector that now goes through some changes.
 				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);

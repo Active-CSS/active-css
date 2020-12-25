@@ -28,6 +28,12 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	}
 
 	let container = document.createElement('div');
+
+	// If the first element is a tr, the tr and subsequent tds are going to disappear with this method.
+	// All we have to do is change these to something else, and put them back afterwards. Quickest method is a simple replace.
+	// It just needs to survive the insertion as innerHTML.
+	content = content.replace(/tr>/gmi, 'acssTrTag>').replace(/td>/gmi, 'acssTdTag>');
+
 	container.innerHTML = content;
 
 	let cid;
@@ -44,10 +50,19 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
 
+	// Put any trs and tds back.
+	content = content.replace(/acssTrTag>/gmi, 'tr>').replace(/acssTdTag>/gmi, 'td>');
+
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
 		content = _addInlinePriorToRender(content);
 	}
+
+	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
+	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
+
+	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
+	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
 	// Unescape any $HTML_NOVARS escaped curlies now that rendering is occurring and iframe content is removed.
 	content = _unEscNoVars(content);

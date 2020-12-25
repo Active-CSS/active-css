@@ -23,6 +23,6 @@
 
 #checkClickOnLast:test {
 	func: checkClickOnLastA;
-	click-on-last: #clickOnLastDiv a;
-	func: checkClickOnLastFinal;
+	click-on-last: #clickOnLastDiv a after {window.delayTimes.clickOnLast[0]}ms;
+	func: checkClickOnLastFinal after {window.delayTimes.clickOnLast[1]}ms;
 }

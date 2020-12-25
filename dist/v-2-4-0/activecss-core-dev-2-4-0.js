@@ -956,12 +956,6 @@ _a.Render = o => {
 	// Handle any ajax strings.
 	content = _replaceStringVars(o.ajaxObj, content);
 
-	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
-	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
-
-	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
-	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
-
 	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
 
 	_renderIt(o, content, childTree, selfTree);
@@ -1767,6 +1761,7 @@ const _handleEvents = evObj => {
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
+
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
@@ -1860,6 +1855,7 @@ const _handleEvents = evObj => {
 			}
 		}
 	}
+
 	if (typeof obj === 'string') {
 		// handle events has been called with a string rather than an object in this case. Use the original real object if there is one.
 		obj = (origObj) ? origObj : obj;
@@ -2478,6 +2474,9 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 
 const _performAction = (o, runButElNotThere=false) => {
 	// All attr... actions pass through here.
+
+
+//console.log('o.doc:', o.doc);
 	if (o.doc.readyState && o.doc.readyState != 'complete') {
 		// Iframe not ready, come back to this in 200ms.
 		setTimeout(_performAction.bind(this, o), 200);
@@ -2625,10 +2624,16 @@ const _performSecSel = (loopObj) => {
 					continue;
 				}
 				// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
-				targs = _splitIframeEls(targetSelector, { obj, compDoc });
-				if (!targs) continue;	// invalid target.
-				doc = targs[0];
-				passTargSel = targs[1];
+				if (evType == 'disconnectedCallback' && meMap.includes(targetSelector)) {
+					// The element won't be there. Just run the event anyway.
+					doc = compDoc;
+					passTargSel = targetSelector;
+				} else {
+					targs = _splitIframeEls(targetSelector, { obj, compDoc });
+					if (!targs) continue;	// invalid target.
+					doc = targs[0];
+					passTargSel = targs[1];
+				}
 
 				// passTargSel is the string of the target selector that now goes through some changes.
 				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
@@ -3035,6 +3040,12 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	}
 
 	let container = document.createElement('div');
+
+	// If the first element is a tr, the tr and subsequent tds are going to disappear with this method.
+	// All we have to do is change these to something else, and put them back afterwards. Quickest method is a simple replace.
+	// It just needs to survive the insertion as innerHTML.
+	content = content.replace(/tr>/gmi, 'acssTrTag>').replace(/td>/gmi, 'acssTdTag>');
+
 	container.innerHTML = content;
 
 	let cid;
@@ -3051,10 +3062,19 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// We need this - there are active IDs in place from the _getActiveID action above, and we need these to set off the correct draw events.
 	content = container.innerHTML;
 
+	// Put any trs and tds back.
+	content = content.replace(/acssTrTag>/gmi, 'tr>').replace(/acssTdTag>/gmi, 'td>');
+
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
 		content = _addInlinePriorToRender(content);
 	}
+
+	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
+	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
+
+	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
+	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
 	// Unescape any $HTML_NOVARS escaped curlies now that rendering is occurring and iframe content is removed.
 	content = _unEscNoVars(content);
@@ -3253,6 +3273,12 @@ const _sortOutDynamicIframes = str => {
 
 	str = str.replace(/\r|\n/gm, '').replace(/\t/gm, ' ');
 
+	// First of all, escape any opening and closing tags in quotes. We need the check the real tags only.
+	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
+		innards = innards.replace(/</gm, '_ACSS_lt').replace(/>/gm, '_ACSS_gt');
+		return '"' + innards + '"';
+	});
+
 	let iframes = [], ref = 0, arr = str.split('<iframe'), endPos, concatStr = '', i = 0, arrLen = arr.length, mainTag, innards, innerCount = 0,
 		accumInnards = '', outerTag = '', useOuterTag, closingChar, closingArr, closingArrLen, cl, openingChar;
 
@@ -3334,6 +3360,13 @@ const _sortOutDynamicIframes = str => {
 		}
 	}
 	str = (foundContentInIframe) ? concatStr: str;
+
+	// Put tag chars back.
+	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
+		innards = innards.replace(/_ACSS_lt/gm, '<').replace(/_ACSS_gt/gm, '>');
+		return '"' + innards + '"';
+	});
+
 
 	return { str, iframes };
 };
@@ -5733,7 +5766,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if ([ '$HTML', '$HTML_ESCAPED', '$STRING', '$RAND' ].includes(wot)) return '{' + wot + '}';
+			if ([ '$HTML', '$HTML_ESCAPED', '$HTML_NOVARS', '$STRING', '$RAND' ].includes(wot)) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -5816,7 +5849,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 
 	let res, origWot, firstVar;
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)\}/gim, function(_, wot) {
-		if ([ '$HTML', '$HTML_ESCAPED', '$STRING', '$RAND' ].includes(wot)) return wot;
+		if ([ '$HTML', '$HTML_ESCAPED', '$HTML_NOVARS', '$STRING', '$RAND' ].includes(wot)) return wot;
 		origWot = wot;
 		// Don't convert to dot format as JavaScript barfs on dot notation in evaluation.
 		// Evaluate the JavaScript expression.
@@ -5875,7 +5908,7 @@ const _replaceStringVars = (o, str, varScope) => {
 
 			default:
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
-					// This should be treated an HTML variable string. It's a regular Active CSS variable that allows HTML.
+					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
 					res = _get(scopedVars, scopedVar);
 					return res || '';

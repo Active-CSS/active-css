@@ -7,13 +7,13 @@ function checkUrlChange(o) {
 	if (window.location.pathname === '/test/funky/url') {
 		urlTestOk = true;
 	} else {
-		_fail(checkUrlChangeEl, 'url-change failed to change the URL to "/test/funky/url"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the URL to "/test/funky/url", window.location.pathname:', window.location.pathname);
 	}
 
 	if (document.title === 'Funky test URL') {
 		titleTestOk = true;
 	} else {
-		_fail(checkUrlChangeEl, 'url-change failed to change the document.title to "Funky test URL"');
+		_fail(checkUrlChangeEl, 'url-change failed to change the document.title to "Funky test URL", document.title:', document.title);
 	}
 
 	if (urlTestOk && titleTestOk) {

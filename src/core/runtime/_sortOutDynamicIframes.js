@@ -6,6 +6,12 @@ const _sortOutDynamicIframes = str => {
 
 	str = str.replace(/\r|\n/gm, '').replace(/\t/gm, ' ');
 
+	// First of all, escape any opening and closing tags in quotes. We need the check the real tags only.
+	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
+		innards = innards.replace(/</gm, '_ACSS_lt').replace(/>/gm, '_ACSS_gt');
+		return '"' + innards + '"';
+	});
+
 	let iframes = [], ref = 0, arr = str.split('<iframe'), endPos, concatStr = '', i = 0, arrLen = arr.length, mainTag, innards, innerCount = 0,
 		accumInnards = '', outerTag = '', useOuterTag, closingChar, closingArr, closingArrLen, cl, openingChar;
 
@@ -87,6 +93,13 @@ const _sortOutDynamicIframes = str => {
 		}
 	}
 	str = (foundContentInIframe) ? concatStr: str;
+
+	// Put tag chars back.
+	str = str.replace(/"((?:\\.|[^"\\])*)"/gm, function(_, innards) {
+		innards = innards.replace(/_ACSS_lt/gm, '<').replace(/_ACSS_gt/gm, '>');
+		return '"' + innards + '"';
+	});
+
 
 	return { str, iframes };
 };
