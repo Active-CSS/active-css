@@ -4,7 +4,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 
 	let res, origWot, firstVar;
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)\}/gim, function(_, wot) {
-		if ([ '$HTML', '$HTML_ESCAPED', '$HTML_NOVARS', '$STRING', '$RAND' ].includes(wot)) return wot;
+		if (wot.startsWith('$')) return '{' + wot + '}';
 		origWot = wot;
 		// Don't convert to dot format as JavaScript barfs on dot notation in evaluation.
 		// Evaluate the JavaScript expression.
