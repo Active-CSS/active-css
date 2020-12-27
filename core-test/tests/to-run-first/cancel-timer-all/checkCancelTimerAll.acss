@@ -1,0 +1,31 @@
+#content:draw {
+	render-before-end: "<div id=\"checkCancelTimerAll\" data-desc=\"Basic cancel-timer-all command\" class=\"coreTest\">{|checkCancelTimerAllHTML}</div>";
+}
+
+@component checkCancelTimerAllHTML {
+	html {
+		<div id="cancelTimerAllDiv" style="background-color: blue;"></div>
+	}
+}
+
+#checkCancelTimerAll:test {
+
+	/* Cancel all by action test. */
+	func: checkCancelTimerAllA;
+	#cancelTimerAllDiv {
+		background-color: green after 1s;
+		add-class: .testAddition after 1s;
+	}
+	cancel-timer-all: true;
+	func: checkCancelTimerAllB;
+
+	/* Cancel all by label test. */
+	#cancelTimerAllDiv {
+		background-color: green after 1s label greenColor;
+		add-class: .testAddition after 1s label myAddition;
+		func: checkCancelTimerAllC;
+	}
+	cancel-timer-all: true;
+	func: checkCancelTimerAllFinal;
+
+}

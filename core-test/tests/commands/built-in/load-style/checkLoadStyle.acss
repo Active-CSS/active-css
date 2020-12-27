@@ -1,0 +1,44 @@
+#content:draw {
+	render-before-end: "<div id=\"checkLoadStyle\" data-desc=\"Basic load-style command in document scope\" class=\"coreTest\">{|checkLoadStyleHTML}</div>";
+	render-before-end: "<div id=\"checkLoadStyleShad\" data-desc=\"Basic load-style command in shadow scope\" class=\"coreTest\">{|checkLoadStyleHTMLShadow}</div>";
+	render-before-end: "<div id=\"checkLoadStyleShad2\" data-desc=\"Basic load-style command in multiple shadow scopes\" class=\"coreTest\">{|checkLoadStyleHTMLShadow2}</div>";
+}
+
+@component checkLoadStyleHTML {
+	&:componentOpen {
+		load-style: "/base/core-test/tests/resource-files/load-style-test.css?v=123";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleDocument;
+	}
+	html {
+		<div></div>
+	}
+}
+
+@component checkLoadStyleHTMLShadow shadow {
+	&:componentOpen {
+		load-style: "/base/core-test/tests/resource-files/load-style-test-shadow.css";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleShadow;
+	}
+	html {
+		<div></div>
+	}
+}
+
+@component checkLoadStyleHTMLShadow2 shadow {
+	&:componentOpen {
+		load-style: "/base/core-test/tests/resource-files/load-style-test-shadow.css";
+	}
+	&:afterLoadStyle {
+		func: checkLoadStyleShadow2;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkLoadStyle:test {
+}

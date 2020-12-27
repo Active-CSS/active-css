@@ -1,0 +1,22 @@
+/* Pended until clone/restore-clone issue 36 has been resolved.
+
+#content:draw {
+	render-before-end: "<div id=\"checkClone\" data-desc=\"Basic clone command\" class=\"coreTest\">{|checkCloneHTML}</div>";
+}
+
+@component checkCloneHTML {
+	html {
+		<p class="cloneText"><span>This text is going to be cloned</span></p>
+		<div id="restoreCloneInHere"><div id="restoreHere"></div></div>
+	}
+}
+
+#checkClone:test {
+	func: checkCloneBefore;
+	clone: .cloneText;
+	#restoreHere {
+		restore-clone: .cloneText;
+	}
+	func: checkClone;
+}
+*/

@@ -1,0 +1,35 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnNextCycle\" data-desc=\"Basic click-on-next-cycle command\" class=\"coreTest\">{|checkClickOnNextCycleHTML}</div>";
+}
+
+@component checkClickOnNextCycleHTML {
+	html {
+		<div id="clickOnNextCycleDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextCycleStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextCycleP"></p>
+	}
+}
+
+#clickOnNextCycleDiv a:click {
+	#clickOnNextCycleP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnNextCycle:test {
+	func: checkClickOnNextCycleA;
+	focus-on: #clickOnNextCycleStart;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleB;
+	focus-on-next-cycle: #clickOnNextCycleDiv a;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleC;
+	focus-on-next-cycle: #clickOnNextCycleDiv a;
+	click-on-next-cycle: #clickOnNextCycleDiv a;
+	func: checkClickOnNextCycleFinal;
+}

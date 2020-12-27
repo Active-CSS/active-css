@@ -13,6 +13,6 @@ const _getSel = (o, sel, priorToGrabAll) => {
 			return (rootNode._acssScoped) ? rootNode : rootNode.host;
 		default:
 			// Grab the element or the first in the group specified.
-			return (priorToGrabAll !== true) ? _getObj(sel) : false;
+			return (priorToGrabAll !== true) ? _getObj(sel, o) : false;
 	}
 };

@@ -1,0 +1,41 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnNext\" data-desc=\"Basic click-on-next command\" class=\"coreTest\">{|checkClickOnNextHTML}</div>";
+}
+
+@component checkClickOnNextHTML {
+	html {
+		<div id="clickOnNextDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a id="clickOnNextStart" data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnNextP"></p>
+	}
+}
+
+#clickOnNextDiv a:click {
+	#clickOnNextP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnNext:test {
+	func: checkClickOnNextA;
+	~customClickOnNext {
+		trigger: startTheTest after {window.delayTimes.clickOnNext[0]}ms;
+	}
+}
+
+~customClickOnNext:startTheTest {
+	focus-on: #clickOnNextStart;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextB;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextC;
+	focus-on-next: #clickOnNextDiv a;
+	click-on-next: #clickOnNextDiv a;
+	func: checkClickOnNextFinal;
+}

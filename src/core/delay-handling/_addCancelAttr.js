@@ -1,5 +1,5 @@
 const _addCancelAttr = (obj, func) => {
-	let activeID = obj.dataset.activeid;
+	let activeID = _getActiveID(obj);
 	if (!cancelIDArr[activeID]) cancelIDArr[activeID] = [];
 	cancelIDArr[activeID][func] = true;
 };

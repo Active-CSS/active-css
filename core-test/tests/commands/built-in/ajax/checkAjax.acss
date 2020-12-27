@@ -1,0 +1,20 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAjax\" data-desc=\"Basic ajax command\" class=\"coreTest\">{|checkAjaxHTML}</div>";
+}
+
+@component checkAjaxHTML {
+	&:beforeComponentOpen {
+		ajax: "/base/core-test/tests/resource-files/ajax-test-1.txt";
+	}
+	&:afterAjax {
+		func: checkAjax after 1s;	/* give component time to draw before checking */
+	}
+	html {
+		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
+		<p id="checkAjaxTestAddress">{{checkAjaxAddress}}</p>
+	}
+}
+
+#checkAjax:test {
+	/* Nothing to see here - the test function gets run from afterAjax in the component. */
+}

@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkMimicInto\" data-desc=\"Basic mimic-into command\" class=\"coreTest\">{|checkMimicIntoHTML}</div>";
+}
+
+@component checkMimicIntoHTML {
+	html {
+	}
+}
+
+#checkMimicInto:test {
+	func: checkMimicInto;
+}

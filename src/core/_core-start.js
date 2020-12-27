@@ -9,6 +9,8 @@
 	const PARSEEND = 2;
 	const PARSEATTR = 3;
 	const PARSEDEBUG = 4;
+//	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;	// This doesn't handle user content very well. May do something else later - leave here for ref.
+	const COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm;
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
@@ -28,6 +30,10 @@
 		'"': '_ACSS_later_double_quote'
 	};
 
+	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
+	const SELFREGEX = /\{\$SELF\}/g;
+
 	window.ActiveCSS = {};
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
@@ -40,10 +46,11 @@
 		configArr = [],
 		configLine = '',
 		configFile = '',
+		configBox = [],
 		lazyConfig = [],
-		concatConfig = '',
 		concatConfigCo = 0,
 		concatConfigLen = 0,
+		masterConfigCo = 0,
 		currentPage = '',
 		ajaxResLocations = {},
 		pageList = [],
@@ -89,6 +96,10 @@
 		// The next two keep track of pending shadow DOM and scoped components to render.
 		compCount = 0,
 		compPending = {},
+		compParents = [],
+		compPrivEvs = [],
+		privVarScopes = [],
+		strictPrivVarScopes = [],
 		shadowSels = [],
 		shadowDoms = {},
 		actualDoms = {},
@@ -100,9 +111,23 @@
 		preSetupEvents = [],
 		nonPassiveEvents = [],
 		passiveEvents = true,
-		inlineConfigTags = null,
 		supportsShadow = true,
-		privateScopes = [];
+		idMap = [],
+		varMap = [],
+		varStyleMap = [],
+		varInStyleMap = [],
+		maEv = [],
+		mainEventCounter = -1,
+		taEv = [],
+		targetEventCounter = -1,
+		elementObserver,
+		pageStore,
+		pagesDisplayed = [],
+		inlineRefCo = 0,
+		inlineRefArr = [],
+		inlineIDArr = [],
+		inIframe = (window.location !== window.parent.location),
+		htmlRawMap = [];
 
 	ActiveCSS.customHTMLElements = {};
 

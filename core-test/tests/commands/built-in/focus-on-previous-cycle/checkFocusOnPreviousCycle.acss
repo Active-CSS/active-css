@@ -1,0 +1,25 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnPreviousCycle\" data-desc=\"Basic focus-on-previous-cycle command\" class=\"coreTest\">{|checkFocusOnPreviousCycleHTML}</div>";
+}
+
+@component checkFocusOnPreviousCycleHTML {
+	html {
+		<div class="focusOnPreviousCycleBlock">
+		    <a id="focusOnPreviousCycleSecond" href="">Apples</a>
+		    <a id="focusOnPreviousCycleStart" href="">Oranges</a>
+		    <a href="">Pears</a>
+		    <a href="">Bananas</a>
+		    <a id="focusOnPreviousCycleEnd" href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnPreviousCycle:test {
+	func: checkFocusOnPreviousCycleA;
+    focus-on: #focusOnPreviousCycleStart;
+	func: checkFocusOnPreviousCycleB;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleC;
+	focus-on-previous-cycle: .focusOnPreviousCycleBlock a;
+	func: checkFocusOnPreviousCycleFinal;
+}

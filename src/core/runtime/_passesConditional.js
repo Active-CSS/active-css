@@ -1,4 +1,4 @@
-const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef, component, eve, compDoc) => {
+const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScope, component, eve, compDoc) => {
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
 
@@ -33,13 +33,14 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, compRef);	// Using the document of the primary selector is what we want.
+				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
 				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 				condVals = aV.split('_ACSSComma');
 				condValsLen = condVals.length;
+
 				for (n = 0; n < condValsLen; n++) {
-					if (_c[func]({
+					let cObj = {
 						'func': func,
 						'actName': commandName,
 						'secSel': 'conditional',
@@ -53,8 +54,9 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 						'ajaxObj': otherEl,
 						'component': component,
 						'compDoc': compDoc,
-						'compRef': compRef
-					}, scopedVars, privateScopes) !== actionBoolState) {
+						'varScope': varScope
+					};
+					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}
@@ -63,7 +65,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 		}
 		if (component) {
 			cond = '|' + component + '|' + cond;
-			if (typeof conditionals[cond] === 'undefined') {
+			if (conditionals[cond] === undefined) {
 				let condErr = cond.substr(component.length + 2);
 				console.log('Active CSS error: Conditional ' + condErr + ' not found in config for component ' + component);
 			}
@@ -92,7 +94,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 					    return '_ACSSComma';
 					});
 
-					aV = _replaceAttrs(el, aV, null, null, null, compRef);	// Using the document of the primary selector is what we want.
+					aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
 					aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 					condVals = aV.split('_ACSSComma');
@@ -112,8 +114,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, compRef
 							'ajaxObj': otherEl,
 							'component': component,
 							'compDoc': compDoc,
-							'compRef': compRef
-						}, scopedVars, privateScopes) !== actionBoolState) {
+							'varScope': varScope
+						}, scopedVars, privVarScopes) !== actionBoolState) {
 							return false;	// Barf out immediately if it fails a condition.
 						}
 					}

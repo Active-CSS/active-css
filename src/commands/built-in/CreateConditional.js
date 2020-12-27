@@ -23,12 +23,12 @@ _a.CreateConditional = o => {
 		'component = o.component,' + 
 		'compDoc = o.compDoc,' + 
 		'carriedEventObject = o.ajaxObj,' +
-		'_activeVarScope = (o.compRef && privateScopes[o.compRef]) ? o.compRef : "main";' +
-		'scopedVars[_activeVarScope] = (typeof scopedVars[_activeVarScope] === \'undefined\') ? {} : scopedVars[_activeVarScope];' +
+		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
+		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
 	// It would be nice to have it recreated on a realtime edit in the Elements extension. This would need to be set up in the extension area to detect and remove
 	// the function if it is edited, but that code has no place in here.
-	_c[funcName] = new Function('o', 'scopedVars', 'privateScopes', funcContent);		// jshint ignore:line
+	_c[funcName] = new Function('o', 'scopedVars', 'privVarScopes', funcContent);		// jshint ignore:line
 };

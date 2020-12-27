@@ -1,0 +1,44 @@
+#content:draw {
+	render-before-end: "<div id=\"checkScrollX\" data-desc=\"Basic scroll-x command\" class=\"coreTest\">{|checkScrollXHTML}</div>";
+}
+
+@component checkScrollXHTML {
+	#scrollXBox:draw {
+		trigger: scrollings after stack;
+	}
+	#scrollXBox:scrollings {
+		scroll-x: right;
+		func: checkScrollXRight;
+		scroll-x: 415;
+		func: checkScrollXHalfway;
+		scroll-x: left;
+		func: checkScrollXFinal;
+	}
+	html {
+		<style>
+		#scrollXBox {
+			width: 200px;
+			height: 200px;
+			overflow-x: scroll;
+		}
+
+		#scrollXBoxInner {
+			position: relative;
+			width: 1000px;
+		}
+		</style>
+
+		<div id="scrollXWrap">
+			<div id="scrollXBox">
+				<div id="scrollXBoxInner">
+					<p style="position: absolute; left: 0;">Left text</p>
+					<p style="position: absolute; left: 46%;">About half-way</p>
+					<p style="position: absolute; right: 0;">Right text</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+#checkScrollX:test {
+}

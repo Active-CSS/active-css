@@ -1,7 +1,8 @@
 // Credit goes to to https://github.com/aramk/CSSJSON for the initial regex parser technique that started this whole project off.
-const _convConfig = (cssString, totOpenCurlies, co=0) => {
+const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 	// Note: By this point in initialisation the config should be compatible for parsing in a similar fashion to CSS.
 	let node = {}, match = null, count = 0, bits, sel, name, value, obj, newNode, commSplit;
+	let topLevel = (!co);
 	while ((match = PARSEREGEX.exec(cssString)) !== null) {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
@@ -17,16 +18,19 @@ const _convConfig = (cssString, totOpenCurlies, co=0) => {
 			co++;
 			name = match[PARSESEL].trim();
 			name = name.replace(/\*debugfile[\s\S]*?\*/g, '');
-			newNode = _convConfig(cssString, totOpenCurlies, co);
+			newNode = _convConfig(cssString, totOpenCurlies, co, inlineActiveID);
 			if (newNode === false) return false;	// There's been a syntax error.
 			obj = {};
 			obj.name = _sortOutEscapeChars(name);
+			if (inlineActiveID) obj.name = obj.name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
 			obj.value = newNode;
 			obj.line = configLine;
 			obj.file = configFile;
 			obj.intID = intIDCounter++;
 			obj.type = 'rule';
-			node[count++] = obj;
+			// If this is the top-level, assign an incrementing master value than spans all config files. If not, use the inner loop counter.
+			let counterToUse = (topLevel) ? masterConfigCo++ : count++;
+			node[counterToUse] = obj;
 		} else if (match[PARSEEND]) { return node;	// Found closing brace
 		} else if (match[PARSEATTR]) {
 			// Handle attributes.

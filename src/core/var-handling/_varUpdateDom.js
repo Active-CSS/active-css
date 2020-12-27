@@ -90,8 +90,6 @@ const _varUpdateDomDo = (change, dataObj) => {
 	// Handle content wrapped in comments.
 	// Loop all items that are affected by this change and update them. We can get the Active IDs and isolate the tags required.
 	colonPos = change.currentPath.indexOf('HOST');
-	theHost = null;
-	theDoc = document;
 	let compScope = null;
 
 	// There has been a recent change whereby the scope of the document may have nothing to with the scope of the variable. Ie. you can have nested shadow DOM
@@ -109,64 +107,65 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete shadowDoms[change.currentPath];
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
+			delete compParents[change.currentPath];
+			delete compPrivEvs[change.currentPath];
+			delete varMap[change.currentPath];
+			delete varStyleMap[change.currentPath];
+
+//				varInStyleMap[el._acssActiveID] = str;		// This needs cleaning up - do it when removing item from DOM in observer.
+
 			return;
+			// Note that this is only going to clean up components that contain reactive variables. At some point, we should look at a method of cleaning up
+			// all component references when they are removed. Then this can possibly be removed depending on the method.
 		}
 	}
-	for (obj in dataObj.cids) {
-		// Locate and update inside comments.
-		// Create a tree of comments to iterate. There's only one tag here, so there shouldn't be a huge amount. It would be very weird if there was.
-		cid = dataObj.cids[obj].cid;
-		scopeRef = dataObj.cids[obj].scopeRef;	// Scope ref is the *display* area - not the variable area!
-		theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-		if (typeof theDoc == 'undefined') continue;	// Not there, skip it. It might not be drawn yet.
 
-		// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-		theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
-
-		el = theDoc.querySelector('[data-activeid="' + cid + '"]');
-		if (!el) {
-			// The node is no longer there at all. Clean it up so we don't bother looking for it again.
-			delete dataObj.cids[cid];
-			continue;
-		}
-
-		treeWalker = document.createTreeWalker(
-			el,
-			NodeFilter.SHOW_COMMENT
-		);
-		// Iterate tree and find unique ref enclosures and update within with newValue.
-		frag = document.createTextNode(refObj);
-		while (treeWalker.nextNode()) {
-			thisNode = treeWalker.currentNode;
-			if (thisNode.data != 'active-var-' + change.currentPath || thisNode.data == '/active-var' || !thisNode.parentNode.isEqualNode(el)) {
-				treeWalker.nextNode();
-				continue;	// If this isn't the same parent node or var change, skip it. We got all the appropriate nodes covered with el.
-			}
-			// Replace the text content of the fragment with new text.
-			if (thisNode.nextSibling.data == '/active-var') {
-				// There is no content there. Insert a text node.
-				let newNode = document.createTextNode(frag.textContent);
-				// Yeah, there is no insertAfter() and after() is not supported on Safari according to MDN...
-				thisNode.parentNode.insertBefore(newNode, thisNode.nextSibling);
+	// Update text nodes.
+	if (typeof varMap[change.currentPath] === 'object') {
+		varMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
+			if (!nod.isConnected) {
+				// Clean-up.
+				varMap[change.currentPath].splice(i, 1);
 			} else {
-				thisNode.nextSibling.textContent = frag.textContent;
+				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
+				nod.textContent = _escapeItem(refObj);
 			}
-			// Move to the last tag. We know it won't match the first loop condition.
-			treeWalker.nextNode();
-		}
-
-		// If this element is an inline-style tag, replace this variable if it is there.
-		if (el.tagName == 'STYLE') {
-			let regex = new RegExp('\\/\\*active\\-var\\-' + change.currentPath + '\\*\\/(((?!\\/\\*).)*)\\/\\*\\/active\\-var\\*\\/', 'g');
-			let str = el.textContent;
-			str = str.replace(regex, function(_, wot) {	// jshint ignore:line
-				return '/*active-var-' + change.currentPath + '*/' + frag.textContent + '/*/active-var*/';
-			});
-			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
-		}
+		});
 	}
 
-	// Handle content in attributes.
+	// Update style nodes.
+	if (typeof varStyleMap[change.currentPath] === 'object') {
+		varStyleMap[change.currentPath].forEach((nod, i) => {	// jshint ignore:line
+			if (!nod.isConnected) {
+				// Clean-up.
+				varStyleMap[change.currentPath].splice(i, 1);
+				delete varInStyleMap[nod];
+			} else {
+				// Update style tag.
+				// What we do now is replace with ALL the current values contained in the string - not just what has changed.
+				let str = varInStyleMap[nod._acssActiveID].replace(STYLEREGEX, function(_, wot) {	// jshint ignore:line
+					if (wot == change.currentPath) {
+						return refObj;
+					} else {
+						let thisColonPos = wot.indexOf('HOST');
+						if (thisColonPos !== -1) {
+							let varName = wot.substr(thisColonPos + 4);
+							let varHost = idMap['id-' + wot.substr(1, thisColonPos - 1)];
+							if (!varHost || !varHost.hasAttribute(varName)) return _;
+							return varHost.getAttribute(varName);
+						} else {
+							// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
+							let val = _get(scopedVars, wot);
+							return (val) ? val : _;
+						}
+					}
+				});
+				nod.textContent = _escapeItem(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+			}
+		});
+	}
+
+	// Handle content in attributes. The treewalker option for attributes is deprecated unfortunately, so it uses a different method.
 	let found;
 	for (cid in dataObj.attrs) {
 		found = false;
@@ -175,12 +174,12 @@ const _varUpdateDomDo = (change, dataObj) => {
 				found = true;	// Only need to do this once per element to get the correct scope.
 				scopeRef = dataObj.attrs[cid][attr].scopeRef;	// Scope ref is the *display* area - not the variable area!
 				theDoc = (!scopeRef) ? document : actualDoms[scopeRef];
-				if (typeof theDoc == 'undefined') break;	// Not there, skip it. It might not be drawn yet.
+				if (theDoc === undefined) break;	// Not there, skip it. It might not be drawn yet.
 
 				// The host specifically refers to the root containing the component, so if that doesn't exist, there is no reference to a host element.
-				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : theDoc.querySelector('[data-activeid="id-' + change.currentPath.substr(1, colonPos - 1) + '"]');
+				theHost = (supportsShadow && theDoc instanceof ShadowRoot) ? theDoc.host : idMap['id-' + change.currentPath.substr(1, colonPos - 1)];
+				el = idMap[cid];
 
-				el = theDoc.querySelector('[data-activeid="' + cid + '"]');
 				if (!el) {
 					// The node is no longer there at all. Clean it up so we don't bother looking for it again.
 					// Note the current method won't work if the same binding variable is in the attribute twice.

@@ -1,43 +1,86 @@
+/*	From MDN.
+Set-Cookie: <cookie-name>=<cookie-value> 
+Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
+Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
+Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
+Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
+Set-Cookie: <cookie-name>=<cookie-value>; Secure
+Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
+Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
+*/
+
 _a.SetCookie = o => {
-	//	Eg. set-cookie: cookieName "any string with spaces" secs/infinity/"date" "\blah" "\sdfkjh" true;
-	let aV = o.actVal;
-	//	1. Replace escaped quotes for now.
+	// Example syntax (double-quotes are optional everywhere for this command):
+	// set-cookie: name("name") value("value") expires("date") maxAge("non-zero-digit") domain("domain") path("path") secure httponly sameSite("strict/lax/none");
+
+	let aV = o.actVal, cookieName, cookieValue, expires, maxAge, cookieDomain, cookiePath, httpOnly, secure, secureIfHttps, sameSite;
+
+	//	Replace escaped quotes.
 	aV = aV.replace(/\\\"/g, '_ACSS_escaped_quote');
-	//	2. Fill in the spaces between quotes with an alternate space string, and remove the quotes if we can.
+	//	Fill in the spaces between quotes with an alternate space string, and remove the quotes.
 	aV = aV._ACSSSpaceQuoIn();
-	//	3. Put the escaped quotes back.
+	//	Put the escaped quotes back. This gives us a true space delimited string of options that can be split later on.
 	aV = aV.replace(/_ACSS_escaped_quote/g, '\\\"');
-	//	4. Split the array by space.
+
+	// Cookie name.
+	cookieName = encodeURIComponent(_getParVal(aV, 'name')._ACSSRepQuo());
+
+	// Cookie value.
+	cookieValue = encodeURIComponent(_getParVal(aV, 'value')._ACSSSpaceQuoOut()._ACSSRepQuo());
+
+	// Expires.
+	expires = _getParVal(aV, 'expires')._ACSSSpaceQuoOut()._ACSSRepQuo();
+	if (expires == 'Infinity') {
+		expires = 'Fri, 31 Dec 9999 23:59:59 GMT';	// After 8000 years that user will be forced to refresh his browser.
+	} else {
+		let attemptToGetDate = _getPastFutureDate(expires);
+		// JavaScript has no date validity function, and alternatives will bloat the core.
+		// If it's not in the right format by the developer, we must assume that it's a specific thing that the developers wants to be set.
+		expires = (attemptToGetDate instanceof Date) ? attemptToGetDate.toUTCString() : expires;
+	}
+
+	// Max-Age.
+	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
+	if (maxAge) {
+		let numTest = new RegExp('^\\d+$');
+		if (!numTest.test(maxAge)) console.log('set-cookie error: maxAge is not a number.');
+	}
+
+	// Domain.
+	cookieDomain = _getParVal(aV, 'domain')._ACSSRepQuo();
+
+	// Path
+	cookiePath = _getParVal(aV, 'path')._ACSSRepQuo();
+
+	// SameSite
+	sameSite = _getParVal(aV, 'sameSite')._ACSSCapitalize()._ACSSRepQuo();
+
+	// Split the array by space.
 	let arr = aV.split(' ');
-	//	5. 0 element is name.
-	//	6. 1 element gets spaces put back in, quotes removed and assigned as value.
-	arr[1] = (arr[1]) ? arr[1]._ACSSSpaceQuoOut()._ACSSRepQuo() : '';
-	//	7. 2 element gets spaces put back in, quotes removed and if number is seconds, if infinity is infinity, otherwise string date, or empty.
-	arr[2] = (arr[2]) ? arr[2].replace(/_ACSS_space/g, ' ')._ACSSRepQuo() : '';
-	arr[2] = (arr[2] == 'Infinity') ? Infinity : (arr[2] == 'Year') ? 31536e3 : (/^[0-9e]+$/.test(arr[2])) ? +arr[2] : arr[2];
-	//	8. 3 element if there is path.
-	arr[3] = (arr[3]) ? arr[3]._ACSSRepQuo() : null;
-	//	9. 4 element if there is domain.
-	arr[4] = (arr[4]) ? arr[4]._ACSSRepQuo() : null;
-	//	10. 5 element if there is secure.
-	arr[5] = (arr[5] == 'true') ? true : (arr[5] == 'false') ? false : null;
-	if (arr[2] == 'true' && !arr[3] && !arr[4] && !arr[5]) {
-		arr[2] = null; arr[5] = true;
+
+	// HttpOnly.
+	httpOnly = _optDef(arr, 'httponly', true, false);
+
+	// Secure/secureIfHttps
+	secureIfHttps = _optDef(arr, 'secureIfHttps', true, false);
+	if (secureIfHttps) {
+		secure = (window.location.protocol == 'https:');
+	} else {
+		secure = _optDef(arr, 'secure', true, false);
 	}
-	if (arr[2] == 'false' && !arr[3] && !arr[4] && !arr[5]) {
-		arr[2] = null; arr[5] = false;
-	}
-	if (arr[3] == 'true' && !arr[4] && !arr[5]) {
-		arr[3] = null; arr[5] = true;
-	}
-	if (arr[3] == 'false' && !arr[4] && !arr[5]) {
-		arr[3] = null; arr[5] = false;
-	}
-	if (arr[4] == 'true' && !arr[5]) {
-		arr[4] = null; arr[5] = true;
-	}
-	if (arr[4] == 'false' && !arr[5]) {
-		arr[4] = null; arr[5] = false;
-	}
-	if (!_setCookie(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5])) console.log('set-cookie ' + arr[0] + ' failed');
+
+	let str = `${cookieName}=${cookieValue};`;
+	str += expires ? ` Expires=${expires};` : '';
+	str += maxAge ? ` Max-Age=${maxAge};` : '';
+	str += cookieDomain ? ` Domain=${cookieDomain};` : '';
+	str += cookiePath ? ` Path=${cookiePath};` : '';
+	str += secure ? ' Secure;' : '';
+	str += sameSite ? ` SameSite=${sameSite};` : '';
+	str += httpOnly ? ' HttpOnly;' : '';
+
+	str = str._ACSSSpaceQuoOut();
+
+	document.cookie = str;
 };

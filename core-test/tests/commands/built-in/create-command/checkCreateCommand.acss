@@ -1,0 +1,28 @@
+#content:draw {
+	render-before-end: "<div id=\"checkCreateCommand\" data-desc=\"Basic create-command command\" class=\"coreTest\">{|checkCreateCommandHTML}</div>";
+}
+
+@component checkCreateCommandHTML {
+	@command create-command-blue {=
+		targetSelector.style.backgroundColor = 'blue';
+	=}
+	html {
+		<div id="checkCreateCommandDiv"></div>
+	}
+}
+
+#checkCreateCommand:test {
+	create-command: create-command-yellow {=
+		targetSelector.style.color = 'yellow';
+	=};
+	#checkCreateCommandDiv {
+		create-command-blue: true;
+		create-command-yellow: true;
+		create-command-height100: true;
+	}
+	func: checkCreateCommand;
+}
+
+@command create-command-height100 {=
+	targetSelector.style.height = '100px';
+=}

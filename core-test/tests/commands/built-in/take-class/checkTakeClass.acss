@@ -1,0 +1,25 @@
+#content:draw {
+	render-before-end: "<div id=\"checkTakeClass\" data-desc=\"Basic take-class command\" class=\"coreTest\">{|checkTakeClassHTML}</div>";
+}
+
+@component checkTakeClassHTML {
+	html {
+		<p>Click on a fruit to select it.</p>
+
+		<div id="takeClassApple" class="takeClassFruit">Apple</div>
+		<div id="takeClassOrange" class="takeClassFruit">Orange</div>
+		<div id="takeClassLemon" class="takeClassFruit taken">Lemon</div>
+		<div id="takeClassLime" class="takeClassFruit">Lime</div>
+	}
+}
+
+#checkTakeClass:test {
+	#takeClassOrange {
+		take-class: .taken;
+		func: checkTakeClassA;
+	}
+	#takeClassLime {
+		take-class: .taken;
+		func: checkTakeClassFinal;
+	}
+}

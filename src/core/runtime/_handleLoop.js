@@ -1,6 +1,5 @@
 const _handleLoop = (loopObj) => {
-	let originalLoops = loopObj.originalLoops;
-	let compRef = loopObj.compRef;
+	let {originalLoops, varScope} = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let existingLoopVars = (loopObj.loopVars) ? loopObj.loopVars : [];
 
@@ -20,18 +19,18 @@ const _handleLoop = (loopObj) => {
 		}
 		let rightVar = originalLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let thisScope = ((compRef && privateScopes[compRef]) ? compRef : 'main') + '.';
+		let thisScope = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 		let rightVarReal = thisScope + rightVar;
 
 		let rightVarVal;
-		if (typeof existingLoopVars[rightVar] != 'undefined') {
+		if (existingLoopVars[rightVar] !== undefined) {
 			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
 			// We need the real variable reference, so reassign rightVar.
 			rightVar = existingLoopVars[rightVar];
 		} else {
 			rightVarVal = _get(scopedVars, rightVarReal);
 		}
-		if (typeof rightVarVal == 'undefined') {
+		if (rightVarVal === undefined) {
 			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
 			return;
 		}

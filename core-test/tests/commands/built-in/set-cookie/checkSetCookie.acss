@@ -1,0 +1,14 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSetCookie\" data-desc=\"Basic set-cookie command\" class=\"coreTest\"></div>";
+}
+
+#checkSetCookie:test {
+	set-cookie: name("test1") value("Y") expires("1 Year") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test2") value("some info\"'") expires("3 months") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test3") value("fred") expires("-1 hour") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test4") value("expired cookie") expires("Fri, 16 Oct 2020 09:01:01 GMT") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test5") value("non-expired cookie") expires("Fri, 31 Dec 9999 09:01:01 GMT") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test6") value("expression expired") expires("{= new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toUTCString() =}") path("/") sameSite("Strict") secureIfHttps;
+	set-cookie: name("test7") value("expression not expired") expires("{= new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString() =}") path("/") sameSite("Strict") secureIfHttps;
+	func: checkSetCookie;
+}

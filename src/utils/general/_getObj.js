@@ -1,8 +1,9 @@
-const _getObj = (str) => {
-	let targArr = _splitIframeEls(str);
+const _getObj = (str, o) => {
+	let targArr = _splitIframeEls(str, o);
 	if (!targArr) return false;	// invalid target.
 	try {
-		return targArr[0].querySelector(targArr[1]);
+		let obj = targArr[0].querySelector(targArr[1]);
+		return obj;
 	} catch(err) {
 		return false;
 	}

@@ -5,7 +5,7 @@ _a.CancelTimer = o => {
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, intID, delayRef, loopref;
-	let scope = (o.compRef) ? o.compRef : 'main';
+	let scope = (o.varScope) ? o.varScope : 'main';
 	// It could be a label cancel. If the label exists, remove the delay.
 	if (labelData[scope + val]) {
 		// This is a label cancel. We know it is tied to a specific action value.
@@ -16,7 +16,7 @@ _a.CancelTimer = o => {
 		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
 		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
 	} else {
-		delayRef = (!['~', '|'].includes(o.secSel.substr(0, 1))) ? _getActiveID(o.secSelObj) : o.secSel;
+		delayRef = (!(typeof o.secSel == 'string' && ['~', '|'].includes(o.secSel.substr(0, 1)))) ? _getActiveID(o.secSelObj) : o.secSel;
 		if (!delayRef) return;
 		if (delayArr[delayRef]) {
 			if (val == 'all') {

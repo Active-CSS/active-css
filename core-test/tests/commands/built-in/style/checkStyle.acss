@@ -1,0 +1,8 @@
+#content:draw {
+	render-before-end: "<div id=\"checkStyle\" data-desc=\"Basic style command\" class=\"coreTest\"></div>";
+}
+
+#checkStyle:test {
+	style: background-color green;
+	func: checkStyle;
+}

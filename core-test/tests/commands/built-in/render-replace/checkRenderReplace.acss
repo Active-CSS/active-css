@@ -1,0 +1,15 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRenderReplace\" data-desc=\"Basic render-replace command\" class=\"coreTest\">{|checkRenderReplaceHTML}</div>";
+}
+
+@component checkRenderReplaceHTML {
+	&:componentOpen {
+	    #renderReplaceHTMLDiv {
+	        render-replace: "<div id=\"checkRenderReplaceTestDiv\">render-replace</div>";
+	    }
+		func: checkRenderReplace;
+	}
+    html {
+		<div id="renderReplaceOuterDiv"><p id="renderReplaceHTMLDiv">Text will be inserted in relation to this element.</p></div>
+    }
+}

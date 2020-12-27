@@ -18,13 +18,13 @@ const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue
 //	console.log('eachLoop = ' + eachLoop);
 
 	eachLoop = (eachLoop) ? eachLoop : '0';
-	if (typeof compConfig[sel][ev][condition][eachLoop] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop] === undefined) {
 		compConfig[sel][ev][condition][eachLoop] = {};
 	}
-	if (typeof compConfig[sel][ev][condition][eachLoop][secSelCounter] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop][secSelCounter] === undefined) {
 		compConfig[sel][ev][condition][eachLoop][secSelCounter] = [];
 	}
-	if (typeof compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] === 'undefined') {
+	if (compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] === undefined) {
 		// Note this next here needs to be an array and not an object, as we do splicing and adding later on from DevTools,
 		// so we need to be flexible in the numbering.
 		compConfig[sel][ev][condition][eachLoop][secSelCounter][secsel] = [];

@@ -1,0 +1,27 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnNext\" data-desc=\"Basic focus-on-next command\" class=\"coreTest\">{|checkFocusOnNextHTML}</div>";
+}
+
+@component checkFocusOnNextHTML {
+	html {
+		<div class="focusOnNextBlock">
+		    <a href="">Apples</a>
+		    <a href="">Oranges</a>
+		    <a id="focusOnNextStart" href="">Pears</a>
+		    <a id="focusOnNextSecond" href="">Bananas</a>
+		    <a id="focusOnNextEnd" href="">Grapes</a>
+		</div>
+	}
+}
+
+#checkFocusOnNext:test {
+	func: checkFocusOnNextA;
+    focus-on: #focusOnNextStart;
+	func: checkFocusOnNextB;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextC;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextD;
+	focus-on-next: .focusOnNextBlock a;
+	func: checkFocusOnNextFinal;
+}

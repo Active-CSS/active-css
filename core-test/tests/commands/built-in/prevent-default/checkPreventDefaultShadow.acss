@@ -1,0 +1,21 @@
+#content:draw {
+	render-before-end: "<div id=\"checkPreventDefaultShadow\" data-desc=\"Basic prevent-default in shadow command\" class=\"coreTest\">{|checkPreventDefaultHTMLShadow}</div>";
+}
+
+@component checkPreventDefaultHTMLShadow shadow {
+	a:click {
+		prevent-default: true;
+	}
+	a:draw {
+		trigger-real: click;
+	}
+	a:afterTriggerReal {
+		func: checkPreventDefaultShadow;	/* If prevent-default works at all then passing the test in the function will be enough. */
+	}
+	html {
+		<a href="/404.html">Test prevent default - this shouldn't do anything when clicked.</a>
+	}
+}
+
+#checkPreventDefaultShadow:test {
+}

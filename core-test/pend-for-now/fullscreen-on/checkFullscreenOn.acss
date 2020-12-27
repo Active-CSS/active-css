@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFullscreenOn\" data-desc=\"Basic fullscreen-on command\" class=\"coreTest\">{|checkFullscreenOnHTML}</div>";
+}
+
+@component checkFullscreenOnHTML {
+	html {
+	}
+}
+
+#checkFullscreenOn:test {
+	func: checkFullscreenOn;
+}

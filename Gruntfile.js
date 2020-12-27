@@ -1,13 +1,13 @@
 // Active CSS core generator.
-// Simple concatenate with lint-checking.
+// Concatenate, lint-check, minify, then unit test.
 (function () {
    'use strict';
 
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.3.0',
-			fileVersion: '2-3-0',
+			realVersion: '2.4.0',
+			fileVersion: '2-4-0',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -54,6 +54,24 @@
 					],
 					dest: 'dist/v-<%= fileVersion %>/full-source/prod.js'
 				},
+				testingJS: {
+					src: [
+						'core-test/helpers/start/helpers-start.js',	// This goes first, always.
+						'core-test/helpers/functions/**/*.js',
+						'core-test/tests/initialize/**/*.js',
+						'core-test/tests/to-run-first/**/*.js',
+						'core-test/tests/commands/**/*.js',
+					],
+					dest: 'core-test/startup/compiled/core-test-js.js'
+				},
+				testingConfig: {
+					src: [
+						'core-test/tests/initialize/**/*.acss',
+						'core-test/tests/to-run-first/**/*.acss',
+						'core-test/tests/commands/**/*.acss',
+					],
+					dest: 'core-test/startup/compiled/core-test-config.acss'
+				},
 			},
 
 			// Lint the concatenated files. This can only happen when the core is combined.
@@ -61,13 +79,16 @@
 				files: [
 					'Gruntfile.js',
 					'dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js',
-					'dist/v-<%= fileVersion %>/full-source/prod.js'
+					'dist/v-<%= fileVersion %>/full-source/prod.js',
+					'core-test/startup/compiled/core-test-js.js'
 				],
 				options: {
 					esversion: 6,
 					strict: true
 				}
 			},
+
+			// Comment out for no babel.
 /*
 			babel: {
 				options: {
@@ -81,6 +102,7 @@
 				},
 			},
 */
+
 			// Terse the different versions after lint-check and put them into the version directory.
 			terser: {
 				regular: {
@@ -93,8 +115,9 @@
 						'dist/v-<%= fileVersion %>/activecss-dev-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js']
 					}
 				},
+
 				// Comment out for no babel.
-				/*
+/*
 				babel: {
 					options: {
 						ie8: true,
@@ -106,18 +129,31 @@
 						'dist/v-<%= fileVersion %>/activecss-babel-dev-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/full-source/activecss-babel-dev-<%= fileVersion %>.js']
 					}
 				}
-				*/
+*/
+			},
+
+			// Run the tests with jasmine via karma.
+			karma: {
+				tests: {
+					configFile: 'karma.conf.js'
+				}
 			},
 		});
 
 		// Run tasks
 		grunt.loadNpmTasks('grunt-contrib-concat');
 		grunt.loadNpmTasks('grunt-contrib-jshint');
-		grunt.loadNpmTasks('grunt-babel');
 		grunt.loadNpmTasks('grunt-terser');
-		// Uncomment/comment for/for no babel.
-//		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser' ]);
-		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
+		grunt.loadNpmTasks('grunt-karma');
+		// Comment out for no babel.
+//		grunt.loadNpmTasks('grunt-babel');
+
+		// Comment out for no babel.
+//		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser', 'karma' ]);
+
+		// Comment out if you don't want Karma testing in order to speed up dev process. Always put it back before a final commit and ensure all tests work.
+		grunt.registerTask('default', ['concat', 'jshint', 'terser', 'karma' ]);
+//		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
 	};
 
 }());

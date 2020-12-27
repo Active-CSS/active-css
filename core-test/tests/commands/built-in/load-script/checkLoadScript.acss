@@ -1,0 +1,18 @@
+#content:draw {
+	render-before-end: "<div id=\"checkLoadScript\" data-desc=\"Basic load-script command\" class=\"coreTest\">{|checkLoadScriptHTML}</div>";
+}
+
+@component checkLoadScriptHTML {
+	&:beforeComponentOpen {
+		load-script: "/base/core-test/tests/resource-files/load-script-test.js";
+	}
+	&:afterLoadScript {
+		func: checkLoadScript;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkLoadScript:test {
+}

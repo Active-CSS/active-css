@@ -32,22 +32,27 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (o.secSel == '#') {
 			console.log('Error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
-		let useSecSel = _prepSelector(o.secSel, o.obj);
-		o.doc.querySelectorAll(useSecSel).forEach(function (obj) {
-			// Loop over each secSec object and handle all the action commands for each one.
-			checkThere = true;
-			let oCopy = Object.assign({}, o);
-			_actionValLoop(oCopy, pars, obj);
-		});
+		let els = _prepSelector(o.secSel, o.obj, o.doc);
+		if (els) {
+			els.forEach((obj) => {
+				// Loop over each target selector object and handle all the action commands for each one.
+				checkThere = true;
+				let oCopy = Object.assign({}, o);
+				_actionValLoop(oCopy, pars, obj);
+			});
+		}
+
+/* Pretty sure we don't need this anymore. References to data-activeid in the o.secSel has been replaced by an object and should be covered in the section below this.
 		if (!checkThere) {
 			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
 			let oCopy = Object.assign({}, o);
 			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.compRef);
+				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}
+*/
 	} else {
 		let oCopy = Object.assign({}, o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -55,8 +60,8 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			_actionValLoop(o, pars, oCopy.secSel);
 		} else {
 			// Is this a custom event selector? If so, don't bother trying to get the object. Trust the developer doesn't need it.
-			if (['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
-				_actionValLoop(o, pars, {});
+			if (runButElNotThere || ['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
+				_actionValLoop(o, pars, {}, runButElNotThere);
 			}
 		}
 /* 	Feedback commented out for the moment - this will be part of a later extension upgrade.

@@ -1,0 +1,15 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRemove\" data-desc=\"Basic remove command\" class=\"coreTest\">{|checkRemoveHTML}</div>";
+}
+
+@component checkRemoveHTML {
+	html {
+		<div id="removeToRemove"></div>
+	}
+}
+
+#checkRemove:test {
+	func: checkRemoveBefore;
+	remove: #removeToRemove;
+	func: checkRemove;
+}

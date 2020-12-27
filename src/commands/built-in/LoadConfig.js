@@ -7,6 +7,6 @@ _a.LoadConfig = o => {
 		_getFile(o.actVal, 'txt', o);
 	} else {
 		// Run the success script - we should still do this, we just didn't need to load the config.
-		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig' });
+		_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 };

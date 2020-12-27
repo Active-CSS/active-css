@@ -1,5 +1,5 @@
 const _setupEvent = (ev, sel, component) => {
-	if (typeof selectors[ev] === 'undefined') {
+	if (selectors[ev] === undefined) {
 		selectors[ev] = [];
 	}
 	// We are giving the main navig keys events, as they are commonly used in UI. Prefixed by keyup 
@@ -31,8 +31,8 @@ const _setupEvent = (ev, sel, component) => {
 		// everything because they already have a slow page. In that case a few microseconds extra won't make a difference particularly. So it's micro-optimization.
 		// It might not even be worth it.
 		let obj = (document.parentNode && sel == 'body' && ev == 'scroll') ? document.body : window;
-		let reGenEvent = (setupEnded) ? true : false;	// We need this, because of the dynamic shadow DOM event adding, which always happens after setup but is actually not a regeneration of an event.
-		_attachListener(obj, ev, null, null, null, reGenEvent);
+		// Re-gen event. We need this, because of the dynamic shadow DOM event adding, which always happens after setup but is actually not a regeneration of an event.
+		_attachListener(obj, ev, setupEnded);
 		eventState[ev] = true;
 	}
 };

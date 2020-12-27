@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFullscreenExit\" data-desc=\"Basic fullscreen-exit command\" class=\"coreTest\">{|checkFullscreenExitHTML}</div>";
+}
+
+@component checkFullscreenExitHTML {
+	html {
+	}
+}
+
+#checkFullscreenExit:test {
+	func: checkFullscreenExit;
+}

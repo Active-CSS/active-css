@@ -1,12 +1,13 @@
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
+
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = o.secSel;
 	} else {
 		// Note: re runButElNotThere) {
 		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
 		// If the original object that has been removed is referenced in the code, this is an error by the user.
-		if (!runButElNotThere && !o.secSelObj.isConnected) {
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) {
 			// Skip it if the object is no longer there and cancel all Active CSS bubbling.
 			if (delayActiveID) {
 				// Cleanup any delayed actions if the element is no longer there.
@@ -19,6 +20,8 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				cancelCustomArr[delayActiveID] = null;
 			}
 			_a.StopPropagation(o);
+			// Remove any mapping to this object.
+			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);
@@ -30,20 +33,20 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Delayed / interval events need to happen at this level.
-	if (o.actVal.match(/(after|every) (stack|[\d]+(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm)) {
+	if (o.actVal.match(/(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm)) {
 		let o2 = Object.assign({}, o), delLoop = ['after', 'every'], aftEv;
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
-			splitArr = _delaySplit(o2.actVal, aftEv);
-			scope = (o.compRef) ? o.compRef : 'main';
-			splitArr.lab = scope + splitArr.lab;
+			splitArr = _delaySplit(o2.actVal, aftEv, o.varScope);
+			scope = (o.varScope) ? o.varScope : 'main';
+			if (splitArr.lab) splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
 				o2.actValSing = o2.actVal;
-				delayArr[delayRef] = (typeof delayArr[delayRef] !== 'undefined') ? delayArr[delayRef] : [];
-				delayArr[delayRef][o2.func] = (typeof delayArr[delayRef][o2.func] !== 'undefined') ? delayArr[delayRef][o2.func] : [];
-				delayArr[delayRef][o2.func][o2.actPos] = (typeof delayArr[delayRef][o2.func][o2.actPos] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos] : [];
-				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (typeof delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== 'undefined') ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
+				delayArr[delayRef] = (delayArr[delayRef] !== undefined) ? delayArr[delayRef] : [];
+				delayArr[delayRef][o2.func] = (delayArr[delayRef][o2.func] !== undefined) ? delayArr[delayRef][o2.func] : [];
+				delayArr[delayRef][o2.func][o2.actPos] = (delayArr[delayRef][o2.func][o2.actPos] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos] : [];
+				delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
 				if (delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]) {
 //					console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.intPos + ', ' + o2.loopRef);
 					_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]);
@@ -51,11 +54,11 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				}
 				o2.delayed = true;
 				if (aftEv == 'after') {
-					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 					return;
 				}
 				o2.interval = true;
-				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef), splitArr.tim));
+				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
 				o.actValSing = splitArr.str;
@@ -88,7 +91,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	}
 
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.compRef);
+	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -99,8 +102,11 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		// Apply this as a CSS style if it isn't a function.
 		o.secSelObj.style[o.actName] = o.actVal;
 	} else {
+		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
+		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
+		o.vars = scopedVars[compScope];
 		// Run the function.
-		_a[o.func](o, scopedVars, privateScopes);
+		_a[o.func](o, scopedVars, privVarScopes);
 	}
 
 	if (!o.interval && delayActiveID) {
@@ -111,8 +117,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (Object.keys(o.secSelObj).length === 0 && ['LoadConfig', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, compRef: o.compRef, compDoc: o.compDoc, component: o.component });
+	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
+		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
+		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
 };

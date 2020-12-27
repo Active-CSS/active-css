@@ -1,0 +1,28 @@
+#content:draw {
+	render-before-end: "<div id=\"checkClickOnFirst\" data-desc=\"Basic click-on-first command\" class=\"coreTest\">{|checkClickOnFirstHTML}</div>";
+}
+
+@component checkClickOnFirstHTML {
+	html {
+		<div id="clickOnFirstDiv">
+		    <a data-color="green" href="">Apples</a>
+		    <a data-color="orange" href="">Oranges</a>
+		    <a data-color="white" href="">Lychee</a>
+		    <a data-color="yellow" href="">Bananas</a>
+		    <a data-color="purple and green" href="">Grapes</a>
+		</div>
+		<p id="clickOnFirstP"></p>
+	}
+}
+
+#clickOnFirstDiv a:click {
+	#clickOnFirstP {
+		render: "{@data-color}";
+	}
+}
+
+#checkClickOnFirst:test {
+	func: checkClickOnFirstA;
+	click-on-first: #clickOnFirstDiv a after {window.delayTimes.clickOnFirst[0]}ms;
+	func: checkClickOnFirstFinal after {window.delayTimes.clickOnFirst[1]}ms;
+}

@@ -1,0 +1,15 @@
+#content:draw {
+	render-before-end: "<div id=\"checkRenderAfterEnd\" data-desc=\"Basic render-after-end command\" class=\"coreTest\">{|checkRenderAfterEndHTML}</div>";
+}
+
+@component checkRenderAfterEndHTML {
+	&:componentOpen {
+	    #renderAfterEndHTMLDiv {
+	        render-after-end: "<span id=\"checkRenderAfterEndTestDiv\">render-after-end</span>";
+			func: checkRenderAfterEnd;
+	    }
+	}
+    html {
+		<p id="renderAfterEndHTMLDiv">Text will be inserted in relation to this element.</p>
+    }
+}

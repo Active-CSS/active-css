@@ -28,7 +28,7 @@ Active CSS is a JavaScript plugin that adds event-driven actions to CSS.
 * **Dynamic CSS:** Include regular CSS alongside Active CSS commands, for dynamic event CSS that can additionally benefit from the delay and interval features of Active CSS. 
 * **Truly event-driven:** Active CSS is a pure event-driven programming style. It is the missing language in the browser's object-oriented programming platform that makes things quick and easy to code. Now you can add "methods" to objects directly. All DOM events and CSS selectors are supported.
 * **A framework that could end up in the browser:** Active CSS could be incorporated natively into the browser without any change to existing future specifications of HTML or CSS. It is the only easy-to-grasp framework that bridges the gaps between HTML, CSS and JavaScript to give you _truly_ higher-level scripting ability. Active CSS has the simplest and most direct method of handling events of all the frameworks, bar none.
-* **Optimized and simple by design:** Simple architecture of the core for optimal performance. Faster start-up than other frameworks. No fush. No compromise. No over-engineering.
+* **Optimized and simple by design:** Simple architecture of the core for optimal performance. Fast start-up. No fush. No compromise. No over-engineering.
 
 For best results, start building a website with no plugins or JavaScript and see how far you can get by only using HTML, CSS and Active CSS.
 
@@ -43,10 +43,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need. There are also npm versions - links on the website.
 
 The production (live) version will look like this:<br>
-activecss-2-3-0.min.js
+activecss-2-4-0.min.js
 
 The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
-activecss-dev-2-3-0.min.js
+activecss-dev-2-4-0.min.js
 
 ## Documentation
 

@@ -1,0 +1,22 @@
+#content:draw {
+	render-before-end: "<div id=\"checkFocusOnLast\" data-desc=\"Basic focus-on-last command\" class=\"coreTest\">{|checkFocusOnLastHTML}</div>";
+}
+
+@component checkFocusOnLastHTML {
+	html {
+		<form id="focusOnLastForm">
+		    <input type="text" name="focus1" value="Cheryl">
+		    <input type="text" name="focus2" value="Dave">
+		    <input type="text" name="focus3" value="Bob">
+		    <input type="text" name="focus4" value="Tracy">
+		    <input id="focusOnLastTarget" type="text" name="focus4" value="Sharon">
+		</form>
+	}
+}
+
+#checkFocusOnLast:test {
+	func: checkFocusOnLastA;
+	focus-on-last: #focusOnLastForm input;
+	func: checkFocusOnLastFinal;
+}
+

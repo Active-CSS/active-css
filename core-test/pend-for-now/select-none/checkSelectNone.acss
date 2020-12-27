@@ -1,0 +1,12 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSelectNone\" data-desc=\"Basic select-none command\" class=\"coreTest\">{|checkSelectNoneHTML}</div>";
+}
+
+@component checkSelectNoneHTML {
+	html {
+	}
+}
+
+#checkSelectNone:test {
+	func: checkSelectNone;
+}

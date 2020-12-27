@@ -1,6 +1,6 @@
 _a.TriggerReal = o => {
 	// Simulate a real event, not just a programmatical one.
-	if (!o.secSelObj.isConnected) {
+	if (!_isConnected(o.secSelObj)) {
 		// Skip it if it's no longer there and cancel all Active CSS bubbling.
 		_a.StopPropagation(o);
 		return;

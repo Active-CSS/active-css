@@ -39,7 +39,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter][secsel] = [];
 			for (thisAct in val) {
-				if (typeof val[thisAct].type === 'undefined') continue;
+				if (val[thisAct].type === undefined) continue;
 				if (secsel == '&' && val[thisAct].name == 'prevent-default') _checkPassiveState(componentName, ev);
 				compConfig[secSelCounter][secsel].push({ name: val[thisAct].name, value: val[thisAct].value, file: val[thisAct].file, line: val[thisAct].line, intID: val[thisAct].intID });
 			}
