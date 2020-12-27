@@ -4,7 +4,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if ([ '$HTML', '$HTML_ESCAPED', '$HTML_NOVARS', '$STRING', '$RAND' ].includes(wot)) return '{' + wot + '}';
+			if (wot.startsWith('$')) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;

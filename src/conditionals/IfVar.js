@@ -5,12 +5,13 @@ _c.IfVar = o => {
 	// This also takes only one parameter, in which case it is checked for evaluating to boolean true.
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl = actVal.split(' ');
+	let compareVal, varName;
 	if (spl.length == 1) {
-		// Run if-var-true.
-		return _ifVarTrue(o.actVal, o.varScope);
+		varname = actVal.trim();
+		compareVal = true;
 	} else {
-		let varName = spl.shift();	// Remove the first element from the array.
-		let compareVal = spl.join(' ')._ACSSSpaceQuoOut();
+		varName = spl.shift();	// Remove the first element from the array.
+		compareVal = spl.join(' ')._ACSSSpaceQuoOut();
 		compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
 		if (typeof compareVal !== 'boolean') {
 			if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
@@ -19,13 +20,13 @@ _c.IfVar = o => {
 				compareVal = compareVal._ACSSRepQuo();
 			}
 		}
-		let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
-		scopedVar = _resolveInnerBracketVars(scopedVar);
-		let scopedVarObj = _resolveInheritance(scopedVar);
-		let varValue = scopedVarObj.val;
-		if (varValue === undefined) {
-			varValue = window[varName];
-		}
-		return (typeof varValue == typeof compareVal && varValue == compareVal);
 	}
+	let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
+	scopedVar = _resolveInnerBracketVars(scopedVar);
+	let scopedVarObj = _resolveInheritance(scopedVar);
+	let varValue = scopedVarObj.val;
+	if (varValue === undefined) {
+		varValue = window[varName];
+	}
+	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };

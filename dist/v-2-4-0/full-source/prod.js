@@ -1528,12 +1528,13 @@ _c.IfVar = o => {
 	// This also takes only one parameter, in which case it is checked for evaluating to boolean true.
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl = actVal.split(' ');
+	let compareVal, varName;
 	if (spl.length == 1) {
-		// Run if-var-true.
-		return _ifVarTrue(o.actVal, o.varScope);
+		varname = actVal.trim();
+		compareVal = true;
 	} else {
-		let varName = spl.shift();	// Remove the first element from the array.
-		let compareVal = spl.join(' ')._ACSSSpaceQuoOut();
+		varName = spl.shift();	// Remove the first element from the array.
+		compareVal = spl.join(' ')._ACSSSpaceQuoOut();
 		compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
 		if (typeof compareVal !== 'boolean') {
 			if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
@@ -1542,15 +1543,15 @@ _c.IfVar = o => {
 				compareVal = compareVal._ACSSRepQuo();
 			}
 		}
-		let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
-		scopedVar = _resolveInnerBracketVars(scopedVar);
-		let scopedVarObj = _resolveInheritance(scopedVar);
-		let varValue = scopedVarObj.val;
-		if (varValue === undefined) {
-			varValue = window[varName];
-		}
-		return (typeof varValue == typeof compareVal && varValue == compareVal);
 	}
+	let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
+	scopedVar = _resolveInnerBracketVars(scopedVar);
+	let scopedVarObj = _resolveInheritance(scopedVar);
+	let varValue = scopedVarObj.val;
+	if (varValue === undefined) {
+		varValue = window[varName];
+	}
+	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };
 
 _c.IfVarTrue = o => {
@@ -5763,7 +5764,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if ([ '$HTML', '$HTML_ESCAPED', '$HTML_NOVARS', '$STRING', '$RAND' ].includes(wot)) return '{' + wot + '}';
+			if (wot.startsWith('$')) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -5907,7 +5908,9 @@ const _replaceStringVars = (o, str, varScope) => {
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
-					res = _get(scopedVars, scopedVar);
+					scopedVar = _resolveInnerBracketVars(scopedVar);
+					let scopedVarObj = _resolveInheritance(scopedVar);
+					res = scopedVarObj.val;
 					return res || '';
 				} else {
 					return '{' + innards + '}';
