@@ -58,7 +58,12 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
 
-	compPending[shadRef] = _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
+	let embeddedChildren = false;
+	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
+		compPending[shadRef] =  _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
+		embeddedChildren = true;
+	}
+
 	strictPrivVarScopes[evScope] = strictVars;
 
 	// Store the component name in the element itself. We don't need to be able to select with it internally, so it is just a property so we don't clutter the
@@ -124,8 +129,13 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
-	// Attach the shadow.
+	// Attach the shadow or the insides.
 	shadow.appendChild(template.content);
+
+	if (!embeddedChildren && childTree) {
+		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
+		shadowParent.insertAdjacentHTML('beforeend', childTree);
+	}
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
 		_replaceTempActiveID(obj);

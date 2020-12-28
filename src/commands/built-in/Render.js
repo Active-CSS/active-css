@@ -13,9 +13,7 @@ _a.Render = o => {
 			selfTree = copyOfSecSelObj.outerHTML;
 			o.renderPos = 'replace';
 		}
-		if (content.indexOf('{$CHILDREN}') !== -1) {
-			childTree = copyOfSecSelObj.innerHTML;
-		}
+		childTree = copyOfSecSelObj.innerHTML;
 	}
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
