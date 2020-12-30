@@ -2,6 +2,7 @@ const _prepSelector = (sel, obj, doc) => {
 	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
 	// Returns a collection of unique objects for iterating as target selectors.
 	let attrActiveID, origSel = sel;
+
 	if (sel.indexOf('&') !== -1) {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
@@ -28,6 +29,10 @@ const _prepSelector = (sel, obj, doc) => {
 			return [ window ];
 		} else if (origSel == 'body') {
 			return [ doc.body ];
+		} else if (origSel == ':root') {
+			return [ document ];
+		} else if (origSel == ':host') {
+			return [ doc ];
 		} else {
 			res = doc.querySelectorAll(sel);
 		}
