@@ -98,9 +98,15 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_debugOutput(o);	// A couple of extra objects variables are set in here, and we want them later for the feedback results (not yet implemented fully).
 	}
 
+	let cssVariableChange;
 	if (typeof _a[o.func] !== 'function') {
 		// Apply this as a CSS style if it isn't a function.
-		o.secSelObj.style[o.actName] = o.actVal;
+		if (o.func.startsWith('--')) {
+			_setCSSVariable(o);
+			cssVariableChange = true;
+		} else {
+			o.secSelObj.style[o.actName] = o.actVal;
+		}
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
@@ -117,7 +123,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
+	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
