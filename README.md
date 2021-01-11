@@ -8,7 +8,21 @@
 
 Power-up your CSS with actions! Is the CSS of the future a full-on programming language?
 
-Active CSS is a JavaScript plugin that adds event-driven actions to CSS. It acts as a front-end only tool that gives you the power of a reactive framework, but you can use whatever back-end you want.
+Active CSS is a JavaScript plugin that adds event-driven actions to CSS. It acts as a *front-end only* tool. It gives you the power of a reactive framework, but you can use whatever back-end you want. It will work will static or pre-rendered HTML files and has smart ajax SPA routing and tooling built into the front-end for ultra-fast handling of pre-rendered or HTML generated on the server. It can breathe new life into PHP, basic Node or any simple back-end driven website. It is designed to make interactivity on the front-end easier than ever before.
+
+It is not a complete solution - you still need a back-end, even if only a minimal one.
+
+Active CSS commands are *NOT* CSS commands. This is *not* a straight expansion of CSS. They live in their own file - separate to styling. Putting Active CSS into CSS files will only give you browser styling errors. They could be handled on the front-end and extracted by the Active CSS core, but it would still give you CSS errors obviously - so Active CSS commands are intentionally always kept in separate files.
+
+You won't need a computer science degree to write in Active CSS if you already know CSS, HTML and JavaScript well. It looks like CSS and the commands are modelled on JavaScript.
+
+It works dynamically with the contents of the DOM at any given time, so you can break free from the Virtual DOM and its added complexity, and help to simplify your stack. 
+
+Aren't you tired of the endless complexities involved in web development and the subsequent solutions to handle those complexities to make things simpler? Why was no one smart enough to realise things were going to inevitably get overly complex in the first place? Why not just expand on what is there already rather than getting everyone to re-learn how to "drive" a new tool or framework every few months? Hence Active CSS is ultimately designed as a solution for the browser itself and could be integrated as something separate to the rendering engine to work higher-level to JavaScript.
+
+Active CSS is not complete and there are probably bugs, but based on zero bug reports in the year since release it is either not being used much or it is pretty stable. 
+
+This is a one man project and if anyone wants to get involved then there is a discussions section on this repo.
 
 * **Easy to install and setup:** Active CSS is just a plugin. You can write your own Active CSS files or use it in inline styles, just like CSS. You can quickly download a regular JavaScript plugin for use in a script tag, or use an NPM version. No pre-processing or complicated setups - Active CSS works in runtime. The code you write in comparison to regular JavaScript is tiny, so runtime performance is practical even for a large site. You don't have to worry about performance at all. Test it in Lighthouse if you want to compare.
 * **Works with plugins out-of-the-box:** The new tinymce \<tinymce-editor>\</tinymce-editor> shadow DOM tag? Works with that. Photoswipe? Works with that. JQuery? Of course. All these amazingly crafted pieces of JS should all work with Active CSS, because Active CSS works dynamically with the DOM at any one time. Change the DOM externally? All the Active CSS events still work. It works dynamically with the DOM at any snapshot in time, just like CSS. It's a benefit of not using a virtual DOM. Just set up your events and commands. Things will just work. No mucking about with event listeners - nothing to maintain.
