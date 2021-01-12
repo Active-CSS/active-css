@@ -16,11 +16,7 @@ Active CSS commands are *NOT* CSS commands. This is *not* a straight expansion o
 
 You won't need a computer science degree to write in Active CSS if you already know CSS, HTML and JavaScript well. It looks like CSS and the commands are modelled on JavaScript.
 
-It works dynamically with the contents of the DOM at any given time, so you can break free from the Virtual DOM and its added complexity, and help to simplify your stack. 
-
-Aren't you tired of the endless complexities involved in web development and the subsequent solutions to handle those complexities to make things simpler? Why was no one smart enough to realise things were going to inevitably get overly complex in the first place? Why not just expand on what is there already rather than getting everyone to re-learn how to "drive" a new tool or framework every few months? Hence Active CSS is ultimately designed as a solution for the browser itself and could be integrated as something separate to the rendering engine to work higher-level to JavaScript.
-
-Active CSS is not complete and there are probably bugs, but based on zero bug reports in the year since release it is either not being used much or it is pretty stable. 
+It works dynamically with the contents of the DOM at any given time.
 
 This is a one man project and if anyone wants to get involved then there is a discussions section on this repo.
 
