@@ -951,7 +951,6 @@ _a.Render = o => {
 		let upperTag = o.secSelObj.tagName.toUpperCase();
 		if (customTags.includes(upperTag)) {
 			childTree = copyOfSecSelObj.innerHTML;
-console.log('_a.Render, childTree:', childTree);
 		}
 	}
 
