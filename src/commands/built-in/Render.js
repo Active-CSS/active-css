@@ -13,7 +13,9 @@ _a.Render = o => {
 			selfTree = copyOfSecSelObj.outerHTML;
 			o.renderPos = 'replace';
 		}
-		if (content.indexOf('{$CHILDREN}') !== -1) {
+		// If this is a custom component, get the child elements for use later on.
+		let upperTag = o.secSelObj.tagName.toUpperCase();
+		if (customTags.includes(upperTag)) {
 			childTree = copyOfSecSelObj.innerHTML;
 		}
 	}

@@ -118,5 +118,5 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		});
 	}
 
-	_renderCompDoms(o);
+	_renderCompDoms(o, undefined, childTree);
 };

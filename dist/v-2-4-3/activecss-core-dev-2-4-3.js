@@ -947,8 +947,11 @@ _a.Render = o => {
 			selfTree = copyOfSecSelObj.outerHTML;
 			o.renderPos = 'replace';
 		}
-		if (content.indexOf('{$CHILDREN}') !== -1) {
+		// If this is a custom component, get the child elements for use later on.
+		let upperTag = o.secSelObj.tagName.toUpperCase();
+		if (customTags.includes(upperTag)) {
 			childTree = copyOfSecSelObj.innerHTML;
+console.log('_a.Render, childTree:', childTree);
 		}
 	}
 
@@ -2810,12 +2813,12 @@ const _prepSelector = (sel, obj, doc) => {
 	return objArr;
 };
 
-const _renderCompDoms = (o, compDoc=o.doc) => {
+const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
 	// Set up any shadow DOM and scoped components so far unrendered and remove these from the pending shadow DOM and scoped array that contains the HTML to draw.
 	// Shadow DOM and scoped content strings are already fully composed with valid Active IDs at this point, they are just not drawn yet.
 	// Search for any data-acss-component tags and handle.
 	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
-		_renderCompDomsDo(o, obj);
+		_renderCompDomsDo(o, obj, childTree);
 
 		// Quick way to check if components and scoped variables are being cleaned up. Leave this here please.
 		// At any time, only the existing scoped vars and shadows should be shown.
@@ -2839,7 +2842,7 @@ const _renderCompDomsClean = varScope => {
 	}
 };
 
-const _renderCompDomsDo = (o, obj) => {
+const _renderCompDomsDo = (o, obj, childTree) => {
 	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
@@ -2898,8 +2901,6 @@ const _renderCompDomsDo = (o, obj) => {
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
-
-	let childTree = shadowParent.innerHTML;
 
 	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
@@ -3153,7 +3154,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		});
 	}
 
-	_renderCompDoms(o);
+	_renderCompDoms(o, undefined, childTree);
 };
 
 const _renderRefElements = (str, htmlStr, refType) => {
