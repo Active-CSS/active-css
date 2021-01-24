@@ -1,4 +1,4 @@
-const _renderCompDoms = (o, compDoc=o.doc, childTree=null) => {
+const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
 	// Set up any shadow DOM and scoped components so far unrendered and remove these from the pending shadow DOM and scoped array that contains the HTML to draw.
 	// Shadow DOM and scoped content strings are already fully composed with valid Active IDs at this point, they are just not drawn yet.
 	// Search for any data-acss-component tags and handle.

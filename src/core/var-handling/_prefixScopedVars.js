@@ -8,7 +8,7 @@ const _prefixScopedVars = function(str, varScope=null) {
 	*/
 	let mapObj = {}, mapObj2 = {}, scopedVar, varEval;
 
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.]+)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
 		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
 		if (wot.indexOf('.') !== -1) {

@@ -2126,6 +2126,9 @@ function checkVar(o, pars) {
 	_shouldBe(checkVarEl, 'varTestBooleanDigitNegative', pars[4], -20);
 	_shouldBe(checkVarEl, 'varTestEvaluatedNumber', pars[5], 8);
 
+console.log('par 7', pars[7]);
+console.log('par 8:', pars[8]);
+
 	// This syntax isn't supported yet - there's a ticket on it:
 	// https://github.com/Active-CSS/active-css/issues/34
 

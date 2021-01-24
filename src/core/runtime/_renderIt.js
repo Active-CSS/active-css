@@ -59,7 +59,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	}
 
 	// Handle any reference to {$CHILDREN} that need to be dealt with with these child elements before any components get rendered.
-	if (childTree != '' && content.indexOf('{$CHILDREN}') !== -1) content = _renderRefElements(content, childTree, 'CHILDREN');
+	if (childTree != '') content = _renderRefElements(content, childTree, 'CHILDREN');
 
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
 	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');

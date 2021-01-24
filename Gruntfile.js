@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.4.2',
-			fileVersion: '2-4-2',
+			realVersion: '2.4.3',
+			fileVersion: '2-4-3',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -152,6 +152,7 @@
 //		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser', 'karma' ]);
 
 		// Comment out if you don't want Karma testing in order to speed up dev process. Always put it back before a final commit and ensure all tests work.
+		// Ensure karma.conf.js is using the correct core to test! ie. const activeCSSVersion = '2-4-3';
 		grunt.registerTask('default', ['concat', 'jshint', 'terser', 'karma' ]);
 //		grunt.registerTask('default', ['concat', 'jshint', 'terser' ]);
 	};

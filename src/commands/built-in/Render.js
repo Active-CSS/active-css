@@ -13,7 +13,11 @@ _a.Render = o => {
 			selfTree = copyOfSecSelObj.outerHTML;
 			o.renderPos = 'replace';
 		}
-		childTree = copyOfSecSelObj.innerHTML;
+		// If this is a custom component, get the child elements for use later on.
+		let upperTag = o.secSelObj.tagName.toUpperCase();
+		if (customTags.includes(upperTag)) {
+			childTree = copyOfSecSelObj.innerHTML;
+		}
 	}
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.

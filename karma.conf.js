@@ -6,6 +6,7 @@
 		export CHROME_BIN=/usr/bin/chromium-browser
 		export FIREFOX_BIN=/usr/bin/firefox
 		Store these permanently in ~/.profile or however you do it.
+		Install karma globally, so "karma start" can just run the tests on their own (npm install -g karma-cli).
 	3) Other browsers that could be used for unit testing are not easily available on linux, or are not available in headless mode. May be worth seeing if it's practical
 		to use something like browserstack with karma at some point.
 	4) PhantomJS does not support ES6 or shadow DOM, so it isn't used for testing.
@@ -13,7 +14,7 @@
 
 module.exports = function(config) {
 	/* Core version */
-	const activeCSSVersion = '2-4-0';
+	const activeCSSVersion = '2-4-3';
 
 	/* Core files (comment as required) */
 	const activeCSSProduction = 'dist/v-' + activeCSSVersion + '/activecss-' + activeCSSVersion + '.min.js';
@@ -25,6 +26,10 @@ module.exports = function(config) {
 //	const activeCSSFile = activeCSSCoreDev;
 
 	config.set({
+		// Continuous Integration mode
+		// if true, Karma captures browsers, runs the tests and exits
+		singleRun: true,
+
 		// base path that will be used to resolve all patterns (eg. files, exclude)
 		basePath: '',
 
@@ -84,6 +89,8 @@ module.exports = function(config) {
 		// Before ready to commit, unless you have a fast server it might be worth just using this one and commenting the other browsers out.
 		browsers: ['ChromeHeadless'],
 
+		browserNoActivityTimeout: 15000,
+
 		customLaunchers: {
 			'FirefoxHeadless': {
 				base: 'Firefox',
@@ -92,10 +99,6 @@ module.exports = function(config) {
 				]
 			}
 		},
-
-		// Continuous Integration mode
-		// if true, Karma captures browsers, runs the tests and exits
-		singleRun: true,
 
 		// Concurrency level
 		// how many browser should be started simultaneous

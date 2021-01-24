@@ -143,7 +143,6 @@ body:init {
 	func: checkBlurFinal;
 }
 
-
 #content:draw {
 	render-before-end: "<div id=\"checkCancelTimer\" data-desc=\"Basic cancel-timer command\" class=\"coreTest\">{|checkCancelTimerHTML}</div>";
 }
@@ -1618,21 +1617,31 @@ create-element-tag:connectedCallback {
 
 @component checkVarHTML {
 	&:componentOpen {
-		var: varTestString "Hi, \"dude\".",
+		var: varTestArray [],
+			varTestArrayAssign '',
+			varTestString "Hi, \"dude\".",
 			varTestBooleanTrue true,
 			varTestBooleanFalse false,
 			varTestBooleanDigitPositive 10,
 			varTestBooleanDigitNegative -20,
 			varTestEvaluatedNumber 1 * 2 + 6,
-			window.varTestWinVar "hello"	/* not yet supported - leave this here for the moment - an issue has been created for it. */
+			window.varTestWinVar "hello", /* not yet supported - leave this here for the moment - an issue has been created for it. */
+			varTestArray['test1'] 'cheese',
+			varTestArray['array'] [],
+			varTestArray['array']['subAssign'] 'dave',
+			varTestArrayAssign varTestArray['array']['subAssign']
 		;
+		console-log: {varTestArray};
+		console-log: {varTestArrayAssign};
 		func: checkVar "{varTestString}"
 			{varTestBooleanTrue}
 			{varTestBooleanFalse}
 			{varTestBooleanDigitPositive}
 			{varTestBooleanDigitNegative}
 			{varTestEvaluatedNumber}
-			"{window.varTestWinVar}"	/* not yet supported - leave this here for the moment - an issue has been created for it. */
+			"{window.varTestWinVar}" /* not yet supported - leave this here for the moment - an issue has been created for it. */
+			{varTestArray}
+			{varTestArrayAssign}
 		;
 	}
 	html {

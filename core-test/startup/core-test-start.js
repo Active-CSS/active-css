@@ -33,7 +33,7 @@ describe('Set up core to test', function() {
 	// Each div on the page (in the document scope) that has a wrapper class of "coreTest" is a wrapper for a test, whether html is actually used for the test or not.
 	// We are going to check for an expected div class of "success" in each of these wrapping divs on the page.
 	// If the class is not there, the test fails with a message to say which test failed.
-  	it('should verify the results from the Active CSS tests', function(done) {
+  	it('should verify the results from the Active CSS integration tests', function(done) {
   		// Wait for a bit until the tests are complete.
 		setTimeout(function() {
 			// Get the required data about the elements on the page.
