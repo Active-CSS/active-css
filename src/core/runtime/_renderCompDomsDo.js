@@ -1,4 +1,4 @@
-const _renderCompDomsDo = (o, obj, childTree) => {
+const _renderCompDomsDo = (o, obj) => {
 	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
@@ -57,6 +57,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
+
+	let childTree = shadowParent.innerHTML;
 
 	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {

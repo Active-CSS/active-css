@@ -143,7 +143,6 @@ body:init {
 	func: checkBlurFinal;
 }
 
-
 #content:draw {
 	render-before-end: "<div id=\"checkCancelTimer\" data-desc=\"Basic cancel-timer command\" class=\"coreTest\">{|checkCancelTimerHTML}</div>";
 }
