@@ -2843,6 +2843,11 @@ const _renderCompDomsDo = (o, obj) => {
 	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
+
+	let childTree = shadowParent.innerHTML;
+
+console.log('_renderCompDomsDo, shadowParent:', shadowParent, ', childTree:', childTree);
+
 	parentCompDetails = _componentDetails(shadowParent);
 
 	shadRef = obj.getAttribute('data-ref');
@@ -2898,8 +2903,6 @@ const _renderCompDomsDo = (o, obj) => {
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
-
-	let childTree = shadowParent.innerHTML;
 
 	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
@@ -2977,6 +2980,9 @@ const _renderCompDomsDo = (o, obj) => {
 
 	if (!embeddedChildren && childTree) {
 		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
+
+console.log('_renderCompDomsDo, reattaching childTree:', childTree);
+
 		shadowParent.insertAdjacentHTML('beforeend', childTree);
 	}
 
@@ -4701,15 +4707,6 @@ const _escapeItem = (str='', varName=null) => {
 	return div.innerHTML;
 };
 
-const _getObjFromDots = (obj, i) => {
-	if (obj[i] === undefined) {	// could be empty, which is fine.
-		// Display sane error for debugging. Not sure what level of debug this should go in, so leave it for now.
-		// Var may not be there though, which could be totally valid.
-		return '';
-	}
-	return obj[i];
-};
-
 /*
  * 	Observable Slim
  *	Version 0.1.5
@@ -5436,7 +5433,7 @@ const _prefixScopedVars = function(str, varScope=null) {
 	*/
 	let mapObj = {}, mapObj2 = {}, scopedVar, varEval;
 
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.]+)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
 		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
 		if (wot.indexOf('.') !== -1) {
@@ -6066,12 +6063,6 @@ const _resolveInnerBracketVars = str => {
 		});
 	}
 	return str;
-};
-
-const _resolvePath = (path, obj=self, separator='.') => {
-	var properties = Array.isArray(path) ? path : path.split(separator);
-	properties.reduce((prev, curr) => prev && prev[curr], obj);
-	return obj;
 };
 
 const _setCSSVariable = o => {
