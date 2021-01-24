@@ -2843,11 +2843,6 @@ const _renderCompDomsDo = (o, obj) => {
 	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
-
-	let childTree = shadowParent.innerHTML;
-
-console.log('_renderCompDomsDo, shadowParent:', shadowParent, ', childTree:', childTree);
-
 	parentCompDetails = _componentDetails(shadowParent);
 
 	shadRef = obj.getAttribute('data-ref');
@@ -2903,6 +2898,8 @@ console.log('_renderCompDomsDo, shadowParent:', shadowParent, ', childTree:', ch
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
 	compPrivEvs[evScope] = privateEvents;
+
+	let childTree = shadowParent.innerHTML;
 
 	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
@@ -2980,9 +2977,6 @@ console.log('_renderCompDomsDo, shadowParent:', shadowParent, ', childTree:', ch
 
 	if (!embeddedChildren && childTree) {
 		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
-
-console.log('_renderCompDomsDo, reattaching childTree:', childTree);
-
 		shadowParent.insertAdjacentHTML('beforeend', childTree);
 	}
 
