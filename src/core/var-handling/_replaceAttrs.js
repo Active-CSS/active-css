@@ -15,14 +15,17 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 		sel = _replaceJSExpression(sel, null, null, varScope);
 	}
 	if (sel.indexOf('{@') !== -1) {
-		sel = sel.replace(/\{\@([^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
+		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
+			let getProperty = false;
+			if (wot.startsWith('@')) {
+				getProperty = true;
+				wot = wot.substr(1);
+			}
 			let wotArr = wot.split('.'), ret, err = [];
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
-				ret = obj.options[obj.selectedIndex].getAttribute(wotArr[1]);
-				if (ret) return _escapeItem(ret);
-				ret = obj.options[obj.selectedIndex][wotArr[1]];
-				if (ret) return _escapeItem(ret);
+				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex);
+				if (ret) return ret;
 				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
@@ -48,26 +51,18 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 						// We can't rely on the src of the iframe element being accurate, as it is not always updated.
 						return _escapeItem(el.contentWindow.location.href);
 					} else {
-						ret = el.getAttribute(wat);
-						if (ret) return _escapeItem(ret);
-						ret = el[wat];
-						if (ret) return _escapeItem(ret);
+						ret = _getAttrOrProp(el, wat, getProperty);
+						if (ret) return ret;
 						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
 					}
 				} else {
 					if (obj && typeof obj !== 'string') {
 						if (secSelObj) {
-							// Check the target selector first.
-							ret = secSelObj.getAttribute(wot);
-							if (ret) return _escapeItem(ret);
-							ret = secSelObj[wot];
-							if (ret) return _escapeItem(ret);
+							ret = _getAttrOrProp(secSelObj, wot, getProperty);
+							if (ret) return ret;
 						}
-						// Check the primary selector next.
-						ret = obj.getAttribute(wot);
-						if (ret) return _escapeItem(ret);
-						ret = obj[wot];
-						if (ret) return _escapeItem(ret);
+						ret = _getAttrOrProp(obj, wot, getProperty);
+						if (ret) return ret;
 						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
 					}
 				}
