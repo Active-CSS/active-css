@@ -108,6 +108,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
 			delete compParents[change.currentPath];
+			delete strictCompPrivEvs[change.currentPath];
 			delete compPrivEvs[change.currentPath];
 			delete varMap[change.currentPath];
 			delete varStyleMap[change.currentPath];

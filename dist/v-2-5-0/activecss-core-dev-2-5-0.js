@@ -97,6 +97,7 @@
 		compCount = 0,
 		compPending = {},
 		compParents = [],
+		strictCompPrivEvs = [],
 		compPrivEvs = [],
 		privVarScopes = [],
 		strictPrivVarScopes = [],
@@ -1703,6 +1704,7 @@ const _checkScopeForEv = (evScope) => {
 			topVarScope: parentComponentDetails.varScope,
 			evScope: parentComponentDetails.evScope,
 			component: ((parentComponentDetails.component) ? '|' + parentComponentDetails.component : null),
+			strictPrivateEvs: parentComponentDetails.strictPrivateEvs,
 			privateEvs: parentComponentDetails.privateEvs
 		};
 	}
@@ -1774,7 +1776,7 @@ const _handleEvents = evObj => {
 	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
 
 	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
-	let componentRefs = { compDoc, topVarScope, evScope, component, privateEvs: compPrivEvs[evScope] };
+	let componentRefs = { compDoc, topVarScope, evScope, component, strictPrivateEvs: strictCompPrivEvs[evScope], privateEvs: compPrivEvs[evScope] };
 	let initialComponentRefs = componentRefs;
 
 	let runGlobalScopeEvents = true;
@@ -1826,7 +1828,7 @@ const _handleEvents = evObj => {
 					}
 				}
 			}
-			if (!componentRefs.privateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
 				componentRefs = _checkScopeForEv(componentRefs.evScope);
 				if (componentRefs !== false) continue;
 			} else {
@@ -2842,7 +2844,7 @@ const _renderCompDomsClean = varScope => {
 };
 
 const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -2850,6 +2852,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	shadRef = obj.getAttribute('data-ref');
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
@@ -2899,6 +2902,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
+	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
 	let embeddedChildren = false;
@@ -2914,6 +2918,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// that point so we don't need to search for it.
 	shadowParent._acssComponent = componentName;
 	shadowParent._acssVarScope = varScopeToPassIn;
+	shadowParent._acssStrictPrivEvs = strictlyPrivateEvents;
 	shadowParent._acssPrivEvs = privateEvents;
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
@@ -2957,7 +2962,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		// The shadow is the top level doc.
 		shadowParent._acssTopEvDoc = shadow;
-	} else if (privateEvents) {
+	} else if (privateEvents || strictlyPrivateEvents) {
 		// The parent is the top level doc.
 		shadowParent._acssTopEvDoc = shadowParent;
 	} else if (parentCompDetails.topEvDoc) {
@@ -2984,7 +2989,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		_replaceTempActiveID(obj);
 	});
 
-	let docToPass = (isShadow || privateEvents) ? shadow : o.doc;
+	let docToPass = (isShadow || strictlyPrivateEvents || privateEvents) ? shadow : o.doc;
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
@@ -3940,26 +3945,30 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							components[compName].mode = null;
 							components[compName].shadow = false;
 							components[compName].scoped = false;
-							components[compName].privEvs = false;
 							components[compName].strictVars = false;
+							components[compName].strictPrivEvs = false;
+							components[compName].privVars = false;
+							components[compName].privEvs = false;
 							let checkStr = strTrimmed + ' ';
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 							}
-							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
+							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
 								components[compName].scoped = true;
-							} else if (checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
+							} else if (checkStr.indexOf(' privateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privVars = true;
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
 								components[compName].scoped = true;
 							}
-							if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {	// "private" is deprecated as of v2.4.0
+							if (checkStr.indexOf(' strictlyPrivateEvents ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
+								components[compName].strictPrivEvs = true;
+							} else if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privEvs = true;
 							}
 						}
@@ -6205,6 +6214,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
 			delete compParents[change.currentPath];
+			delete strictCompPrivEvs[change.currentPath];
 			delete compPrivEvs[change.currentPath];
 			delete varMap[change.currentPath];
 			delete varStyleMap[change.currentPath];
@@ -7543,6 +7553,7 @@ const _getComponentDetails = rootNode => {
 			compDoc: rootNode,
 			varScope: rootNodeHost._acssVarScope,
 			evScope: rootNodeHost._acssEvScope,
+			strictPrivateEvs: rootNodeHost._acssStrictPrivEvs,
 			privateEvs: rootNodeHost._acssPrivEvs,
 			strictVars: rootNodeHost._acssStrictVars,
 			topEvDoc: rootNodeHost._acssTopEvDoc
@@ -7554,6 +7565,7 @@ const _getComponentDetails = rootNode => {
 			compDoc: null,
 			varScope: null,
 			evScope: null,
+			strictPrivateEvs: null,
 			privateEvs: null,
 			strictVars: null,
 			topEvDoc: null

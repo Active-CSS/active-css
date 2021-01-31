@@ -14,7 +14,7 @@ const _handleEvents = evObj => {
 	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
 
 	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
-	let componentRefs = { compDoc, topVarScope, evScope, component, privateEvs: compPrivEvs[evScope] };
+	let componentRefs = { compDoc, topVarScope, evScope, component, strictPrivateEvs: strictCompPrivEvs[evScope], privateEvs: compPrivEvs[evScope] };
 	let initialComponentRefs = componentRefs;
 
 	let runGlobalScopeEvents = true;
@@ -66,7 +66,7 @@ const _handleEvents = evObj => {
 					}
 				}
 			}
-			if (!componentRefs.privateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
 				componentRefs = _checkScopeForEv(componentRefs.evScope);
 				if (componentRefs !== false) continue;
 			} else {

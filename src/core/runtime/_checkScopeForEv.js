@@ -7,6 +7,7 @@ const _checkScopeForEv = (evScope) => {
 			topVarScope: parentComponentDetails.varScope,
 			evScope: parentComponentDetails.evScope,
 			component: ((parentComponentDetails.component) ? '|' + parentComponentDetails.component : null),
+			strictPrivateEvs: parentComponentDetails.strictPrivateEvs,
 			privateEvs: parentComponentDetails.privateEvs
 		};
 	}

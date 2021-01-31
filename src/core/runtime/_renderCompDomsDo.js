@@ -1,5 +1,5 @@
 const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -7,6 +7,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	shadRef = obj.getAttribute('data-ref');
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
@@ -56,6 +57,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
+	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
 	let embeddedChildren = false;
@@ -71,6 +73,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// that point so we don't need to search for it.
 	shadowParent._acssComponent = componentName;
 	shadowParent._acssVarScope = varScopeToPassIn;
+	shadowParent._acssStrictPrivEvs = strictlyPrivateEvents;
 	shadowParent._acssPrivEvs = privateEvents;
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
@@ -114,7 +117,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		// The shadow is the top level doc.
 		shadowParent._acssTopEvDoc = shadow;
-	} else if (privateEvents) {
+	} else if (privateEvents || strictlyPrivateEvents) {
 		// The parent is the top level doc.
 		shadowParent._acssTopEvDoc = shadowParent;
 	} else if (parentCompDetails.topEvDoc) {
@@ -141,7 +144,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		_replaceTempActiveID(obj);
 	});
 
-	let docToPass = (isShadow || privateEvents) ? shadow : o.doc;
+	let docToPass = (isShadow || strictlyPrivateEvents || privateEvents) ? shadow : o.doc;
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {

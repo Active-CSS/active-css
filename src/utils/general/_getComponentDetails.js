@@ -11,6 +11,7 @@ const _getComponentDetails = rootNode => {
 			compDoc: rootNode,
 			varScope: rootNodeHost._acssVarScope,
 			evScope: rootNodeHost._acssEvScope,
+			strictPrivateEvs: rootNodeHost._acssStrictPrivEvs,
 			privateEvs: rootNodeHost._acssPrivEvs,
 			strictVars: rootNodeHost._acssStrictVars,
 			topEvDoc: rootNodeHost._acssTopEvDoc
@@ -22,6 +23,7 @@ const _getComponentDetails = rootNode => {
 			compDoc: null,
 			varScope: null,
 			evScope: null,
+			strictPrivateEvs: null,
 			privateEvs: null,
 			strictVars: null,
 			topEvDoc: null

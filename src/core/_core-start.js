@@ -97,6 +97,7 @@
 		compCount = 0,
 		compPending = {},
 		compParents = [],
+		strictCompPrivEvs = [],
 		compPrivEvs = [],
 		privVarScopes = [],
 		strictPrivVarScopes = [],
