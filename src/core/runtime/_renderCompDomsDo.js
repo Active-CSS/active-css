@@ -118,7 +118,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// The shadow is the top level doc.
 		shadowParent._acssTopEvDoc = shadow;
 	} else if (privateEvents || strictlyPrivateEvents) {
-		// The parent is the top level doc.
+		// The parent is the top level doc when running events inside the component.
 		shadowParent._acssTopEvDoc = shadowParent;
 	} else if (parentCompDetails.topEvDoc) {
 		// Set the top level event scope for this component for quick reference.
@@ -127,7 +127,15 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// The document is the top level doc.
 		shadowParent._acssTopEvDoc = document;
 	}
-
+	// For private events, but only when running inherited events, the top level doc is parentCompDetails.topEvDoc.
+	// I think there could be more to this - like the main focus should be on the target selector.
+	if (privateEvents) {
+		if (parentCompDetails.topEvDoc) {
+			shadowParent._acssInheritEvDoc = parentCompDetails.topEvDoc;
+		} else {
+			shadowParent._acssInheritEvDoc = document;
+		}
+	}
 	shadowDoms[varScope] = shadow;
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();

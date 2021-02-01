@@ -1,5 +1,5 @@
 const _performSecSel = (loopObj) => {
-	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, origO, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
 	let compDoc = loopObj.compDoc || document;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 
@@ -45,6 +45,7 @@ const _performSecSel = (loopObj) => {
 						evScope,
 						evObj,
 						otherObj,
+						origO,
 						passCond,
 						sel,
 						component,
@@ -66,7 +67,7 @@ const _performSecSel = (loopObj) => {
 					doc = compDoc;
 					passTargSel = targetSelector;
 				} else {
-					targs = _splitIframeEls(targetSelector, { obj, compDoc });
+					targs = _splitIframeEls(targetSelector, { obj, component, primSel, origO, compDoc });
 					if (!targs) continue;	// invalid target.
 					doc = targs[0];
 					passTargSel = targs[1];
@@ -113,6 +114,7 @@ const _performSecSel = (loopObj) => {
 							evScope,
 							evObj,
 							otherObj,
+							origO,
 							passCond,
 							sel,
 							component,

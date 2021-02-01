@@ -14,7 +14,8 @@ const _getComponentDetails = rootNode => {
 			strictPrivateEvs: rootNodeHost._acssStrictPrivEvs,
 			privateEvs: rootNodeHost._acssPrivEvs,
 			strictVars: rootNodeHost._acssStrictVars,
-			topEvDoc: rootNodeHost._acssTopEvDoc
+			topEvDoc: rootNodeHost._acssTopEvDoc,
+			inheritEvDoc: rootNodeHost._acssInheritEvDoc
 //			compHost: rootNodeHost._acssHost
 		};
 	} else {
@@ -26,7 +27,8 @@ const _getComponentDetails = rootNode => {
 			strictPrivateEvs: null,
 			privateEvs: null,
 			strictVars: null,
-			topEvDoc: null
+			topEvDoc: null,
+			inheritEvDoc: null
 //			compHost: null
 		};
 	}

@@ -319,7 +319,11 @@ _a.Clone = o => {
 };
 
 _a.ConsoleLog = o => {
-	console.log(o.actVal._ACSSRepQuo());
+	if (o.actVal == 'target') {	// mainly here for core debugging purposes.
+		console.log(o);
+	} else {
+		console.log(o.actVal._ACSSRepQuo());
+	}
 };
 
 _a.CopyToClipboard = o => {
@@ -1260,7 +1264,7 @@ _a.ToggleClass = o => {
 _a.Trigger = o => {
 	if (typeof o.secSel == 'string' && o.secSel.substr(0, 1) == '~') {
 		// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-		_handleEvents({ obj: o.secSel, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.secSel, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
 		// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
 		// Is this a draw event? If so, we also want to run all draw events for elements within.
@@ -1268,10 +1272,10 @@ _a.Trigger = o => {
 			_runInnerEvent(o, null, 'draw');
 		} else if (o.secSel == 'body' || o.secSel == 'window') {
 			// Run any events on the body, followed by the window.
-			_handleEvents({ obj: 'body', evType: o.actVal });
-			_handleEvents({ obj: 'window', evType: o.actVal });
+			_handleEvents({ obj: 'body', evType: o.actVal, origO: o });
+			_handleEvents({ obj: 'window', evType: o.actVal, origO: o });
 		} else {
-			_handleEvents({ obj: o.secSelObj, evType: o.actVal, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.secSelObj, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		}
 	}
 };
@@ -1761,7 +1765,7 @@ const _handleClickOutside = (el, e) => {
 };
 
 const _handleEvents = evObj => {
-	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
 	let varScope, thisDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
@@ -1876,7 +1880,7 @@ const _handleEvents = evObj => {
 	// All conditionals for a full event must be run *before* all actions, otherwise we end up with confusing changes within the same event which makes
 	// setting conditionals inconsistent. Like checking if a div is red, then setting it to green, then checking if a div is green and setting it to red.
 	// Having conditionals dynamically checked before each run of actions means the actions cancel out. So therein lies confusion. So all conditionals
-	// must be for a specific event on a selector *before* all actions. We get two "for" loops, but I don't see an alternative right now.
+	// must run for a specific event on a selector *before* all actions start.
 	for (sel = 0; sel < selectorListLen; sel++) {
 		let primSel = selectorList[sel].primSel;
 		let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
@@ -1914,6 +1918,7 @@ const _handleEvents = evObj => {
 						let secSelLoops, loopObj;
 						for (secSelLoops in chilsObj) {
 							loopObj = {
+								primSel,
 								chilsObj,
 								originalLoops: secSelLoops,
 								secSelLoops,
@@ -1924,6 +1929,7 @@ const _handleEvents = evObj => {
 								evScope,
 								evObj,
 								otherObj,
+								origO,
 								passCond,
 								sel,
 								component,
@@ -2572,7 +2578,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 };
 
 const _performSecSel = (loopObj) => {
-	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, origO, passCond, sel, component, primSel, eve, loopVars, _maEvCo, runButElNotThere} = loopObj;
 	let compDoc = loopObj.compDoc || document;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 
@@ -2618,6 +2624,7 @@ const _performSecSel = (loopObj) => {
 						evScope,
 						evObj,
 						otherObj,
+						origO,
 						passCond,
 						sel,
 						component,
@@ -2639,7 +2646,7 @@ const _performSecSel = (loopObj) => {
 					doc = compDoc;
 					passTargSel = targetSelector;
 				} else {
-					targs = _splitIframeEls(targetSelector, { obj, compDoc });
+					targs = _splitIframeEls(targetSelector, { obj, component, primSel, origO, compDoc });
 					if (!targs) continue;	// invalid target.
 					doc = targs[0];
 					passTargSel = targs[1];
@@ -2686,6 +2693,7 @@ const _performSecSel = (loopObj) => {
 							evScope,
 							evObj,
 							otherObj,
+							origO,
 							passCond,
 							sel,
 							component,
@@ -2963,7 +2971,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// The shadow is the top level doc.
 		shadowParent._acssTopEvDoc = shadow;
 	} else if (privateEvents || strictlyPrivateEvents) {
-		// The parent is the top level doc.
+		// The parent is the top level doc when running events inside the component.
 		shadowParent._acssTopEvDoc = shadowParent;
 	} else if (parentCompDetails.topEvDoc) {
 		// Set the top level event scope for this component for quick reference.
@@ -2972,7 +2980,15 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// The document is the top level doc.
 		shadowParent._acssTopEvDoc = document;
 	}
-
+	// For private events, but only when running inherited events, the top level doc is parentCompDetails.topEvDoc.
+	// I think there could be more to this - like the main focus should be on the target selector.
+	if (privateEvents) {
+		if (parentCompDetails.topEvDoc) {
+			shadowParent._acssInheritEvDoc = parentCompDetails.topEvDoc;
+		} else {
+			shadowParent._acssInheritEvDoc = document;
+		}
+	}
 	shadowDoms[varScope] = shadow;
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
@@ -3468,6 +3484,13 @@ const _splitIframeEls = (sel, o) => {
 		if (doc && doc.nodeType !== Node.DOCUMENT_NODE) {
 			let compDetails = _getComponentDetails(doc);
 			doc = compDetails.topEvDoc;
+			if (compDetails.inheritEvDoc) {
+				let checkPrimSel = (o.primSel && o.primSel.startsWith('~') && o.origO && o.origO.primSel) ? o.origO.primSel : o.primSel;
+				if (!o.component || !checkPrimSel || checkPrimSel.indexOf('|' + o.component + ':') === -1) {
+					doc = compDetails.inheritEvDoc;
+				}
+			}
+
 		}
 	}
 	return [doc, targSel, iframeID];
@@ -6880,7 +6903,8 @@ const _getComponentDetails = rootNode => {
 			strictPrivateEvs: rootNodeHost._acssStrictPrivEvs,
 			privateEvs: rootNodeHost._acssPrivEvs,
 			strictVars: rootNodeHost._acssStrictVars,
-			topEvDoc: rootNodeHost._acssTopEvDoc
+			topEvDoc: rootNodeHost._acssTopEvDoc,
+			inheritEvDoc: rootNodeHost._acssInheritEvDoc
 //			compHost: rootNodeHost._acssHost
 		};
 	} else {
@@ -6892,7 +6916,8 @@ const _getComponentDetails = rootNode => {
 			strictPrivateEvs: null,
 			privateEvs: null,
 			strictVars: null,
-			topEvDoc: null
+			topEvDoc: null,
+			inheritEvDoc: null
 //			compHost: null
 		};
 	}

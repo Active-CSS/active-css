@@ -1,5 +1,5 @@
 const _handleEvents = evObj => {
-	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
 	let varScope, thisDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
@@ -114,7 +114,7 @@ const _handleEvents = evObj => {
 	// All conditionals for a full event must be run *before* all actions, otherwise we end up with confusing changes within the same event which makes
 	// setting conditionals inconsistent. Like checking if a div is red, then setting it to green, then checking if a div is green and setting it to red.
 	// Having conditionals dynamically checked before each run of actions means the actions cancel out. So therein lies confusion. So all conditionals
-	// must be for a specific event on a selector *before* all actions. We get two "for" loops, but I don't see an alternative right now.
+	// must run for a specific event on a selector *before* all actions start.
 	for (sel = 0; sel < selectorListLen; sel++) {
 		let primSel = selectorList[sel].primSel;
 		let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
@@ -152,6 +152,7 @@ const _handleEvents = evObj => {
 						let secSelLoops, loopObj;
 						for (secSelLoops in chilsObj) {
 							loopObj = {
+								primSel,
 								chilsObj,
 								originalLoops: secSelLoops,
 								secSelLoops,
@@ -162,6 +163,7 @@ const _handleEvents = evObj => {
 								evScope,
 								evObj,
 								otherObj,
+								origO,
 								passCond,
 								sel,
 								component,
