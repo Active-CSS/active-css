@@ -9,7 +9,9 @@ const _handleClickOutside = (el, e) => {
 			clickOutsideObj = idMap[cid];
 			if (clickOutsideObj && !clickOutsideObj.contains(el)) {
 				// This is outside.
-				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', eve: e, otherObj: el })) {	// clickoutside sends the target also.
+				// Get the component, scope, etc. for this element if there is component.
+				let compDetails = _componentDetails(clickOutsideObj);
+				if (_handleEvents({ obj: clickOutsideObj, evType: 'clickoutside', eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, otherObj: el })) {	// clickoutside sends the target also.
 					if (!clickOutsideSels[cid][1]) {
 						// This is a blocking click outside, so cancel any further actions.
 						return false;
