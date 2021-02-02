@@ -539,11 +539,15 @@ _a.FocusOff = o => { _a.Blur(o); };
 _a.FocusOn = o => { _focusOn(o); };
 
 const _focusOn = (o, wot, justObj=false) => {
-	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl;
+	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl, endOfField = false;
 	// For previousCycle and nextCycle, as well as a selector, it also takes in the following parameters:
 	// 2, 3 - this says how far to go forward or back.
 	// click - clicks on the item
 	let val = o.actVal;
+	if (val.indexOf(' end-of-field') !== -1) {
+		endOfField = true;
+		val = val.replace(/ end-of-field/, '');
+	}
 	if (wot == 'pcc' || wot == 'ncc') {
 		if (val.indexOf(' click') !== -1) {
 			doClick = true;
@@ -621,7 +625,12 @@ const _focusOn = (o, wot, justObj=false) => {
 		if (o.func.substr(0, 5) == 'Click') {
 			ActiveCSS.trigger(targEl, 'click');
 		} else {
-			el.focus();
+			if (endOfField && _isTextField(el)) {
+				// Position cursor at end of line.
+				_placeCaretAtEnd(el);
+			} else {
+				el.focus();
+			}
 		}
 	}
 	return targEl;
@@ -7160,6 +7169,15 @@ const _isInlineLoaded = nod => {
 	return configBox.find(item => item.file === fullFile);
 };
 
+const _isTextField = el => {
+	let tagName = el.tagName;
+	if (tagName == 'TEXTAREA') return true;
+	if (tagName != 'INPUT') return false;
+	if (!el.hasAttribute('type')) return true;
+	return (['TEXT', 'PASSWORD', 'NUMBER', 'EMAIL', 'TEL', 'URL', 'SEARCH', 'DATE', 'DATETIME', 'DATETIME-LOCAL', 'TIME', 'MONTH', 'WEEK'].
+		indexOf(el.getAttribute('type')) !== -1);
+};
+
 const _mimicReset = e => {
 	var key, obj, prop;
 	for (key in e.target.cjsReset) {
@@ -7195,6 +7213,16 @@ const _outDebug = (showErrs, errs) => {
 			console.log(err);
 		}
 	}
+};
+
+const _placeCaretAtEnd = el => {
+	// Assumes el is already in focus. Only works with input fields for the moment.
+	if (el.selectionStart || el.selectionStart === 0) {
+		el.selectionStart = el.value.length;
+		el.selectionEnd = el.value.length;
+		el.blur();
+	}
+	el.focus();
 };
 
 // Solution courtesy of https://github.com/cosmicanant/recursive-diff

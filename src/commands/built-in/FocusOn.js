@@ -1,11 +1,15 @@
 _a.FocusOn = o => { _focusOn(o); };
 
 const _focusOn = (o, wot, justObj=false) => {
-	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl;
+	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl, endOfField = false;
 	// For previousCycle and nextCycle, as well as a selector, it also takes in the following parameters:
 	// 2, 3 - this says how far to go forward or back.
 	// click - clicks on the item
 	let val = o.actVal;
+	if (val.indexOf(' end-of-field') !== -1) {
+		endOfField = true;
+		val = val.replace(/ end-of-field/, '');
+	}
 	if (wot == 'pcc' || wot == 'ncc') {
 		if (val.indexOf(' click') !== -1) {
 			doClick = true;
@@ -83,7 +87,12 @@ const _focusOn = (o, wot, justObj=false) => {
 		if (o.func.substr(0, 5) == 'Click') {
 			ActiveCSS.trigger(targEl, 'click');
 		} else {
-			el.focus();
+			if (endOfField && _isTextField(el)) {
+				// Position cursor at end of line.
+				_placeCaretAtEnd(el);
+			} else {
+				el.focus();
+			}
 		}
 	}
 	return targEl;
