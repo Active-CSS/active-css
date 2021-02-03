@@ -13,6 +13,7 @@ const _performSecSel = (loopObj) => {
 	} else {
 		varScope = (evObj.varScope) ? evObj.varScope : null;
 	}
+	let inheritedScope = compDoc._acssInheritEvDoc;
 
 	// Get the selectors this event is going to apply to.
 	let secSelCounter, targetSelector, targs, doc, passTargSel, meMap = [ '&', 'self', 'this' ], activeTrackObj = '', m, n, tmpSecondaryFunc, actionValue;
@@ -51,6 +52,7 @@ const _performSecSel = (loopObj) => {
 						component,
 						primSel,
 						eve,
+						inheritedScope,
 						_maEvCo,
 						_taEvCo: targetEventCounter,
 						loopVars,
@@ -61,6 +63,12 @@ const _performSecSel = (loopObj) => {
 
 					continue;
 				}
+
+				// Does the compDoc still exist? If not, if there is different scoped event root use that. Needed for privateEvents inheritance after component removal.
+				if (inheritedScope && !compDoc.isConnected) {
+					compDoc = inheritedScope;
+				}
+
 				// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
 				if (evType == 'disconnectedCallback' && meMap.includes(targetSelector)) {
 					// The element won't be there. Just run the event anyway.
@@ -83,7 +91,9 @@ const _performSecSel = (loopObj) => {
 				if (meMap.includes(passTargSel)) {
 					// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
 					// It won't work unless we can identify it later and have it selectable as a string.
-					if (typeof obj == 'string') {	// passed in as a string - skip it, this is already a string selector.
+					if (primSel.indexOf('~') !== -1) {
+						passTargSel = primSel;
+					} else if (typeof obj == 'string') {	// passed in as a string - skip it, this is already a string selector.
 						passTargSel = obj;
 					} else {
 						activeTrackObj = _getActiveID(obj);
@@ -120,6 +130,7 @@ const _performSecSel = (loopObj) => {
 							component,
 							primSel,
 							eve,
+							inheritedScope,
 							_maEvCo,
 							_taEvCo: targetEventCounter,
 							loopVars,
@@ -149,6 +160,7 @@ const _performSecSel = (loopObj) => {
 						doc,
 						ajaxObj: otherObj,
 						e: eve,
+						inheritedScope,
 						_maEvCo,
 						_taEvCo: targetEventCounter,
 						passCond: passCond,
