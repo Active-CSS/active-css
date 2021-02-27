@@ -47,7 +47,9 @@ const _startMainListen = () => {
 	// Get and set the page we are starting on.
 	currentPage = location.pathname;
 
-	// Set up listening for changes to scoped variables.
-	scopedVars = _observableSlim.create(scoped, true, ActiveCSS._varUpdateDom);
+	// Bring in any session or local storage variables before we start observing for variable changes.
+	_restoreStorage();
 
+	// Set up listening for changes to scoped variables.
+	scopedProxy = _observableSlim.create(scopedOrig, true, ActiveCSS._varUpdateDom);	// batch changes.
 };

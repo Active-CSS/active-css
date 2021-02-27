@@ -39,7 +39,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
 							el = obj;
 						} else if (!o || !oEvIsCompOpen) {
-							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
+							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
 							el = obj.shadowRoot;
 						}
 					} else {
@@ -74,5 +74,5 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	sel = _replaceStringVars(o, sel, varScope);
 	// Replace regular scoped variables with their content, and if content-based put internal wrappers around the bound variables so they can be formatted later.
 	// We can only do this after attributes have been substituted, in order to handle variable binding in an attribute that also has an attribute substituted.
-	return _replaceScopedVars(sel, secSelObj, func, o, null, null, varScope);
+	return (['Var', 'VarDelete'].indexOf(func) === -1) ? _replaceScopedVars(sel, secSelObj, func, o, null, null, varScope) : sel;
 };

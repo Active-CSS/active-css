@@ -17,19 +17,23 @@ const _handleLoop = (loopObj) => {
 			// There is more than one left-hand assignment.
 			leftVars = leftVar.split(',');
 		}
+
 		let rightVar = originalLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let thisScope = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
-		let rightVarReal = thisScope + rightVar;
 
-		let rightVarVal;
+		let rightVarVal, rightVarReal;
 		if (existingLoopVars[rightVar] !== undefined) {
-			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
+			let scoped = _getScopedVar(existingLoopVars[rightVar], varScope);
+			rightVarReal = scoped.name;
+			rightVarVal = scoped.val;
 			// We need the real variable reference, so reassign rightVar.
 			rightVar = existingLoopVars[rightVar];
 		} else {
-			rightVarVal = _get(scopedVars, rightVarReal);
+			let scoped = _getScopedVar(rightVar, varScope);
+			rightVarReal = scoped.name;
+			rightVarVal = scoped.val;
 		}
+
 		if (rightVarVal === undefined) {
 			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
 			return;
@@ -40,7 +44,7 @@ const _handleLoop = (loopObj) => {
 		// We do this by reading and replacing the remainder of this particular object with the correct values.
 		// We keep the original object, and make copies for use in _performSecSel as we do the following looping.
 		let newRef, loopObj2, i, j, key, val;
-		if (Array.isArray(rightVarVal)) {
+		if (isArray(rightVarVal)) {
 			// Get the rightVar for real and loop over it.
 			let rightVarValLen = rightVarVal.length;
 			for (i = 0; i < rightVarVal.length; i++) {

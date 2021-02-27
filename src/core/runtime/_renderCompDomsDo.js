@@ -35,8 +35,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
-	if (scopedVars[varScope] === undefined) {
-		scopedVars[varScope] = {};
+	if (scopedProxy[varScope] === undefined) {
+		scopedProxy[varScope] = {};
 	}
 
 	evScope = varScope;		// This needs to be per component for finding event per component when looping.

@@ -22,6 +22,10 @@ _a.Func = o => {
 			} else {
 				// Unconvert all spaces within double quotes back to what they were. Remove any surrounding double quotes, as it will go as a string anyway.
 				par = par._ACSSSpaceQuoOut()._ACSSRepQuo();
+				let checkIfVar = _getScopedVar(par, o.varScope);
+				if (checkIfVar.val !== undefined) {
+					par = checkIfVar.val;
+				}
 			}
 			pars.push(par);
 		}

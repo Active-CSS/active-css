@@ -3,7 +3,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
 			if (wot.startsWith('$')) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
@@ -34,27 +34,15 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 			} else {
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
-				wot = wot.replace(/\[[\'\"]?/g, '.').replace(/[\'\"]?\]/g, '');
-				// Evaluate the JavaScript expression.
-				if (wot.indexOf('.') !== -1) {
-					// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
-					// This is separated from the main regex as we will be adding further scoping options later on, and so it will easier to keep this separate.
-					let firstVar = wot.split('.')[0];
-					// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use "scopedVars", but do a handling for that anyway.
-					if (firstVar == 'window') return wot;
-					if (firstVar == 'scopedVars') {
-						wot = wot.replace(/^scopedVars\./, '');
-					}
-				}
-				// Prefix with sub-scope (main or _VarScope).
-				wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
-				wot = _resolveInnerBracketVars(wot);
-				let scopedVarObj = _resolveInheritance(wot);
-				res = scopedVarObj.val;
+				let scoped = _getScopedVar(wot, varScope);
+				// Return the wot if it's a window variable.
+				if (scoped.winVar === true) return wot;
+				res = scoped.val;
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
-				realWot = wot;
+				realWot = scoped.name;
 			}
+
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
@@ -67,7 +55,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					retLT = (walker) ? '_cj_s_lt_' : '<!--';
 					retGT = (walker) ? '_cj_s_gt_' : '-->';
 				}
-				return retLT + 'active-var-' + realWot + retGT + res + retLT + '/active-var' + retGT;
+				let placeHolder = _varChangeToDots(realWot);
+				return retLT + 'active-var-' + placeHolder + retGT + res + retLT + '/active-var' + retGT;
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {

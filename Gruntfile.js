@@ -30,6 +30,7 @@
 						'src/utils/dom-basic/*.js',
 						'src/utils/file-handling/*.js',
 						'src/utils/general/*.js',
+						'src/utils/lodash/*.js',
 						'src/utils/prototypes/*.js',
 						'src/core/_core-end.js'	// This goes last, always.
 					],
@@ -49,6 +50,7 @@
 						'src/utils/dom-basic/*.js',
 						'src/utils/file-handling/*.js',
 						'src/utils/general/*.js',
+						'src/utils/lodash/*.js',
 						'src/utils/prototypes/*.js',
 						'src/core/_core-end.js'
 					],

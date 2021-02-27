@@ -1,27 +1,31 @@
-const _resolveInnerBracketVars = str => {
-	// Takes a scoped variable string and replaces the variables within brackets into true values.
+const _resolveInnerBracketVars = (str, scope) => {
+	// Takes a scoped variable string and replaces the variables within brackets.
 	// Used in the var command so it can work with _set in the correct scope.
+	let newStr = str;
 
 	if (str.indexOf('[') !== -1) {
-		str = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/gm, function(_, innerVariable) {
+		newStr = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/g, function(_, innerVariable) {
 			// Is this a scoped variable?
+			if (_resolvable(innerVariable)) return '[' + innerVariable + ']';	// Do not resolve variable or content found that has not already been defined.
 			let res;
-			if (innerVariable.substr(0, 11) == 'scopedVars.') {
-				// Sort out if the left-hand var is an inherited variable or not.
-				innerVariable = innerVariable.substr(11);
-				let scopedVarObj = _resolveInheritance(innerVariable);
-				res = scopedVarObj.val;
-			} else if (innerVariable.substr(0, 7) == 'window.') {
-				// Remove the window prefix.
-				innerVariable = innerVariable.substr(7);
-				// Get the variable value - should always be a string or a number.
-				res = _get(window, innerVariable);
+			let scoped = _getScopedVar(innerVariable, scope);
+			if (typeof scoped.val === 'string') {
+				// Return the value in quotes.
+				res = '"' + scoped.val + '"';
+			} else if (typeof scoped.val === 'number') {
+				// Return the value as it is.
+				res = scoped.val;
+			} else if (typeof scoped.val !== 'undefined') {
+				// Return the fully scoped name.
+				res = scoped.fullName;
 			} else {
-				// Variable should be whatever was found.
+				// Variable should be whatever was found as it isn't recognised as a variable.
 				res = innerVariable;
 			}
+
 			return '[' + res + ']';
 		});
 	}
-	return str;
+
+	return newStr;
 };

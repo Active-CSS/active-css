@@ -1,7 +1,11 @@
 _a.ConsoleLog = o => {
-	if (o.actVal == 'target') {	// mainly here for core debugging purposes.
-		console.log(o);
+	let wot;
+	if (o.actVal == 'target') {
+		wot = o;
+	} else if (o.actVal == 'variables') {
+		wot = scopedProxy;
 	} else {
-		console.log(o.actVal._ACSSRepQuo());
+		wot = o.actVal._ACSSRepQuo();
 	}
+	console.log(wot);
 };

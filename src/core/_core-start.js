@@ -30,9 +30,29 @@
 		'"': '_ACSS_later_double_quote'
 	};
 
-	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
 	const SELFREGEX = /\{\$SELF\}/g;
+
+	// Lodash vars for _get & _set. These are all vars in the original source.
+	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
+		reIsPlainProp = /^\w*$/,
+		rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
+		INFINITY = 1 / 0,
+		MAX_SAFE_INTEGER = 9007199254740991,
+		reIsUint = /^(?:0|[1-9]\d*)$/,
+		reEscapeChar = /\\(\\)?/g,
+		isArray = Array.isArray,
+		objectProto = Object.prototype,
+		defineProperty = (function() {
+			try {
+				var func = _getNative(Object, 'defineProperty');
+				func({}, '', {});
+				return func;
+			} catch (e) {}
+		}()),
+		CLONE_DEEP_FLAG = 1;
+	var hasOwnProperty = objectProto.hasOwnProperty;
 
 	window.ActiveCSS = {};
 
@@ -83,13 +103,13 @@
 		evEditorActive = false,
 		devtoolsInit = [],
 		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
-		scoped = {},
+		scopedOrig = {},
 		// This is actually a proxy, but used as the variable manipulator in the core. It is simpler just to call it the main variable as we never reference
 		// the vars direct.
-		scopedVars = null,
+		scopedProxy = null,
 		// This is a map to information about the proxy variable. This is updated when variables are rendered, and stores location data to be updated
 		// when the proxy target is modified.
-		scopedData = {},
+		scopedData = [],
 		labelData = [],
 		labelByIDs = [],
 		customTags = [],
@@ -128,7 +148,10 @@
 		inlineRefArr = [],
 		inlineIDArr = [],
 		inIframe = (window.location !== window.parent.location),
-		htmlRawMap = [];
+		htmlRawMap = [],
+		sessionStoreVars = [],
+		localStoreVars = [],
+		resolvableVars = [];
 
 	ActiveCSS.customHTMLElements = {};
 

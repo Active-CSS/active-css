@@ -9,7 +9,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
 		// At any time, only the existing scoped vars and shadows should be shown.
 //		console.log('Current shadow DOMs', shadowDoms);
 //		console.log('scopedData:', scopedData);
-//		console.log('scopedVars:', scopedVars);
+//		console.log('scopedProxy:', scopedProxy);
 //		console.log('actualDoms:', actualDoms);
 //		console.log('compParents:', compParents);
 	});

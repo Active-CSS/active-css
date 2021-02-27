@@ -86,12 +86,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Is this a non-delayed action, if so, we can skip the cancel check.
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
-	if (o.func == 'Var') {
+	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+	} else {
+		o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 	}
-
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -110,9 +110,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
-		o.vars = scopedVars[compScope];
+		o.vars = scopedProxy[compScope];
 		// Run the function.
-		_a[o.func](o, scopedVars, privVarScopes);
+		_a[o.func](o, scopedProxy, privVarScopes);
 	}
 
 	if (!o.interval && delayActiveID) {

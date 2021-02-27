@@ -30,9 +30,29 @@
 		'"': '_ACSS_later_double_quote'
 	};
 
-	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
+	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
 	const SELFREGEX = /\{\$SELF\}/g;
+
+	// Lodash vars for _get & _set. These are all vars in the original source.
+	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
+		reIsPlainProp = /^\w*$/,
+		rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
+		INFINITY = 1 / 0,
+		MAX_SAFE_INTEGER = 9007199254740991,
+		reIsUint = /^(?:0|[1-9]\d*)$/,
+		reEscapeChar = /\\(\\)?/g,
+		isArray = Array.isArray,
+		objectProto = Object.prototype,
+		defineProperty = (function() {
+			try {
+				var func = _getNative(Object, 'defineProperty');
+				func({}, '', {});
+				return func;
+			} catch (e) {}
+		}()),
+		CLONE_DEEP_FLAG = 1;
+	var hasOwnProperty = objectProto.hasOwnProperty;
 
 	window.ActiveCSS = {};
 
@@ -83,13 +103,13 @@
 		evEditorActive = false,
 		devtoolsInit = [],
 		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
-		scoped = {},
+		scopedOrig = {},
 		// This is actually a proxy, but used as the variable manipulator in the core. It is simpler just to call it the main variable as we never reference
 		// the vars direct.
-		scopedVars = null,
+		scopedProxy = null,
 		// This is a map to information about the proxy variable. This is updated when variables are rendered, and stores location data to be updated
 		// when the proxy target is modified.
-		scopedData = {},
+		scopedData = [],
 		labelData = [],
 		labelByIDs = [],
 		customTags = [],
@@ -128,7 +148,10 @@
 		inlineRefArr = [],
 		inlineIDArr = [],
 		inIframe = (window.location !== window.parent.location),
-		htmlRawMap = [];
+		htmlRawMap = [],
+		sessionStoreVars = [],
+		localStoreVars = [],
+		resolvableVars = [];
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -319,11 +342,15 @@ _a.Clone = o => {
 };
 
 _a.ConsoleLog = o => {
-	if (o.actVal == 'target') {	// mainly here for core debugging purposes.
-		console.log(o);
+	let wot;
+	if (o.actVal == 'target') {
+		wot = o;
+	} else if (o.actVal == 'variables') {
+		wot = scopedProxy;
 	} else {
-		console.log(o.actVal._ACSSRepQuo());
+		wot = o.actVal._ACSSRepQuo();
 	}
+	console.log(wot);
 };
 
 _a.CopyToClipboard = o => {
@@ -389,13 +416,13 @@ _a.CreateCommand = o => {
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
 		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
-		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
+		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
 	// It would be nice to have it recreated on a realtime edit in the extension. This would need to be set up in the extension area to detect and remove
 	// the function if it is edited, but that code has no place in here.
-	_a[funcName] = new Function('o', 'scopedVars', 'privVarScopes', funcContent);		// jshint ignore:line
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', funcContent);		// jshint ignore:line
 };
 
 _a.CreateConditional = o => {
@@ -424,13 +451,13 @@ _a.CreateConditional = o => {
 		'compDoc = o.compDoc,' + 
 		'carriedEventObject = o.ajaxObj,' +
 		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
-		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
+		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
 		funcContent;
 	// Its primary purpose is to create a command, which is a low-level activity.
 	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
 	// It would be nice to have it recreated on a realtime edit in the Elements extension. This would need to be set up in the extension area to detect and remove
 	// the function if it is edited, but that code has no place in here.
-	_c[funcName] = new Function('o', 'scopedVars', 'privVarScopes', funcContent);		// jshint ignore:line
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', funcContent);		// jshint ignore:line
 };
 
 _a.CreateElement = o => {
@@ -702,6 +729,10 @@ _a.Func = o => {
 			} else {
 				// Unconvert all spaces within double quotes back to what they were. Remove any surrounding double quotes, as it will go as a string anyway.
 				par = par._ACSSSpaceQuoOut()._ACSSRepQuo();
+				let checkIfVar = _getScopedVar(par, o.varScope);
+				if (checkIfVar.val !== undefined) {
+					par = checkIfVar.val;
+				}
 			}
 			pars.push(par);
 		}
@@ -1017,9 +1048,9 @@ _a.Run = o => {
 		return inn;
 	});
 	let _activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
-	scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];
+	scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];
 	try {
-		Function('scopedVars, _activeVarScope', funky)(scopedVars, _activeVarScope);		// jshint ignore:line
+		Function('scopedProxy, _activeVarScope', funky)(scopedProxy, _activeVarScope);		// jshint ignore:line
 	} catch (err) {
 		console.log('Function syntax error (' + err + '): ' + funky);
 	}
@@ -1319,12 +1350,32 @@ _a.UrlChange = o => {
 };
 
 _a.Var = o => {
+	let locStorage, sessStorage;	//, newActVal = o.actVal.trim();
+
+//console.log('_a.Var, before o.actVal:', o.actVal);
+
+//	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, 'noAttrs', o.varScope).trim();
+	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+
+//console.log('_a.Var, after o.actVal:', newActVal);
+
+	if (newActVal.endsWith(' session-storage')) {
+		sessStorage = true;
+		newActVal = newActVal.substr(0, newActVal.length - 16);
+	} else if (newActVal.endsWith(' local-storage')) {
+		locStorage = true;
+		newActVal = newActVal.substr(0, newActVal.length - 14);
+	}
+
 	// Get the name of the variable on the left.
-	let arr = o.actVal.trim().split(' ');
-	let varName = arr.shift();
+
+// this isn't going to work with var: arr["a 12"] {}
+
+	let arr = newActVal.trim()._ACSSSpaceQuoIn().split(' ');
+	let varName = arr.shift()._ACSSSpaceQuoOut();
 
 	// Get the expression on the right.
-	let varDetails = arr.join(' ');
+	let varDetails = arr.join(' ')._ACSSSpaceQuoOut();
 
 	if (!varDetails) {
 		// A right-hand expression is needed, unless it a ++ or a -- operator is being used.
@@ -1340,54 +1391,115 @@ _a.Var = o => {
 		}
 	}
 
+	// Now check the varname before the "." or the "[" to see if it is the session or local storage reference arrays.
+	let storeCheck = varName;
+	let storeCheckDot = varName.indexOf('.');
+	let storeCheckBrack = varName.indexOf('[');
+	if (storeCheckDot !== -1) {
+		storeCheck = varName.substr(0, storeCheckDot);
+	} else if (storeCheckBrack !== -1) {
+		storeCheck = varName.substr(0, storeCheckBrack);
+	}
+
 	// Add in correct scoped variable locations.
-	varName = _prefixScopedVars(varName, o.varScope, 'varname');
+	if (sessStorage || sessionStoreVars[storeCheck] === true) {
+		sessionStoreVars[storeCheck] = true;
+		varName = 'scopedProxy.session.' + varName;
+	} else if (locStorage || localStoreVars[storeCheck] === true) {
+		localStoreVars[storeCheck] = true;
+		varName = 'scopedProxy.local.' + varName;
+	}
+
+//console.log('_a.Var, before varName:', varName);
+
+	varName = _resolveInnerBracketVars(varName, o.varScope);	// done in getScopedVar but needs to be done before prefix...
+	varName = _prefixScopedVars(varName, o.varScope);
+
+//console.log('_a.Var, after varName:', varName);
+
+	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
+
+//console.log('_a.Var, 1 varDetails:', varDetails);
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
 	if (varName.startsWith('window.')) {
 		// Leave it as it is - it's a variable in the window scope.
 		isWindowVar = true;
+		scopedVar = varName.substr(7);
+
+//console.log('******************* window scopedVar:', scopedVar);
+
+//		scopedVar = _resolveInnerBracketVars(scopedVar);
+	} else if (varName.startsWith('scopedProxy.')) {
 		scopedVar = varName;
-		scopedVar = _resolveInnerBracketVars(scopedVar);
-	} else if (varName.startsWith('scopedVars.')) {
-		scopedVar = varName;
+		scopedVar = scopedVar.replace('scopedProxy.', '');	// We don't want the first part of the left-hand variable to contain "scopedProxy." any more.
 	} else {
-		scopedVar = varName;
-		let prefix = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
-		scopedVar = scopedVar.replace('scopedVars.' + prefix + '.', '');	// We don't want the first part of the left-hand variable to contain "scopedVars.".
-		scopedVar = prefix + '.' + scopedVar;
-		scopedVar = _resolveInnerBracketVars(scopedVar);
-		// Sort out if the left-hand var is an inherited variable or not.
-		let scopedVarObj = _resolveInheritance(scopedVar);
-		scopedVar = scopedVarObj.name;
-		// Note: That may look weird, but it needs to do the above in order to correctly handle initially undefined variables that will not get the prefix from
-		// _prefixScopedVars() the first time the var command is run, because the left-hand variable is undefined.
-		// Only a defined variable gets the scoped prefix when _prefixScopedVars() is run on it.
-		// So we have to do the above to ensure the prefix is there the first time the var is declared.
+		let scoped = _getScopedVar(varName, o.varScope);
+		scopedVar = scoped.name;
 	}
-	scopedVar = scopedVar.replace('scopedVars.', '');	// We don't want the first part of the left-hand variable to contain "scopedVars.".
+
+	// Resolve attributes. Put in something to disallow html attributes otherwise there could be a problem with injection.
+//	varDetails = _replaceAttrs(o.obj, varDetails, o.secSelObj, o, o.func, o.varScope);
 
 	// Resolve inner bracket variables (only) with their true values on the left-hand of the equation now that they are scoped.
 	varDetails = _replaceHTMLVars(o, varDetails);
 
-	// Place the expression into the correct format for evaluating. The expression must contain "scopedVars." as a prefix where it is needed.
+//console.log('_a.Var, 2 varDetails:', varDetails);
+
+	// Resolve any attributes in the right-hand side.
+//	varDetails = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, '_inVarFunc', o.varScope);
+
+	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
+
+
+
+
+
+// Scoping object value references to variables doesn't work yet, like { key: varThatNeedsScoping }
+
+
+
+
+
+
+
+
+
+
+//console.log('_a.Var, 3 varDetails:', varDetails);
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
+
+//console.log('_a.Var, 4 expr:', expr);
 
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.
 //		console.log('_a.Var, set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(window, scopedVar, expr);
+
+//console.log(_set(window, scopedVar, expr));
+
 	} else {
 		// Active CSS component/document scopes.
 //		console.log('_a.Var, set ' + scopedVar + ' = ', expr);		// handy - don't remove
-		_set(scopedVars, scopedVar, expr);
+		_set(scopedProxy, scopedVar, expr);
+		_allowResolve(scopedVar);
 	}
+
+//console.log('_a.Var, resolvableVars:', resolvableVars);
+
+};
+
+_a.VarDelete = o => {
+	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+	let scoped = _getScopedVar(newActVal, o.varScope);
+	let mainScope = (scoped.winVar) ? window : scopedProxy;
+	_unset(mainScope, scoped.name);
 };
 
 ActiveCSS.first = sel => { return _focusOn({ actVal: sel }, null, true); };				//	First selector in list
@@ -1449,6 +1561,11 @@ _c.IfCookieEquals = o =>  {
 
 _c.IfCookieExists = o => {
 	return _cookieExists(o.actVal);
+};
+
+_c.IfDefined = o => {
+	let scoped = _getScopedVar(o.actVal, o.varScope);
+	return (typeof scoped.val !== 'undefined');
 };
 
 _c.IfDisplay = o => {
@@ -1544,31 +1661,23 @@ _c.IfVar = o => {
 	// First parameter is the variable name.
 	// Second parameter is a string, number or boolean. Any JavaScript expression ({= ... =} clauses) has already been evaluated.
 	// This also takes only one parameter, in which case it is checked for evaluating to boolean true.
+
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl = actVal.split(' ');
 	let compareVal, varName;
-	if (spl.length == 1) {
-		varname = actVal.trim();
-		compareVal = true;
-	} else {
-		varName = spl.shift();	// Remove the first element from the array.
-		compareVal = spl.join(' ')._ACSSSpaceQuoOut();
-		compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
-		if (typeof compareVal !== 'boolean') {
-			if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-				compareVal = Number(compareVal._ACSSRepQuo());
-			} else {
-				compareVal = compareVal._ACSSRepQuo();
-			}
+	varName = spl.shift();	// Remove the first element from the array.
+	compareVal = spl.join(' ')._ACSSSpaceQuoOut();
+	compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
+	if (typeof compareVal !== 'boolean') {
+		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
+			compareVal = Number(compareVal._ACSSRepQuo());
+		} else {
+			compareVal = compareVal._ACSSRepQuo();
 		}
 	}
-	let scopedVar = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main') + '.' + varName;
-	scopedVar = _resolveInnerBracketVars(scopedVar);
-	let scopedVarObj = _resolveInheritance(scopedVar);
-	let varValue = scopedVarObj.val;
-	if (varValue === undefined) {
-		varValue = window[varName];
-	}
+	let scoped = _getScopedVar(varName, o.varScope);
+	let varValue = scoped.val;
+
 	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };
 
@@ -2050,12 +2159,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Is this a non-delayed action, if so, we can skip the cancel check.
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
-	if (o.func == 'Var') {
+	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+	} else {
+		o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 	}
-
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -2074,9 +2183,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
-		o.vars = scopedVars[compScope];
+		o.vars = scopedProxy[compScope];
 		// Run the function.
-		_a[o.func](o, scopedVars, privVarScopes);
+		_a[o.func](o, scopedProxy, privVarScopes);
 	}
 
 	if (!o.interval && delayActiveID) {
@@ -2113,19 +2222,23 @@ const _handleLoop = (loopObj) => {
 			// There is more than one left-hand assignment.
 			leftVars = leftVar.split(',');
 		}
+
 		let rightVar = originalLoops.substr(inPos + 4);
 		// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
-		let thisScope = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
-		let rightVarReal = thisScope + rightVar;
 
-		let rightVarVal;
+		let rightVarVal, rightVarReal;
 		if (existingLoopVars[rightVar] !== undefined) {
-			rightVarVal = _get(scopedVars, thisScope + existingLoopVars[rightVar]);
+			let scoped = _getScopedVar(existingLoopVars[rightVar], varScope);
+			rightVarReal = scoped.name;
+			rightVarVal = scoped.val;
 			// We need the real variable reference, so reassign rightVar.
 			rightVar = existingLoopVars[rightVar];
 		} else {
-			rightVarVal = _get(scopedVars, rightVarReal);
+			let scoped = _getScopedVar(rightVar, varScope);
+			rightVarReal = scoped.name;
+			rightVarVal = scoped.val;
 		}
+
 		if (rightVarVal === undefined) {
 			console.log('Active CSS error: ' + rightVarReal + ' is not defined - skipping loop.');
 			return;
@@ -2136,7 +2249,7 @@ const _handleLoop = (loopObj) => {
 		// We do this by reading and replacing the remainder of this particular object with the correct values.
 		// We keep the original object, and make copies for use in _performSecSel as we do the following looping.
 		let newRef, loopObj2, i, j, key, val;
-		if (Array.isArray(rightVarVal)) {
+		if (isArray(rightVarVal)) {
 			// Get the rightVar for real and loop over it.
 			let rightVarValLen = rightVarVal.length;
 			for (i = 0; i < rightVarVal.length; i++) {
@@ -2193,8 +2306,8 @@ const _handleVarsInJS = function(str) {
 	 * before evaluation. A bit like the PHP "global" command, except in this case we are not declaring global variables. We are limiting all variables to the
 	 * scope of Active CSS. All the ease of global variables, but they are actually contained within Active CSS and not available outside Active CSS. Global variables can still
 	 * be used by using window['blah']. But private variables to Active CSS is, and should always be, the default.
-	 * 1. Names of variables get substituted with reference to the scopedVars container variable for the scoped variables, which is private to the Active CSS IIFE.
-	 *		This is literally just an insertion of "scopedVars." before any matching variable name.
+	 * 1. Names of variables get substituted with reference to the scopedProxy container variable for the scoped variables, which is private to the Active CSS IIFE.
+	 *		This is literally just an insertion of "scopedProxy." before any matching variable name.
 	 * 2. Variables enclosed in curlies get substituted with the value of the variable itself. This would be for rendered contents.
 	 * Note: This could be optimised to be faster - there's bound to be some ES6 compatible regex magic that will do the job better than this.
 	*/
@@ -2210,7 +2323,7 @@ const _handleVarsInJS = function(str) {
 		for (thisVar of listArr) {
 			thisVar = thisVar.trim();
 			mapObj[negLook + '(' + thisVar + ')' + negLook] = '';
-			mapObj2[thisVar] = 'scopedVars[_activeVarScope].' + thisVar;
+			mapObj2[thisVar] = 'scopedProxy[_activeVarScope].' + thisVar;
 		}
 		return '';	// Return an empty line - the vars line was Active CSS syntax, not native JavaScript.
 	});
@@ -2225,9 +2338,9 @@ const _handleVarsInJS = function(str) {
 		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2);
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// There's probably a faster way of doing this, but my regex brain isn't totally switched on today. Help if you can!
-		// Just want to remove any /scopedVars\[_activeVarScope\]\./ anywhere in single or double quotes catering for escaped quotes.
+		// Just want to remove any /scopedProxy\[_activeVarScope\]\./ anywhere in single or double quotes catering for escaped quotes.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedVars\[_activeVarScope\]\./g, '');
+			return innards.replace(/scopedProxy\[_activeVarScope\]\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");
@@ -2428,7 +2541,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 						'compDoc': compDoc,
 						'varScope': varScope
 					};
-					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
+					if (_c[func](cObj, scopedProxy, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}
@@ -2487,7 +2600,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 							'component': component,
 							'compDoc': compDoc,
 							'varScope': varScope
-						}, scopedVars, privVarScopes) !== actionBoolState) {
+						}, scopedProxy, privVarScopes) !== actionBoolState) {
 							return false;	// Barf out immediately if it fails a condition.
 						}
 					}
@@ -2531,7 +2644,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Put any commas in brackets back.
 		newActVal = newActVal.replace(/_ACSStmpcomma_/g, ',');
 	}
-	if (o.func == 'Var') {
+	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value is a JavaScript expression, but not in {= =}, to make it quicker to type.
 		newActVal = ActiveCSS._sortOutFlowEscapeChars(newActVal);
 		// Now escape any commas inside any kind of brackets.
@@ -2856,7 +2969,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
 		// At any time, only the existing scoped vars and shadows should be shown.
 //		console.log('Current shadow DOMs', shadowDoms);
 //		console.log('scopedData:', scopedData);
-//		console.log('scopedVars:', scopedVars);
+//		console.log('scopedProxy:', scopedProxy);
 //		console.log('actualDoms:', actualDoms);
 //		console.log('compParents:', compParents);
 	});
@@ -2869,7 +2982,7 @@ const _renderCompDomsClean = varScope => {
 	for ([shadTmp, shadObj] of Object.entries(shadowDoms)) {
 		if (!shadObj.isConnected) {
 			// Delete any variables scoped to this shadow. This will also trigger the deletion of the shadow from the shadowDoms object in _varUpdateDom.
-			delete scopedVars[shadTmp];
+			delete scopedProxy[shadTmp];
 		}
 	}
 };
@@ -2911,8 +3024,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
-	if (scopedVars[varScope] === undefined) {
-		scopedVars[varScope] = {};
+	if (scopedProxy[varScope] === undefined) {
+		scopedProxy[varScope] = {};
 	}
 
 	evScope = varScope;		// This needs to be per component for finding event per component when looping.
@@ -3824,7 +3937,7 @@ const _isFromFile = (fileToRemove, configPart) => {
 	} else {
 		for (i = 0; i < configPartLen; i++) {
 			item = configPart[i];
-			if (Array.isArray(item)) {
+			if (isArray(item)) {
 				if (_isFromFile(fileToRemove, item)) {
 					return true;
 				}
@@ -4275,11 +4388,11 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\[\]]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\' \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
@@ -4291,7 +4404,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
@@ -4299,7 +4412,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_hash_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\$\[\]]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\. \$\[\]]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
@@ -4602,9 +4715,11 @@ const _startMainListen = () => {
 	// Get and set the page we are starting on.
 	currentPage = location.pathname;
 
-	// Set up listening for changes to scoped variables.
-	scopedVars = _observableSlim.create(scoped, true, ActiveCSS._varUpdateDom);
+	// Bring in any session or local storage variables before we start observing for variable changes.
+	_restoreStorage();
 
+	// Set up listening for changes to scoped variables.
+	scopedProxy = _observableSlim.create(scopedOrig, true, ActiveCSS._varUpdateDom);	// batch changes.
 };
 
 const _wrapUpStart = () => {
@@ -4622,6 +4737,14 @@ const _wrapUpStart = () => {
 
 		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
 		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
+
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			characterData: true,
+			childList: true,
+			subtree: true
+		});
 
 		// Handle any developer initialization events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
@@ -4641,14 +4764,6 @@ const _wrapUpStart = () => {
 			window.history.replaceState(url, document.title, url);
 		}
 		setupEnded = true;
-
-		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
-		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
-		elementObserver.observe(document.body, {
-			characterData: true,
-			childList: true,
-			subtree: true
-		});
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 
@@ -4737,14 +4852,26 @@ const _addScopedAttr = (wot, o, originalStr, walker, scopeRef) => {
 	let cid = _addScopedCID(wot, o.secSelObj, scopeRef);
 	let attrName = o.actVal.split(' ')[0];
 	let str = (!walker) ? originalStr.substr(originalStr.indexOf(' ') + 1)._ACSSRepQuo() : originalStr;
-	_set(scopedData, wot + '.attrs[' + cid + '][' + attrName + ']', { orig: str, scopeRef });
+	_set(scopedData, wot + '.attrs["' + cid + '"]["' + attrName + '"]', { orig: str, scopeRef });
 };
 
 // Store the rendered location for quick DOM lookup when state changes. We need this for both content and attribute rendering.
 const _addScopedCID = (wot, obj, scopeRef) => {
 	let cid = _getActiveID(obj);
-	_set(scopedData, wot + '.cids[' + cid + ']', { cid, scopeRef } );
+	if (typeof _get(scopedData, wot) === 'undefined') {
+		_set(scopedData, wot, []);
+	}
 	return cid;
+};
+
+/* Takes the base name of a fully scoped variable and sets it as allowable to be resolved for evaluating the inner brackets of variables. */
+const _allowResolve = fullVar => {
+	if (fullVar.startsWith('window.')) return;	// Don't bother remembering window variables, they will always be resolved.
+	// Any scopedProxy reference has been stripped off, so remove the base scope (main., _1., session., etc.) and store the base variable name before any dot or bracket.
+	let scopedVar = fullVar.substr(fullVar.indexOf('.') + 1);
+	let baseVar = _getBaseVar(scopedVar);
+	// Add the resolvable variable to the list if it isn't there already.
+	if (resolvableVars.indexOf(baseVar) === -1) resolvableVars[baseVar] = true;
 };
 
 const _escapeItem = (str='', varName=null) => {
@@ -4754,6 +4881,61 @@ const _escapeItem = (str='', varName=null) => {
 	div.textContent = ('' + str).replace(/\{\=|\=\}/gm, '');
 	// Remove possibility of JavaScript evaluation later on in a random place.
 	return div.innerHTML;
+};
+
+const _getBaseVar = str => {
+	let dotPos = str.indexOf('.');
+	let bracketPos = str.indexOf('[');
+	if (dotPos !== -1 && dotPos < bracketPos) {
+		// Handle a dot appearing earlier than a bracket.
+		return str.substr(0, dotPos);
+	} else if (bracketPos !== -1) {
+		// Handle a bracket which is now before a dot.
+		return str.substr(0, bracketPos);
+	} else {
+		// Take the whole thing - there is no dot or bracket.
+		return str;
+	}
+};
+
+const _getScopedVar = (nam, scope) => {
+	// Accepts any variable type, scoped or not. Returns an object containing full scope name (fullName), name (name) and value (val).
+	// If variable is already scoped, it assumes that inheritance has already been sorted out.
+	let fullName, scopeName, val, pathName, scopingDone, winVar = false;
+
+//console.log('_getScopedVar, looking at nam:', nam);
+
+	let fullyScoped = (nam.startsWith('window.') || nam.startsWith('scopedProxy.'));
+
+	if (scope == '___none' && !fullyScoped) {
+		fullName = 'scopedProxy.' + nam;
+		scopeName = nam;
+		val = _get(scopedProxy.__getTarget, scopeName);
+	} else if (fullyScoped) {
+		fullName = nam;
+		scopeName = nam.substr(nam.indexOf('.') + 1);
+		scopeName = _resolveInnerBracketVars(scopeName, scope);
+		if (fullName.substr(0, 1) == 'w') {
+			val = _get(window, scopeName);
+			winVar = true;
+
+//console.log('_getScopedVar, window variable return object:', { fullName, name: scopeName, val, winVar });
+
+
+		} else {
+			val = _get(scopedProxy.__getTarget, scopeName);
+		}
+	} else {
+		// Handle variables without a scope.
+		scopeName = _resolveInnerBracketVars(nam, scope);
+		scopeName = ((scope && privVarScopes[scope]) ? scope : 'main') + '.' + scopeName;
+		let scopedObj = _resolveInheritance(scopeName);
+		scopeName = scopedObj.name;
+		fullName = 'scopedProxy.' + scopeName;
+		val = scopedObj.val;
+	}
+
+	return { fullName, name: scopeName, val, winVar };
 };
 
 /*
@@ -5476,30 +5658,26 @@ const _prefixScopedVars = function(str, varScope=null) {
 	/**
 	 * "str" is a string that could contain scoped variables that need proper set up before evaluating.
 	 * It finds each word, which may include a period (.), and see if this needs scoping. It may already have a scoped prefix. If it doesn't, it gets
-	 * a scoped prefix added. At the end it will return the formatted string. It will only add the "scopedVars." prefix if the word exists in the string.
+	 * a scoped prefix added. At the end it will return the formatted string. It will only add the "scopedProxy." prefix if the word exists in the string.
 	 * We need to ignore all words in double quotes, so the part of the regex referencing quotes brings back a full string including quotes so we can ignore the
 	 * whole thing.
 	*/
-	let mapObj = {}, mapObj2 = {}, scopedVar, varEval;
+//console.log('_prefixScopedVars, before str:', str);
 
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
-		if (wot.indexOf('"') !== -1 || wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
+		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
-		if (wot.indexOf('.') !== -1) {
-			// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
-			// This is separated from the main regex as we will be adding further scoping options later on, and so it will easier to keep this separate.
-			let firstVar = wot.split('.')[0];
-			// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use scopedVars, but just in case ignore that too.
-			if (firstVar == 'window' || firstVar == 'scopedVars') return wot;
-		}
-		scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + wot;
-		// Sort out if the left-hand var is an inherited variable or not.
-		let scopedVarObj = _resolveInheritance(scopedVar);
-		scopedVar = scopedVarObj.name;
-		varEval = _get(scopedVars, scopedVar);
-		// Only return the variable if it actually exists.
-		return (typeof varEval !== 'undefined') ? 'scopedVars.' + scopedVar : wot;
+
+//console.log('_prefixScopedVars, getting: wot:', wot, 'varScope:', varScope);
+
+		let scoped = _getScopedVar(wot, varScope);
+
+//console.log('_prefixScopedVars, scoped.fullName:', scoped.fullName, 'scoped:', scoped, 'scopedProxy:', scopedProxy);
+
+		return (typeof scoped.val !== 'undefined') ? scoped.fullName : wot;
 	});
+
+//console.log('_prefixScopedVars, after str:', str);
 
 	return str;
 };
@@ -5576,15 +5754,14 @@ const _removeVarPlaceholders = obj => {
 					return varHost.getAttribute(varName);
 				} else {
 					// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-					let val = _get(scopedVars, wot);
-					return (val) ? val : '';
+					let scoped = _getScopedVar(wot, '___none');
+					return (scoped.val) ? scoped.val : '';
 				}
 				return wot2 || '';
 			});
 			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 		}
 	} while (treeWalker.nextNode());
-
 };
 
 // Replace attributes if they exist. Also the {$RAND}, as that is safe to run in advance. This is run at multiple stages at different parts of the runtime
@@ -5628,7 +5805,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
 							el = obj;
 						} else if (!o || !oEvIsCompOpen) {
-							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedVars.
+							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
 							el = obj.shadowRoot;
 						}
 					} else {
@@ -5663,7 +5840,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	sel = _replaceStringVars(o, sel, varScope);
 	// Replace regular scoped variables with their content, and if content-based put internal wrappers around the bound variables so they can be formatted later.
 	// We can only do this after attributes have been substituted, in order to handle variable binding in an attribute that also has an attribute substituted.
-	return _replaceScopedVars(sel, secSelObj, func, o, null, null, varScope);
+	return (['Var', 'VarDelete'].indexOf(func) === -1) ? _replaceScopedVars(sel, secSelObj, func, o, null, null, varScope) : sel;
 };
 
 const _replaceComponents = (o, str) => {
@@ -5718,10 +5895,18 @@ const _replaceComponents = (o, str) => {
 const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null) => {
 	let res;
 
+//console.log('_replaceJSExpression, sel:', sel);
+
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
+
+//console.log('_replaceJSExpression, 1, wot:', wot);
+
 		wot = _replaceScopedVarsExpr(wot, varScope);
+
+//console.log('_replaceJSExpression, 2, wot:', wot);
+
 		let q = '';
 		if (quoteIfString) {
 			q = '"';
@@ -5733,10 +5918,10 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedVars', '"use strict";return (' + wot + ');')(scopedVars);		// jshint ignore:line
+			res = Function('scopedProxy', '"use strict";return (' + wot + ');')(scopedProxy);		// jshint ignore:line
 		} catch (err) {
 			try {
-				res = Function('scopedVars', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedVars);		// jshint ignore:line
+				res = Function('scopedProxy', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');
@@ -5749,6 +5934,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 		return res;
 	});
+
+//console.log('_replaceJSExpression, realVal:', realVal, 'res:', res, 'sel:', sel);
 
 	// Return the result rather than the string if realVal is set to true.
 	return (realVal) ? res : sel;
@@ -5829,7 +6016,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\'\"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
 			if (wot.startsWith('$')) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
@@ -5860,27 +6047,15 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 			} else {
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
-				wot = wot.replace(/\[[\'\"]?/g, '.').replace(/[\'\"]?\]/g, '');
-				// Evaluate the JavaScript expression.
-				if (wot.indexOf('.') !== -1) {
-					// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
-					// This is separated from the main regex as we will be adding further scoping options later on, and so it will easier to keep this separate.
-					let firstVar = wot.split('.')[0];
-					// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use "scopedVars", but do a handling for that anyway.
-					if (firstVar == 'window') return wot;
-					if (firstVar == 'scopedVars') {
-						wot = wot.replace(/^scopedVars\./, '');
-					}
-				}
-				// Prefix with sub-scope (main or _VarScope).
-				wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
-				wot = _resolveInnerBracketVars(wot);
-				let scopedVarObj = _resolveInheritance(wot);
-				res = scopedVarObj.val;
+				let scoped = _getScopedVar(wot, varScope);
+				// Return the wot if it's a window variable.
+				if (scoped.winVar === true) return wot;
+				res = scoped.val;
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
-				realWot = wot;
+				realWot = scoped.name;
 			}
+
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
@@ -5893,7 +6068,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					retLT = (walker) ? '_cj_s_lt_' : '<!--';
 					retGT = (walker) ? '_cj_s_gt_' : '-->';
 				}
-				return retLT + 'active-var-' + realWot + retGT + res + retLT + '/active-var' + retGT;
+				let placeHolder = _varChangeToDots(realWot);
+				return retLT + 'active-var-' + placeHolder + retGT + res + retLT + '/active-var' + retGT;
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
@@ -5915,23 +6091,11 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)\}/gim, function(_, wot) {
 		if (wot.startsWith('$')) return '{' + wot + '}';
 		origWot = wot;
-		// Don't convert to dot format as JavaScript barfs on dot notation in evaluation.
-		// Evaluate the JavaScript expression.
-		if (wot.indexOf('.') !== -1) {
-			// This is already scoped in some fashion. If it already has window or scopedVars as the first prefix we can skip it.
-			// This is separated from the main regex as we will be adding further scoping options later on, and so it will easier to keep this separate.
-			firstVar = wot.split('.')[0];
-			// Return the wot if it prefixed with window. It is unlikely someone unfamiliar with the core will use "scopedVars", but do a handling for that anyway.
-			if (firstVar == 'window') return '{' + wot + '}';
-			if (firstVar.startsWith('scopedVars')) {
-				wot = wot.replace('scopedVars.', '');
-			}
-		}
-		// Prefix with sub-scope (main or _varScope).
-		wot = (varScope && privVarScopes[varScope]) ? varScope + '.' + wot : 'main.' + wot;
-		wot = _resolveInnerBracketVars(wot);
-		let scopedVarObj = _resolveInheritance(wot);
-		res = scopedVarObj.val;
+
+		let scoped = _getScopedVar(wot, varScope);
+		// Return the wot if it's a window variable.
+		if (scoped.winVar === true) return '{' + wot + '}';
+		res = scoped.val;
 		if (typeof res !== 'undefined') {
 			// Variable definitely exists in some form.
 			return res;
@@ -5961,29 +6125,33 @@ const _replaceStringVars = (o, str, varScope) => {
 			case '$HTML_NOVARS':
 			case '$HTML_ESCAPED':
 			case '$HTML':
-				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
-				res = _get(scopedVars, scopedVar);
-				if (!res && typeof res !== 'string') {
+				let scoped = _getScopedVar('__acss' + innards.substr(1), varScope);
+				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-					res = ActiveCSS._sortOutFlowEscapeChars(res);
+					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
 				}
 				return res;
 
 			default:
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
-					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
-					scopedVar = _resolveInnerBracketVars(scopedVar);
-					let scopedVarObj = _resolveInheritance(scopedVar);
-					res = scopedVarObj.val;
-					return res || '';
+					let scoped = _getScopedVar(innards, varScope);
+					return scoped.val || '';
 				} else {
 					return '{' + innards + '}';
 				}
 		}
 	});
 	return str;
+};
+
+/* Takes a variable and checks if it is allowed to be resolved. This value is set through the var command with _allowResolve. */
+const _resolvable = str => {
+
+//console.log('_resolvable, str:', str, 'resolvableVars:', resolvableVars);
+
+	return (str.startsWith('scopedProxy.') || resolvableVars.indexOf(str) !== -1 || str.startsWith('window.')) ? true : false;
 };
 
 const _resolveAjaxVars = o => {
@@ -6013,24 +6181,54 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
-		_set(scopedVars, compScope + '.' + v, res[v]);
+		_set(scopedProxy, compScope + '.' + v, res[v]);
 	}
 };
 
 // Takes a scoped variable reference and returns the true scope.
 const _resolveInheritance = scopedVar => {
 	// Rules:
+	// Variable in will already have a base scope (ie. "main.", "_1.").
+	// Variable in will never start with "scopedProxy." or "window.".
+	// Variable in may look like this: "main.varname" but may actually be a session or local variable.
 	// If it exists in this scope it returns the original scope.
 	// If it doesn't exist in this scope it will bubble up the component variables scopes until it reaches the document scope or a strictlyPrivateVars scope.
 	// As soon as it finds somewhere the variable exists, it returns the variable reference in that scope.
 	// If it doesn't find the variable there, it returns the original scope.
 
-	// Is this already in the "main", or do we already have a value in the current scope? If so, we don't go any higher - return the original scope reference.
+//console.log('_resolveInheritance, resolving scopedVar:', scopedVar);
 
-	scopedVar = scopedVar.replace(/\[[\'\"]?/g, '.').replace(/[\'\"]?\]/g, '');
-	let val = _get(scopedVars, scopedVar);
+	// Check if this is a session or local variable first.
+	let dotPos = scopedVar.indexOf('.');
+	if (dotPos !== -1) {
+		let lesserScopedVar = scopedVar.substr(dotPos + 1);
+		let baseVar = _getBaseVar(lesserScopedVar);
+
+//console.log('_resolveInheritance, baseVar:', baseVar, 'lesserScopedVar:', lesserScopedVar, 'scopedVar:', scopedVar);
+
+		if (localStoreVars[baseVar] === true) {
+			let realScopedVar = 'local.' + lesserScopedVar;
+//console.log('_resolveInheritance, found a local variable:', { name: realScopedVar, val: _get(scopedProxy, realScopedVar) });
+
+			return { name: realScopedVar, val: _get(scopedProxy.__getTarget, realScopedVar) };
+		} else if (sessionStoreVars[baseVar] === true) {
+			let realScopedVar = 'session.' + lesserScopedVar;
+
+//console.log('_resolveInheritance, found a session variable:', { name: realScopedVar, val: _get(scopedProxy, realScopedVar) });
+
+			return { name: realScopedVar, val: _get(scopedProxy.__getTarget, realScopedVar) };
+		}
+	}
+
+	// We should be left with page scoped variables.
+
+	// Is this already in the current scope? If so, we don't go any higher - return the original scope reference.
+	let val = _get(scopedProxy.__getTarget, scopedVar);
 	let origValObj = { 'name': scopedVar, 'val': val };
-	if (scopedVar.startsWith('main.') || typeof val !== 'undefined' || scopedVar.startsWith('window.')) {
+	if (typeof val !== 'undefined') {
+
+//console.log('_resolveInheritance, found origValObj in current scope:', origValObj);
+
 		return origValObj;
 	}
 
@@ -6044,9 +6242,17 @@ const _resolveInheritance = scopedVar => {
 
 	// If there is no inherited variable then we assume this is a new variable appearing in the scope the variable is used in,
 	// so return the original scope reference. "actualScopeObj" will be false if the variable is not inherited.
-	if (!actualScopeObj) return origValObj;
+	if (!actualScopeObj) {
+
+//console.log('_resolveInheritance, 3 returning origValObj:', origValObj);
+
+		return origValObj;
+	}
 
 	// This variable is inherited from a higher scope, return the higher scope reference.
+
+//console.log('_resolveInheritance, end returning origValObj:', actualScopeObj);
+
 	return actualScopeObj;
 };
 
@@ -6068,7 +6274,7 @@ const _resolveInheritanceBubble = (scope, varName) => {
 	let parentScope = (parentCompDetails && parentCompDetails.varScope) ? parentCompDetails.varScope : 'main';
 
 	// If there, return it immediately.
-	let val = _get(scopedVars, parentScope + '.' + varName);
+	let val = _get(scopedProxy.__getTarget, parentScope + '.' + varName);
 
 	if (typeof val !== 'undefined') return { name: parentScope + '.' + varName, val };
 
@@ -6081,32 +6287,69 @@ const _resolveInheritanceBubble = (scope, varName) => {
 	return false;
 };
 
-const _resolveInnerBracketVars = str => {
-	// Takes a scoped variable string and replaces the variables within brackets into true values.
+const _resolveInnerBracketVars = (str, scope) => {
+	// Takes a scoped variable string and replaces the variables within brackets.
 	// Used in the var command so it can work with _set in the correct scope.
+	let newStr = str;
 
 	if (str.indexOf('[') !== -1) {
-		str = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/gm, function(_, innerVariable) {
+		newStr = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/g, function(_, innerVariable) {
 			// Is this a scoped variable?
+			if (_resolvable(innerVariable)) return '[' + innerVariable + ']';	// Do not resolve variable or content found that has not already been defined.
 			let res;
-			if (innerVariable.substr(0, 11) == 'scopedVars.') {
-				// Sort out if the left-hand var is an inherited variable or not.
-				innerVariable = innerVariable.substr(11);
-				let scopedVarObj = _resolveInheritance(innerVariable);
-				res = scopedVarObj.val;
-			} else if (innerVariable.substr(0, 7) == 'window.') {
-				// Remove the window prefix.
-				innerVariable = innerVariable.substr(7);
-				// Get the variable value - should always be a string or a number.
-				res = _get(window, innerVariable);
+			let scoped = _getScopedVar(innerVariable, scope);
+			if (typeof scoped.val === 'string') {
+				// Return the value in quotes.
+				res = '"' + scoped.val + '"';
+			} else if (typeof scoped.val === 'number') {
+				// Return the value as it is.
+				res = scoped.val;
+			} else if (typeof scoped.val !== 'undefined') {
+				// Return the fully scoped name.
+				res = scoped.fullName;
 			} else {
-				// Variable should be whatever was found.
+				// Variable should be whatever was found as it isn't recognised as a variable.
 				res = innerVariable;
 			}
+
 			return '[' + res + ']';
 		});
 	}
-	return str;
+
+	return newStr;
+};
+
+const _restoreStorage = () => {
+	let sessionStore = window.sessionStorage.getItem('_acssSession');
+	if (typeof sessionStore !== 'undefined') {
+
+//console.log('_restoreStorage, found in session storage:', JSON.parse(sessionStore));
+
+		scopedOrig.session = JSON.parse(sessionStore);
+
+//console.log('_restoreStorage, scopedOrig.session:', scopedOrig.session);
+
+		// Loop immediate items under session and set as session vars for the core to use.
+		let key;
+		for (key in scopedOrig.session) {
+//console.log('_restoreStorage, logging sessionStoreVars[' + key + ']');
+
+			sessionStoreVars[key] = true;
+			_allowResolve('session.' + key);
+		}		
+	}
+	let localStore = window.sessionStorage.getItem('_acssLocal');
+	if (typeof localStore !== 'undefined') {
+		scopedOrig.local = JSON.parse(localStore);
+		let key;
+		for (key in scopedOrig.local) {
+			localStoreVars[key] = true;
+			_allowResolve('local.' + key);
+		}		
+	}
+
+//console.log('_restoreStorage, sessionStoreVars:', sessionStoreVars, 'localStoreVars:', localStoreVars);
+
 };
 
 const _setCSSVariable = o => {
@@ -6125,11 +6368,11 @@ const _setHTMLVars = (o, isEmptyStr=false) => {
 	let safeStr = (isEmptyStr) ? '' : _safeTags(o.res);
 	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 
-	_set(scopedVars, compScope + '.__acssHTML', str);
+	_set(scopedProxy, compScope + '.__acssHTML', str);
 	// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
-	_set(scopedVars, compScope + '.__acssHTML_NOVARS', escStr);
+	_set(scopedProxy, compScope + '.__acssHTML_NOVARS', escStr);
 	// Escape HTML and curlies with safe HTML entities.
-	_set(scopedVars, compScope + '.__acssHTML_ESCAPED', safeStr);
+	_set(scopedProxy, compScope + '.__acssHTML_ESCAPED', safeStr);
 };
 
 ActiveCSS._sortOutFlowEscapeChars = str => {
@@ -6150,6 +6393,24 @@ ActiveCSS._sortOutFlowEscapeChars = str => {
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
 
+const _varChangeToDots = str => {
+	return str.replace(/\[(\"|\')?/g, '.').replace(/(\"|\')?\]/g, '');
+};
+
+const _varFixArr = path => {
+	let pathArr = path.split('.');
+	let thisPath, newPath = pathArr.shift();	// Shift assigns and removes the first item, so all items following get a dot, so it's quicker in the loop.
+	for (thisPath of pathArr) {
+		if (thisPath.indexOf(' ') !== -1) {
+			thisPath = '["' + thisPath.replace(/\\([\s\S])|(")/, "\\$1$2") + '"]';
+		} else {
+			newPath += '.';
+		}
+		newPath += thisPath;
+	}
+	return newPath;
+};
+
 /***
  * Called from _observable-slim.js after a change has been made to a scoped variable.
  *
@@ -6157,7 +6418,7 @@ ActiveCSS._sortOutFlowEscapeChars = str => {
  * --------------------------------------------------------------------------------------------------------------------------
  * Direct changes to attributes are not covered here - this is just what happens when variables change, not attributes. See the create-element command for that code.
  *
- * All scoped variables that are set are contained to a IIFE limited variable "scoped", and changed via the notifier Proxy "scopedVars".
+ * All scoped variables that are set are contained to a IIFE limited variable "scoped", and changed via the notifier Proxy "scopedProxy".
  * The "scoped" variable is not referenced directly.
  *
  * Each new variable that gets set adds to a mirror map of the scoped variable that is populated with data relating to what needs updating.
@@ -6203,7 +6464,17 @@ ActiveCSS._varUpdateDom = (changes) => {
 
 	let change, dataObj, changeDiff, innerChange;
 	for (change of changes) {
-		if (change.currentPath.indexOf('.') === -1 && change.currentPath.indexOf('HOST') === -1) continue;	// Skip all actions on the root scoped variable.
+		// If it is a session storage or local storage object it may not have been rendered if it isn't in scopedData, but the storage itself should be
+		// updated at this point. It may have been rendered also, in which case it will do all of that separately further down the script.
+		// Keep this simple for speed.
+		if (change.currentPath.startsWith('session')) {
+			window.sessionStorage.setItem('_acssSession', JSON.stringify(scopedProxy.__getTarget.session));
+		} else if (change.currentPath.startsWith('local')) {
+			window.localStorage.setItem('_acssLocal', JSON.stringify(scopedProxy.__getTarget.local));
+		}
+
+		if (change.currentPath.indexOf('.') === -1 && change.currentPath.indexOf('HOST') === -1) continue;	// Skip all actions on scoped variable root.
+
 		if (typeof change.previousValue == 'object' || typeof change.newValue == 'object') {
 			// This is an object or an array, or some sort of type change. Get a diff and apply the applicable change to each item.
 			// The reason we've got here in the code is that a whole array is being redeclared or something, and there may be individually rendered sub-elements
@@ -6214,10 +6485,15 @@ ActiveCSS._varUpdateDom = (changes) => {
 			change.previousValue = (change.previousValue.__isProxy === true) ? change.previousValue.__getTarget : change.previousValue;
 			// This next line brings back a complex object diff that indicates type of change.
 			changeDiff = recursiveDiff.getDiff(change.previousValue, change.newValue);	// https://github.com/cosmicanant/recursive-diff
+
 			for (innerChange of changeDiff) {
 				innerChange.path = change.currentPath + ((!innerChange.path) ? '' : '.' + innerChange.path.join('.'));
-				dataObj = _get(scopedData, innerChange.path);
-				if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+
+				// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
+				let varPath = _varFixArr(innerChange.path);
+				dataObj = _get(scopedData, varPath);
+				if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+
 				innerChange.val = (!innerChange.val) ? '' : innerChange.val;
 				_varUpdateDomDo({
 					currentPath: innerChange.path,
@@ -6226,8 +6502,13 @@ ActiveCSS._varUpdateDom = (changes) => {
 				}, dataObj);	// We need this - we may have a complex object.
 			}
 		} else {
-			dataObj = _get(scopedData, change.currentPath);
-			if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+			// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
+			let varPath = _varFixArr(change.currentPath);
+			dataObj = _get(scopedData, varPath);
+			if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+
+			// Convert the currentPath for placeholders.
+			change.currentPath = _varChangeToDots(change.currentPath);
 			_varUpdateDomDo(change, dataObj);
 		}
 	}
@@ -6255,7 +6536,10 @@ const _varUpdateDomDo = (change, dataObj) => {
 	if (change.currentPath.substr(0, 1) == '_') {
 		compScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
 		if (change.type == 'delete' && compScope == '') {
-			// The whole scope has been deleted. Clean up.
+			// The whole scope has been deleted. Clean up. Don't clean-up session or local storage as they need to persist until manual deletion.
+
+// All these references need converting to dot format. These should just be deleting the scope where applicable here - not the current path.
+
 			delete shadowDoms[change.currentPath];
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
@@ -6308,7 +6592,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 							return varHost.getAttribute(varName);
 						} else {
 							// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-							let val = _get(scopedVars, wot);
+							let val = _get(scopedProxy.__getTarget, wot);
 							return (val) ? val : _;
 						}
 					}
@@ -6320,6 +6604,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 
 	// Handle content in attributes. The treewalker option for attributes is deprecated unfortunately, so it uses a different method.
 	let found;
+
 	for (cid in dataObj.attrs) {
 		found = false;
 		for (attr in dataObj.attrs[cid]) {
@@ -6346,6 +6631,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
 			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
 			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
+
 			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost, compScope);
 			el.setAttribute(attr, attrContent);
 		}
@@ -7540,17 +7826,6 @@ const _fullscreenDetails = () => {
 	return arr;
 };
 
-// Courtesy of https://gist.github.com/harish2704/d0ee530e6ee75bad6fd30c98e5ad9dab
-// Modded to return undefined if not set instead of null.
-const _get = (object, keys, defaultVal=undefined) => {
-	keys = Array.isArray(keys) ? keys : keys.replace(/(\[(\d)\])/g, '.$2').split('.');
-	object = object[keys[0]];
-	if (object && keys.length > 1) {
-		return _get(object, keys.slice(1), defaultVal);
-	}
-	return object === undefined ? defaultVal : object;
-};
-
 const _getActiveID = obj => {
 	if (!obj.isConnected) {
 		return _getTempActiveID(obj);
@@ -7890,7 +8165,7 @@ const _mimicReset = e => {
 
 const _optDef = (arr, srch, opt, def) => {
 	// This is a case insensitive comparison.
-	if (!Array.isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
+	if (!isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
 	srch = srch.toLowerCase();
 	let res = arr.findIndex(item => srch === item.toLowerCase());
 	return (res !== -1) ? opt : def;	// return def if not present.
@@ -7917,7 +8192,7 @@ const _placeCaretAtEnd = el => {
 
 // Solution courtesy of https://github.com/cosmicanant/recursive-diff
 // MIT license.
-!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.recursiveDiff=t():e.recursiveDiff=t()}("undefined"!=typeof self?self:this,(function(){return function(e){var t={};function n(r){if(t[r])return t[r].exports;var o=t[r]={i:r,l:!1,exports:{}};return e[r].call(o.exports,o,o.exports,n),o.l=!0,o.exports}return n.m=e,n.c=t,n.d=function(e,t,r){n.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:r})},n.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},n.t=function(e,t){if(1&t&&(e=n(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var o in e)n.d(r,o,function(t){return e[t]}.bind(null,o));return r},n.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return n.d(t,"a",t),t},n.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},n.p="",n(n.s=0)}([function(e,t,n){const{types:r,iterableTypes:o,errors:i}=n(1),l=n(2),f={[r.NUMBER]:l.isNumber,[r.BOOLEAN]:l.isBoolean,[r.STRING]:l.isString,[r.DATE]:l.isDate,[r.UNDEFINED]:l.isUndefined,[r.NULL]:l.isNull,[r.ARRAY]:l.isArray,[r.MAP]:l.isMap,[r.SET]:l.isSet,[r.ITERABLE_OBJECT]:l.isIterableObject},u={[r.DATE]:l.areDatesEqual};function a(e){const t=Object.keys(f);let n=r.DEFAULT;for(let r=0;r<t.length;r+=1)if(f[t[r]](e)){n=t[r];break}return n}function s(e,t,n,o){let i;return n===r.UNDEFINED&&o!==r.UNDEFINED?i="add":n!==r.UNDEFINED&&o===r.UNDEFINED?i="delete":!function(e,t,n,r){return n===r&&(u[n]?u[n](e,t):e===t)}(e,t,n,o)?i="update":l.noop(),i}function c(e,t,n,i,l){const f=a(e),u=a(t),p=i||[],d=l||[];if(function(e,t){return e===t&&o.indexOf(e)>=0}(f,u)){const o=function(e,t,n){let o;return n===r.ITERABLE_OBJECT?o=new Set(Object.keys(e).concat(Object.keys(t))):n===r.ARRAY&&(o=e.length>t.length?new Array(e.length):new Array(t.length),o=o.fill(0,0),o=o.map((e,t)=>t),o=new Set(o)),o}(e,t,f).values();let i=o.next().value;for(;null!=i;)c(e[i],t[i],n,p.concat(i),d),i=o.next().value}else{const r=s(e,t,f,u);null!=r&&d.push(function(e,t,n,r,o){const i={op:n,path:r};return"add"!==n&&"update"!==n||(i.val=t),o&&"add"!==n&&(i.oldVal=e),i}(e,t,r,i,n))}return d}const p={add:l.setValueByPath,update:l.setValueByPath,delete:l.deleteValueByPath};e.exports={getDiff:(e,t,n=!1)=>c(e,t,n),applyDiff:(e,t,n)=>function(e,t,n){if(!(t instanceof Array))throw new Error(i.INVALID_DIFF_FORMAT);let r=e;return t.forEach(e=>{const{op:t,val:o,path:l}=e;if(!p[t])throw new Error(i.INVALID_DIFF_OP);r=p[t](r,l,o,n)}),r}(e,t,n)}},function(e,t){const n={NUMBER:"NUMBER",BOOLEAN:"BOOLEAN",STRING:"STRING",NULL:"NULL",UNDEFINED:"UNDEFINED",DATE:"DATE",ARRAY:"ARRAY",MAP:"MAP",SET:"SET",ITERABLE_OBJECT:"ITERABLE_OBJECT",DEFAULT:"OBJECT"};e.exports={types:n,iterableTypes:[n.ITERABLE_OBJECT,n.MAP,n.ARRAY,n.SET],errors:{EMPTY_DIFF:"No diff object is provided, Nothing to apply",INVALID_DIFF_FORMAT:"Invalid diff format",INVALID_DIFF_OP:"Unsupported operation provided into diff object"}}},function(e,t){const n=e=>t=>t instanceof e,r=n(Date),o=n(Array),i=n(Map),l=n(Set),f=e=>"[object Object]"===Object.prototype.toString.call(e);e.exports={isNumber:e=>"number"==typeof e,isBoolean:e=>"boolean"==typeof e,isString:e=>"string"==typeof e,isDate:r,isUndefined:e=>void 0===e,isNull:e=>null===e,isArray:o,isMap:i,isSet:l,isIterableObject:f,noop:()=>{},areDatesEqual:(e,t)=>e.getTime()===t.getTime(),setValueByPath:function(e,t=[],n,r){if(!o(t))throw new Error(`Diff path: "${t}" is not valid`);const{length:i}=t;if(0===i)return n;let l=e;for(let o=0;o<i;o+=1){const f=t[o];if(!l)throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);if(null==f)throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);o!==i-1?(l=l[f],r&&r(l)):l[f]=n}return e},deleteValueByPath:function(e,t){const n=t||[];if(0===n.length)return;let r=e;const{length:o}=n;for(let i=0;i<o;i+=1)if(i!==o-1){if(!r[n[i]])throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);r=r[n[i]]}else if(f(r))delete r[n[i]];else{const e=parseInt(n[i],10);for(;r.length>e;)r.pop()}return e}}}])}));	// jshint ignore:line
+!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.recursiveDiff=t():e.recursiveDiff=t()}("undefined"!=typeof self?self:this,(function(){return function(e){var t={};function n(r){if(t[r])return t[r].exports;var o=t[r]={i:r,l:!1,exports:{}};return e[r].call(o.exports,o,o.exports,n),o.l=!0,o.exports}return n.m=e,n.c=t,n.d=function(e,t,r){n.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:r})},n.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},n.t=function(e,t){if(1&t&&(e=n(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var o in e)n.d(r,o,function(t){return e[t]}.bind(null,o));return r},n.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return n.d(t,"a",t),t},n.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},n.p="",n(n.s=0)}([function(e,t,n){const{types:r,iterableTypes:o,errors:i}=n(1),l=n(2),f={[r.NUMBER]:l.isNumber,[r.BOOLEAN]:l.isBoolean,[r.STRING]:l.isString,[r.DATE]:l.isDate,[r.UNDEFINED]:l.isUndefined,[r.NULL]:l.isNull,[r.ARRAY]:l.isArray,[r.MAP]:l.isMap,[r.SET]:l.isSet,[r.ITERABLE_OBJECT]:l.isIterableObject},a={[r.DATE]:l.areDatesEqual};function u(e){const t=Object.keys(f);let n=r.DEFAULT;for(let r=0;r<t.length;r+=1)if(f[t[r]](e)){n=t[r];break}return n}function s(e,t,n,o){let i;return n===r.UNDEFINED&&o!==r.UNDEFINED?i="add":n!==r.UNDEFINED&&o===r.UNDEFINED?i="delete":!function(e,t,n,r){return n===r&&(a[n]?a[n](e,t):e===t)}(e,t,n,o)?i="update":l.noop(),i}function c(e,t,n,r,o){const i={op:n,path:r};return"add"!==n&&"update"!==n||(i.val=t),o&&"add"!==n&&(i.oldVal=e),i}function p(e,t,n,i,l){const f=u(e),a=u(t),d=i||[],E=l||[];if(function(e,t){return e===t&&o.indexOf(e)>=0}(f,a)){const o=function(e,t,n){if(n===r.ARRAY){const n=e.length>t.length?new Array(e.length):new Array(t.length);return n.fill(0),new Set(n.map((e,t)=>t))}return new Set(Object.keys(e).concat(Object.keys(t)))}(e,t,f).values();let{value:i,done:l}=o.next();for(;!l;){Object.prototype.hasOwnProperty.call(e,i)?Object.prototype.hasOwnProperty.call(t,i)?p(e[i],t[i],n,d.concat(i),E):E.push(c(e[i],t[i],"delete",d.concat(i),n)):E.push(c(e[i],t[i],"add",d.concat(i),n));const r=o.next();i=r.value,l=r.done}}else{const r=s(e,t,f,a);null!=r&&E.push(c(e,t,r,i,n))}return E}const d={add:l.setValueByPath,update:l.setValueByPath,delete:l.deleteValueByPath};e.exports={getDiff:(e,t,n=!1)=>p(e,t,n),applyDiff:(e,t,n)=>function(e,t,n){if(!(t instanceof Array))throw new Error(i.INVALID_DIFF_FORMAT);let r=e;return t.forEach(e=>{const{op:t,val:o,path:l}=e;if(!d[t])throw new Error(i.INVALID_DIFF_OP);r=d[t](r,l,o,n)}),r}(e,t,n)}},function(e,t){const n={NUMBER:"NUMBER",BOOLEAN:"BOOLEAN",STRING:"STRING",NULL:"NULL",UNDEFINED:"UNDEFINED",DATE:"DATE",ARRAY:"ARRAY",MAP:"MAP",SET:"SET",ITERABLE_OBJECT:"ITERABLE_OBJECT",DEFAULT:"OBJECT"};e.exports={types:n,iterableTypes:[n.ITERABLE_OBJECT,n.MAP,n.ARRAY,n.SET],errors:{EMPTY_DIFF:"No diff object is provided, Nothing to apply",INVALID_DIFF_FORMAT:"Invalid diff format",INVALID_DIFF_OP:"Unsupported operation provided into diff object"}}},function(e,t){const n=e=>t=>t instanceof e,r=n(Date),o=n(Array),i=n(Map),l=n(Set),f=e=>"[object Object]"===Object.prototype.toString.call(e);e.exports={isNumber:e=>"number"==typeof e,isBoolean:e=>"boolean"==typeof e,isString:e=>"string"==typeof e,isDate:r,isUndefined:e=>void 0===e,isNull:e=>null===e,isArray:o,isMap:i,isSet:l,isIterableObject:f,noop:()=>{},areDatesEqual:(e,t)=>e.getTime()===t.getTime(),setValueByPath:function(e,t=[],n,r){if(!o(t))throw new Error(`Diff path: "${t}" is not valid`);const{length:i}=t;if(0===i)return n;let l=e;for(let o=0;o<i;o+=1){const f=t[o];if(!l)throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);if(null==f)throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);o!==i-1?(l=l[f],r&&r(l)):l[f]=n}return e},deleteValueByPath:function(e,t){const n=t||[];if(0===n.length)return;let r=e;const{length:o}=n;for(let i=0;i<o;i+=1)if(i!==o-1){if(!r[n[i]])throw new Error(`Invalid path: "${t}" for object: ${JSON.stringify(e,null,2)}`);r=r[n[i]]}else if(f(r))delete r[n[i]];else{const e=parseInt(n[i],10);for(;r.length>e;)r.pop()}return e}}}])}));	// jshint ignore:line
 ActiveCSS._removeClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	let arr = str.replace('.', '').split(' ');
@@ -8046,16 +8321,6 @@ const _selCompare = (o, opt) => {
 	}
 };
 
-// Courtesy of https://stackoverflow.com/a/54733755
-// See stackoverflow for full comments.
-const _set = (obj, path, value) => {
-	if (Object(obj) !== obj) return obj;
-	if (!Array.isArray(path)) path = path.toString().match(/[^.[\]]+/g) || [];
-	path.slice(0,-1).reduce((a, c, i) =>
-		Object(a[c]) === a[c] ? a[c] : a[c] = Math.abs(path[i + 1]) >> 0 === +path[i + 1] ? [] : {}, obj)[path[path.length - 1]] = value;
-	return obj;
-};
-
 const _setClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	obj.className = str;
@@ -8096,6 +8361,509 @@ const _urlTitle = (url, titl, o) => {
 		window.history.pushState(url, titl, url);
 	}
 	document.title = titl;
+};
+
+/**
+ * A specialized version of `_.map` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the new mapped array.
+*/
+const _arrayMap = (array, iteratee) => {
+	var index = -1,
+	length = array == null ? 0 : array.length,
+	result = Array(length);
+
+	while (++index < length) {
+		result[index] = iteratee(array[index], index, array);
+	}
+	return result;
+};
+
+/**
+* Assigns `value` to `key` of `object` if the existing value is not equivalent
+* using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+* for equality comparisons.
+*
+* @private
+* @param {Object} object The object to modify.
+* @param {string} key The key of the property to assign.
+* @param {*} value The value to assign.
+*/
+const _assignValue = (object, key, value) => {
+	var objValue = object[key];
+	if (!(hasOwnProperty.call(object, key) && _eq(objValue, value)) || (value === undefined && !(key in object))) {
+		_baseAssignValue(object, key, value);
+	}
+};
+
+/**
+ * The base implementation of `assignValue` and `assignMergeValue` without
+ * value checks.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+*/
+const _baseAssignValue = (object, key, value) => {
+	if (key == '__proto__' && defineProperty) {
+		defineProperty(object, key, {
+			'configurable': true,
+			'enumerable': true,
+			'value': value,
+			'writable': true
+		});
+	} else {
+		object[key] = value;
+	}
+};
+
+/**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+*/
+const _baseGet = (object, path) => {
+	path = _castPath(path, object);
+	var index = 0, length = path.length;
+	while (object != null && index < length) {
+		object = object[_toKey(path[index++])];
+	}
+	return (index && index == length) ? object : undefined;
+};
+
+/**
+* The base implementation of `_.set`.
+*
+* @private
+* @param {Object} object The object to modify.
+* @param {Array|string} path The path of the property to set.
+* @param {*} value The value to set.
+* @param {Function} [customizer] The function to customize path creation.
+* @returns {Object} Returns `object`.
+*/
+const _baseSet = (object, path, value, customizer) => {
+	if (!_isObject(object)) return object;
+	path = _castPath(path, object);
+
+	var index = -1, length = path.length, lastIndex = length - 1, nested = object;
+
+	while (nested != null && ++index < length) {
+		var key = _toKey(path[index]),
+		newValue = value;
+
+		if (index != lastIndex) {
+			var objValue = nested[key];
+			newValue = customizer ? customizer(objValue, key, nested) : undefined;
+			if (newValue === undefined) {
+				newValue = _isObject(objValue) ? objValue : (_isIndex(path[index + 1]) ? [] : {});
+			}
+		}
+		_assignValue(nested, key, newValue);
+		nested = nested[key];
+	}
+	return object;
+};
+
+/**
+* The base implementation of `_.toString` which doesn't convert nullish
+* values to empty strings.
+*
+* @private
+* @param {*} value The value to process.
+* @returns {string} Returns the string.
+*/
+const _baseToString = value => {
+	// Exit early for strings to avoid a performance hit in some environments.
+	if (typeof value == 'string') return value;
+	if (isArray(value)) return _arrayMap(value, _baseToString) + '';	// Recursively convert values (susceptible to call stack limits).
+//	if (isSymbol(value)) return symbolToString ? symbolToString.call(value) : '';	// don't need symbol support in acss.
+	var result = (value + '');
+	return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+};
+
+/**
+ * The base implementation of `unset`.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The property path to unset.
+ * @returns {boolean} Returns `true` if the property is deleted, else `false`.
+ */
+const _baseUnset = (object, path) => {
+	path = _castPath(path, object);
+	object = _parent(object, path);
+	return object == null || delete object[_toKey(_last(path))];
+};
+
+/**
+ * Casts `value` to a path array if it's not one.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {Array} Returns the cast property path array.
+*/
+const _castPath = (value, object) => {
+	if (isArray(value)) return value;
+	return _isKey(value, object) ? [value] : _stringToPath(_toString(value));
+};
+
+/**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+*/
+const _eq = (value, other) => {
+	return value === other || (value !== value && other !== other);
+};
+
+/**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+*/
+
+
+const _get = (object, path, defaultValue) => {
+	var result = object == null ? undefined : _baseGet(object, path);
+	return result === undefined ? defaultValue : result;
+};
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+*/
+const _getNative = (object, key) => {
+	var value = _getValue(object, key);
+//	return _baseIsNative(value) ? value : undefined;	// more than we need in acss.
+	return value;
+};
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+*/
+const _getValue = (object, key) => {
+	return object == null ? undefined : object[key];
+};
+
+/**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+*/
+const _isIndex = (value, length) => {
+	var type = typeof value;
+	length = length == null ? MAX_SAFE_INTEGER : length;
+	return !!length && (type == 'number' || (type != 'symbol' && reIsUint.test(value))) && (value > -1 && value % 1 == 0 && value < length);
+};
+
+/**
+ * Checks if `value` is a property name and not a property path.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+*/
+
+const _isKey = (value, object) => {
+	if (isArray(value)) return false;
+	var type = typeof value;
+//	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) return true;	// don't need symbol support in acss.
+	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null) return true;
+	return reIsPlainProp.test(value) || !reIsDeepProp.test(value) || (object != null && value in Object(object));
+};
+
+/**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+*/
+const _isObject = value => {
+	var type = typeof value;
+	return value != null && (type == 'object' || type == 'function');
+};
+
+/**
+ * Gets the last element of `array`.
+ *
+ * @since 0.1.0
+ * @category Array
+ * @param {Array} array The array to query.
+ * @returns {*} Returns the last element of `array`.
+ * @example
+ *
+ * last([1, 2, 3])
+ * // => 3
+ */
+const _last = array => {
+	const length = array == null ? 0 : array.length;
+	return length ? array[length - 1] : undefined;
+};
+
+/**
+ * Gets the parent value at `path` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array} path The path to get the parent value of.
+ * @returns {*} Returns the parent value.
+ */
+const _parent = (object, path) => {
+	return path.length < 2 ? object : _baseGet(object, _slice(path, 0, -1));
+};
+
+/**
+ * Sets the value at `path` of `object`. If a portion of `path` doesn't exist,
+ * it's created. Arrays are created for missing index properties while objects
+ * are created for all other missing properties. Use `_.setWith` to customize
+ * `path` creation.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.set(object, 'a[0].b.c', 4);
+ * console.log(object.a[0].b.c);
+ * // => 4
+ *
+ * _.set(object, ['x', '0', 'y', 'z'], 5);
+ * console.log(object.x[0].y.z);
+ * // => 5
+*/
+const _set = (object, path, value) => {
+	return object == null ? object : _baseSet(object, path, value);
+};
+
+
+/**
+ * Creates a slice of `array` from `start` up to, but not including, `end`.
+ *
+ * **Note:** This method is used instead of
+ * [`Array#slice`](https://mdn.io/Array/slice) to ensure dense arrays are
+ * returned.
+ *
+ * @since 3.0.0
+ * @category Array
+ * @param {Array} array The array to slice.
+ * @param {number} [start=0] The start position. A negative index will be treated as an offset from the end.
+ * @param {number} [end=array.length] The end position. A negative index will be treated as an offset from the end.
+ * @returns {Array} Returns the slice of `array`.
+ * @example
+ *
+ * var array = [1, 2, 3, 4]
+ *
+ * _.slice(array, 2)
+ * // => [3, 4]
+ */
+const _slice = (array, start, end) => {
+	let length = array == null ? 0 : array.length;
+	if (!length) {
+		return [];
+	}
+	start = start == null ? 0 : start;
+	end = end === undefined ? length : end;
+
+	if (start < 0) {
+		start = -start > length ? 0 : (length + start);
+	}
+	end = end > length ? length : end;
+	if (end < 0) {
+		end += length;
+	}
+	length = start > end ? 0 : ((end - start) >>> 0);
+	start >>>= 0;
+
+	let index = -1;
+	const result = new Array(length);
+	while (++index < length) {
+		result[index] = array[index + start];
+	}
+	return result;
+};
+
+/**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+*/
+//const _stringToPath = _memoizeCapped(function(string) {
+const _stringToPath = string => {
+	var result = [];
+	if (string.charCodeAt(0) === 46 /* . */) result.push('');
+	string.replace(rePropName, function(match, number, quote, subString) {
+		result.push(quote ? subString.replace(reEscapeChar, '$1') : (number || match));
+	});
+	return result;
+};
+
+/**
+ * Converts `value` to a string key if it's not a string or symbol.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {string|symbol} Returns the key.
+	ACSS = modded to remove symbol references as it isn't needed.
+*/
+const _toKey = (value) => {
+//	if (typeof value == 'string' || isSymbol(value)) return value;	// don't need symbol support in acss.
+	if (typeof value == 'string') return value;
+	var result = (value + '');
+	return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
+};
+
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+*/
+const _toString = value => {
+	return value == null ? '' : _baseToString(value);
+};
+
+/**
+ * Removes the property at `path` of `object`.
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @since 4.0.0
+ * @category Object
+ * @param {Object} object The object to modify.
+ * @param {Array|string} path The path of the property to unset.
+ * @returns {boolean} Returns `true` if the property is deleted, else `false`.
+ * @see get, has, set
+ * @example
+ *
+ * const object = { 'a': [{ 'b': { 'c': 7 } }] }
+ * unset(object, 'a[0].b.c')
+ * // => true
+ *
+ * console.log(object)
+ * // => { 'a': [{ 'b': {} }] }
+ *
+ * unset(object, ['a', '0', 'b', 'c'])
+ * // => true
+ *
+ * console.log(object)
+ * // => { 'a': [{ 'b': {} }] }
+ */
+const _unset = (object, path) => {
+	return object == null ? true : _baseUnset(object, path);
 };
 
 String.prototype._ACSSCapitalize = function() {

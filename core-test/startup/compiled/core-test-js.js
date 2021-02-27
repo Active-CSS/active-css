@@ -2125,15 +2125,9 @@ function checkVar(o, pars) {
 	_shouldBe(checkVarEl, 'varTestBooleanDigitPositive', pars[3], 10);
 	_shouldBe(checkVarEl, 'varTestBooleanDigitNegative', pars[4], -20);
 	_shouldBe(checkVarEl, 'varTestEvaluatedNumber', pars[5], 8);
-
-console.log('par 7', pars[7]);
-console.log('par 8:', pars[8]);
-
-	// This syntax isn't supported yet - there's a ticket on it:
-	// https://github.com/Active-CSS/active-css/issues/34
-
-//	_shouldBe(checkVarEl, 'window.varTestWinVar as a parameter', pars[6], 'hello');
-//	_shouldBe(checkVarEl, 'window.varTestWinVar', window.varTestWinVar, 'hello');
+	_shouldBe(checkVarEl, 'window.varTestWinVar as a parameter', pars[6], 'hello');
+	_shouldBe(checkVarEl, 'window.varTestWinVar as a variable', window.varTestWinVar, 'hello');
+	_shouldBe(checkVarEl, 'varTestArrayAssign', pars[7], true);
 
 	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
 	_addSuccessClass(checkVarEl);

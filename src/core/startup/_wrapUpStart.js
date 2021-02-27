@@ -14,6 +14,14 @@ const _wrapUpStart = () => {
 		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
 		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
 
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			characterData: true,
+			childList: true,
+			subtree: true
+		});
+
 		// Handle any developer initialization events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
 
@@ -32,14 +40,6 @@ const _wrapUpStart = () => {
 			window.history.replaceState(url, document.title, url);
 		}
 		setupEnded = true;
-
-		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
-		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
-		elementObserver.observe(document.body, {
-			characterData: true,
-			childList: true,
-			subtree: true
-		});
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 

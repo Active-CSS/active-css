@@ -21,8 +21,8 @@ body:init {
 
 .coreTest:draw {
 	var: testIndex++;
-	var: window.testsRun[{testIndex}] {};
-	var: window.testsRun[{testIndex}].desc "{@data-desc}";
+	var: window.testsRun[testIndex] {};
+	var: window.testsRun[testIndex].desc "{@data-desc}";
 	trigger: test;
 }
 
@@ -1625,22 +1625,20 @@ create-element-tag:connectedCallback {
 			varTestBooleanDigitPositive 10,
 			varTestBooleanDigitNegative -20,
 			varTestEvaluatedNumber 1 * 2 + 6,
-			window.varTestWinVar "hello", /* not yet supported - leave this here for the moment - an issue has been created for it. */
+			window.varTestWinVar "hello",
 			varTestArray['test1'] 'cheese',
 			varTestArray['array'] [],
-			varTestArray['array']['subAssign'] 'dave',
-			varTestArrayAssign varTestArray['array']['subAssign']
+			varTestArray['array']['subAssign'] {},
+			varTestArray['array']['subAssign'].dave true,
+			varTestArrayAssign varTestArray['array']['subAssign'].dave
 		;
-		console-log: {varTestArray};
-		console-log: {varTestArrayAssign};
 		func: checkVar "{varTestString}"
 			{varTestBooleanTrue}
 			{varTestBooleanFalse}
 			{varTestBooleanDigitPositive}
 			{varTestBooleanDigitNegative}
 			{varTestEvaluatedNumber}
-			"{window.varTestWinVar}" /* not yet supported - leave this here for the moment - an issue has been created for it. */
-			{varTestArray}
+			"{window.varTestWinVar}"
 			{varTestArrayAssign}
 		;
 	}

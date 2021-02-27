@@ -25,6 +25,6 @@ const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
 	for (v in res) {
-		_set(scopedVars, compScope + '.' + v, res[v]);
+		_set(scopedProxy, compScope + '.' + v, res[v]);
 	}
 };

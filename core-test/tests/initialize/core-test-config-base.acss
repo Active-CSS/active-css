@@ -21,7 +21,7 @@ body:init {
 
 .coreTest:draw {
 	var: testIndex++;
-	var: window.testsRun[{testIndex}] {};
-	var: window.testsRun[{testIndex}].desc "{@data-desc}";
+	var: window.testsRun[testIndex] {};
+	var: window.testsRun[testIndex].desc "{@data-desc}";
 	trigger: test;
 }

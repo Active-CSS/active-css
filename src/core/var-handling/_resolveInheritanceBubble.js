@@ -16,7 +16,7 @@ const _resolveInheritanceBubble = (scope, varName) => {
 	let parentScope = (parentCompDetails && parentCompDetails.varScope) ? parentCompDetails.varScope : 'main';
 
 	// If there, return it immediately.
-	let val = _get(scopedVars, parentScope + '.' + varName);
+	let val = _get(scopedProxy.__getTarget, parentScope + '.' + varName);
 
 	if (typeof val !== 'undefined') return { name: parentScope + '.' + varName, val };
 

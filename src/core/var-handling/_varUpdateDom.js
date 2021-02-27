@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------------------------------------------------
  * Direct changes to attributes are not covered here - this is just what happens when variables change, not attributes. See the create-element command for that code.
  *
- * All scoped variables that are set are contained to a IIFE limited variable "scoped", and changed via the notifier Proxy "scopedVars".
+ * All scoped variables that are set are contained to a IIFE limited variable "scoped", and changed via the notifier Proxy "scopedProxy".
  * The "scoped" variable is not referenced directly.
  *
  * Each new variable that gets set adds to a mirror map of the scoped variable that is populated with data relating to what needs updating.
@@ -51,7 +51,17 @@ ActiveCSS._varUpdateDom = (changes) => {
 
 	let change, dataObj, changeDiff, innerChange;
 	for (change of changes) {
-		if (change.currentPath.indexOf('.') === -1 && change.currentPath.indexOf('HOST') === -1) continue;	// Skip all actions on the root scoped variable.
+		// If it is a session storage or local storage object it may not have been rendered if it isn't in scopedData, but the storage itself should be
+		// updated at this point. It may have been rendered also, in which case it will do all of that separately further down the script.
+		// Keep this simple for speed.
+		if (change.currentPath.startsWith('session')) {
+			window.sessionStorage.setItem('_acssSession', JSON.stringify(scopedProxy.__getTarget.session));
+		} else if (change.currentPath.startsWith('local')) {
+			window.localStorage.setItem('_acssLocal', JSON.stringify(scopedProxy.__getTarget.local));
+		}
+
+		if (change.currentPath.indexOf('.') === -1 && change.currentPath.indexOf('HOST') === -1) continue;	// Skip all actions on scoped variable root.
+
 		if (typeof change.previousValue == 'object' || typeof change.newValue == 'object') {
 			// This is an object or an array, or some sort of type change. Get a diff and apply the applicable change to each item.
 			// The reason we've got here in the code is that a whole array is being redeclared or something, and there may be individually rendered sub-elements
@@ -62,10 +72,15 @@ ActiveCSS._varUpdateDom = (changes) => {
 			change.previousValue = (change.previousValue.__isProxy === true) ? change.previousValue.__getTarget : change.previousValue;
 			// This next line brings back a complex object diff that indicates type of change.
 			changeDiff = recursiveDiff.getDiff(change.previousValue, change.newValue);	// https://github.com/cosmicanant/recursive-diff
+
 			for (innerChange of changeDiff) {
 				innerChange.path = change.currentPath + ((!innerChange.path) ? '' : '.' + innerChange.path.join('.'));
-				dataObj = _get(scopedData, innerChange.path);
-				if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+
+				// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
+				let varPath = _varFixArr(innerChange.path);
+				dataObj = _get(scopedData, varPath);
+				if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+
 				innerChange.val = (!innerChange.val) ? '' : innerChange.val;
 				_varUpdateDomDo({
 					currentPath: innerChange.path,
@@ -74,8 +89,13 @@ ActiveCSS._varUpdateDom = (changes) => {
 				}, dataObj);	// We need this - we may have a complex object.
 			}
 		} else {
-			dataObj = _get(scopedData, change.currentPath);
-			if (!dataObj) continue;		// No point doing anything yet - it's not been rendered.
+			// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
+			let varPath = _varFixArr(change.currentPath);
+			dataObj = _get(scopedData, varPath);
+			if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+
+			// Convert the currentPath for placeholders.
+			change.currentPath = _varChangeToDots(change.currentPath);
 			_varUpdateDomDo(change, dataObj);
 		}
 	}
@@ -103,7 +123,10 @@ const _varUpdateDomDo = (change, dataObj) => {
 	if (change.currentPath.substr(0, 1) == '_') {
 		compScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
 		if (change.type == 'delete' && compScope == '') {
-			// The whole scope has been deleted. Clean up.
+			// The whole scope has been deleted. Clean up. Don't clean-up session or local storage as they need to persist until manual deletion.
+
+// All these references need converting to dot format. These should just be deleting the scope where applicable here - not the current path.
+
 			delete shadowDoms[change.currentPath];
 			delete scopedData[change.currentPath];
 			delete actualDoms[change.currentPath];
@@ -156,7 +179,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 							return varHost.getAttribute(varName);
 						} else {
 							// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-							let val = _get(scopedVars, wot);
+							let val = _get(scopedProxy.__getTarget, wot);
 							return (val) ? val : _;
 						}
 					}
@@ -168,6 +191,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 
 	// Handle content in attributes. The treewalker option for attributes is deprecated unfortunately, so it uses a different method.
 	let found;
+
 	for (cid in dataObj.attrs) {
 		found = false;
 		for (attr in dataObj.attrs[cid]) {
@@ -194,6 +218,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			if (!el.hasAttribute(attr)) return;	// Hasn't been created yet, or it isn't there any more. Skip clean-up anyway. Might need it later.
 			// Regenerate the attribute from scratch with the latest values. This is the safest way to handler it and cater for multiple different variables
 			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
+
 			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost, compScope);
 			el.setAttribute(attr, attrContent);
 		}

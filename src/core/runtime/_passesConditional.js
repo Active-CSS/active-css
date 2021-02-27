@@ -56,7 +56,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 						'compDoc': compDoc,
 						'varScope': varScope
 					};
-					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
+					if (_c[func](cObj, scopedProxy, privVarScopes) !== actionBoolState) {
 						return false;	// Barf out immediately if it fails a condition.
 					}
 				}
@@ -115,7 +115,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 							'component': component,
 							'compDoc': compDoc,
 							'varScope': varScope
-						}, scopedVars, privVarScopes) !== actionBoolState) {
+						}, scopedProxy, privVarScopes) !== actionBoolState) {
 							return false;	// Barf out immediately if it fails a condition.
 						}
 					}

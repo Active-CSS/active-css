@@ -15,23 +15,19 @@ const _replaceStringVars = (o, str, varScope) => {
 			case '$HTML_NOVARS':
 			case '$HTML_ESCAPED':
 			case '$HTML':
-				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
-				res = _get(scopedVars, scopedVar);
-				if (!res && typeof res !== 'string') {
+				let scoped = _getScopedVar('__acss' + innards.substr(1), varScope);
+				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-					res = ActiveCSS._sortOutFlowEscapeChars(res);
+					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
 				}
 				return res;
 
 			default:
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
-					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
-					scopedVar = _resolveInnerBracketVars(scopedVar);
-					let scopedVarObj = _resolveInheritance(scopedVar);
-					res = scopedVarObj.val;
-					return res || '';
+					let scoped = _getScopedVar(innards, varScope);
+					return scoped.val || '';
 				} else {
 					return '{' + innards + '}';
 				}

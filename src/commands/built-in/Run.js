@@ -5,9 +5,9 @@ _a.Run = o => {
 		return inn;
 	});
 	let _activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
-	scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];
+	scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];
 	try {
-		Function('scopedVars, _activeVarScope', funky)(scopedVars, _activeVarScope);		// jshint ignore:line
+		Function('scopedProxy, _activeVarScope', funky)(scopedProxy, _activeVarScope);		// jshint ignore:line
 	} catch (err) {
 		console.log('Function syntax error (' + err + '): ' + funky);
 	}
