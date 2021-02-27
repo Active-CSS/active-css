@@ -51,10 +51,12 @@ _a.Var = o => {
 		varName = 'scopedProxy.local.' + varName;
 	}
 
-	varName = _resolveInnerBracketVars(varName, o.varScope);	// done in getScopedVar but needs to be done before prefix...
+	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
+	varName = _prefixScopedVars(varName, o.varScope, true);		// true = handle variables in quotes first.
 	varName = _prefixScopedVars(varName, o.varScope);
 
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+	varDetails = _prefixScopedVars(varDetails, o.varScope, true);		// true = handle variables in quotes first.
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Set up left-hand variable for use in _set() later on.
@@ -71,7 +73,8 @@ _a.Var = o => {
 		scopedVar = scoped.name;
 	}
 
-	// Resolve inner bracket variables (only) with their true values on the left-hand of the equation now that they are scoped.
+// this is going to get sorted out shortly. All var types need to be resolved at this point and not just HTML vars, to avoid double-evaluation.
+
 	varDetails = _replaceHTMLVars(o, varDetails);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.

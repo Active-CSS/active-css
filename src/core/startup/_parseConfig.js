@@ -14,8 +14,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
-	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
-
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.

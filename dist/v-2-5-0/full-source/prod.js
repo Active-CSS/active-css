@@ -1402,10 +1402,12 @@ _a.Var = o => {
 		varName = 'scopedProxy.local.' + varName;
 	}
 
-	varName = _resolveInnerBracketVars(varName, o.varScope);	// done in getScopedVar but needs to be done before prefix...
+	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
+	varName = _prefixScopedVars(varName, o.varScope, true);		// true = handle variables in quotes first.
 	varName = _prefixScopedVars(varName, o.varScope);
 
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+	varDetails = _prefixScopedVars(varDetails, o.varScope, true);		// true = handle variables in quotes first.
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Set up left-hand variable for use in _set() later on.
@@ -1422,7 +1424,8 @@ _a.Var = o => {
 		scopedVar = scoped.name;
 	}
 
-	// Resolve inner bracket variables (only) with their true values on the left-hand of the equation now that they are scoped.
+// this is going to get sorted out shortly. All var types need to be resolved at this point and not just HTML vars, to avoid double-evaluation.
+
 	varDetails = _replaceHTMLVars(o, varDetails);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
@@ -4301,8 +4304,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
-	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
-
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
@@ -5601,7 +5602,7 @@ const _observableSlim = (function() {
 	};
 })();
 
-const _prefixScopedVars = function(str, varScope=null) {
+const _prefixScopedVars = (str, varScope=null, quoted=false) => {
 	/**
 	 * "str" is a string that could contain scoped variables that need proper set up before evaluating.
 	 * It finds each word, which may include a period (.), and see if this needs scoping. It may already have a scoped prefix. If it doesn't, it gets
@@ -5609,13 +5610,26 @@ const _prefixScopedVars = function(str, varScope=null) {
 	 * We need to ignore all words in double quotes, so the part of the regex referencing quotes brings back a full string including quotes so we can ignore the
 	 * whole thing.
 	*/
+	let reg;
+	if (quoted) {
+		// Handle on those inside double quotes.
+		str = str.replace(/("([^"]|"")*"|'([^']|'')*')/g, function(_, innards) {
+			return _prefixScopedVarsDo(innards, varScope, quoted);
+		});
+	} else {
+		str = _prefixScopedVarsDo(str, varScope, quoted);
+	}
+
+	return str;
+};
+
+const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
 		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
 		let scoped = _getScopedVar(wot, varScope);
-		return (typeof scoped.val !== 'undefined') ? scoped.fullName : wot;
+		return (typeof scoped.val !== 'undefined') ? (quoted) ? scoped.val : scoped.fullName : wot;
 	});
-
 	return str;
 };
 
