@@ -52,11 +52,9 @@ _a.Var = o => {
 	}
 
 	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
-	varName = _prefixScopedVars(varName, o.varScope, true);		// true = handle variables in quotes first.
 	varName = _prefixScopedVars(varName, o.varScope);
 
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
-	varDetails = _prefixScopedVars(varDetails, o.varScope, true);		// true = handle variables in quotes first.
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Set up left-hand variable for use in _set() later on.

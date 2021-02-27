@@ -1403,11 +1403,9 @@ _a.Var = o => {
 	}
 
 	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
-	varName = _prefixScopedVars(varName, o.varScope, true);		// true = handle variables in quotes first.
 	varName = _prefixScopedVars(varName, o.varScope);
 
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
-	varDetails = _prefixScopedVars(varDetails, o.varScope, true);		// true = handle variables in quotes first.
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Set up left-hand variable for use in _set() later on.
@@ -5602,7 +5600,19 @@ const _observableSlim = (function() {
 	};
 })();
 
-const _prefixScopedVars = (str, varScope=null, quoted=false) => {
+const _prefixScopedVars = (str, varScope=null) => {
+	// Handle those inside double quotes.
+	str = str.replace(/("([^"]|"")*"|'([^']|'')*')/g, function(_, innards) {
+		return _prefixScopedVarsDo(innards, varScope, true);
+	});
+	str = _prefixScopedVarsDo(str, varScope);
+
+// note these will need to be part of the map ref strategy to avoid double-evaluation.
+
+	return str;
+};
+
+const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	/**
 	 * "str" is a string that could contain scoped variables that need proper set up before evaluating.
 	 * It finds each word, which may include a period (.), and see if this needs scoping. It may already have a scoped prefix. If it doesn't, it gets
@@ -5610,20 +5620,6 @@ const _prefixScopedVars = (str, varScope=null, quoted=false) => {
 	 * We need to ignore all words in double quotes, so the part of the regex referencing quotes brings back a full string including quotes so we can ignore the
 	 * whole thing.
 	*/
-	let reg;
-	if (quoted) {
-		// Handle on those inside double quotes.
-		str = str.replace(/("([^"]|"")*"|'([^']|'')*')/g, function(_, innards) {
-			return _prefixScopedVarsDo(innards, varScope, quoted);
-		});
-	} else {
-		str = _prefixScopedVarsDo(str, varScope, quoted);
-	}
-
-	return str;
-};
-
-const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
 		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
