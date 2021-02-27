@@ -1352,12 +1352,7 @@ _a.UrlChange = o => {
 _a.Var = o => {
 	let locStorage, sessStorage;	//, newActVal = o.actVal.trim();
 
-//console.log('_a.Var, before o.actVal:', o.actVal);
-
-//	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, 'noAttrs', o.varScope).trim();
 	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
-
-//console.log('_a.Var, after o.actVal:', newActVal);
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -1368,9 +1363,6 @@ _a.Var = o => {
 	}
 
 	// Get the name of the variable on the left.
-
-// this isn't going to work with var: arr["a 12"] {}
-
 	let arr = newActVal.trim()._ACSSSpaceQuoIn().split(' ');
 	let varName = arr.shift()._ACSSSpaceQuoOut();
 
@@ -1410,17 +1402,11 @@ _a.Var = o => {
 		varName = 'scopedProxy.local.' + varName;
 	}
 
-//console.log('_a.Var, before varName:', varName);
-
 	varName = _resolveInnerBracketVars(varName, o.varScope);	// done in getScopedVar but needs to be done before prefix...
 	varName = _prefixScopedVars(varName, o.varScope);
 
-//console.log('_a.Var, after varName:', varName);
-
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
-
-//console.log('_a.Var, 1 varDetails:', varDetails);
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
@@ -1428,10 +1414,6 @@ _a.Var = o => {
 		// Leave it as it is - it's a variable in the window scope.
 		isWindowVar = true;
 		scopedVar = varName.substr(7);
-
-//console.log('******************* window scopedVar:', scopedVar);
-
-//		scopedVar = _resolveInnerBracketVars(scopedVar);
 	} else if (varName.startsWith('scopedProxy.')) {
 		scopedVar = varName;
 		scopedVar = scopedVar.replace('scopedProxy.', '');	// We don't want the first part of the left-hand variable to contain "scopedProxy." any more.
@@ -1440,59 +1422,30 @@ _a.Var = o => {
 		scopedVar = scoped.name;
 	}
 
-	// Resolve attributes. Put in something to disallow html attributes otherwise there could be a problem with injection.
-//	varDetails = _replaceAttrs(o.obj, varDetails, o.secSelObj, o, o.func, o.varScope);
-
 	// Resolve inner bracket variables (only) with their true values on the left-hand of the equation now that they are scoped.
 	varDetails = _replaceHTMLVars(o, varDetails);
 
-//console.log('_a.Var, 2 varDetails:', varDetails);
-
-	// Resolve any attributes in the right-hand side.
-//	varDetails = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, '_inVarFunc', o.varScope);
-
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
-
-
-
-
 
 // Scoping object value references to variables doesn't work yet, like { key: varThatNeedsScoping }
 
 
 
-
-
-
-
-
-
-
-//console.log('_a.Var, 3 varDetails:', varDetails);
-
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
-
-//console.log('_a.Var, 4 expr:', expr);
 
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.
 //		console.log('_a.Var, set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(window, scopedVar, expr);
-
-//console.log(_set(window, scopedVar, expr));
-
 	} else {
 		// Active CSS component/document scopes.
 //		console.log('_a.Var, set ' + scopedVar + ' = ', expr);		// handy - don't remove
 		_set(scopedProxy, scopedVar, expr);
 		_allowResolve(scopedVar);
 	}
-
-//console.log('_a.Var, resolvableVars:', resolvableVars);
-
 };
 
 _a.VarDelete = o => {
@@ -4903,8 +4856,6 @@ const _getScopedVar = (nam, scope) => {
 	// If variable is already scoped, it assumes that inheritance has already been sorted out.
 	let fullName, scopeName, val, pathName, scopingDone, winVar = false;
 
-//console.log('_getScopedVar, looking at nam:', nam);
-
 	let fullyScoped = (nam.startsWith('window.') || nam.startsWith('scopedProxy.'));
 
 	if (scope == '___none' && !fullyScoped) {
@@ -4918,10 +4869,6 @@ const _getScopedVar = (nam, scope) => {
 		if (fullName.substr(0, 1) == 'w') {
 			val = _get(window, scopeName);
 			winVar = true;
-
-//console.log('_getScopedVar, window variable return object:', { fullName, name: scopeName, val, winVar });
-
-
 		} else {
 			val = _get(scopedProxy.__getTarget, scopeName);
 		}
@@ -5662,22 +5609,12 @@ const _prefixScopedVars = function(str, varScope=null) {
 	 * We need to ignore all words in double quotes, so the part of the regex referencing quotes brings back a full string including quotes so we can ignore the
 	 * whole thing.
 	*/
-//console.log('_prefixScopedVars, before str:', str);
-
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
 		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';	// This is a full quoted so is an invalid match - ignore it.
 		if (wot == 'true' || wot == 'false') return wot;
-
-//console.log('_prefixScopedVars, getting: wot:', wot, 'varScope:', varScope);
-
 		let scoped = _getScopedVar(wot, varScope);
-
-//console.log('_prefixScopedVars, scoped.fullName:', scoped.fullName, 'scoped:', scoped, 'scopedProxy:', scopedProxy);
-
 		return (typeof scoped.val !== 'undefined') ? scoped.fullName : wot;
 	});
-
-//console.log('_prefixScopedVars, after str:', str);
 
 	return str;
 };
@@ -5895,18 +5832,10 @@ const _replaceComponents = (o, str) => {
 const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null) => {
 	let res;
 
-//console.log('_replaceJSExpression, sel:', sel);
-
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
-
-//console.log('_replaceJSExpression, 1, wot:', wot);
-
 		wot = _replaceScopedVarsExpr(wot, varScope);
-
-//console.log('_replaceJSExpression, 2, wot:', wot);
-
 		let q = '';
 		if (quoteIfString) {
 			q = '"';
@@ -5934,8 +5863,6 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 		return res;
 	});
-
-//console.log('_replaceJSExpression, realVal:', realVal, 'res:', res, 'sel:', sel);
 
 	// Return the result rather than the string if realVal is set to true.
 	return (realVal) ? res : sel;
@@ -6148,9 +6075,6 @@ const _replaceStringVars = (o, str, varScope) => {
 
 /* Takes a variable and checks if it is allowed to be resolved. This value is set through the var command with _allowResolve. */
 const _resolvable = str => {
-
-//console.log('_resolvable, str:', str, 'resolvableVars:', resolvableVars);
-
 	return (str.startsWith('scopedProxy.') || resolvableVars.indexOf(str) !== -1 || str.startsWith('window.')) ? true : false;
 };
 
@@ -6196,26 +6120,16 @@ const _resolveInheritance = scopedVar => {
 	// As soon as it finds somewhere the variable exists, it returns the variable reference in that scope.
 	// If it doesn't find the variable there, it returns the original scope.
 
-//console.log('_resolveInheritance, resolving scopedVar:', scopedVar);
-
 	// Check if this is a session or local variable first.
 	let dotPos = scopedVar.indexOf('.');
 	if (dotPos !== -1) {
 		let lesserScopedVar = scopedVar.substr(dotPos + 1);
 		let baseVar = _getBaseVar(lesserScopedVar);
-
-//console.log('_resolveInheritance, baseVar:', baseVar, 'lesserScopedVar:', lesserScopedVar, 'scopedVar:', scopedVar);
-
 		if (localStoreVars[baseVar] === true) {
 			let realScopedVar = 'local.' + lesserScopedVar;
-//console.log('_resolveInheritance, found a local variable:', { name: realScopedVar, val: _get(scopedProxy, realScopedVar) });
-
 			return { name: realScopedVar, val: _get(scopedProxy.__getTarget, realScopedVar) };
 		} else if (sessionStoreVars[baseVar] === true) {
 			let realScopedVar = 'session.' + lesserScopedVar;
-
-//console.log('_resolveInheritance, found a session variable:', { name: realScopedVar, val: _get(scopedProxy, realScopedVar) });
-
 			return { name: realScopedVar, val: _get(scopedProxy.__getTarget, realScopedVar) };
 		}
 	}
@@ -6225,12 +6139,7 @@ const _resolveInheritance = scopedVar => {
 	// Is this already in the current scope? If so, we don't go any higher - return the original scope reference.
 	let val = _get(scopedProxy.__getTarget, scopedVar);
 	let origValObj = { 'name': scopedVar, 'val': val };
-	if (typeof val !== 'undefined') {
-
-//console.log('_resolveInheritance, found origValObj in current scope:', origValObj);
-
-		return origValObj;
-	}
+	if (typeof val !== 'undefined') return origValObj;
 
 	// Get the current scope so it is a separate item when bubbling up components.
 	let i = scopedVar.indexOf('.');
@@ -6242,17 +6151,9 @@ const _resolveInheritance = scopedVar => {
 
 	// If there is no inherited variable then we assume this is a new variable appearing in the scope the variable is used in,
 	// so return the original scope reference. "actualScopeObj" will be false if the variable is not inherited.
-	if (!actualScopeObj) {
-
-//console.log('_resolveInheritance, 3 returning origValObj:', origValObj);
-
-		return origValObj;
-	}
+	if (!actualScopeObj) return origValObj;
 
 	// This variable is inherited from a higher scope, return the higher scope reference.
-
-//console.log('_resolveInheritance, end returning origValObj:', actualScopeObj);
-
 	return actualScopeObj;
 };
 
@@ -6322,18 +6223,10 @@ const _resolveInnerBracketVars = (str, scope) => {
 const _restoreStorage = () => {
 	let sessionStore = window.sessionStorage.getItem('_acssSession');
 	if (typeof sessionStore !== 'undefined') {
-
-//console.log('_restoreStorage, found in session storage:', JSON.parse(sessionStore));
-
 		scopedOrig.session = JSON.parse(sessionStore);
-
-//console.log('_restoreStorage, scopedOrig.session:', scopedOrig.session);
-
 		// Loop immediate items under session and set as session vars for the core to use.
 		let key;
 		for (key in scopedOrig.session) {
-//console.log('_restoreStorage, logging sessionStoreVars[' + key + ']');
-
 			sessionStoreVars[key] = true;
 			_allowResolve('session.' + key);
 		}		
@@ -6347,9 +6240,6 @@ const _restoreStorage = () => {
 			_allowResolve('local.' + key);
 		}		
 	}
-
-//console.log('_restoreStorage, sessionStoreVars:', sessionStoreVars, 'localStoreVars:', localStoreVars);
-
 };
 
 const _setCSSVariable = o => {
