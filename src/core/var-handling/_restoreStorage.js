@@ -9,7 +9,7 @@ const _restoreStorage = () => {
 			_allowResolve('session.' + key);
 		}		
 	}
-	let localStore = window.sessionStorage.getItem('_acssLocal');
+	let localStore = window.localStorage.getItem('_acssLocal');
 	if (typeof localStore !== 'undefined') {
 		scopedOrig.local = JSON.parse(localStore);
 		let key;
