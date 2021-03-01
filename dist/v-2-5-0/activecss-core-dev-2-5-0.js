@@ -1302,9 +1302,13 @@ _a.ToggleClass = o => {
 };
 
 _a.Trigger = o => {
-	if (typeof o.secSel == 'string' && o.secSel.substr(0, 1) == '~') {
+	if (typeof o.secSel == 'string' && o.secSel.indexOf('~') !== -1) {
+		// Remove any attached scopes prior to handling the event - probably custom event came from a sub-component. The event handling adds the scopes on as indicated.
+		let colonPos = o.secSel.indexOf(':');
+		let unScopedSecSel = (colonPos !== -1) ? o.secSel.substr(colonPos + 1) : o.secSel;
+
 		// This is a trigger on a custom selector. Pass the available objects in case they are needed.
-		_handleEvents({ obj: o.secSel, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: unScopedSecSel, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	} else {
 		// Note: We want to keep the object of the selector, but we do still want the ajaxObj.
 		// Is this a draw event? If so, we also want to run all draw events for elements within.
@@ -4211,12 +4215,6 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						if (!removeState) {
 							preSetupEvents.push({ ev, sel });
-							if (config[sel] === undefined) {	// needed for DevTools.
-								config[sel] = {};
-							}
-							if (config[sel][ev] === undefined) {	// needed for DevTools.
-								config[sel][ev] = {};
-							}
 							if (config[sel][ev][conditionName] === undefined) {
 								config[sel][ev][conditionName] = [];
 							}
@@ -6695,6 +6693,7 @@ ActiveCSS._checkEvEditor = debugID => {
 	return (evEditorExtID && evEditorExtID == debugID);
 };
 
+/* Used in extension only - will need updating when back on it */
 ActiveCSS._checkEventDupe = (primSel, condList, ev) => {
 	// Check the main config for a duplicate primSel, condList and event. Return 0 if no matching event, 1 if matching event and an element can be inspected,
 	// 2 if matching event but no matching element.

@@ -203,12 +203,6 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						if (!removeState) {
 							preSetupEvents.push({ ev, sel });
-							if (config[sel] === undefined) {	// needed for DevTools.
-								config[sel] = {};
-							}
-							if (config[sel][ev] === undefined) {	// needed for DevTools.
-								config[sel][ev] = {};
-							}
 							if (config[sel][ev][conditionName] === undefined) {
 								config[sel][ev][conditionName] = [];
 							}
