@@ -1,4 +1,4 @@
-const _replaceHTMLVars = (o, str) => {
+const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:_]+)\}/gi, function(_, c) {
 		let doc, noVars, escaped, unEscaped;
 		let noVarsPos = c.indexOf(':NOVARS');
@@ -37,7 +37,7 @@ const _replaceHTMLVars = (o, str) => {
 			if (noVars) res = _escNoVars(res);
 			if (escaped) res = _safeTags(res);
 			if (unEscaped) res = _unSafeTags(res);
-			return res;
+			return _preReplaceVar(res, varReplacementRef);
 		}
 		// Return it as it is if the element is not there.
 		return '{#' + c + '}';

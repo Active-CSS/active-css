@@ -86,11 +86,23 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Is this a non-delayed action, if so, we can skip the cancel check.
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
+	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
+	
 	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	} else {
-		o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref);
 	}
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.

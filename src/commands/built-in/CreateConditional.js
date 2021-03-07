@@ -1,6 +1,6 @@
 _a.CreateConditional = o => {
 	// Create an Active CSS conditional dynamically.
-	let funcName = o.actVal.trim().split(' ')[0];
+	let funcName = o.actVal.split(' ')[0];
 	let funcContent = o.actVal.replace(funcName, '').trim();
 	funcName = funcName._ACSSConvFunc();
 
@@ -9,7 +9,9 @@ _a.CreateConditional = o => {
 	// This function right here should only ever be declared once. All var handlings need to be set up correctly with the correct scope right here in this
 	// function.
 	if (_c[funcName]) return;	// If this command already exists, do nothing more.
-	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+
+//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+	funcContent = funcContent.slice(2, -2);
 	funcContent = _handleVarsInJS(funcContent);
 
 	// Set up the default variables in terms that a Active CSS programmer would be used to:

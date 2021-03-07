@@ -20,13 +20,18 @@ _a.Render = o => {
 		}
 	}
 
-	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
-	content = _replaceComponents(o, content);
-
 	// Handle any ajax strings.
-	content = _replaceStringVars(o.ajaxObj, content);
+	let strObj = _handleVars([ 'strings' ],
+		{
+			str: content,
+			o: o.ajaxObj
+		}
+	);
+	content = _resolveVars(strObj.str, strObj.ref);
 
-	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
+	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
+	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
+	content = _replaceComponents(o, content);
 
 	_renderIt(o, content, childTree, selfTree);
 };

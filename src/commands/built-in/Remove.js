@@ -1,5 +1,5 @@
 _a.Remove = o => {
-	let thisObj = _getSel(o, o.actVal.trim(), true);
+	let thisObj = _getSel(o, o.actVal, true);
 	if (thisObj !== false) {
 		// This is self or a host element.
 		ActiveCSS._removeObj(thisObj);

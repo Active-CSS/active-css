@@ -156,7 +156,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							// attached to the event.
 							let re, clause;
 							for (clause of evSplit) {
-								re = new RegExp(COLONSELS, 'g');
+								re = COLONSELS;
 								if (re.test(clause)) {
 									predefs.push(clause);
 								} else {

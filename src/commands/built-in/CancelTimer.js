@@ -1,7 +1,7 @@
 _a.CancelTimer = o => {
 	// Delay action on a secSel by action or label.
 	// This is scoped by document or specific shadow DOM or component.
-	let val = o.actVal.trim();
+	let val = o.actVal;
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, intID, delayRef, loopref;

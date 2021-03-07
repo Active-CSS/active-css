@@ -1,7 +1,5 @@
 _a.Var = o => {
-	let locStorage, sessStorage;	//, newActVal = o.actVal.trim();
-
-	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+	let locStorage, sessStorage, newActVal = o.actValSing;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -12,8 +10,20 @@ _a.Var = o => {
 	}
 
 	// Get the name of the variable on the left.
-	let arr = newActVal.trim()._ACSSSpaceQuoIn().split(' ');
+	let arr = newActVal._ACSSSpaceQuoIn().split(' ');
 	let varName = arr.shift()._ACSSSpaceQuoOut();
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings' ],
+		{
+			str: varName,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+	varName = _resolveVars(strObj.str, strObj.ref);
 
 	// Get the expression on the right.
 	let varDetails = arr.join(' ')._ACSSSpaceQuoOut();
@@ -54,9 +64,6 @@ _a.Var = o => {
 	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
 	varName = _prefixScopedVars(varName, o.varScope);
 
-	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
-	varDetails = _prefixScopedVars(varDetails, o.varScope);
-
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
 	if (varName.startsWith('window.')) {
@@ -71,16 +78,23 @@ _a.Var = o => {
 		scopedVar = scoped.name;
 	}
 
-// this is going to get sorted out shortly. All var types need to be resolved at this point and not just HTML vars, to avoid double-evaluation.
+	strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'html' ],
+		{
+			str: varDetails,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+	varDetails = _resolveVars(strObj.str, strObj.ref);
 
-	varDetails = _replaceHTMLVars(o, varDetails);
+	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
-
-// Scoping object value references to variables doesn't work yet, like { key: varThatNeedsScoping }
-
-
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false

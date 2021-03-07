@@ -84,14 +84,39 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
-	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScopeToPassIn);
+	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str: compPending[shadRef],
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: varScopeToPassIn,
+			shadowParent: shadowParent
+		}
+	);
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: o.ajaxObj,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Output the variables for real from the map.
+	compPending[shadRef] = _resolveVars(strObj.str, strObj.ref);
+
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
-
-	// Now we can go through the shadow DOM contents and handle any host attribute references now that the host is set up.
-	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, varScopeToPassIn);
-
-	// Lastly, handle any {$STRING} value from ajax content if it exists. This must be done last, otherwise we risk var replacement changing content of the $STRING.
-	compPending[shadRef] = _replaceStringVars(o.ajaxObj, compPending[shadRef]);
 
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];

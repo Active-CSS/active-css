@@ -84,9 +84,32 @@ const _performSecSel = (loopObj) => {
 				// passTargSel is the string of the target selector that now goes through some changes.
 				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
 
-				passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, varScope);
-				// See if there are any left that can be populated by the passed otherObj.
-				passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, varScope);
+				passTargSel = ActiveCSS._sortOutFlowEscapeChars(passTargSel);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						str: passTargSel,
+						obj,
+						varScope
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope
+					},
+					strObj.ref
+				);
+				strObj = _handleVars([ 'attrs' ],
+					{
+						str: strObj.str,
+						obj: otherObj,
+						varScope
+					},
+					strObj.ref
+				);
+				passTargSel = _resolveVars(strObj.str, strObj.ref);
+
 				// Handle functions being run on self.
 				if (meMap.includes(passTargSel)) {
 					// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.

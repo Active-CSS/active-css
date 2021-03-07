@@ -1,4 +1,4 @@
-const _replaceComponents = (o, str) => {
+const _replaceComponents = (o, str, varReplacementRef=-1) => {
 	// This needs to be recursive to facilitate easier syntax. XSS defense needs to occur elsewhere otherwise this ceases to be useful. This must stay recursive.
 	let co = 0, found;
 	while (co < 50) {
@@ -36,8 +36,33 @@ const _replaceComponents = (o, str) => {
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;
 			} else {
-				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.varScope);
-				ret = _replaceStringVars(o.ajaxObj, ret);
+				ret = ActiveCSS._sortOutFlowEscapeChars(ret);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+					{
+						str: ret,
+						func: o.func,
+						o,
+						obj: o.obj,
+						varScope: o.varScope
+					}
+				);
+				strObj = _handleVars([ 'strings' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope: o.varScope
+					},
+					strObj.ref
+				);
+				strObj = _handleVars([ 'strings' ],
+					{
+						str: strObj.str,
+						o: o.ajaxObj,
+						varScope: o.varScope
+					},
+					strObj.ref
+				);
+				ret = _resolveVars(strObj.str, strObj.ref);
 			}
 			return (ret) ? ret : '';
 		});

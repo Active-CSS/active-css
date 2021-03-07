@@ -33,7 +33,25 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
+
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						evType: thisAction,
+						str: aV,
+						obj: el,
+						varScope
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope
+					},
+					strObj.ref
+				);
+				aV = _resolveVars(strObj.str, strObj.ref);
+
 				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 				condVals = aV.split('_ACSSComma');
@@ -94,7 +112,22 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+						{
+							str: aV,
+							obj: el,
+							varScope
+						}
+					);
+					strObj = _handleVars([ 'strings', 'scoped' ],
+						{
+							str: strObj.str,
+							varScope
+						},
+						strObj.ref
+					);
+					aV = _resolveVars(strObj.str, strObj.ref);
+
 					aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 					condVals = aV.split('_ACSSComma');

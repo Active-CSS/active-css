@@ -14,12 +14,13 @@
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
-	const COLONSELS = '^(' +
+	const COLONSELS = new RegExp('^(' +
 		// Word not followed by another name type character.
 		'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
 		// Word and opening parenthesis.
 		'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
-		')';
+		')', 'g');
+
 
 	const DYNAMICCHARS = {
 		',': '_ACSS_later_comma',
@@ -33,6 +34,7 @@
 	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
 	const SELFREGEX = /\{\$SELF\}/g;
+	const UNIQUEREF = Math.floor(Math.random() * 10000000);
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -151,7 +153,9 @@
 		htmlRawMap = [],
 		sessionStoreVars = [],
 		localStoreVars = [],
-		resolvableVars = [];
+		resolvableVars = [],
+		resolvingObj = {},
+		varReplaceRef = 0;
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -199,7 +203,7 @@ _a.Blur = o => {
 _a.CancelTimer = o => {
 	// Delay action on a secSel by action or label.
 	// This is scoped by document or specific shadow DOM or component.
-	let val = o.actVal.trim();
+	let val = o.actVal;
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, intID, delayRef, loopref;
@@ -376,7 +380,7 @@ _a.CopyToClipboard = o => {
 
 _a.CreateCommand = o => {
 	// Create an Active CSS command dynamically.
-	let funcName = o.actVal.trim().split(' ')[0];
+	let funcName = o.actVal.split(' ')[0];
 	let funcContent = o.actVal.replace(funcName, '').trim();
 	funcName = funcName._ACSSConvFunc();
 
@@ -387,7 +391,8 @@ _a.CreateCommand = o => {
 
 	if (_a[funcName]) return;	// If this command already exists, do nothing more.
 
-	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+	funcContent = funcContent.slice(2, -2);
 	funcContent = _handleVarsInJS(funcContent);
 
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
@@ -427,7 +432,7 @@ _a.CreateCommand = o => {
 
 _a.CreateConditional = o => {
 	// Create an Active CSS conditional dynamically.
-	let funcName = o.actVal.trim().split(' ')[0];
+	let funcName = o.actVal.split(' ')[0];
 	let funcContent = o.actVal.replace(funcName, '').trim();
 	funcName = funcName._ACSSConvFunc();
 
@@ -436,7 +441,9 @@ _a.CreateConditional = o => {
 	// This function right here should only ever be declared once. All var handlings need to be set up correctly with the correct scope right here in this
 	// function.
 	if (_c[funcName]) return;	// If this command already exists, do nothing more.
-	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+
+//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
+	funcContent = funcContent.slice(2, -2);
 	funcContent = _handleVarsInJS(funcContent);
 
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
@@ -557,7 +564,7 @@ _a.DocumentTitle = o => {
 
 _a.Eval = o => {
 	// Run JavaScript dynamically in the global window scope. This is straight-up JavaScript that runs globally.
-	let evalContent = ActiveCSS._sortOutFlowEscapeChars(o.actVal.trim().slice(2, -2));
+	let evalContent = o.actVal.slice(2, -2);
 	eval(evalContent);		// jshint ignore:line
 };
 
@@ -711,7 +718,7 @@ _a.Func = o => {
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();
 
-	let spl = o.actVal.trim().split(' ');
+	let spl = o.actVal.split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {
 		console.log(func + ' is not a function.');
@@ -749,7 +756,7 @@ _a.IframeReload = o => {
 
 _a.LoadConfig = o => {
 	// Dynamically load additional config if it has not already been loaded and append to existing unprocessed concatenated config.
-	o.actVal = o.actVal._ACSSRepQuo().trim();
+	o.actVal = o.actVal._ACSSRepQuo();
 	_addActValRaw(o);
 	if (!configArr.includes(o.avRaw)) {
 		o.file = o.actVal;	// We want the original to show in the extensions.
@@ -921,7 +928,7 @@ _a.PreventDefault = o => {
 };
 
 _a.Remove = o => {
-	let thisObj = _getSel(o, o.actVal.trim(), true);
+	let thisObj = _getSel(o, o.actVal, true);
 	if (thisObj !== false) {
 		// This is self or a host element.
 		ActiveCSS._removeObj(thisObj);
@@ -999,13 +1006,18 @@ _a.Render = o => {
 		}
 	}
 
-	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
-	content = _replaceComponents(o, content);
-
 	// Handle any ajax strings.
-	content = _replaceStringVars(o.ajaxObj, content);
+	let strObj = _handleVars([ 'strings' ],
+		{
+			str: content,
+			o: o.ajaxObj
+		}
+	);
+	content = _resolveVars(strObj.str, strObj.ref);
 
-	content = _replaceScopedVars(content, o.secSelObj, 'Render', null, false);
+	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
+	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
+	content = _replaceComponents(o, content);
 
 	_renderIt(o, content, childTree, selfTree);
 };
@@ -1044,7 +1056,10 @@ _a.RestoreClone = o => {
 _a.Run = o => {
 	let inn;
 	let funky = '"use strict";' + o.actVal.replace(/\{\=([\s\S]*?)\=\}/m, function(_, wot) {
-		inn = _handleVarsInJS(ActiveCSS._sortOutFlowEscapeChars(wot));
+
+// look into this and _handleVarsInJS at some point - it doesn't look like it correctly scopes, and probably should be part of the higher level substitution stuff.
+
+		inn = _handleVarsInJS(wot);
 		return inn;
 	});
 	let _activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
@@ -1345,7 +1360,7 @@ _a.UrlChange = o => {
 	// url to go back to.
 	let wot = o.actVal.split(' ');
 	let url = wot[0];
-	let titl = o.actVal.replace(url, '').trim();
+	let titl = o.actVal.replace(url, '');
 	if (titl == '') {
 		// default to current title if no parameter set.
 		titl = document.title;
@@ -1354,9 +1369,7 @@ _a.UrlChange = o => {
 };
 
 _a.Var = o => {
-	let locStorage, sessStorage;	//, newActVal = o.actVal.trim();
-
-	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+	let locStorage, sessStorage, newActVal = o.actValSing;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -1367,8 +1380,20 @@ _a.Var = o => {
 	}
 
 	// Get the name of the variable on the left.
-	let arr = newActVal.trim()._ACSSSpaceQuoIn().split(' ');
+	let arr = newActVal._ACSSSpaceQuoIn().split(' ');
 	let varName = arr.shift()._ACSSSpaceQuoOut();
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings' ],
+		{
+			str: varName,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+	varName = _resolveVars(strObj.str, strObj.ref);
 
 	// Get the expression on the right.
 	let varDetails = arr.join(' ')._ACSSSpaceQuoOut();
@@ -1409,9 +1434,6 @@ _a.Var = o => {
 	varName = _resolveInnerBracketVars(varName, o.varScope);	// inner brackets are done in getScopedVar but it also needs to be done here before _prefixScopedVars.
 	varName = _prefixScopedVars(varName, o.varScope);
 
-	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
-	varDetails = _prefixScopedVars(varDetails, o.varScope);
-
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
 	if (varName.startsWith('window.')) {
@@ -1426,16 +1448,23 @@ _a.Var = o => {
 		scopedVar = scoped.name;
 	}
 
-// this is going to get sorted out shortly. All var types need to be resolved at this point and not just HTML vars, to avoid double-evaluation.
+	strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'html' ],
+		{
+			str: varDetails,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+	varDetails = _resolveVars(strObj.str, strObj.ref);
 
-	varDetails = _replaceHTMLVars(o, varDetails);
+	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
 	varDetails = '{=' + varDetails + '=}';
-
-// Scoping object value references to variables doesn't work yet, like { key: varThatNeedsScoping }
-
-
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
@@ -1454,7 +1483,18 @@ _a.Var = o => {
 };
 
 _a.VarDelete = o => {
-	let newActVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings' ],
+		{
+			str: o.actValSing,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+	let newActVal = _resolveVars(strObj.str, strObj.ref);
+
 	let scoped = _getScopedVar(newActVal, o.varScope);
 	let mainScope = (scoped.winVar) ? window : scopedProxy;
 	_unset(mainScope, scoped.name);
@@ -1674,7 +1714,7 @@ const _delaySplit = (str, typ, varScope) => {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
 			delayValue = delayValue.replace(/[\{\}]+/g, '');
-			// Replace any scoped variables that may be in the timer value.
+			// Replace any scoped variables that may be in the timer value from inside _replaceJSExpression.
 			convTime = _replaceJSExpression('{=' + delayValue + '=}', true, false, varScope) + delayType;
 		} else {
 			convTime = wot2;
@@ -1889,7 +1929,22 @@ const _handleEvents = evObj => {
 				testSel = primSel.substr(compSelCheckPos + 1);
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
+				if (afterEv && origObj) {
+					testSel = ActiveCSS._sortOutFlowEscapeChars(testSel);
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+						{
+							str: testSel,
+							obj: origObj
+						}
+					);
+					strObj = _handleVars([ 'strings', 'scoped' ],
+						{
+							str: strObj.str,
+						},
+						strObj.ref
+					);
+					testSel = _resolveVars(strObj.str, strObj.ref);
+				}
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
 						selectorList.push({ primSel, componentRefs });
@@ -1926,7 +1981,25 @@ const _handleEvents = evObj => {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-			testSel = (afterEv && origObj) ? _replaceAttrs(origObj, primSel) : primSel;
+			if (afterEv && origObj) {
+				testSel = ActiveCSS._sortOutFlowEscapeChars(primSel);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						str: testSel,
+						obj: origObj
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						str: strObj.str,
+					},
+					strObj.ref
+				);
+				testSel = _resolveVars(strObj.str, strObj.ref);
+			} else {
+				testSel = primSel;
+			}
+
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
 				    try {
@@ -2117,11 +2190,23 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Is this a non-delayed action, if so, we can skip the cancel check.
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
+	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
+	
 	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	} else {
-		o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
+		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref);
 	}
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
@@ -2476,7 +2561,25 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
+
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						evType: thisAction,
+						str: aV,
+						obj: el,
+						varScope
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope
+					},
+					strObj.ref
+				);
+				aV = _resolveVars(strObj.str, strObj.ref);
+
 				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 				condVals = aV.split('_ACSSComma');
@@ -2537,7 +2640,22 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+						{
+							str: aV,
+							obj: el,
+							varScope
+						}
+					);
+					strObj = _handleVars([ 'strings', 'scoped' ],
+						{
+							str: strObj.str,
+							varScope
+						},
+						strObj.ref
+					);
+					aV = _resolveVars(strObj.str, strObj.ref);
+
 					aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
 					condVals = aV.split('_ACSSComma');
@@ -2634,7 +2752,12 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
 			let oCopy = Object.assign({}, o);
 			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
+				oCopy.actVal = _replaceRand(oCopy.actValSing);
+				oCopy.actVal = ActiveCSS._sortOutFlowEscapeChars(oCopy.actVal);
+				oCopy.actVal = _replaceJSExpression(oCopy.actVal, null, null, oCopy.varScope);
+				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actVal, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
+				oCopy.actVal = _replaceStringVars(oCopy, oCopy.actVal, oCopy.varScope);
+				oCopy.actVal = _replaceScopedVars(oCopy.actVal, oCopy.secSelObj, oCopy.func, oCopy, null, null, oCopy.varScope);
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}
@@ -2745,9 +2868,32 @@ const _performSecSel = (loopObj) => {
 				// passTargSel is the string of the target selector that now goes through some changes.
 				if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
 
-				passTargSel = _replaceAttrs(obj, passTargSel, null, null, null, varScope);
-				// See if there are any left that can be populated by the passed otherObj.
-				passTargSel = _replaceAttrs(otherObj, passTargSel, null, null, null, varScope);
+				passTargSel = ActiveCSS._sortOutFlowEscapeChars(passTargSel);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						str: passTargSel,
+						obj,
+						varScope
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope
+					},
+					strObj.ref
+				);
+				strObj = _handleVars([ 'attrs' ],
+					{
+						str: strObj.str,
+						obj: otherObj,
+						varScope
+					},
+					strObj.ref
+				);
+				passTargSel = _resolveVars(strObj.str, strObj.ref);
+
 				// Handle functions being run on self.
 				if (meMap.includes(passTargSel)) {
 					// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
@@ -3031,14 +3177,39 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
-	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScopeToPassIn);
+	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str: compPending[shadRef],
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: varScopeToPassIn,
+			shadowParent: shadowParent
+		}
+	);
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: o.ajaxObj,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Output the variables for real from the map.
+	compPending[shadRef] = _resolveVars(strObj.str, strObj.ref);
+
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
-
-	// Now we can go through the shadow DOM contents and handle any host attribute references now that the host is set up.
-	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, varScopeToPassIn);
-
-	// Lastly, handle any {$STRING} value from ajax content if it exists. This must be done last, otherwise we risk var replacement changing content of the $STRING.
-	compPending[shadRef] = _replaceStringVars(o.ajaxObj, compPending[shadRef]);
 
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];
@@ -3281,7 +3452,7 @@ const _renderRefElements = (str, htmlStr, refType) => {
 	return str;
 };
 
-const _replaceHTMLVars = (o, str) => {
+const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:_]+)\}/gi, function(_, c) {
 		let doc, noVars, escaped, unEscaped;
 		let noVarsPos = c.indexOf(':NOVARS');
@@ -3320,7 +3491,7 @@ const _replaceHTMLVars = (o, str) => {
 			if (noVars) res = _escNoVars(res);
 			if (escaped) res = _safeTags(res);
 			if (unEscaped) res = _unSafeTags(res);
-			return res;
+			return _preReplaceVar(res, varReplacementRef);
 		}
 		// Return it as it is if the element is not there.
 		return '{#' + c + '}';
@@ -4168,7 +4339,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							// attached to the event.
 							let re, clause;
 							for (clause of evSplit) {
-								re = new RegExp(COLONSELS, 'g');
+								re = COLONSELS;
 								if (re.test(clause)) {
 									predefs.push(clause);
 								} else {
@@ -4880,6 +5051,46 @@ const _getScopedVar = (nam, scope) => {
 	}
 
 	return { fullName, name: scopeName, val, winVar };
+};
+
+const _handleVars = (arr, opts, varReplacementRef=null) => {
+	let { evType, func, o, obj, secSelObj, shadowParent, str, varScope } = opts, i = 0;
+	if (!varReplacementRef) varReplacementRef = varReplaceRef++;
+	for (i; i < arr.length; i++) {
+		if (!arr[i]) continue;	// cater for null values due to populating _handleVars arr conditionally.
+		switch (arr[i]) {
+			case 'attrs':
+				// Includes progressive variable substitution protection.
+				str = _replaceAttrs(obj, str, secSelObj, o, func, varScope, evType, varReplacementRef);
+				break;
+
+			case 'expr':
+				// Includes progressive variable substitution protection.
+				str = _replaceJSExpression(str, null, null, varScope, varReplacementRef);
+				break;
+
+			case 'html':
+				// Includes progressive variable substitution protection.
+				str = _replaceHTMLVars(o, str, varReplacementRef);
+				break;
+
+			case 'rand':
+				// No need for progressive substitution protection.
+				str = _replaceRand(str, varReplacementRef);
+				break;
+
+			case 'scoped':
+				// Includes progressive variable substitution protection.
+				str = _replaceScopedVars(str, secSelObj, func, o, null, shadowParent, varScope, varReplacementRef);
+				break;
+
+			case 'strings':
+				// Includes progressive variable substitution protection.
+				str = _replaceStringVars(o, str, varScope, varReplacementRef);
+
+		}
+	}
+	return { str, ref: varReplacementRef };
 };
 
 /*
@@ -5627,6 +5838,16 @@ const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	return str;
 };
 
+const _preReplaceVar = (str, varReplacementRef=-1) => {
+	if (varReplacementRef === -1) return str;
+	if (typeof resolvingObj[varReplacementRef] === 'undefined') resolvingObj[varReplacementRef] = [];
+	let subRef = resolvingObj[varReplacementRef].length;
+	let ret = '__acss' + UNIQUEREF + '_' + varReplacementRef + '_' + subRef + '_';
+	resolvingObj[varReplacementRef][subRef] = str;
+	return ret;
+};
+
+
 const _removeVarPlaceholders = obj => {
 	/**
 	* Handle text nodes.
@@ -5713,18 +5934,10 @@ const _removeVarPlaceholders = obj => {
 // config on different objects as they are needed. Also replace JavaScript expressions {= expression}.
 // Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 
-const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null, evType='') => {
+const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null, evType='', varReplacementRef=-1) => {
 	// Note, obj could sometimes be a string with no attributes if this is a trigger.
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
-	if (sel.indexOf('{$RAND}') !== -1) {
-		let rand = Math.floor(Math.random() * 10000000);
-		sel = sel.replace(/\{\$RAND\}/g, rand);
-	}
-	if (sel.indexOf('{=') !== -1 && !(o && ['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func))) {	// skip restoration and eval now if it needs to run dynamically.
-		sel = ActiveCSS._sortOutFlowEscapeChars(sel);
-		sel = _replaceJSExpression(sel, null, null, varScope);
-	}
 	if (sel.indexOf('{@') !== -1) {
 		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
 			let getProperty = false;
@@ -5736,7 +5949,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex);
-				if (ret) return ret;
+				if (ret) return _preReplaceVar(ret, varReplacementRef);
 				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
@@ -5760,20 +5973,20 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					if (el.tagName == 'IFRAME' && wat == 'url') {
 						// If this is an iframe and the virtual attribute url is chosen, get the actual url inside the iframe.
 						// We can't rely on the src of the iframe element being accurate, as it is not always updated.
-						return _escapeItem(el.contentWindow.location.href);
+						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef));
 					} else {
 						ret = _getAttrOrProp(el, wat, getProperty);
-						if (ret) return ret;
+						if (ret) return _preReplaceVar(ret, varReplacementRef);
 						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
 					}
 				} else {
 					if (obj && typeof obj !== 'string') {
 						if (secSelObj) {
 							ret = _getAttrOrProp(secSelObj, wot, getProperty);
-							if (ret) return ret;
+							if (ret) return _preReplaceVar(ret, varReplacementRef);
 						}
 						ret = _getAttrOrProp(obj, wot, getProperty);
-						if (ret) return ret;
+						if (ret) return _preReplaceVar(ret, varReplacementRef);
 						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
 					}
 				}
@@ -5782,13 +5995,10 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			return '';	// More useful to return an empty string. '{@' + wot + '>';
 		});
 	}
-	sel = _replaceStringVars(o, sel, varScope);
-	// Replace regular scoped variables with their content, and if content-based put internal wrappers around the bound variables so they can be formatted later.
-	// We can only do this after attributes have been substituted, in order to handle variable binding in an attribute that also has an attribute substituted.
-	return (['Var', 'VarDelete'].indexOf(func) === -1) ? _replaceScopedVars(sel, secSelObj, func, o, null, null, varScope) : sel;
+	return sel;
 };
 
-const _replaceComponents = (o, str) => {
+const _replaceComponents = (o, str, varReplacementRef=-1) => {
 	// This needs to be recursive to facilitate easier syntax. XSS defense needs to occur elsewhere otherwise this ceases to be useful. This must stay recursive.
 	let co = 0, found;
 	while (co < 50) {
@@ -5826,8 +6036,33 @@ const _replaceComponents = (o, str) => {
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;
 			} else {
-				ret = _replaceAttrs(o.obj, ret, null, null, o.func, o.varScope);
-				ret = _replaceStringVars(o.ajaxObj, ret);
+				ret = ActiveCSS._sortOutFlowEscapeChars(ret);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+					{
+						str: ret,
+						func: o.func,
+						o,
+						obj: o.obj,
+						varScope: o.varScope
+					}
+				);
+				strObj = _handleVars([ 'strings' ],
+					{
+						obj: null,
+						str: strObj.str,
+						varScope: o.varScope
+					},
+					strObj.ref
+				);
+				strObj = _handleVars([ 'strings' ],
+					{
+						str: strObj.str,
+						o: o.ajaxObj,
+						varScope: o.varScope
+					},
+					strObj.ref
+				);
+				ret = _resolveVars(strObj.str, strObj.ref);
 			}
 			return (ret) ? ret : '';
 		});
@@ -5837,7 +6072,8 @@ const _replaceComponents = (o, str) => {
 	return str;
 };
 
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1) => {
+	if (sel.indexOf('{=') === -1) return sel;
 	let res;
 
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
@@ -5851,7 +6087,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		// If this contains tabs or lines then it better be a string. It won't evaluate with those characters.
 		if (["\t", "\n", "\r"].some(v => wot.includes(v))) {
 			res = (quoteIfString) ? q + wot + q : wot;
-			return res;
+			return _preReplaceVar(res, varReplacementRef);
 		}
 
 		try {
@@ -5869,14 +6105,22 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 			// Res should always be a string in the config, even if evaluated into a conditional. This is because the config is made up of strings.
 			res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? q + res + q : (typeof res === 'number') ? res.toString() : 'Invalid expression (' + wot.trim() + ')';
 		}
-		return res;
+		return _preReplaceVar(res, varReplacementRef);
 	});
 
 	// Return the result rather than the string if realVal is set to true.
 	return (realVal) ? res : sel;
 };
 
-const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null) => {
+const _replaceRand = (sel, varReplacementRef=-1) => {
+	if (sel.indexOf('{$RAND}') !== -1) {
+		let rand = Math.floor(Math.random() * 10000000);
+		sel = sel.replace(/\{\$RAND\}/g, rand);
+	}
+	return sel;
+};
+
+const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
 	// Evaluate and insert scoped variables. This could be a HTML string containing nodes.
 	// This should only happen after attribute substitution has occurred, otherwise binding in attributes won't work fully.
 	// Eg.: set-attribute: data-name "{{firstName}} {@id}{{surname}} {{surname}}". Simply put, the ID is not easily obtainable when updating the attribute with
@@ -5941,13 +6185,13 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	} else {
 		// Come in from an var change or there are no nodes - so no point creating a tree and going through all that stuff to set up sub Active IDs and all that
 		// sort of thing.
-		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, varScope);
+		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, varScope, varReplacementRef);
 	}
 	return str;
 };
 
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
@@ -5984,7 +6228,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
 				// Return the wot if it's a window variable.
-				if (scoped.winVar === true) return wot;
+				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
 				res = scoped.val;
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
@@ -6011,7 +6255,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					_addScopedAttr(realWot, o, originalStr, walker, varScope);
 				}
 				// Send the regular scoped variable back.
-				return res;
+				return _preReplaceVar(res, varReplacementRef);
 			}
 		});
 	}
@@ -6043,7 +6287,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 	return str;
 };
 
-const _replaceStringVars = (o, str, varScope) => {
+const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
@@ -6051,7 +6295,7 @@ const _replaceStringVars = (o, str, varScope) => {
 		switch (innards) {
 			case '$STRING':
 				if (o && o.res) {
-					res = o.res;
+					res = _preReplaceVar(o.res, varReplacementRef);
 				} else {
 					res = '{$STRING}';
 				}
@@ -6064,7 +6308,8 @@ const _replaceStringVars = (o, str, varScope) => {
 				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
+//					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
+					res = _preReplaceVar(scoped.val, varReplacementRef);
 				}
 				return res;
 
@@ -6072,7 +6317,7 @@ const _replaceStringVars = (o, str, varScope) => {
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scoped = _getScopedVar(innards, varScope);
-					return scoped.val || '';
+					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
 				} else {
 					return '{' + innards + '}';
 				}
@@ -6226,6 +6471,19 @@ const _resolveInnerBracketVars = (str, scope) => {
 	}
 
 	return newStr;
+};
+
+const _resolveVars = (str, varReplacementRef) => {
+ 	if (varReplacementRef === -1 || typeof resolvingObj[varReplacementRef] === 'undefined') return str;
+	let regex = new RegExp('__acss' + UNIQUEREF + '_(\\d+)_(\\d+)_', 'gm');
+	str = str.replace(regex, function(_, ref, subRef) {
+		return (typeof resolvingObj[ref] !== 'undefined' && typeof resolvingObj[ref][subRef] !== 'undefined') ? resolvingObj[ref][subRef] : _;
+	});
+	// Clean-up
+	delete resolvingObj[varReplacementRef];
+
+	// Return the fully resolved string - all variable content should now be substituted in correctly.
+	return str;
 };
 
 const _restoreStorage = () => {
