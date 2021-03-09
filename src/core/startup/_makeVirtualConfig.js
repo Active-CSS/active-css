@@ -154,10 +154,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							// Loop the remaining selectors, pop out each one and assign to the correct place in the config.
 							// Ie. either after the selector for DOM queries, or as part of the conditional array that gets
 							// attached to the event.
-							let re, clause;
+							let clause;
 							for (clause of evSplit) {
-								re = COLONSELS;
-								if (re.test(clause)) {
+								if (clause.match(COLONSELS)) {
 									predefs.push(clause);
 								} else {
 									conds.push(clause);

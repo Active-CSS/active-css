@@ -14,10 +14,9 @@
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
+	// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
 	const COLONSELS = new RegExp('^(' +
-		// Word not followed by another name type character.
 		'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
-		// Word and opening parenthesis.
 		'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 		')', 'g');
 
@@ -1468,6 +1467,11 @@ _a.Var = o => {
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
+
+	// Escape result for curlies to stop possible re-evaluation on re-assignment.
+	if (typeof expr === 'string') {
+		expr = _escNoVars(expr);
+	}
 
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
@@ -3211,6 +3215,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
+	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
+	compPending[shadRef] = _unEscNoVars(compPending[shadRef]);
+
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];
 
@@ -3385,7 +3392,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
 	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
-	// Unescape any $HTML_NOVARS escaped curlies now that rendering is occurring and iframe content is removed.
+	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
 	content = _unEscNoVars(content);
 
 	if (o.renderPos && !isIframe) {
@@ -4337,10 +4344,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							// Loop the remaining selectors, pop out each one and assign to the correct place in the config.
 							// Ie. either after the selector for DOM queries, or as part of the conditional array that gets
 							// attached to the event.
-							let re, clause;
+							let clause;
 							for (clause of evSplit) {
-								re = COLONSELS;
-								if (re.test(clause)) {
+								if (clause.match(COLONSELS)) {
 									predefs.push(clause);
 								} else {
 									conds.push(clause);
@@ -4464,6 +4470,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// There are quite possibly unnecessary bits in the regexes. If anyone wants to rewrite any so they are more accurate, that is welcome.
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
+	if (inlineActiveID) str = _unEscNoVars(str);
 	// Remove all comments.
 	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
@@ -6477,7 +6484,7 @@ const _resolveVars = (str, varReplacementRef) => {
  	if (varReplacementRef === -1 || typeof resolvingObj[varReplacementRef] === 'undefined') return str;
 	let regex = new RegExp('__acss' + UNIQUEREF + '_(\\d+)_(\\d+)_', 'gm');
 	str = str.replace(regex, function(_, ref, subRef) {
-		return (typeof resolvingObj[ref] !== 'undefined' && typeof resolvingObj[ref][subRef] !== 'undefined') ? resolvingObj[ref][subRef] : _;
+		return (typeof resolvingObj[ref] !== 'undefined' && typeof resolvingObj[ref][subRef] !== 'undefined') ? _escNoVars(resolvingObj[ref][subRef]) : _;
 	});
 	// Clean-up
 	delete resolvingObj[varReplacementRef];
@@ -6721,7 +6728,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				varMap[change.currentPath].splice(i, 1);
 			} else {
 				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
-				nod.textContent = _escapeItem(refObj);
+				nod.textContent = _unEscNoVars(_escapeItem(refObj));
 			}
 		});
 	}
@@ -6753,7 +6760,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 						}
 					}
 				});
-				nod.textContent = _escapeItem(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+				nod.textContent = _unEscNoVars(_escapeItem(str));	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 			}
 		});
 	}
@@ -6789,7 +6796,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 			// within the same attribute. Any reference to an attribute variable would already be substituted by this point.
 
 			attrContent = _replaceScopedVars(attrOrig, null, '', null, true, theHost, compScope);
-			el.setAttribute(attr, attrContent);
+			el.setAttribute(attr, _unEscNoVars(attrContent));
 		}
 	}
 };
@@ -7969,7 +7976,7 @@ function _escCommaBrackClean(str, mapObj2) {
 }
 
 const _escNoVars = str => {
-	return str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly');
+	return (typeof str === 'string') ? str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly') : str;
 };
 
 const _fullscreenDetails = () => {

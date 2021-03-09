@@ -14,10 +14,9 @@
 
 	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 	// Don't forget that double backslashes are needed with quoted regexes.
+	// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
 	const COLONSELS = new RegExp('^(' +
-		// Word not followed by another name type character.
 		'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
-		// Word and opening parenthesis.
 		'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 		')', 'g');
 

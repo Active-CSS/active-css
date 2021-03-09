@@ -7,6 +7,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// There are quite possibly unnecessary bits in the regexes. If anyone wants to rewrite any so they are more accurate, that is welcome.
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
+	if (inlineActiveID) str = _unEscNoVars(str);
 	// Remove all comments.
 	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.

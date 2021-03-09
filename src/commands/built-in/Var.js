@@ -99,6 +99,11 @@ _a.Var = o => {
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
 
+	// Escape result for curlies to stop possible re-evaluation on re-assignment.
+	if (typeof expr === 'string') {
+		expr = _escNoVars(expr);
+	}
+
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.

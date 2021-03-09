@@ -118,6 +118,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
+	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
+	compPending[shadRef] = _unEscNoVars(compPending[shadRef]);
+
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];
 
