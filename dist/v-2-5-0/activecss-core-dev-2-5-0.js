@@ -1814,8 +1814,8 @@ const _addInlinePriorToRender = (str) => {
 		fragRoot.innerHTML = str;
 		let inlineConfigTags = fragRoot.querySelectorAll('style[type="text/acss"]');
 		if (inlineConfigTags) _getInline(inlineConfigTags);
+		str = fragRoot.innerHTML;	// needed to get all the IDs set up during this.
 	}
-
 	return str;
 };
 
@@ -1867,10 +1867,11 @@ const _handleClickOutside = (el, e) => {
 	let cid, clickOutsideObj;
 	for (cid in clickOutsideSels) {
 		// Check the state of the clickoutside for this container. Will be true if active.
-		if (clickOutsideSels[cid][0]) {
+		if (typeof clickOutsideSels[cid][0] !== 'undefined' && clickOutsideSels[cid][0] === true) {
 			// Does this clicked object exist in the clickoutside main element?
 			clickOutsideObj = idMap[cid];
-			if (clickOutsideObj && !clickOutsideObj.contains(el)) {
+			if (!clickOutsideObj || supportsShadow && el.shadowRoot || el.isSameNode(clickOutsideObj)) continue;
+			if (!clickOutsideObj.contains(el)) {
 				// This is outside.
 				// Get the component, scope, etc. for this element if there is component.
 				let compDetails = _componentDetails(clickOutsideObj);
@@ -2488,6 +2489,14 @@ ActiveCSS._nodeMutations = function(mutations) {
 							_regenConfig(obj, 'remove');
 						});
 					}
+
+// Note to self: when onto the clean-up issue, all the nodes in the childlist need iterating...
+
+//					if (typeof clickOutsideSels[activeID] !== 'undefined') {
+//						console.log('ActiveCSS._nodeMutations, removing clickoutside ref');
+//						delete clickOutsideSels[activeID];
+//					}
+
 				});
 			}
 
@@ -2496,11 +2505,11 @@ ActiveCSS._nodeMutations = function(mutations) {
 					if (!(nod instanceof HTMLElement)) return;
 
 					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
-					if (_isACSSStyleTag(nod) && !_isInlineLoaded(nod)) {
+					if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 						_regenConfig(nod, 'addDevTools');
 					} else {
 						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							if (!_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+							if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
 						});
 					}
 				});
@@ -3013,6 +3022,9 @@ const _prepSelector = (sel, obj, doc) => {
 					break;
 				case 'body':
 					sel = doc.body;
+					break;
+				case ':root':
+				case ':host':
 					break;
 				default:
 					// Substitute the active ID into the selector.

@@ -17,6 +17,14 @@ ActiveCSS._nodeMutations = function(mutations) {
 							_regenConfig(obj, 'remove');
 						});
 					}
+
+// Note to self: when onto the clean-up issue, all the nodes in the childlist need iterating...
+
+//					if (typeof clickOutsideSels[activeID] !== 'undefined') {
+//						console.log('ActiveCSS._nodeMutations, removing clickoutside ref');
+//						delete clickOutsideSels[activeID];
+//					}
+
 				});
 			}
 
@@ -25,11 +33,11 @@ ActiveCSS._nodeMutations = function(mutations) {
 					if (!(nod instanceof HTMLElement)) return;
 
 					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
-					if (_isACSSStyleTag(nod) && !_isInlineLoaded(nod)) {
+					if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 						_regenConfig(nod, 'addDevTools');
 					} else {
 						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							if (!_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+							if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
 						});
 					}
 				});
