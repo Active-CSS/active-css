@@ -10,11 +10,10 @@ const _iteratePageList = (pages, removeState=false) => {
 		document.body.appendChild(templ);
 	}
 	var counter, page, attrs, el;
-	let rand = Math.floor(Math.random() * 10000000);
 	Object.keys(pages).forEach(function(key) {
 		page = pages[key].name;
 		if (!page) return;
-		attrs = pages[key].value.replace(/\{\$RAND\}/g, rand);
+		attrs = _replaceRand(pages[key].value);
 		let cleanPage = page.replace(/"/g, '').trim();
 		let pConcat = cleanPage + ' ' + attrs.trim();
 		let pos = pagesDisplayed.indexOf(cleanPage);

@@ -136,7 +136,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
+		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 

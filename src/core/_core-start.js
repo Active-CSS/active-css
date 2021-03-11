@@ -34,6 +34,8 @@
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
 	const SELFREGEX = /\{\$SELF\}/g;
 	const UNIQUEREF = Math.floor(Math.random() * 10000000);
+	const RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	const RANDNUMS = '0123456789';
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,

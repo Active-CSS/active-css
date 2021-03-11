@@ -21,7 +21,7 @@ const _handleVars = (arr, opts, varReplacementRef=null) => {
 
 			case 'rand':
 				// No need for progressive substitution protection.
-				str = _replaceRand(str, varReplacementRef);
+				str = _replaceRand(str);
 				break;
 
 			case 'scoped':

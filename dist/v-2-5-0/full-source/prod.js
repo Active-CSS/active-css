@@ -34,6 +34,8 @@
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
 	const SELFREGEX = /\{\$SELF\}/g;
 	const UNIQUEREF = Math.floor(Math.random() * 10000000);
+	const RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	const RANDNUMS = '0123456789';
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -2245,7 +2247,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
+		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
 
@@ -4128,11 +4130,10 @@ const _iteratePageList = (pages, removeState=false) => {
 		document.body.appendChild(templ);
 	}
 	var counter, page, attrs, el;
-	let rand = Math.floor(Math.random() * 10000000);
 	Object.keys(pages).forEach(function(key) {
 		page = pages[key].name;
 		if (!page) return;
-		attrs = pages[key].value.replace(/\{\$RAND\}/g, rand);
+		attrs = _replaceRand(pages[key].value);
 		let cleanPage = page.replace(/"/g, '').trim();
 		let pConcat = cleanPage + ' ' + attrs.trim();
 		let pos = pagesDisplayed.indexOf(cleanPage);
@@ -5095,7 +5096,7 @@ const _handleVars = (arr, opts, varReplacementRef=null) => {
 
 			case 'rand':
 				// No need for progressive substitution protection.
-				str = _replaceRand(str, varReplacementRef);
+				str = _replaceRand(str);
 				break;
 
 			case 'scoped':
@@ -6131,12 +6132,13 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 	return (realVal) ? res : sel;
 };
 
-const _replaceRand = (sel, varReplacementRef=-1) => {
-	if (sel.indexOf('{$RAND}') !== -1) {
-		let rand = Math.floor(Math.random() * 10000000);
-		sel = sel.replace(/\{\$RAND\}/g, rand);
+const _replaceRand = (str) => {
+	if (str.indexOf('{$RAND') !== -1) {
+		str = str.replace(/\{\$RAND((STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isStr, num, hyph, endNum) {
+			return hyph ? Math.floor(Math.random() * (endNum - num + 1) + num) : _random( ((num) ? num : 8) , (isStr ? true : false) );
+		});
 	}
-	return sel;
+	return str;
 };
 
 const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
@@ -7687,6 +7689,14 @@ const _placeCaretAtEnd = el => {
 		el.blur();
 	}
 	el.focus();
+};
+
+const _random = (len, str=false) => {
+	let chars = (str) ? RANDCHARS + RANDNUMS : RANDNUMS, rand = '', i = 0;
+    for (i = 0; i < len; i++) {
+        rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+	return rand;
 };
 
 // Solution courtesy of https://github.com/cosmicanant/recursive-diff
