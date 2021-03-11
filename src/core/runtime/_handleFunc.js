@@ -2,7 +2,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
 
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
-		delayRef = o.secSel;
+		delayRef = (o.evScope ? o.evScope : 'doc') + o.secSel;
 	} else {
 		// Note: re runButElNotThere) {
 		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
@@ -69,7 +69,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Remove any labels from the command string. We can't remove this earlier, as we need the label to exist for either "after" or "every", or both.
-	if (o.actValSing.indexOf('label ') !== -1) {
+	if (o.actValSing.indexOf(' label ') !== -1) {
 		o.actValSing = o.actValSing.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm, '');
 	}
 
