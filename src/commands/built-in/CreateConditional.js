@@ -10,12 +10,8 @@ _a.CreateConditional = o => {
 	// function.
 	if (_c[funcName]) return;	// If this command already exists, do nothing more.
 
-//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
-	funcContent = funcContent.slice(2, -2);
-	funcContent = _handleVarsInJS(funcContent);
-
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
-	funcContent = 'let conditionalName = o.actName,' +	// The name of the action command that called this function.
+	let funcStart = 'let conditionalName = o.actName,' +	// The name of the action command that called this function.
 		'conditionalFunc = o.func,' +
 		'conditionalValue = o.actVal,' +
 		'eventSelectorName = o.primSel,' +
@@ -24,13 +20,17 @@ _a.CreateConditional = o => {
 		'doc = o.doc,' +
 		'component = o.component,' + 
 		'compDoc = o.compDoc,' + 
-		'carriedEventObject = o.ajaxObj,' +
-		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
+		'carriedEventObject = o.ajaxObj;';
+
+	// Now put in a routine to dynamically work out the variable scopes for the vars command. This is run dynamically, so we need to effective remove the vars command
+	// and replace all the remaining content with correctly scoped variables. The original command must retain the vars command for dynamic use, hence this is
+	// happening at the point of runtime. The _run function (found in the Run command file) sorts the variable scoping out.
+
+	let newFunc = '_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
 		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
-		funcContent;
-	// Its primary purpose is to create a command, which is a low-level activity.
-	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
-	// It would be nice to have it recreated on a realtime edit in the Elements extension. This would need to be set up in the extension area to detect and remove
-	// the function if it is edited, but that code has no place in here.
-	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', funcContent);		// jshint ignore:line
+		'return _run(flyConds[\'' + funcName + '\'], _activeVarScope, o);';
+
+	flyConds[funcName] = '{=' + funcStart + funcContent.substr(2);
+
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', newFunc);		// jshint ignore:line
 };

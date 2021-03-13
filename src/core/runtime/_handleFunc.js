@@ -124,7 +124,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 		o.vars = scopedProxy[compScope];
 		// Run the function.
-		_a[o.func](o, scopedProxy, privVarScopes);
+		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
 	if (!o.interval && delayActiveID) {

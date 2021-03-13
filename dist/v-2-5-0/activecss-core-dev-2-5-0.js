@@ -156,7 +156,9 @@
 		localStoreVars = [],
 		resolvableVars = [],
 		resolvingObj = {},
-		varReplaceRef = 0;
+		varReplaceRef = 0,
+		flyCommands = [],
+		flyConds = [];
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -392,12 +394,8 @@ _a.CreateCommand = o => {
 
 	if (_a[funcName]) return;	// If this command already exists, do nothing more.
 
-//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
-	funcContent = funcContent.slice(2, -2);
-	funcContent = _handleVarsInJS(funcContent);
-
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
-	funcContent = 'let actionName = o.actName,' +	// The name of the action command that called this function.
+	let funcStart = 'let actionName = o.actName,' +	// The name of the action command that called this function.
 		'actionPosition = o.actPos,' +				// The position in the action value, 0, 1, etc. - you can call more than one function if you comma-delimit them.
 		'actionValue = o.actVal,' +					// The full evaluated action value.
 		'actionValueUnEval = o.actValSing,' +		// The singular un-evaluated action value that called the function.
@@ -420,15 +418,19 @@ _a.CreateCommand = o => {
 		'compDoc = o.compDoc,' +				// The document of the shadow DOM, if applicable.
 		'component = o.component,' +				// The name of the component, if applicable.
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
-		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
-		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
+		'_loopRef = o.loopRef;';					// Internal reference for looping variable reference.
+
+	// Now put in a routine to dynamically work out the variable scopes for the vars command. This is run dynamically, so we need to effective remove the vars command
+	// and replace all the remaining content with correctly scoped variables. The original command must retain the vars command for dynamic use, hence this is
+	// happening at the point of runtime. The _run function (found in the Run command file) sorts the variable scoping out.
+
+	let newFunc = '_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
 		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
-		funcContent;
-	// Its primary purpose is to create a command, which is a low-level activity.
-	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
-	// It would be nice to have it recreated on a realtime edit in the extension. This would need to be set up in the extension area to detect and remove
-	// the function if it is edited, but that code has no place in here.
-	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', funcContent);		// jshint ignore:line
+		'_run(flyCommands[\'' + funcName + '\'], _activeVarScope, o);';
+
+	flyCommands[funcName] = '{=' + funcStart + funcContent.substr(2);
+
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', newFunc);		// jshint ignore:line
 };
 
 _a.CreateConditional = o => {
@@ -443,12 +445,8 @@ _a.CreateConditional = o => {
 	// function.
 	if (_c[funcName]) return;	// If this command already exists, do nothing more.
 
-//	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
-	funcContent = funcContent.slice(2, -2);
-	funcContent = _handleVarsInJS(funcContent);
-
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
-	funcContent = 'let conditionalName = o.actName,' +	// The name of the action command that called this function.
+	let funcStart = 'let conditionalName = o.actName,' +	// The name of the action command that called this function.
 		'conditionalFunc = o.func,' +
 		'conditionalValue = o.actVal,' +
 		'eventSelectorName = o.primSel,' +
@@ -457,15 +455,19 @@ _a.CreateConditional = o => {
 		'doc = o.doc,' +
 		'component = o.component,' + 
 		'compDoc = o.compDoc,' + 
-		'carriedEventObject = o.ajaxObj,' +
-		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
+		'carriedEventObject = o.ajaxObj;';
+
+	// Now put in a routine to dynamically work out the variable scopes for the vars command. This is run dynamically, so we need to effective remove the vars command
+	// and replace all the remaining content with correctly scoped variables. The original command must retain the vars command for dynamic use, hence this is
+	// happening at the point of runtime. The _run function (found in the Run command file) sorts the variable scoping out.
+
+	let newFunc = '_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
 		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
-		funcContent;
-	// Its primary purpose is to create a command, which is a low-level activity.
-	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
-	// It would be nice to have it recreated on a realtime edit in the Elements extension. This would need to be set up in the extension area to detect and remove
-	// the function if it is edited, but that code has no place in here.
-	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', funcContent);		// jshint ignore:line
+		'return _run(flyConds[\'' + funcName + '\'], _activeVarScope, o);';
+
+	flyConds[funcName] = '{=' + funcStart + funcContent.substr(2);
+
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', newFunc);		// jshint ignore:line
 };
 
 _a.CreateElement = o => {
@@ -1055,21 +1057,7 @@ _a.RestoreClone = o => {
 };
 
 _a.Run = o => {
-	let inn;
-	let funky = '"use strict";' + o.actVal.replace(/\{\=([\s\S]*?)\=\}/m, function(_, wot) {
-
-// look into this and _handleVarsInJS at some point - it doesn't look like it correctly scopes, and probably should be part of the higher level substitution stuff.
-
-		inn = _handleVarsInJS(wot);
-		return inn;
-	});
-	let _activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main';
-	scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];
-	try {
-		Function('scopedProxy, _activeVarScope', funky)(scopedProxy, _activeVarScope);		// jshint ignore:line
-	} catch (err) {
-		console.log('Function syntax error (' + err + '): ' + funky);
-	}
+	_run(o.actVal, o.varScope, o);
 };
 
 _a.ScrollIntoView = o => {
@@ -1793,6 +1781,20 @@ const _unloadAllCancelTimerLoop = i => {
 	}
 };
 
+const _run = (str, varScope, o) => {
+	let inn;
+	let funky = '"use strict";' + str.replace(/\{\=([\s\S]*?)\=\}/m, function(_, wot) {
+		inn = _handleVarsInJS(wot, varScope);
+		return inn;
+	});
+
+	try {
+		return Function('scopedProxy, o', funky)(scopedProxy, o);		// jshint ignore:line
+	} catch (err) {
+		console.log('Function syntax error (' + err + '): ' + funky);
+	}
+};
+
 const _actionValLoop = (oCopy, pars, obj, runButElNotThere) => {
 	let i, { loopI, actVals, actValsLen } = pars;
 	for (i = 0; i < actValsLen; i++) {
@@ -1818,6 +1820,57 @@ const _addInlinePriorToRender = (str) => {
 		str = fragRoot.innerHTML;	// needed to get all the IDs set up during this.
 	}
 	return str;
+};
+
+const _checkCond = condObj => {
+	let { actName, rules, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState } = condObj;
+	let condVals, condValsLen, n;
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+		{
+			evType: thisAction,
+			str: aV,
+			obj: el,
+			varScope
+		}
+	);
+	strObj = _handleVars([ 'strings', 'scoped' ],
+		{
+			str: strObj.str,
+			varScope
+		},
+		strObj.ref
+	);
+	aV = _resolveVars(strObj.str, strObj.ref);
+
+	aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
+
+	condVals = aV.split('_ACSSComma');
+	condValsLen = condVals.length;
+
+	for (n = 0; n < condValsLen; n++) {
+		let cObj = {
+			'func': func,
+			'actName': actName,
+			'secSel': 'conditional',
+			'secSelObj': el,
+			'actVal': condVals[n].trim(),
+			'primSel': sel,
+			'rules': rules,
+			'obj': el,
+			'e': eve,
+			'doc': doc,
+			'ajaxObj': otherEl,
+			'component': component,
+			'compDoc': compDoc,
+			'varScope': varScope
+		};
+		if (_c[func](cObj, scopedProxy, privVarScopes, flyConds, _run) !== actionBoolState) {
+			return false;	// Barf out immediately if it fails a condition.
+		}
+	}
+
+	return true;
 };
 
 const _checkScopeForEv = (evScope) => {
@@ -2234,7 +2287,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 		o.vars = scopedProxy[compScope];
 		// Run the function.
-		_a[o.func](o, scopedProxy, privVarScopes);
+		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
 	if (!o.interval && delayActiveID) {
@@ -2348,15 +2401,17 @@ const _handleLoop = (loopObj) => {
 	}
 };
 
-const _handleVarsInJS = function(str) {
+const _handleVarsInJS = function(str, varScope) {
 	/**
 	 * "str" is the full JavaScript content that is being prepared for evaluation.
 	 * This function finds any "vars" line that declares any Active CSS variables that will be used, and locates and substitutes these variables into the code
 	 * before evaluation. A bit like the PHP "global" command, except in this case we are not declaring global variables. We are limiting all variables to the
-	 * scope of Active CSS. All the ease of global variables, but they are actually contained within Active CSS and not available outside Active CSS. Global variables can still
-	 * be used by using window['blah']. But private variables to Active CSS is, and should always be, the default.
+	 * scope of Active CSS. All the ease of global variables, but they are actually contained within Active CSS and not available outside Active CSS.
 	 * 1. Names of variables get substituted with reference to the scopedProxy container variable for the scoped variables, which is private to the Active CSS IIFE.
-	 *		This is literally just an insertion of "scopedProxy." before any matching variable name.
+	 *		This is literally just an insertion of "scopedProxy." and the appropriate scope before any matching variable name. The scope is worked out on the fly
+	 *		at the moment the command (like "run"), or referenced command (like with "create-command") is run. So it works out the scopes dynamically every time. It
+	 *		needs to run every time, as commands tend to be able to be used inside difference variable scopes, so each time there is potentially a different set of scoped
+	 *		variables.
 	 * 2. Variables enclosed in curlies get substituted with the value of the variable itself. This would be for rendered contents.
 	 * Note: This could be optimised to be faster - there's bound to be some ES6 compatible regex magic that will do the job better than this.
 	*/
@@ -2364,7 +2419,7 @@ const _handleVarsInJS = function(str) {
 	let found = false;
 	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, ]+)[\s]*\;/gi, function(_, varList) {
 		// We should have one or more variables in a comma delimited list. Split it up.
-		let listArr = varList.split(','), thisVar;
+		let listArr = varList.split(','), thisVar, varObj;
 		// Remove dupes from the list by using the Set command.
 		listArr = [...new Set(listArr)];
 		let negLook = '(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)';
@@ -2372,7 +2427,11 @@ const _handleVarsInJS = function(str) {
 		for (thisVar of listArr) {
 			thisVar = thisVar.trim();
 			mapObj[negLook + '(' + thisVar + ')' + negLook] = '';
-			mapObj2[thisVar] = 'scopedProxy[_activeVarScope].' + thisVar;
+			// Variable can be evaluated at this point as the command runs dynamically. This is not the case with create-command which tends to run in places like
+			// body:init and the actual command referenced needs to be dynamically.
+			// So a different method is used there. But here for speed we can do it dynamically before the command is actually run.
+			varObj = _getScopedVar(thisVar, varScope);
+			mapObj2[thisVar] = varObj.fullName;
 		}
 		return '';	// Return an empty line - the vars line was Active CSS syntax, not native JavaScript.
 	});
@@ -2386,10 +2445,9 @@ const _handleVarsInJS = function(str) {
 		// We are going to used this as a regex map to substitute scoped prefixes into the code. But we use a non-regex replace object.
 		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2);
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
-		// There's probably a faster way of doing this, but my regex brain isn't totally switched on today. Help if you can!
-		// Just want to remove any /scopedProxy\[_activeVarScope\]\./ anywhere in single or double quotes catering for escaped quotes.
+		// Remove any /scopedProxy.*./ anywhere in single or double quotes catering for escaped quotes, this whole function could be optimised.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedProxy\[_activeVarScope\]\./g, '');
+			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_]+\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");
@@ -2502,18 +2560,20 @@ ActiveCSS._nodeMutations = function(mutations) {
 			}
 
 			if (mutation.addedNodes) {
-				mutation.addedNodes.forEach(nod => {
-					if (!(nod instanceof HTMLElement)) return;
+				if (DEVCORE) {
+					mutation.addedNodes.forEach(nod => {
+						if (!(nod instanceof HTMLElement)) return;
 
-					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
-					if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
-						_regenConfig(nod, 'addDevTools');
-					} else {
-						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
-						});
-					}
-				});
+						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
+							_regenConfig(nod, 'addDevTools');
+						} else {
+							nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+								if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+							});
+						}
+					});
+				}
 			}
 		} else if (mutation.type == 'characterData') {
 			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
@@ -2549,7 +2609,6 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
 	let actionBoolState = false;
-	let newCondVal, condVals, condValsLen, n;
 
 	for (cond of conds) {
 		let parenthesisPos = cond.indexOf('(');
@@ -2575,50 +2634,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-					{
-						evType: thisAction,
-						str: aV,
-						obj: el,
-						varScope
-					}
-				);
-				strObj = _handleVars([ 'strings', 'scoped' ],
-					{
-						obj: null,
-						str: strObj.str,
-						varScope
-					},
-					strObj.ref
-				);
-				aV = _resolveVars(strObj.str, strObj.ref);
-
-				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
-
-				condVals = aV.split('_ACSSComma');
-				condValsLen = condVals.length;
-
-				for (n = 0; n < condValsLen; n++) {
-					let cObj = {
-						'func': func,
-						'actName': commandName,
-						'secSel': 'conditional',
-						'secSelObj': el,
-						'actVal': condVals[n].trim(),
-						'primSel': sel,
-						'rules': cond,
-						'obj': el,
-						'e': eve,
-						'doc': doc,
-						'ajaxObj': otherEl,
-						'component': component,
-						'compDoc': compDoc,
-						'varScope': varScope
-					};
-					if (_c[func](cObj, scopedProxy, privVarScopes) !== actionBoolState) {
-						return false;	// Barf out immediately if it fails a condition.
-					}
+				if (!_checkCond({ actName: commandName, rules: cond, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+					return false;
 				}
 			}
 			continue;
@@ -2654,45 +2671,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-						{
-							str: aV,
-							obj: el,
-							varScope
-						}
-					);
-					strObj = _handleVars([ 'strings', 'scoped' ],
-						{
-							str: strObj.str,
-							varScope
-						},
-						strObj.ref
-					);
-					aV = _resolveVars(strObj.str, strObj.ref);
-
-					aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
-
-					condVals = aV.split('_ACSSComma');
-					condValsLen = condVals.length;
-					for (n = 0; n < condValsLen; n++) {
-						if (_c[func]({
-							'func': func,
-							'actName': obj.name,
-							'secSel': 'conditional',
-							'secSelObj': el,
-							'actVal': condVals[n].trim(),
-							'primSel': sel,
-							'rules': rules,
-							'obj': el,
-							'e': eve,
-							'doc': doc,
-							'ajaxObj': otherEl,
-							'component': component,
-							'compDoc': compDoc,
-							'varScope': varScope
-						}, scopedProxy, privVarScopes) !== actionBoolState) {
-							return false;	// Barf out immediately if it fails a condition.
-						}
+					if (!_checkCond({ actName: obj.name, rules, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+						return false;
 					}
 				}
 			}
@@ -9112,6 +9092,10 @@ if (window.NodeList && !NodeList.prototype.forEach) {
         }
     };
 }
+
+
+	const DEVCORE = (typeof _drawHighlight !== 'undefined') ? true : false;
+	if (DEVCORE) console.log('Running Active CSS development edition.');
 
 	// Is there inline Active CSS? If so, initiate the core.
 	document.addEventListener('DOMContentLoaded', function(e) {

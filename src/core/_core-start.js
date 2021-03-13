@@ -156,7 +156,9 @@
 		localStoreVars = [],
 		resolvableVars = [],
 		resolvingObj = {},
-		varReplaceRef = 0;
+		varReplaceRef = 0,
+		flyCommands = [],
+		flyConds = [];
 
 	ActiveCSS.customHTMLElements = {};
 

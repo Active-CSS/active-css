@@ -29,18 +29,20 @@ ActiveCSS._nodeMutations = function(mutations) {
 			}
 
 			if (mutation.addedNodes) {
-				mutation.addedNodes.forEach(nod => {
-					if (!(nod instanceof HTMLElement)) return;
+				if (DEVCORE) {
+					mutation.addedNodes.forEach(nod => {
+						if (!(nod instanceof HTMLElement)) return;
 
-					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
-					if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
-						_regenConfig(nod, 'addDevTools');
-					} else {
-						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
-						});
-					}
-				});
+						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
+							_regenConfig(nod, 'addDevTools');
+						} else {
+							nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+								if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+							});
+						}
+					});
+				}
 			}
 		} else if (mutation.type == 'characterData') {
 			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
