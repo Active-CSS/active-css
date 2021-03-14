@@ -3,39 +3,36 @@
 
 (function (global, document) {
 	'use strict';
-	const PARSELINEX = /([^\:]+):([^\;]*)(;)?/;
-	const PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi;
-	const PARSESEL = 1;
-	const PARSEEND = 2;
-	const PARSEATTR = 3;
-	const PARSEDEBUG = 4;
-//	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;	// This doesn't handle user content very well. May do something else later - leave here for ref.
-	const COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm;
-
-	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
-	// Don't forget that double backslashes are needed with quoted regexes.
-	// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
-	const COLONSELS = new RegExp('^(' +
-		'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
-		'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
-		')', 'g');
-
-
-	const DYNAMICCHARS = {
-		',': '_ACSS_later_comma',
-		'{': '_ACSS_later_brace_start',
-		'}': '_ACSS_later_brace_end',
-		';': '_ACSS_later_semi_colon',
-		':': '_ACSS_later_colon',
-		'"': '_ACSS_later_double_quote'
-	};
-
-	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
-	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
-	const SELFREGEX = /\{\$SELF\}/g;
-	const UNIQUEREF = Math.floor(Math.random() * 10000000);
-	const RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-	const RANDNUMS = '0123456789';
+	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
+		// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
+		// Don't forget that double backslashes are needed with quoted regexes.
+		// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
+		// At some point this may be worth changing to a negative check based on config loaded conditionals.
+		// If so, that would need to adjust according to loaded/removed config.
+		COLONSELS = new RegExp('^(' +
+			'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
+			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
+			')', 'g'),
+		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		DYNAMICCHARS = {
+			',': '_ACSS_later_comma',
+			'{': '_ACSS_later_brace_start',
+			'}': '_ACSS_later_brace_end',
+			';': '_ACSS_later_semi_colon',
+			':': '_ACSS_later_colon',
+			'"': '_ACSS_later_double_quote'
+		},
+		PARSEATTR = 3,
+		PARSEDEBUG = 4,
+		PARSEEND = 2,
+		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
+		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
+		PARSESEL = 1,
+		RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+		RANDNUMS = '0123456789',
+		SELFREGEX = /\{\$SELF\}/g,
+		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		UNIQUEREF = Math.floor(Math.random() * 10000000);
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -61,104 +58,102 @@
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
-	var coreVersionExtension = '2-0-0',		// Used by the extensions to maintain backward-compatibility - this doesn't reflect minor core version changes.
-		_a = {},							// Active CSS action commands.
-		_c = {},							// Active CSS conditionals.
-		parsedConfig = {},
-		config = [],
-		configArr = [],
-		configLine = '',
-		configFile = '',
-		configBox = [],
-		lazyConfig = [],
-		concatConfigCo = 0,
-		concatConfigLen = 0,
+	// Mark as ok when clean-up code is in place or isn't needed.
+	var coreVersionExtension = '2-0-0',			// ok
+		// Active CSS action commands.
+		_a = {},								// ok
+		// Active CSS conditionals.
+		_c = {},								// ok
+		activeIDTrack = 0,						// ok
+		actualDoms = {},						// Use: actualDoms[varScope]
+		ajaxResLocations = {},					// ok
+		allEvents = [],							// ok
+		autoStartInit = false,					// ok
+		cancelIDArr = [],						// Use: cancelIDArr[activeID]. For custom targets: cancelIDArr[delayRef] (see _handleFuncs, etc.)
+		cancelCustomArr = [],					// Use: cancelCustomArr[delayRef] (see _handleFuncs and other - needs investigating of contents)
+		clickOutsideSels = [],					// Use: clickOutsideSels[activeID]
+		clickOutsideSet = false,				// ok
+		compCount = 0,							// Sets the number of the component scope. ok
+		components = [],						// ok
+		compPending = {},						// Use: compPending[varScope]
+		compParents = [],						// Use: compParents[evScope]
+		compPrivEvs = [],						// Use: compPrivEvs[evScope]
+		config = [],							// ok
+		configArr = [],							// ok
+		configBox = [],							// ok
+		configFile = '',						// ok
+		configLine = '',						// ok
+		concatConfigCo = 0,						// ok
+		concatConfigLen = 0,					// ok
+		conditionals = [],						// ok
+		currDocTitle = document.title,			// ok
+		currentPage = '',						// ok
+		customTags = [],						// Needs deleting when the create-element command is removed.
+		debuggerActive = false,					// ok
+		debuggerCo = 0,							// ok
+		debuggerEvs = [ 'afterLoadConfig' ],	// ok
+		debuggerExtID = null,					// ok
+		debuggerness = false,					// ok
+		debugMode = '',							// ok
+		delayArr = [],							// Use: delayArr[activeID]. For custom targets: delayArr[delayRef] (see _handleFuncs, etc.)
+		devtoolsInit = [],						// ok
+		doesPassive = false,					// ok
+		elementObserver,						// ok
+		evEditorExtID = null,					// ok
+		evEditorActive = false,					// ok
+		eventState = {},						// ok
+		flyCommands = [],						// Use: flyCommands[funcName]. Needs deleting when the create-command command is removed.
+		flyConds = [],							// Use: flyConds[funcName]. Needs deleting when the create-conditional command is removed.
+		idMap = [],								// Use: should be idMap[activeID], but there's a idMap[o.secSelObj] in there, so that needs to be consistent.
+		inIframe = (window.location !== window.parent.location),	// ok
+		inlineIDArr = [],						// ok
+		intIDCounter = 0,						// ok
+		labelData = [],							// ok
+		labelByIDs = [],						// ok
+		lazyConfig = '',
+		localStoreVars = [],
+		maEv = [],
+		mainEventCounter = -1,
 		masterConfigCo = 0,
-		currentPage = '',
-		ajaxResLocations = {},
-		pageList = [],
-		eventState = {},
-		delayArr = [],
-		cancelIDArr = [],				//	[data-activeid][func];		// for cancel-delay
-		cancelCustomArr = [],			//	[~(custom event)][func];	// for cancel-delay
-		intIDCounter = 0,
-		selectors = [],
-		userSetupStarted = false,
-		autoStartInit = false,
-		setupEnded = false,
-		clickOutsideSet = false,
-		clickOutsideSels = [],
-		mimicClones = [],				// Used by the clone and restore-clones commands.
-		currDocTitle = document.title,
-		debugMode = '',
-		conditionals = [],
-		components = [],
 		mediaQueries = [],
 		mediaQueriesOrig = [],
-		activeIDTrack = 0,
-		scriptTrack = [],
-		debuggerActive = false,
-		debuggerness = false,
-		debuggerExtID = null,
-		debuggerEvs = [ 'afterLoadConfig' ],
-		debuggerCo = 0,
-		evEditorExtID = null,
-		evEditorActive = false,
-		devtoolsInit = [],
-		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
-		scopedOrig = {},
-		// This is actually a proxy, but used as the variable manipulator in the core. It is simpler just to call it the main variable as we never reference
-		// the vars direct.
-		scopedProxy = null,
+		mimicClones = [],
+		nonPassiveEvents = [],
+		pageList = [],
+		pagesDisplayed = [],
+		pageStore,
+		parsedConfig = {},				// ok
+		passiveEvents = true,
+		preGetMax = 6,
+		preGetMid = 0,
+		preSetupEvents = [],
+		privVarScopes = [],
+		resolvableVars = [],
+		resolvingObj = {},
+		reverseShadowEvs = {},
 		// This is a map to information about the proxy variable. This is updated when variables are rendered, and stores location data to be updated
 		// when the proxy target is modified.
 		scopedData = [],
-		labelData = [],
-		labelByIDs = [],
-		customTags = [],
-		// The next two keep track of pending shadow DOM and scoped components to render.
-		compCount = 0,
-		compPending = {},
-		compParents = [],
-		strictCompPrivEvs = [],
-		compPrivEvs = [],
-		privVarScopes = [],
-		strictPrivVarScopes = [],
+		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
+		scopedOrig = {},
+		// This is the proxy and used as the variable manipulator in the core.
+		scopedProxy = null,
+		scriptTrack = [],
+		selectors = [],
+		sessionStoreVars = [],
+		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
-		actualDoms = {},
-		preGetMax = 6,
-		preGetMid = 0,
-		reverseShadowEvs = {},
-		allEvents = [],
-		doesPassive = false,
-		preSetupEvents = [],
-		nonPassiveEvents = [],
-		passiveEvents = true,
+		strictCompPrivEvs = [],			// Use: strictCompPrivEvs[evScope]
+		strictPrivVarScopes = [],		// Use: strictPrivVarScopes[evScope]
 		supportsShadow = true,
-		idMap = [],
+		taEv = [],
+		targetEventCounter = -1,
+		userSetupStarted = false,
 		varMap = [],
 		varStyleMap = [],
 		varInStyleMap = [],
-		maEv = [],
-		mainEventCounter = -1,
-		taEv = [],
-		targetEventCounter = -1,
-		elementObserver,
-		pageStore,
-		pagesDisplayed = [],
-		inlineRefCo = 0,
-		inlineRefArr = [],
-		inlineIDArr = [],
-		inIframe = (window.location !== window.parent.location),
-		htmlRawMap = [],
-		sessionStoreVars = [],
-		localStoreVars = [],
-		resolvableVars = [],
-		resolvingObj = {},
-		varReplaceRef = 0,
-		flyCommands = [],
-		flyConds = [];
+		varReplaceRef = 0;
 
 	ActiveCSS.customHTMLElements = {};
 
@@ -3566,7 +3561,7 @@ const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
 
 const _setUpNavAttrs = (el) => {
 	let hrf, templ, shortAttr, navEl;
-	templ = document.querySelector('#data-active-pages');
+	templ = document.getElementById('data-active-pages');
 	if (templ) {
 		shortAttr = el.getAttribute('href');
 		if (shortAttr) {
@@ -3789,7 +3784,7 @@ const _addConfig = (str, o) => {
 
 	// If this is last file, run the config generator.
 	if (concatConfigCo >= concatConfigLen) {
-		_readSiteMap();
+		_readSiteMap(o);
 	}
 };
 
@@ -4593,7 +4588,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	return str;
 };
 
-const _readSiteMap = () => {
+const _readSiteMap = (o) => {
 	// We have the config file loaded. Go through the config file and sort out the website objects and properties.
 	// This is an SPA so we do everything first in a speedy fashion - we only do this once.
 	// Don't forget that load-config runs this too, so anything for first initialization needs to be with the !setupEnded condition.
@@ -4631,7 +4626,7 @@ const _readSiteMap = () => {
 	// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 	_initScriptTrack();
 
-	_wrapUpStart();
+	_wrapUpStart(o);
 };
 
 const _regenConfig = (styleTag, opt) => {
@@ -4842,7 +4837,7 @@ const _startMainListen = () => {
 	scopedProxy = _observableSlim.create(scopedOrig, true, ActiveCSS._varUpdateDom);	// batch changes.
 };
 
-const _wrapUpStart = () => {
+const _wrapUpStart = (o) => {
 	// The page has been reloaded. Every page in Active CSS must have an element that contains an href linking to it, which when clicked on will perform the
 	// actions necessary to redraw the page. The page has just been loaded or reloaded, so there was no object clicked on to perform any actions yet.
 	// So we need to find the href in the page that has the url, and based on that, we assume that clicking on this object will perform the correct actions
@@ -4866,6 +4861,8 @@ const _wrapUpStart = () => {
 			subtree: true
 		});
 
+		setupEnded = true;
+
 		// Handle any developer initialization events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
 
@@ -4883,7 +4880,6 @@ const _wrapUpStart = () => {
 			let url = _resolveURL(window.location.href);
 			window.history.replaceState(url, document.title, url);
 		}
-		setupEnded = true;
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 
@@ -4894,6 +4890,7 @@ const _wrapUpStart = () => {
 				for (configFile of arr) {
 					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
 				}
+//				lazyConfig = '';
 			}, 1000);
 		}
 	} else {

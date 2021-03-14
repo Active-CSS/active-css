@@ -1,4 +1,4 @@
-const _readSiteMap = () => {
+const _readSiteMap = (o) => {
 	// We have the config file loaded. Go through the config file and sort out the website objects and properties.
 	// This is an SPA so we do everything first in a speedy fashion - we only do this once.
 	// Don't forget that load-config runs this too, so anything for first initialization needs to be with the !setupEnded condition.
@@ -36,5 +36,5 @@ const _readSiteMap = () => {
 	// Put all the existing script tag details into memory so we don't load things up twice if load-script is used.
 	_initScriptTrack();
 
-	_wrapUpStart();
+	_wrapUpStart(o);
 };
