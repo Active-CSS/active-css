@@ -124,23 +124,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 		compScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
 		if (change.type == 'delete' && compScope == '') {
 			// The whole scope has been deleted. Clean up. Don't clean-up session or local storage as they need to persist until manual deletion.
-
-// All these references need converting to dot format. These should just be deleting the scope where applicable here - not the current path.
-
-			delete shadowDoms[change.currentPath];
-			delete scopedData[change.currentPath];
-			delete actualDoms[change.currentPath];
-			delete compParents[change.currentPath];
-			delete strictCompPrivEvs[change.currentPath];
-			delete compPrivEvs[change.currentPath];
-			delete varMap[change.currentPath];
-			delete varStyleMap[change.currentPath];
-
-//				varInStyleMap[el._acssActiveID] = str;		// This needs cleaning up - do it when removing item from DOM in observer.
-
+			_deleteScopeVars(change.currentPath);
 			return;
-			// Note that this is only going to clean up components that contain reactive variables. At some point, we should look at a method of cleaning up
-			// all component references when they are removed. Then this can possibly be removed depending on the method.
 		}
 	}
 

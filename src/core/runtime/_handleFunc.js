@@ -15,13 +15,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
 					_unloadAllCancelTimerLoop(delayActiveID);
 				}
-				delayArr[delayActiveID] = null;
-				cancelIDArr[delayActiveID] = null;
-				cancelCustomArr[delayActiveID] = null;
+				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
+				delayArr.splice(delayArr.indexOf(activeID), 1);
+				cancelIDArr.splice(cancelIDArr.indexOf(activeID), 1);
+				cancelCustomArr.splice(cancelCustomArr.indexOf(activeID), 1);
 			}
 			_a.StopPropagation(o);
-			// Remove any mapping to this object.
-			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);
@@ -139,5 +138,4 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
-
 };

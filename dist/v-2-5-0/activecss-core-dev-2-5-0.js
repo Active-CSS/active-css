@@ -59,57 +59,57 @@
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
 	// Mark as ok when clean-up code is in place or isn't needed.
-	var coreVersionExtension = '2-0-0',			// ok
+	var coreVersionExtension = '2-0-0',
 		// Active CSS action commands.
-		_a = {},								// ok
+		_a = {},
 		// Active CSS conditionals.
-		_c = {},								// ok
-		activeIDTrack = 0,						// ok
-		actualDoms = {},						// Use: actualDoms[varScope]
-		ajaxResLocations = {},					// ok
-		allEvents = [],							// ok
-		autoStartInit = false,					// ok
-		cancelIDArr = [],						// Use: cancelIDArr[activeID]. For custom targets: cancelIDArr[delayRef] (see _handleFuncs, etc.)
-		cancelCustomArr = [],					// Use: cancelCustomArr[delayRef] (see _handleFuncs and other - needs investigating of contents)
-		clickOutsideSels = [],					// Use: clickOutsideSels[activeID]
-		clickOutsideSet = false,				// ok
-		compCount = 0,							// Sets the number of the component scope. ok
-		components = [],						// ok
-		compPending = {},						// Use: compPending[varScope]
-		compParents = [],						// Use: compParents[evScope]
-		compPrivEvs = [],						// Use: compPrivEvs[evScope]
-		config = [],							// ok
-		configArr = [],							// ok
-		configBox = [],							// ok
-		configFile = '',						// ok
-		configLine = '',						// ok
-		concatConfigCo = 0,						// ok
-		concatConfigLen = 0,					// ok
-		conditionals = [],						// ok
-		currDocTitle = document.title,			// ok
-		currentPage = '',						// ok
-		customTags = [],						// Needs deleting when the create-element command is removed.
-		debuggerActive = false,					// ok
-		debuggerCo = 0,							// ok
-		debuggerEvs = [ 'afterLoadConfig' ],	// ok
-		debuggerExtID = null,					// ok
-		debuggerness = false,					// ok
-		debugMode = '',							// ok
-		delayArr = [],							// Use: delayArr[activeID]. For custom targets: delayArr[delayRef] (see _handleFuncs, etc.)
-		devtoolsInit = [],						// ok
-		doesPassive = false,					// ok
-		elementObserver,						// ok
-		evEditorExtID = null,					// ok
-		evEditorActive = false,					// ok
-		eventState = {},						// ok
-		flyCommands = [],						// Use: flyCommands[funcName]. Needs deleting when the create-command command is removed.
-		flyConds = [],							// Use: flyConds[funcName]. Needs deleting when the create-conditional command is removed.
-		idMap = [],								// Use: should be idMap[activeID], but there's a idMap[o.secSelObj] in there, so that needs to be consistent.
-		inIframe = (window.location !== window.parent.location),	// ok
-		inlineIDArr = [],						// ok
-		intIDCounter = 0,						// ok
-		labelData = [],							// ok
-		labelByIDs = [],						// ok
+		_c = {},
+		activeIDTrack = 0,
+		actualDoms = {},
+		ajaxResLocations = {},
+		allEvents = [],
+		autoStartInit = false,
+		cancelIDArr = [],
+		cancelCustomArr = [],
+		clickOutsideSels = [],
+		clickOutsideSet = false,
+		compCount = 0,
+		components = [],
+		compPending = {},
+		compParents = [],
+		compPrivEvs = [],
+		config = [],
+		configArr = [],
+		configBox = [],
+		configFile = '',
+		configLine = '',
+		concatConfigCo = 0,
+		concatConfigLen = 0,
+		conditionals = [],
+		currDocTitle = document.title,
+		currentPage = '',
+		customTags = [],
+		debuggerActive = false,
+		debuggerCo = 0,
+		debuggerEvs = [ 'afterLoadConfig' ],
+		debuggerExtID = null,
+		debuggerness = false,
+		debugMode = '',
+		delayArr = [],
+		devtoolsInit = [],
+		doesPassive = false,
+		elementObserver,
+		evEditorExtID = null,
+		evEditorActive = false,
+		eventState = {},
+		flyCommands = [],
+		flyConds = [],
+		idMap = [],
+		inIframe = (window.location !== window.parent.location),
+		inlineIDArr = [],
+		intIDCounter = 0,
+		labelData = [],
+		labelByIDs = [],
 		lazyConfig = '',
 		localStoreVars = [],
 		maEv = [],
@@ -122,7 +122,7 @@
 		pageList = [],
 		pagesDisplayed = [],
 		pageStore,
-		parsedConfig = {},				// ok
+		parsedConfig = {},
 		passiveEvents = true,
 		preGetMax = 6,
 		preGetMid = 0,
@@ -144,8 +144,8 @@
 		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
-		strictCompPrivEvs = [],			// Use: strictCompPrivEvs[evScope]
-		strictPrivVarScopes = [],		// Use: strictPrivVarScopes[evScope]
+		strictCompPrivEvs = [],
+		strictPrivVarScopes = [],
 		supportsShadow = true,
 		taEv = [],
 		targetEventCounter = -1,
@@ -1729,15 +1729,15 @@ const _removeCancel = (delayRef, func, actPos, intID, loopRef) => {
 			labelByIDs.splice(labelByIDs.indexOf[tid]);
 			delete labelData[delData.lab];
 		}
-		delayArr[delayRef][func][actPos][intID][loopRef] = null;
+		delete delayArr[delayRef][func][actPos][intID][loopRef];
 	}
 	if (['~', '|'].includes(delayRef.substr(0, 1))) {
 		if (cancelCustomArr[delayRef] && cancelCustomArr[delayRef][func] && cancelCustomArr[delayRef][func][actPos] && cancelCustomArr[delayRef][func][actPos][intID]) {
-			cancelCustomArr[delayRef][func][actPos][intID][loopRef] = null;
+			delete cancelCustomArr[delayRef][func][actPos][intID][loopRef];
 		}
 	} else {
 		if (cancelIDArr[delayRef] && cancelIDArr[delayRef][func]) {
-			cancelIDArr[delayRef][func] = null;
+			delete cancelIDArr[delayRef][func];
 		}
 	}
 };
@@ -1896,6 +1896,36 @@ const _cloneAttrs = (el, srcEl) => {
 		}
 	}
 	el.setAttribute('data-active-nav', '1');
+};
+
+const _deleteIDVars = activeID => {
+	clickOutsideSels.splice(clickOutsideSels.indexOf(activeID), 1);
+	idMap.splice(idMap.indexOf(activeID), 1);
+	varInStyleMap.splice(varInStyleMap.indexOf(activeID), 1);
+};
+
+const _deleteScopeVars = varScope => {
+	let i, scopePref = varScope + '.', scopeNum = varScope.substr(1);
+	delete scopedProxy[varScope];
+	delete scopedData[varScope];
+	for (i in scopedData) {
+		if (i.startsWith('i' + scopeNum + 'HOST')) {
+			delete scopedData[i];
+		}
+	}
+	delete actualDoms[varScope];
+	delete compPending[varScope];
+	delete compParents[varScope];
+	delete compPrivEvs[varScope];
+	delete privVarScopes[varScope];
+	delete strictCompPrivEvs[varScope];
+	delete strictPrivVarScopes[varScope];
+	for (i in varMap) {
+		if (i.startsWith(scopePref)) {
+			delete varMap[i];
+		}
+	}
+	delete varStyleMap[varScope];
 };
 
 const _escapeInline = (str, start) => {
@@ -2173,13 +2203,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
 					_unloadAllCancelTimerLoop(delayActiveID);
 				}
-				delayArr[delayActiveID] = null;
-				cancelIDArr[delayActiveID] = null;
-				cancelCustomArr[delayActiveID] = null;
+				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
+				delayArr.splice(delayArr.indexOf(activeID), 1);
+				cancelIDArr.splice(cancelIDArr.indexOf(activeID), 1);
+				cancelCustomArr.splice(cancelCustomArr.indexOf(activeID), 1);
 			}
 			_a.StopPropagation(o);
-			// Remove any mapping to this object.
-			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);
@@ -2297,7 +2326,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
-
 };
 
 const _handleLoop = (loopObj) => {
@@ -2531,10 +2559,6 @@ ActiveCSS._nodeMutations = function(mutations) {
 			if (mutation.removedNodes) {
 				mutation.removedNodes.forEach(nod => {
 					if (!(nod instanceof HTMLElement)) return;
-					// We only get the top-level removed node, so we have to do some searching for childnodes and clean-up.
-					idMap.splice(idMap.indexOf(nod), 1);
-					varInStyleMap.splice(varInStyleMap.indexOf(nod._acssActiveID), 1);
-
 					// Handle the removal of inline Active CSS styles from the config. This works with DevTools and also when navigating via SPA tools.
 					if (_isACSSStyleTag(nod)) {
 						_regenConfig(nod, 'remove');
@@ -2543,14 +2567,6 @@ ActiveCSS._nodeMutations = function(mutations) {
 							_regenConfig(obj, 'remove');
 						});
 					}
-
-// Note to self: when onto the clean-up issue, all the nodes in the childlist need iterating...
-
-//					if (typeof clickOutsideSels[activeID] !== 'undefined') {
-//						console.log('ActiveCSS._nodeMutations, removing clickoutside ref');
-//						delete clickOutsideSels[activeID];
-//					}
-
 				});
 			}
 
@@ -2558,7 +2574,6 @@ ActiveCSS._nodeMutations = function(mutations) {
 				if (DEVCORE) {
 					mutation.addedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
-
 						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 							_regenConfig(nod, 'addDevTools');
@@ -2592,6 +2607,43 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}, 0);
 			}
 		}
+
+		if (mutation.removedNodes) {
+			mutation.removedNodes.forEach(nod => {
+				if (!(nod instanceof HTMLElement)) return;
+				// Now perform some clean-up on removed nodes. It doesn't have to be done immediately, so just do it after the current stack.
+				// Note that nested shadow DOMs can also come into play here, and we need to clean up those too.
+				setTimeout(function() {
+					let ID = nod._acssActiveID;
+					if (ID) {
+						_deleteIDVars(ID);
+						_deleteScopeVars('_' + ID.substr(3));
+					}
+					_recursiveScopeCleanUp(nod);
+
+/*
+					// This is handy for checking memory. Please don't remove.
+					console.log('ActiveCSS._nodeMutations, scopedProxy:', scopedProxy,
+						'scopedData:', scopedData,
+						'varMap:', varMap,
+						'varStyleMap:', varStyleMap,
+						'clickOutsideSels:', varStyleMap,
+						'idMap:', varStyleMap,
+						'varInStyleMap:', varStyleMap,
+						'compPending:', compPending,
+						'compParents:', compParents,
+						'compPrivEvs:', compPrivEvs,
+						'actualDoms:', actualDoms,
+						'delayArr:', delayArr,
+						'idMap:', idMap,
+						'cancelIDArr:', cancelIDArr,
+						'cancelCustomArr:', cancelCustomArr
+					);
+*/
+				}, 0);
+			});
+		}
+
 	});
 };
 
@@ -3052,6 +3104,20 @@ const _prepSelector = (sel, obj, doc) => {
 	});
 	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
 	return objArr;
+};
+
+const _recursiveScopeCleanUp = nod => {
+	let ID;
+	nod.querySelectorAll('*').forEach(function (obj, index) {
+		ID = obj._acssActiveID;
+		if (ID) {
+			_deleteIDVars(ID);
+			_deleteScopeVars('_' + ID.substr(3));
+		}
+		if (supportsShadow && obj.shadowRoot) {
+			_recursiveScopeCleanUp(obj.shadowRoot);
+		}
+	});
 };
 
 const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
@@ -6690,23 +6756,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 		compScope = change.currentPath.substr(0, change.currentPath.indexOf('.'));
 		if (change.type == 'delete' && compScope == '') {
 			// The whole scope has been deleted. Clean up. Don't clean-up session or local storage as they need to persist until manual deletion.
-
-// All these references need converting to dot format. These should just be deleting the scope where applicable here - not the current path.
-
-			delete shadowDoms[change.currentPath];
-			delete scopedData[change.currentPath];
-			delete actualDoms[change.currentPath];
-			delete compParents[change.currentPath];
-			delete strictCompPrivEvs[change.currentPath];
-			delete compPrivEvs[change.currentPath];
-			delete varMap[change.currentPath];
-			delete varStyleMap[change.currentPath];
-
-//				varInStyleMap[el._acssActiveID] = str;		// This needs cleaning up - do it when removing item from DOM in observer.
-
+			_deleteScopeVars(change.currentPath);
 			return;
-			// Note that this is only going to clean up components that contain reactive variables. At some point, we should look at a method of cleaning up
-			// all component references when they are removed. Then this can possibly be removed depending on the method.
 		}
 	}
 
@@ -9082,12 +9133,13 @@ if (!document.head.attachShadow) {
 
 // For Firefox 48.
 if (window.NodeList && !NodeList.prototype.forEach) {
-    NodeList.prototype.forEach = function (callback, thisArg) {
-        thisArg = thisArg || window;
-        for (var i = 0; i < this.length; i++) {
-            callback.call(thisArg, this[i], i, this);
-        }
-    };
+	NodeList.prototype.forEach = function (callback, thisArg) {
+		thisArg = thisArg || window;
+		let i = 0;
+		for (i; i < this.length; i++) {
+			callback.call(thisArg, this[i], i, this);
+		}
+	};
 }
 
 

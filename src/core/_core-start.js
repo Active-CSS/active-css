@@ -59,57 +59,57 @@
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
 	// Mark as ok when clean-up code is in place or isn't needed.
-	var coreVersionExtension = '2-0-0',			// ok
+	var coreVersionExtension = '2-0-0',
 		// Active CSS action commands.
-		_a = {},								// ok
+		_a = {},
 		// Active CSS conditionals.
-		_c = {},								// ok
-		activeIDTrack = 0,						// ok
-		actualDoms = {},						// Use: actualDoms[varScope]
-		ajaxResLocations = {},					// ok
-		allEvents = [],							// ok
-		autoStartInit = false,					// ok
-		cancelIDArr = [],						// Use: cancelIDArr[activeID]. For custom targets: cancelIDArr[delayRef] (see _handleFuncs, etc.)
-		cancelCustomArr = [],					// Use: cancelCustomArr[delayRef] (see _handleFuncs and other - needs investigating of contents)
-		clickOutsideSels = [],					// Use: clickOutsideSels[activeID]
-		clickOutsideSet = false,				// ok
-		compCount = 0,							// Sets the number of the component scope. ok
-		components = [],						// ok
-		compPending = {},						// Use: compPending[varScope]
-		compParents = [],						// Use: compParents[evScope]
-		compPrivEvs = [],						// Use: compPrivEvs[evScope]
-		config = [],							// ok
-		configArr = [],							// ok
-		configBox = [],							// ok
-		configFile = '',						// ok
-		configLine = '',						// ok
-		concatConfigCo = 0,						// ok
-		concatConfigLen = 0,					// ok
-		conditionals = [],						// ok
-		currDocTitle = document.title,			// ok
-		currentPage = '',						// ok
-		customTags = [],						// Needs deleting when the create-element command is removed.
-		debuggerActive = false,					// ok
-		debuggerCo = 0,							// ok
-		debuggerEvs = [ 'afterLoadConfig' ],	// ok
-		debuggerExtID = null,					// ok
-		debuggerness = false,					// ok
-		debugMode = '',							// ok
-		delayArr = [],							// Use: delayArr[activeID]. For custom targets: delayArr[delayRef] (see _handleFuncs, etc.)
-		devtoolsInit = [],						// ok
-		doesPassive = false,					// ok
-		elementObserver,						// ok
-		evEditorExtID = null,					// ok
-		evEditorActive = false,					// ok
-		eventState = {},						// ok
-		flyCommands = [],						// Use: flyCommands[funcName]. Needs deleting when the create-command command is removed.
-		flyConds = [],							// Use: flyConds[funcName]. Needs deleting when the create-conditional command is removed.
-		idMap = [],								// Use: should be idMap[activeID], but there's a idMap[o.secSelObj] in there, so that needs to be consistent.
-		inIframe = (window.location !== window.parent.location),	// ok
-		inlineIDArr = [],						// ok
-		intIDCounter = 0,						// ok
-		labelData = [],							// ok
-		labelByIDs = [],						// ok
+		_c = {},
+		activeIDTrack = 0,
+		actualDoms = {},
+		ajaxResLocations = {},
+		allEvents = [],
+		autoStartInit = false,
+		cancelIDArr = [],
+		cancelCustomArr = [],
+		clickOutsideSels = [],
+		clickOutsideSet = false,
+		compCount = 0,
+		components = [],
+		compPending = {},
+		compParents = [],
+		compPrivEvs = [],
+		config = [],
+		configArr = [],
+		configBox = [],
+		configFile = '',
+		configLine = '',
+		concatConfigCo = 0,
+		concatConfigLen = 0,
+		conditionals = [],
+		currDocTitle = document.title,
+		currentPage = '',
+		customTags = [],
+		debuggerActive = false,
+		debuggerCo = 0,
+		debuggerEvs = [ 'afterLoadConfig' ],
+		debuggerExtID = null,
+		debuggerness = false,
+		debugMode = '',
+		delayArr = [],
+		devtoolsInit = [],
+		doesPassive = false,
+		elementObserver,
+		evEditorExtID = null,
+		evEditorActive = false,
+		eventState = {},
+		flyCommands = [],
+		flyConds = [],
+		idMap = [],
+		inIframe = (window.location !== window.parent.location),
+		inlineIDArr = [],
+		intIDCounter = 0,
+		labelData = [],
+		labelByIDs = [],
 		lazyConfig = '',
 		localStoreVars = [],
 		maEv = [],
@@ -122,7 +122,7 @@
 		pageList = [],
 		pagesDisplayed = [],
 		pageStore,
-		parsedConfig = {},				// ok
+		parsedConfig = {},
 		passiveEvents = true,
 		preGetMax = 6,
 		preGetMid = 0,
@@ -144,8 +144,8 @@
 		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
-		strictCompPrivEvs = [],			// Use: strictCompPrivEvs[evScope]
-		strictPrivVarScopes = [],		// Use: strictPrivVarScopes[evScope]
+		strictCompPrivEvs = [],
+		strictPrivVarScopes = [],
 		supportsShadow = true,
 		taEv = [],
 		targetEventCounter = -1,
