@@ -7627,7 +7627,7 @@ const _ajaxCallbackDisplay = (o) => {
 		// Run the post event - success or failure.
 		_ajaxDisplay(o);
 	}
-	delete o.res;
+//	delete o.res;
 };
 
 const _ajaxCallbackErr = (str, resp, o) => {
