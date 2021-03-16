@@ -4,7 +4,7 @@ _a.UrlChange = o => {
 	// url to go back to.
 	let wot = o.actVal.split(' ');
 	let url = wot[0];
-	let titl = o.actVal.replace(url, '');
+	let titl = o.actVal.replace(url, '').trim();
 	if (titl == '') {
 		// default to current title if no parameter set.
 		titl = document.title;

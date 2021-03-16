@@ -13,7 +13,6 @@ const _mimicReset = e => {
 		}
 	}
 	if (e.target.cjsReset.title) {
-		currDocTitle = ActiveCSS._decodeHTML(e.target.cjsReset.title);
-		document.title = currDocTitle;
+		_setDocTitle(e.target.cjsReset.title);
 	}
 };

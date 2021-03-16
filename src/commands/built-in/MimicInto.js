@@ -65,7 +65,6 @@ _a.MimicInto = o => {
 			targEl.innerText = insVal;
 			break;
 		case 'title':
-			document.title = ActiveCSS._decodeHTML(insVal);
-			currDocTitle = ActiveCSS._decodeHTML(insVal);
+			_setDocTitle(insVal);
 	}
 };

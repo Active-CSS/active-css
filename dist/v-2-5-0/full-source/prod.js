@@ -557,7 +557,7 @@ _a.CreateElement = o => {
 };
 
 _a.DocumentTitle = o => {
-	document.title = o.actVal._ACSSRepQuo();
+	_setDocTitle(o.actVal._ACSSRepQuo());
 };
 
 _a.Eval = o => {
@@ -916,8 +916,7 @@ _a.MimicInto = o => {
 			targEl.innerText = insVal;
 			break;
 		case 'title':
-			document.title = ActiveCSS._decodeHTML(insVal);
-			currDocTitle = ActiveCSS._decodeHTML(insVal);
+			_setDocTitle(insVal);
 	}
 };
 
@@ -1344,7 +1343,7 @@ _a.UrlChange = o => {
 	// url to go back to.
 	let wot = o.actVal.split(' ');
 	let url = wot[0];
-	let titl = o.actVal.replace(url, '');
+	let titl = o.actVal.replace(url, '').trim();
 	if (titl == '') {
 		// default to current title if no parameter set.
 		titl = document.title;
@@ -7686,8 +7685,7 @@ const _mimicReset = e => {
 		}
 	}
 	if (e.target.cjsReset.title) {
-		currDocTitle = ActiveCSS._decodeHTML(e.target.cjsReset.title);
-		document.title = currDocTitle;
+		_setDocTitle(e.target.cjsReset.title);
 	}
 };
 
@@ -7862,6 +7860,11 @@ const _setClassObj = (obj, str) => {
 	obj.className = str;
 };
 
+const _setDocTitle = titl => {
+	currDocTitle = ActiveCSS._decodeHTML(titl);
+	document.title = currDocTitle;
+};
+
 const _setsrcObj = (obj, inSrc) => {
 	if (!obj) return; // element is no longer there.
 	obj.src = inSrc;
@@ -7891,12 +7894,12 @@ const _unSafeTags = str => {
 const _urlTitle = (url, titl, o) => {
 	if (inIframe) return;
 	url = url.replace(/"/g, '');
-	titl = titl.replace(/"/g, '');
+	titl = titl._ACSSRepQuo();
 	url = _resolveURL(url);
 	if (window.location.href != url) {
 		window.history.pushState(url, titl, url);
 	}
-	document.title = titl;
+	_setDocTitle(titl);
 };
 
 /**
@@ -8424,7 +8427,6 @@ String.prototype._ACSSRepAllQuo = function() {
 
 String.prototype._ACSSRepQuo = function() {
 	var html = this.replace(/\\"/g, '_ACSS*�%_');
-//	html = html.replace(/"/g, '');
 	html = html.replace(/(^")|("$)/g, '');
 	html = html.replace(/_ACSS\*�%_/g, '"');
 	return html;

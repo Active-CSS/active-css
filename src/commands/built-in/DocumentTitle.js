@@ -1,3 +1,3 @@
 _a.DocumentTitle = o => {
-	document.title = o.actVal._ACSSRepQuo();
+	_setDocTitle(o.actVal._ACSSRepQuo());
 };
