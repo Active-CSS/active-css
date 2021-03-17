@@ -28,11 +28,12 @@
 		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
 		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
 		PARSESEL = 1,
-		RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+		RANDHEX = 'ABCDEF',
 		RANDNUMS = '0123456789',
 		SELFREGEX = /\{\$SELF\}/g,
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
+	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,

@@ -28,11 +28,12 @@
 		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
 		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
 		PARSESEL = 1,
-		RANDCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+		RANDHEX = 'ABCDEF',
 		RANDNUMS = '0123456789',
 		SELFREGEX = /\{\$SELF\}/g,
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
+	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -2244,6 +2245,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					return;
 				}
 				o2.interval = true;
+				o2.origActValSing = o2.actValSing;
 				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
@@ -2273,7 +2275,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
 	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
-	
+
 	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
@@ -2313,7 +2315,11 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
-	if (!o.interval && delayActiveID) {
+	if (o.interval) {
+		// Restore the actVal to it's state prior to variable evaluation so interval works correctly.
+		o.actVal = o.origActValSing;
+		o.actValSing = o.actVal;
+	} else if (!o.interval && delayActiveID) {
 		// We don't cleanup any timers if we are in the middle of an interval. Only on cancel, or if the element is no longer on the page.
 		// Also... don't try and clean up after a non-delayed action. Only clean-up here after delayed actions are completed. Otherwise we get actions being removed
 		// that shouldn't be when clashing actions from different events with different action values, but the same everything esle.
@@ -6175,8 +6181,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 
 const _replaceRand = (str) => {
 	if (str.indexOf('{$RAND') !== -1) {
-		str = str.replace(/\{\$RAND((STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isStr, num, hyph, endNum) {
-			return hyph ? Math.floor(Math.random() * (endNum - num + 1) + num) : _random( ((num) ? num : 8) , (isStr ? true : false) );
+		str = str.replace(/\{\$RAND((HEX)?(STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isHex, isStr, num, hyph, endNum) {
+			return hyph ? Math.floor(Math.random() * (endNum - num + 1) + num) : _random( ((num) ? num : 8) , (isStr ? true : false) , (isHex ? true : false) );
 		});
 	}
 	return str;
@@ -8392,8 +8398,8 @@ const _placeCaretAtEnd = el => {
 	el.focus();
 };
 
-const _random = (len, str=false) => {
-	let chars = (str) ? RANDCHARS + RANDNUMS : RANDNUMS, rand = '', i = 0;
+const _random = (len, str=false, hex=false) => {
+	let chars = (hex) ? RANDHEX + RANDNUMS : (str) ? RANDCHARS + RANDNUMS : RANDNUMS, rand = '', i = 0;
     for (i = 0; i < len; i++) {
         rand += chars.charAt(Math.floor(Math.random() * chars.length));
     }
