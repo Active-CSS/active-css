@@ -81,7 +81,12 @@ const _focusOn = (o, wot, justObj=false) => {
 	if (doClick && (wot == 'pcc' || wot == 'ncc')) {
 		ActiveCSS.trigger(targEl, 'click');
 		setTimeout(function () {	// Needed for everything not to get highlighted when used in combination with select text area.
-			targEl.focus();
+			if (endOfField && _isTextField(el)) {
+				// Position cursor at end of line.
+				_placeCaretAtEnd(el);
+			} else {
+				targEl.focus();
+			}
 		}, 0);
 	} else if (!justObj) {
 		if (o.func.substr(0, 5) == 'Click') {
