@@ -9,7 +9,7 @@ const _isFromFile = (fileToRemove, configPart) => {
 	} else {
 		for (i = 0; i < configPartLen; i++) {
 			item = configPart[i];
-			if (Array.isArray(item)) {
+			if (isArray(item)) {
 				if (_isFromFile(fileToRemove, item)) {
 					return true;
 				}

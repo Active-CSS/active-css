@@ -1,4 +1,4 @@
-const _wrapUpStart = () => {
+const _wrapUpStart = (o) => {
 	// The page has been reloaded. Every page in Active CSS must have an element that contains an href linking to it, which when clicked on will perform the
 	// actions necessary to redraw the page. The page has just been loaded or reloaded, so there was no object clicked on to perform any actions yet.
 	// So we need to find the href in the page that has the url, and based on that, we assume that clicking on this object will perform the correct actions
@@ -13,6 +13,16 @@ const _wrapUpStart = () => {
 
 		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
 		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
+
+		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
+		elementObserver.observe(document.body, {
+			characterData: true,
+			childList: true,
+			subtree: true
+		});
+
+		setupEnded = true;
 
 		// Handle any developer initialization events
 		_handleEvents({ obj: 'body', evType: 'preInit' });
@@ -31,15 +41,6 @@ const _wrapUpStart = () => {
 			let url = _resolveURL(window.location.href);
 			window.history.replaceState(url, document.title, url);
 		}
-		setupEnded = true;
-
-		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
-		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
-		elementObserver.observe(document.body, {
-			characterData: true,
-			childList: true,
-			subtree: true
-		});
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
 
@@ -50,6 +51,7 @@ const _wrapUpStart = () => {
 				for (configFile of arr) {
 					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
 				}
+//				lazyConfig = '';
 			}, 1000);
 		}
 	} else {

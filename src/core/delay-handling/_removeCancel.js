@@ -6,15 +6,15 @@ const _removeCancel = (delayRef, func, actPos, intID, loopRef) => {
 			labelByIDs.splice(labelByIDs.indexOf[tid]);
 			delete labelData[delData.lab];
 		}
-		delayArr[delayRef][func][actPos][intID][loopRef] = null;
+		delete delayArr[delayRef][func][actPos][intID][loopRef];
 	}
 	if (['~', '|'].includes(delayRef.substr(0, 1))) {
 		if (cancelCustomArr[delayRef] && cancelCustomArr[delayRef][func] && cancelCustomArr[delayRef][func][actPos] && cancelCustomArr[delayRef][func][actPos][intID]) {
-			cancelCustomArr[delayRef][func][actPos][intID][loopRef] = null;
+			delete cancelCustomArr[delayRef][func][actPos][intID][loopRef];
 		}
 	} else {
 		if (cancelIDArr[delayRef] && cancelIDArr[delayRef][func]) {
-			cancelIDArr[delayRef][func] = null;
+			delete cancelIDArr[delayRef][func];
 		}
 	}
 };

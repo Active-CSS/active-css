@@ -7,7 +7,6 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
 	let actionBoolState = false;
-	let newCondVal, condVals, condValsLen, n;
 
 	for (cond of conds) {
 		let parenthesisPos = cond.indexOf('(');
@@ -33,32 +32,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 				    return '_ACSSComma';
 				});
 
-				aV = _replaceAttrs(el, aV, null, null, null, varScope, thisAction);	// Using the document of the primary selector is what we want.
-				aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
-
-				condVals = aV.split('_ACSSComma');
-				condValsLen = condVals.length;
-
-				for (n = 0; n < condValsLen; n++) {
-					let cObj = {
-						'func': func,
-						'actName': commandName,
-						'secSel': 'conditional',
-						'secSelObj': el,
-						'actVal': condVals[n].trim(),
-						'primSel': sel,
-						'rules': cond,
-						'obj': el,
-						'e': eve,
-						'doc': doc,
-						'ajaxObj': otherEl,
-						'component': component,
-						'compDoc': compDoc,
-						'varScope': varScope
-					};
-					if (_c[func](cObj, scopedVars, privVarScopes) !== actionBoolState) {
-						return false;	// Barf out immediately if it fails a condition.
-					}
+				if (!_checkCond({ actName: commandName, rules: cond, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+					return false;
 				}
 			}
 			continue;
@@ -94,30 +69,8 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					aV = _replaceAttrs(el, aV, null, null, null, varScope);	// Using the document of the primary selector is what we want.
-					aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
-
-					condVals = aV.split('_ACSSComma');
-					condValsLen = condVals.length;
-					for (n = 0; n < condValsLen; n++) {
-						if (_c[func]({
-							'func': func,
-							'actName': obj.name,
-							'secSel': 'conditional',
-							'secSelObj': el,
-							'actVal': condVals[n].trim(),
-							'primSel': sel,
-							'rules': rules,
-							'obj': el,
-							'e': eve,
-							'doc': doc,
-							'ajaxObj': otherEl,
-							'component': component,
-							'compDoc': compDoc,
-							'varScope': varScope
-						}, scopedVars, privVarScopes) !== actionBoolState) {
-							return false;	// Barf out immediately if it fails a condition.
-						}
+					if (!_checkCond({ actName: obj.name, rules, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+						return false;
 					}
 				}
 			}

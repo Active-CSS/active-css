@@ -7,6 +7,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// There are quite possibly unnecessary bits in the regexes. If anyone wants to rewrite any so they are more accurate, that is welcome.
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
+	if (inlineActiveID) str = _unEscNoVars(str);
 	// Remove all comments.
 	str = str.replace(COMMENTS, '');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
@@ -14,8 +15,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
-	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
-
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
@@ -54,11 +53,11 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\[\]]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\' \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
@@ -70,7 +69,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
@@ -78,7 +77,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_hash_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\$\[\]]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\. \$\[\]]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});

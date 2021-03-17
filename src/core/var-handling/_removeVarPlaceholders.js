@@ -70,13 +70,12 @@ const _removeVarPlaceholders = obj => {
 					return varHost.getAttribute(varName);
 				} else {
 					// This is a regular scoped variable. Find the current value and return it or return what it was if it isn't there yet.
-					let val = _get(scopedVars, wot);
-					return (val) ? val : '';
+					let scoped = _getScopedVar(wot, '___none');
+					return (scoped.val) ? scoped.val : '';
 				}
 				return wot2 || '';
 			});
 			el.textContent = str;	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 		}
 	} while (treeWalker.nextNode());
-
 };

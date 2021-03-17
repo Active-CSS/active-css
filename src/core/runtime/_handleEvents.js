@@ -1,5 +1,5 @@
 const _handleEvents = evObj => {
-	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
 	let varScope, thisDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
@@ -14,7 +14,7 @@ const _handleEvents = evObj => {
 	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
 
 	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
-	let componentRefs = { compDoc, topVarScope, evScope, component, privateEvs: compPrivEvs[evScope] };
+	let componentRefs = { compDoc, topVarScope, evScope, component, strictPrivateEvs: strictCompPrivEvs[evScope], privateEvs: compPrivEvs[evScope] };
 	let initialComponentRefs = componentRefs;
 
 	let runGlobalScopeEvents = true;
@@ -45,7 +45,22 @@ const _handleEvents = evObj => {
 				testSel = primSel.substr(compSelCheckPos + 1);
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				testSel = (afterEv && origObj) ? _replaceAttrs(origObj, testSel) : testSel;
+				if (afterEv && origObj) {
+					testSel = ActiveCSS._sortOutFlowEscapeChars(testSel);
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+						{
+							str: testSel,
+							obj: origObj
+						}
+					);
+					strObj = _handleVars([ 'strings', 'scoped' ],
+						{
+							str: strObj.str,
+						},
+						strObj.ref
+					);
+					testSel = _resolveVars(strObj.str, strObj.ref);
+				}
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
 						selectorList.push({ primSel, componentRefs });
@@ -66,7 +81,7 @@ const _handleEvents = evObj => {
 					}
 				}
 			}
-			if (!componentRefs.privateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
 				componentRefs = _checkScopeForEv(componentRefs.evScope);
 				if (componentRefs !== false) continue;
 			} else {
@@ -82,7 +97,25 @@ const _handleEvents = evObj => {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-			testSel = (afterEv && origObj) ? _replaceAttrs(origObj, primSel) : primSel;
+			if (afterEv && origObj) {
+				testSel = ActiveCSS._sortOutFlowEscapeChars(primSel);
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+					{
+						str: testSel,
+						obj: origObj
+					}
+				);
+				strObj = _handleVars([ 'strings', 'scoped' ],
+					{
+						str: strObj.str,
+					},
+					strObj.ref
+				);
+				testSel = _resolveVars(strObj.str, strObj.ref);
+			} else {
+				testSel = primSel;
+			}
+
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
 				    try {
@@ -114,7 +147,7 @@ const _handleEvents = evObj => {
 	// All conditionals for a full event must be run *before* all actions, otherwise we end up with confusing changes within the same event which makes
 	// setting conditionals inconsistent. Like checking if a div is red, then setting it to green, then checking if a div is green and setting it to red.
 	// Having conditionals dynamically checked before each run of actions means the actions cancel out. So therein lies confusion. So all conditionals
-	// must be for a specific event on a selector *before* all actions. We get two "for" loops, but I don't see an alternative right now.
+	// must run for a specific event on a selector *before* all actions start.
 	for (sel = 0; sel < selectorListLen; sel++) {
 		let primSel = selectorList[sel].primSel;
 		let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
@@ -152,6 +185,7 @@ const _handleEvents = evObj => {
 						let secSelLoops, loopObj;
 						for (secSelLoops in chilsObj) {
 							loopObj = {
+								primSel,
 								chilsObj,
 								originalLoops: secSelLoops,
 								secSelLoops,
@@ -162,6 +196,7 @@ const _handleEvents = evObj => {
 								evScope,
 								evObj,
 								otherObj,
+								origO,
 								passCond,
 								sel,
 								component,

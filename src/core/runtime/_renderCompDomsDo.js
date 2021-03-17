@@ -1,5 +1,5 @@
 const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -7,6 +7,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	shadRef = obj.getAttribute('data-ref');
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
@@ -34,8 +35,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
-	if (scopedVars[varScope] === undefined) {
-		scopedVars[varScope] = {};
+	if (scopedProxy[varScope] === undefined) {
+		scopedProxy[varScope] = {};
 	}
 
 	evScope = varScope;		// This needs to be per component for finding event per component when looping.
@@ -56,6 +57,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// This behaviour is exactly the same for shadow DOMs and non-shadow DOM components.
 	// The data will be assigned to the compParents array further down this page once we have the component drawn.
 	compParents[evScope] = parentCompDetails;
+	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
 	let embeddedChildren = false;
@@ -71,6 +73,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// that point so we don't need to search for it.
 	shadowParent._acssComponent = componentName;
 	shadowParent._acssVarScope = varScopeToPassIn;
+	shadowParent._acssStrictPrivEvs = strictlyPrivateEvents;
 	shadowParent._acssPrivEvs = privateEvents;
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
@@ -81,14 +84,42 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 
-	compPending[shadRef] = _replaceAttrs(o.obj, compPending[shadRef], null, null, o.func, varScopeToPassIn);
+	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str: compPending[shadRef],
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: varScopeToPassIn,
+			shadowParent: shadowParent
+		}
+	);
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: o.ajaxObj,
+			varScope: varScopeToPassIn,
+		},
+		strObj.ref
+	);
+	// Output the variables for real from the map.
+	compPending[shadRef] = _resolveVars(strObj.str, strObj.ref);
+
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
-	// Now we can go through the shadow DOM contents and handle any host attribute references now that the host is set up.
-	compPending[shadRef] = _replaceScopedVars(compPending[shadRef], o.secSelObj, o.func, o, false, shadowParent, varScopeToPassIn);
-
-	// Lastly, handle any {$STRING} value from ajax content if it exists. This must be done last, otherwise we risk var replacement changing content of the $STRING.
-	compPending[shadRef] = _replaceStringVars(o.ajaxObj, compPending[shadRef]);
+	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
+	compPending[shadRef] = _unEscNoVars(compPending[shadRef]);
 
 	template = document.createElement('template');
 	template.innerHTML = compPending[shadRef];
@@ -114,8 +145,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		// The shadow is the top level doc.
 		shadowParent._acssTopEvDoc = shadow;
-	} else if (privateEvents) {
-		// The parent is the top level doc.
+	} else if (privateEvents || strictlyPrivateEvents) {
+		// The parent is the top level doc when running events inside the component.
 		shadowParent._acssTopEvDoc = shadowParent;
 	} else if (parentCompDetails.topEvDoc) {
 		// Set the top level event scope for this component for quick reference.
@@ -124,7 +155,15 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// The document is the top level doc.
 		shadowParent._acssTopEvDoc = document;
 	}
-
+	// For private events, but only when running inherited events, the top level doc is parentCompDetails.topEvDoc.
+	// I think there could be more to this - like the main focus should be on the target selector.
+	if (privateEvents) {
+		if (parentCompDetails.topEvDoc) {
+			shadowParent._acssInheritEvDoc = parentCompDetails.topEvDoc;
+		} else {
+			shadowParent._acssInheritEvDoc = document;
+		}
+	}
 	shadowDoms[varScope] = shadow;
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
@@ -141,7 +180,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		_replaceTempActiveID(obj);
 	});
 
-	let docToPass = (isShadow || privateEvents) ? shadow : o.doc;
+	let docToPass = (isShadow || strictlyPrivateEvents || privateEvents) ? shadow : o.doc;
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {

@@ -67,6 +67,13 @@ const _splitIframeEls = (sel, o) => {
 		if (doc && doc.nodeType !== Node.DOCUMENT_NODE) {
 			let compDetails = _getComponentDetails(doc);
 			doc = compDetails.topEvDoc;
+			if (compDetails.inheritEvDoc) {
+				let checkPrimSel = (o.primSel && o.primSel.startsWith('~') && o.origO && o.origO.primSel) ? o.origO.primSel : o.primSel;
+				if (!o.component || !checkPrimSel || checkPrimSel.indexOf('|' + o.component + ':') === -1) {
+					doc = compDetails.inheritEvDoc;
+				}
+			}
+
 		}
 	}
 	return [doc, targSel, iframeID];

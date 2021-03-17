@@ -14,6 +14,9 @@ const _prepSelector = (sel, obj, doc) => {
 				case 'body':
 					sel = doc.body;
 					break;
+				case ':root':
+				case ':host':
+					break;
 				default:
 					// Substitute the active ID into the selector.
 					attrActiveID = _getActiveID(obj);

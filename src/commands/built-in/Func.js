@@ -4,7 +4,7 @@ _a.Func = o => {
 	// Convert all spaces within double quotes to something else before the split.
 	o.actVal = o.actVal._ACSSSpaceQuoIn();
 
-	let spl = o.actVal.trim().split(' ');
+	let spl = o.actVal.split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {
 		console.log(func + ' is not a function.');
@@ -22,6 +22,10 @@ _a.Func = o => {
 			} else {
 				// Unconvert all spaces within double quotes back to what they were. Remove any surrounding double quotes, as it will go as a string anyway.
 				par = par._ACSSSpaceQuoOut()._ACSSRepQuo();
+				let checkIfVar = _getScopedVar(par, o.varScope);
+				if (checkIfVar.val !== undefined) {
+					par = checkIfVar.val;
+				}
 			}
 			pars.push(par);
 		}

@@ -1,4 +1,4 @@
-const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null) => {
+const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
 	// Evaluate and insert scoped variables. This could be a HTML string containing nodes.
 	// This should only happen after attribute substitution has occurred, otherwise binding in attributes won't work fully.
 	// Eg.: set-attribute: data-name "{{firstName}} {@id}{{surname}} {{surname}}". Simply put, the ID is not easily obtainable when updating the attribute with
@@ -63,7 +63,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	} else {
 		// Come in from an var change or there are no nodes - so no point creating a tree and going through all that stuff to set up sub Active IDs and all that
 		// sort of thing.
-		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, varScope);
+		str = _replaceScopedVarsDo(str, obj, func, o, false, shadHost, varScope, varReplacementRef);
 	}
 	return str;
 };

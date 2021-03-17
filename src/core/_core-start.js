@@ -3,131 +3,158 @@
 
 (function (global, document) {
 	'use strict';
-	const PARSELINEX = /([^\:]+):([^\;]*)(;)?/;
-	const PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi;
-	const PARSESEL = 1;
-	const PARSEEND = 2;
-	const PARSEATTR = 3;
-	const PARSEDEBUG = 4;
-//	const COMMENTS = /\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm;	// This doesn't handle user content very well. May do something else later - leave here for ref.
-	const COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm;
+	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
+		// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
+		// Don't forget that double backslashes are needed with quoted regexes.
+		// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
+		// At some point this may be worth changing to a negative check based on config loaded conditionals.
+		// If so, that would need to adjust according to loaded/removed config.
+		COLONSELS = new RegExp('^(' +
+			'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
+			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
+			')', 'g'),
+		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		DYNAMICCHARS = {
+			',': '_ACSS_later_comma',
+			'{': '_ACSS_later_brace_start',
+			'}': '_ACSS_later_brace_end',
+			';': '_ACSS_later_semi_colon',
+			':': '_ACSS_later_colon',
+			'"': '_ACSS_later_double_quote'
+		},
+		PARSEATTR = 3,
+		PARSEDEBUG = 4,
+		PARSEEND = 2,
+		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
+		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
+		PARSESEL = 1,
+		RANDHEX = 'ABCDEF',
+		RANDNUMS = '0123456789',
+		SELFREGEX = /\{\$SELF\}/g,
+		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		UNIQUEREF = Math.floor(Math.random() * 10000000);
+	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
-	// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
-	// Don't forget that double backslashes are needed with quoted regexes.
-	const COLONSELS = '^(' +
-		// Word not followed by another name type character.
-		'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
-		// Word and opening parenthesis.
-		'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
-		')';
-
-	const DYNAMICCHARS = {
-		',': '_ACSS_later_comma',
-		'{': '_ACSS_later_brace_start',
-		'}': '_ACSS_later_brace_end',
-		';': '_ACSS_later_semi_colon',
-		':': '_ACSS_later_colon',
-		'"': '_ACSS_later_double_quote'
-	};
-
-	const STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g;
-	const CHILDRENREGEX = /\{\$CHILDREN\}/g;
-	const SELFREGEX = /\{\$SELF\}/g;
+	// Lodash vars for _get & _set. These are all vars in the original source.
+	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
+		reIsPlainProp = /^\w*$/,
+		rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g,
+		INFINITY = 1 / 0,
+		MAX_SAFE_INTEGER = 9007199254740991,
+		reIsUint = /^(?:0|[1-9]\d*)$/,
+		reEscapeChar = /\\(\\)?/g,
+		isArray = Array.isArray,
+		objectProto = Object.prototype,
+		defineProperty = (function() {
+			try {
+				var func = _getNative(Object, 'defineProperty');
+				func({}, '', {});
+				return func;
+			} catch (e) {}
+		}()),
+		CLONE_DEEP_FLAG = 1;
+	var hasOwnProperty = objectProto.hasOwnProperty;
 
 	window.ActiveCSS = {};
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
-	var coreVersionExtension = '2-0-0',		// Used by the extensions to maintain backward-compatibility - this doesn't reflect minor core version changes.
-		_a = {},							// Active CSS action commands.
-		_c = {},							// Active CSS conditionals.
-		parsedConfig = {},
-		config = [],
-		configArr = [],
-		configLine = '',
-		configFile = '',
-		configBox = [],
-		lazyConfig = [],
-		concatConfigCo = 0,
-		concatConfigLen = 0,
-		masterConfigCo = 0,
-		currentPage = '',
-		ajaxResLocations = {},
-		pageList = [],
-		eventState = {},
-		delayArr = [],
-		cancelIDArr = [],				//	[data-activeid][func];		// for cancel-delay
-		cancelCustomArr = [],			//	[~(custom event)][func];	// for cancel-delay
-		intIDCounter = 0,
-		selectors = [],
-		userSetupStarted = false,
-		autoStartInit = false,
-		setupEnded = false,
-		clickOutsideSet = false,
-		clickOutsideSels = [],
-		mimicClones = [],				// Used by the clone and restore-clones commands.
-		currDocTitle = document.title,
-		debugMode = '',
-		conditionals = [],
-		components = [],
-		mediaQueries = [],
-		mediaQueriesOrig = [],
+	// Mark as ok when clean-up code is in place or isn't needed.
+	var coreVersionExtension = '2-0-0',
+		// Active CSS action commands.
+		_a = {},
+		// Active CSS conditionals.
+		_c = {},
 		activeIDTrack = 0,
-		scriptTrack = [],
-		debuggerActive = false,
-		debuggerness = false,
-		debuggerExtID = null,
-		debuggerEvs = [ 'afterLoadConfig' ],
-		debuggerCo = 0,
-		evEditorExtID = null,
-		evEditorActive = false,
-		devtoolsInit = [],
-		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
-		scoped = {},
-		// This is actually a proxy, but used as the variable manipulator in the core. It is simpler just to call it the main variable as we never reference
-		// the vars direct.
-		scopedVars = null,
-		// This is a map to information about the proxy variable. This is updated when variables are rendered, and stores location data to be updated
-		// when the proxy target is modified.
-		scopedData = {},
-		labelData = [],
-		labelByIDs = [],
-		customTags = [],
-		// The next two keep track of pending shadow DOM and scoped components to render.
+		actualDoms = {},
+		ajaxResLocations = {},
+		allEvents = [],
+		autoStartInit = false,
+		cancelIDArr = [],
+		cancelCustomArr = [],
+		clickOutsideSels = [],
+		clickOutsideSet = false,
 		compCount = 0,
+		components = [],
 		compPending = {},
 		compParents = [],
 		compPrivEvs = [],
-		privVarScopes = [],
-		strictPrivVarScopes = [],
-		shadowSels = [],
-		shadowDoms = {},
-		actualDoms = {},
+		config = [],
+		configArr = [],
+		configBox = [],
+		configFile = '',
+		configLine = '',
+		concatConfigCo = 0,
+		concatConfigLen = 0,
+		conditionals = [],
+		currDocTitle = document.title,
+		currentPage = '',
+		customTags = [],
+		debuggerActive = false,
+		debuggerCo = 0,
+		debuggerEvs = [ 'afterLoadConfig' ],
+		debuggerExtID = null,
+		debuggerness = false,
+		debugMode = '',
+		delayArr = [],
+		devtoolsInit = [],
+		doesPassive = false,
+		elementObserver,
+		evEditorExtID = null,
+		evEditorActive = false,
+		eventState = {},
+		flyCommands = [],
+		flyConds = [],
+		idMap = [],
+		inIframe = (window.location !== window.parent.location),
+		inlineIDArr = [],
+		intIDCounter = 0,
+		labelData = [],
+		labelByIDs = [],
+		lazyConfig = '',
+		localStoreVars = [],
+		maEv = [],
+		mainEventCounter = -1,
+		masterConfigCo = 0,
+		mediaQueries = [],
+		mediaQueriesOrig = [],
+		mimicClones = [],
+		nonPassiveEvents = [],
+		pageList = [],
+		pagesDisplayed = [],
+		pageStore,
+		parsedConfig = {},
+		passiveEvents = true,
 		preGetMax = 6,
 		preGetMid = 0,
-		reverseShadowEvs = {},
-		allEvents = [],
-		doesPassive = false,
 		preSetupEvents = [],
-		nonPassiveEvents = [],
-		passiveEvents = true,
+		privVarScopes = [],
+		resolvableVars = [],
+		resolvingObj = {},
+		reverseShadowEvs = {},
+		// This is a map to information about the proxy variable. This is updated when variables are rendered, and stores location data to be updated
+		// when the proxy target is modified.
+		scopedData = [],
+		// The variable containing the scoped variables that is proxied (using _observable-Slim) for detecting changes.
+		scopedOrig = {},
+		// This is the proxy and used as the variable manipulator in the core.
+		scopedProxy = null,
+		scriptTrack = [],
+		selectors = [],
+		sessionStoreVars = [],
+		setupEnded = false,
+		shadowSels = [],
+		shadowDoms = {},
+		strictCompPrivEvs = [],
+		strictPrivVarScopes = [],
 		supportsShadow = true,
-		idMap = [],
+		taEv = [],
+		targetEventCounter = -1,
+		userSetupStarted = false,
 		varMap = [],
 		varStyleMap = [],
 		varInStyleMap = [],
-		maEv = [],
-		mainEventCounter = -1,
-		taEv = [],
-		targetEventCounter = -1,
-		elementObserver,
-		pageStore,
-		pagesDisplayed = [],
-		inlineRefCo = 0,
-		inlineRefArr = [],
-		inlineIDArr = [],
-		inIframe = (window.location !== window.parent.location),
-		htmlRawMap = [];
+		varReplaceRef = 0;
 
 	ActiveCSS.customHTMLElements = {};
 

@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.4.3',
-			fileVersion: '2-4-3',
+			realVersion: '2.5.0',
+			fileVersion: '2-5-0',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -30,6 +30,7 @@
 						'src/utils/dom-basic/*.js',
 						'src/utils/file-handling/*.js',
 						'src/utils/general/*.js',
+						'src/utils/lodash/*.js',
 						'src/utils/prototypes/*.js',
 						'src/core/_core-end.js'	// This goes last, always.
 					],
@@ -49,6 +50,7 @@
 						'src/utils/dom-basic/*.js',
 						'src/utils/file-handling/*.js',
 						'src/utils/general/*.js',
+						'src/utils/lodash/*.js',
 						'src/utils/prototypes/*.js',
 						'src/core/_core-end.js'
 					],

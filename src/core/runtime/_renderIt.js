@@ -64,7 +64,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// Handle any reference to {$SELF} that needs to be dealt with before any components get rendered.
 	if (selfTree != '') content = _renderRefElements(content, selfTree, 'SELF');
 
-	// Unescape any $HTML_NOVARS escaped curlies now that rendering is occurring and iframe content is removed.
+	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
 	content = _unEscNoVars(content);
 
 	if (o.renderPos && !isIframe) {

@@ -1,6 +1,6 @@
 _a.CreateCommand = o => {
 	// Create an Active CSS command dynamically.
-	let funcName = o.actVal.trim().split(' ')[0];
+	let funcName = o.actVal.split(' ')[0];
 	let funcContent = o.actVal.replace(funcName, '').trim();
 	funcName = funcName._ACSSConvFunc();
 
@@ -11,11 +11,8 @@ _a.CreateCommand = o => {
 
 	if (_a[funcName]) return;	// If this command already exists, do nothing more.
 
-	funcContent = ActiveCSS._sortOutFlowEscapeChars(funcContent).slice(2, -2);
-	funcContent = _handleVarsInJS(funcContent);
-
 	// Set up the default variables in terms that a Active CSS programmer would be used to:
-	funcContent = 'let actionName = o.actName,' +	// The name of the action command that called this function.
+	let funcStart = 'let actionName = o.actName,' +	// The name of the action command that called this function.
 		'actionPosition = o.actPos,' +				// The position in the action value, 0, 1, etc. - you can call more than one function if you comma-delimit them.
 		'actionValue = o.actVal,' +					// The full evaluated action value.
 		'actionValueUnEval = o.actValSing,' +		// The singular un-evaluated action value that called the function.
@@ -38,13 +35,17 @@ _a.CreateCommand = o => {
 		'compDoc = o.compDoc,' +				// The document of the shadow DOM, if applicable.
 		'component = o.component,' +				// The name of the component, if applicable.
 		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
-		'_loopRef = o.loopRef,' +					// Internal reference for looping variable reference.
-		'_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
-		'scopedVars[_activeVarScope] = (scopedVars[_activeVarScope] === undefined) ? {} : scopedVars[_activeVarScope];' +
-		funcContent;
-	// Its primary purpose is to create a command, which is a low-level activity.
-	// There is little benefit to having it run more than once, as no variable substitution is allowed in here, and would only lead to inevitable pointless recreates.
-	// It would be nice to have it recreated on a realtime edit in the extension. This would need to be set up in the extension area to detect and remove
-	// the function if it is edited, but that code has no place in here.
-	_a[funcName] = new Function('o', 'scopedVars', 'privVarScopes', funcContent);		// jshint ignore:line
+		'_loopRef = o.loopRef;';					// Internal reference for looping variable reference.
+
+	// Now put in a routine to dynamically work out the variable scopes for the vars command. This is run dynamically, so we need to effective remove the vars command
+	// and replace all the remaining content with correctly scoped variables. The original command must retain the vars command for dynamic use, hence this is
+	// happening at the point of runtime. The _run function (found in the Run command file) sorts the variable scoping out.
+
+	let newFunc = '_activeVarScope = (o.varScope && privVarScopes[o.varScope]) ? o.varScope : "main";' +
+		'scopedProxy[_activeVarScope] = (scopedProxy[_activeVarScope] === undefined) ? {} : scopedProxy[_activeVarScope];' +
+		'_run(flyCommands[\'' + funcName + '\'], _activeVarScope, o);';
+
+	flyCommands[funcName] = '{=' + funcStart + funcContent.substr(2);
+
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', newFunc);		// jshint ignore:line
 };

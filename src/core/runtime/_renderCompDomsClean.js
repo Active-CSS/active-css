@@ -5,7 +5,7 @@ const _renderCompDomsClean = varScope => {
 	for ([shadTmp, shadObj] of Object.entries(shadowDoms)) {
 		if (!shadObj.isConnected) {
 			// Delete any variables scoped to this shadow. This will also trigger the deletion of the shadow from the shadowDoms object in _varUpdateDom.
-			delete scopedVars[shadTmp];
+			delete scopedProxy[shadTmp];
 		}
 	}
 };

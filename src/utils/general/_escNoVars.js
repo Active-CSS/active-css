@@ -1,3 +1,3 @@
 const _escNoVars = str => {
-	return str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly');
+	return (typeof str === 'string') ? str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly') : str;
 };

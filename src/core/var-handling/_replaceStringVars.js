@@ -1,4 +1,4 @@
-const _replaceStringVars = (o, str, varScope) => {
+const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
@@ -6,7 +6,7 @@ const _replaceStringVars = (o, str, varScope) => {
 		switch (innards) {
 			case '$STRING':
 				if (o && o.res) {
-					res = o.res;
+					res = _preReplaceVar(o.res, varReplacementRef);
 				} else {
 					res = '{$STRING}';
 				}
@@ -15,23 +15,20 @@ const _replaceStringVars = (o, str, varScope) => {
 			case '$HTML_NOVARS':
 			case '$HTML_ESCAPED':
 			case '$HTML':
-				let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.__acss' + innards.substr(1);
-				res = _get(scopedVars, scopedVar);
-				if (!res && typeof res !== 'string') {
+				let scoped = _getScopedVar('__acss' + innards.substr(1), varScope);
+				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-					res = ActiveCSS._sortOutFlowEscapeChars(res);
+//					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
+					res = _preReplaceVar(scoped.val, varReplacementRef);
 				}
 				return res;
 
 			default:
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
-					let scopedVar = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.' + innards;
-					scopedVar = _resolveInnerBracketVars(scopedVar);
-					let scopedVarObj = _resolveInheritance(scopedVar);
-					res = scopedVarObj.val;
-					return res || '';
+					let scoped = _getScopedVar(innards, varScope);
+					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
 				} else {
 					return '{' + innards + '}';
 				}

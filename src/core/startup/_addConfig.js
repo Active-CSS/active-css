@@ -18,6 +18,6 @@ const _addConfig = (str, o) => {
 
 	// If this is last file, run the config generator.
 	if (concatConfigCo >= concatConfigLen) {
-		_readSiteMap();
+		_readSiteMap(o);
 	}
 };

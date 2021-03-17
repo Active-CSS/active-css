@@ -1,3 +1,4 @@
+/* Used in extension only - will need updating when back on it */
 ActiveCSS._checkEventDupe = (primSel, condList, ev) => {
 	// Check the main config for a duplicate primSel, condList and event. Return 0 if no matching event, 1 if matching event and an element can be inspected,
 	// 2 if matching event but no matching element.

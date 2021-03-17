@@ -5,10 +5,6 @@ ActiveCSS._nodeMutations = function(mutations) {
 			if (mutation.removedNodes) {
 				mutation.removedNodes.forEach(nod => {
 					if (!(nod instanceof HTMLElement)) return;
-					// We only get the top-level removed node, so we have to do some searching for childnodes and clean-up.
-					idMap.splice(idMap.indexOf(nod), 1);
-					varInStyleMap.splice(varInStyleMap.indexOf(nod._acssActiveID), 1);
-
 					// Handle the removal of inline Active CSS styles from the config. This works with DevTools and also when navigating via SPA tools.
 					if (_isACSSStyleTag(nod)) {
 						_regenConfig(nod, 'remove');
@@ -21,18 +17,19 @@ ActiveCSS._nodeMutations = function(mutations) {
 			}
 
 			if (mutation.addedNodes) {
-				mutation.addedNodes.forEach(nod => {
-					if (!(nod instanceof HTMLElement)) return;
-
-					// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
-					if (_isACSSStyleTag(nod) && !_isInlineLoaded(nod)) {
-						_regenConfig(nod, 'addDevTools');
-					} else {
-						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							if (!_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
-						});
-					}
-				});
+				if (DEVCORE) {
+					mutation.addedNodes.forEach(nod => {
+						if (!(nod instanceof HTMLElement)) return;
+						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
+							_regenConfig(nod, 'addDevTools');
+						} else {
+							nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+								if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
+							});
+						}
+					});
+				}
 			}
 		} else if (mutation.type == 'characterData') {
 			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
@@ -56,5 +53,42 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}, 0);
 			}
 		}
+
+		if (mutation.removedNodes) {
+			mutation.removedNodes.forEach(nod => {
+				if (!(nod instanceof HTMLElement)) return;
+				// Now perform some clean-up on removed nodes. It doesn't have to be done immediately, so just do it after the current stack.
+				// Note that nested shadow DOMs can also come into play here, and we need to clean up those too.
+				setTimeout(function() {
+					let ID = nod._acssActiveID;
+					if (ID) {
+						_deleteIDVars(ID);
+						_deleteScopeVars('_' + ID.substr(3));
+					}
+					_recursiveScopeCleanUp(nod);
+
+/*
+					// This is handy for checking memory. Please don't remove.
+					console.log('ActiveCSS._nodeMutations, scopedProxy:', scopedProxy,
+						'scopedData:', scopedData,
+						'varMap:', varMap,
+						'varStyleMap:', varStyleMap,
+						'clickOutsideSels:', varStyleMap,
+						'idMap:', varStyleMap,
+						'varInStyleMap:', varStyleMap,
+						'compPending:', compPending,
+						'compParents:', compParents,
+						'compPrivEvs:', compPrivEvs,
+						'actualDoms:', actualDoms,
+						'delayArr:', delayArr,
+						'idMap:', idMap,
+						'cancelIDArr:', cancelIDArr,
+						'cancelCustomArr:', cancelCustomArr
+					);
+*/
+				}, 0);
+			});
+		}
+
 	});
 };

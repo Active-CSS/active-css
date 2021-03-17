@@ -16,7 +16,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Put any commas in brackets back.
 		newActVal = newActVal.replace(/_ACSStmpcomma_/g, ',');
 	}
-	if (o.func == 'Var') {
+	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value is a JavaScript expression, but not in {= =}, to make it quicker to type.
 		newActVal = ActiveCSS._sortOutFlowEscapeChars(newActVal);
 		// Now escape any commas inside any kind of brackets.
@@ -48,7 +48,12 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			// Only by doing this can we ensure that this is an action which will only target elements that exist.
 			let oCopy = Object.assign({}, o);
 			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actValSing, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
+				oCopy.actVal = _replaceRand(oCopy.actValSing);
+				oCopy.actVal = ActiveCSS._sortOutFlowEscapeChars(oCopy.actVal);
+				oCopy.actVal = _replaceJSExpression(oCopy.actVal, null, null, oCopy.varScope);
+				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actVal, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
+				oCopy.actVal = _replaceStringVars(oCopy, oCopy.actVal, oCopy.varScope);
+				oCopy.actVal = _replaceScopedVars(oCopy.actVal, oCopy.secSelObj, oCopy.func, oCopy, null, null, oCopy.varScope);
 				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
 			}
 		}

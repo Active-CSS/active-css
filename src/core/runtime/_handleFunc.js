@@ -2,7 +2,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	let delayRef;
 
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
-		delayRef = o.secSel;
+		delayRef = (o.evScope ? o.evScope : 'doc') + o.secSel;
 	} else {
 		// Note: re runButElNotThere) {
 		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
@@ -15,13 +15,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
 					_unloadAllCancelTimerLoop(delayActiveID);
 				}
-				delayArr[delayActiveID] = null;
-				cancelIDArr[delayActiveID] = null;
-				cancelCustomArr[delayActiveID] = null;
+				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
+				delayArr.splice(delayArr.indexOf(activeID), 1);
+				cancelIDArr.splice(cancelIDArr.indexOf(activeID), 1);
+				cancelCustomArr.splice(cancelCustomArr.indexOf(activeID), 1);
 			}
 			_a.StopPropagation(o);
-			// Remove any mapping to this object.
-			delete idMap[o.secSelObj];
 			return;
 		}
 		delayRef = _getActiveID(o.secSelObj);
@@ -58,6 +57,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					return;
 				}
 				o2.interval = true;
+				o2.origActValSing = o2.actValSing;
 				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
@@ -69,7 +69,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Remove any labels from the command string. We can't remove this earlier, as we need the label to exist for either "after" or "every", or both.
-	if (o.actValSing.indexOf('label ') !== -1) {
+	if (o.actValSing.indexOf(' label ') !== -1) {
 		o.actValSing = o.actValSing.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm, '');
 	}
 
@@ -86,12 +86,24 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Is this a non-delayed action, if so, we can skip the cancel check.
 	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
 
-	if (o.func == 'Var') {
+	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
+
+	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+	} else {
+		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref);
 	}
-
-	o.actVal = _replaceAttrs(o.obj, o.actValSing, o.secSelObj, o, o.func, o.varScope).trim();
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -110,12 +122,16 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
 		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
-		o.vars = scopedVars[compScope];
+		o.vars = scopedProxy[compScope];
 		// Run the function.
-		_a[o.func](o, scopedVars, privVarScopes);
+		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
-	if (!o.interval && delayActiveID) {
+	if (o.interval) {
+		// Restore the actVal to it's state prior to variable evaluation so interval works correctly.
+		o.actVal = o.origActValSing;
+		o.actValSing = o.actVal;
+	} else if (!o.interval && delayActiveID) {
 		// We don't cleanup any timers if we are in the middle of an interval. Only on cancel, or if the element is no longer on the page.
 		// Also... don't try and clean up after a non-delayed action. Only clean-up here after delayed actions are completed. Otherwise we get actions being removed
 		// that shouldn't be when clashing actions from different events with different action values, but the same everything esle.
@@ -124,8 +140,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
 	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
-		if (!runButElNotThere && !_isConnected(o.secSelObj)) o.secSelObj = undefined;
+		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
-
 };

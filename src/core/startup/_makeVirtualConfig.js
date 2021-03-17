@@ -50,26 +50,30 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							components[compName].mode = null;
 							components[compName].shadow = false;
 							components[compName].scoped = false;
-							components[compName].privEvs = false;
 							components[compName].strictVars = false;
+							components[compName].strictPrivEvs = false;
+							components[compName].privVars = false;
+							components[compName].privEvs = false;
 							let checkStr = strTrimmed + ' ';
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
 							}
-							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
+							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
 								components[compName].scoped = true;
-							} else if (checkStr.indexOf(' privateVars ') !== -1) {	// "private" is deprecated as of v2.4.0
+							} else if (checkStr.indexOf(' privateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privVars = true;
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
 								components[compName].scoped = true;
 							}
-							if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {	// "private" is deprecated as of v2.4.0
+							if (checkStr.indexOf(' strictlyPrivateEvents ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
+								components[compName].strictPrivEvs = true;
+							} else if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privEvs = true;
 							}
 						}
@@ -150,10 +154,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							// Loop the remaining selectors, pop out each one and assign to the correct place in the config.
 							// Ie. either after the selector for DOM queries, or as part of the conditional array that gets
 							// attached to the event.
-							let re, clause;
+							let clause;
 							for (clause of evSplit) {
-								re = new RegExp(COLONSELS, 'g');
-								if (re.test(clause)) {
+								if (clause.match(COLONSELS)) {
 									predefs.push(clause);
 								} else {
 									conds.push(clause);
@@ -199,12 +202,6 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						if (!removeState) {
 							preSetupEvents.push({ ev, sel });
-							if (config[sel] === undefined) {	// needed for DevTools.
-								config[sel] = {};
-							}
-							if (config[sel][ev] === undefined) {	// needed for DevTools.
-								config[sel][ev] = {};
-							}
 							if (config[sel][ev][conditionName] === undefined) {
 								config[sel][ev][conditionName] = [];
 							}

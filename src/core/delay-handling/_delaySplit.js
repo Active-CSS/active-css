@@ -7,7 +7,7 @@ const _delaySplit = (str, typ, varScope) => {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
 			delayValue = delayValue.replace(/[\{\}]+/g, '');
-			// Replace any scoped variables that may be in the timer value.
+			// Replace any scoped variables that may be in the timer value from inside _replaceJSExpression.
 			convTime = _replaceJSExpression('{=' + delayValue + '=}', true, false, varScope) + delayType;
 		} else {
 			convTime = wot2;

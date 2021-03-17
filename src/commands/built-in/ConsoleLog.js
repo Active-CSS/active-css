@@ -1,3 +1,11 @@
 _a.ConsoleLog = o => {
-	console.log(o.actVal._ACSSRepQuo());
+	let wot;
+	if (o.actVal == 'target') {
+		wot = o;
+	} else if (o.actVal == 'variables') {
+		wot = scopedProxy;
+	} else {
+		wot = o.actVal._ACSSRepQuo();
+	}
+	console.log(wot);
 };
