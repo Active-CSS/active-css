@@ -4195,7 +4195,7 @@ const _iteratePageList = (pages, removeState=false) => {
 			}
 		}
 
-		obj = (pages[key].value.trim() == 'none') ? { url: page, attrs: ''} : { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
+		obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
 		if (isWild) {
 			// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
 			regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
