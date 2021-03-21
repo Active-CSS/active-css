@@ -38,8 +38,14 @@ const _wrapUpStart = (o) => {
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
-			let url = _resolveURL(window.location.href);
-			window.history.replaceState(url, document.title, url);
+			let full = new URL(window.location.href);
+			let url = full.pathname + full.search;
+			let urlObj = { url };
+			let pageItem = _getPageFromList(url);
+			if (pageItem) {
+				urlObj.attrs = pageItem.attrs;
+			}
+			window.history.replaceState(urlObj, document.title, url);
 		}
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));

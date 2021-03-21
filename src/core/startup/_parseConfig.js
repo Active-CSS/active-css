@@ -8,8 +8,12 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	if (inlineActiveID) str = _unEscNoVars(str);
-	// Remove all comments.
+	// Remove all comments. But not comments within quotes. Easy way is to escape the ones inside, then run a general removal, and then unescape.
+	str = str.replace(INQUOTES, function(_, innards) {
+		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
+	});
 	str = str.replace(COMMENTS, '');
+	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.

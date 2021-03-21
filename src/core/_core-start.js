@@ -22,6 +22,7 @@
 			':': '_ACSS_later_colon',
 			'"': '_ACSS_later_double_quote'
 		},
+		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -30,6 +31,7 @@
 		PARSESEL = 1,
 		RANDHEX = 'ABCDEF',
 		RANDNUMS = '0123456789',
+		REGEXCHARS = /[\\^$.*+?\/()[\]{}|]/g,
 		SELFREGEX = /\{\$SELF\}/g,
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
@@ -121,8 +123,8 @@
 		mimicClones = [],
 		nonPassiveEvents = [],
 		pageList = [],
-		pagesDisplayed = [],
-		pageStore,
+		pageWildcards = [],
+		pageWildReg = [],
 		parsedConfig = {},
 		passiveEvents = true,
 		preGetMax = 6,

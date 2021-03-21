@@ -14,7 +14,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		el = e.target;	// Take in the object if called direct, or the event.
 	}
 	if (typ == 'mouseover' && !bod) {
-		if (el.tagName == 'A' && el['data-active-nav'] !== 1) {
+		if (el.tagName == 'A' && el.__acssNavSet !== 1) {
 			// Set up any attributes needed for navigation from the routing declaration if this is being used.
 			_setUpNavAttrs(el);
 		}
@@ -55,7 +55,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (typ == 'click' && el.tagName == 'A' && el['data-active-nav'] !== 1) {
+			if (typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				_setUpNavAttrs(el);
 			}

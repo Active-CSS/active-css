@@ -20,14 +20,16 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			name = name.replace(/\*debugfile[\s\S]*?\*/g, '');
 			newNode = _convConfig(cssString, totOpenCurlies, co, inlineActiveID);
 			if (newNode === false) return false;	// There's been a syntax error.
-			obj = {};
-			obj.name = _sortOutEscapeChars(name);
-			if (inlineActiveID) obj.name = obj.name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
-			obj.value = newNode;
-			obj.line = configLine;
-			obj.file = configFile;
-			obj.intID = intIDCounter++;
-			obj.type = 'rule';
+			name = _sortOutEscapeChars(name);
+			if (inlineActiveID) name = name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
+			obj = {
+				name,
+				value: newNode,
+				line: configLine,
+				file: configFile,
+				intID: intIDCounter++,
+				type: 'rule'
+			};
 			// If this is the top-level, assign an incrementing master value than spans all config files. If not, use the inner loop counter.
 			let counterToUse = (topLevel) ? masterConfigCo++ : count++;
 			node[counterToUse] = obj;
@@ -40,15 +42,14 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			var attr = PARSELINEX.exec(line);
 			if (attr) {
 				// Attribute
-				name = attr[1].trim();
-				value = attr[2].trim();
-				obj = {};
-				obj.name = _sortOutEscapeChars(name);
-				obj.value = _sortOutEscapeChars(value);
-				obj.type = 'attr';
-				obj.line = configLine;
-				obj.file = configFile;
-				obj.intID = intIDCounter++;
+				obj = {
+					name: _sortOutEscapeChars(attr[1].trim()),
+					value: _sortOutEscapeChars(attr[2].trim()),
+					type: 'attr',
+					line: configLine,
+					file: configFile,
+					intID: intIDCounter++
+				};
 				node[count++] = obj;
 			} else {
 				node[count++] = line;
