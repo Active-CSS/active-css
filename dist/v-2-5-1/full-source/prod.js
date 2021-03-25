@@ -3424,9 +3424,18 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	let container = document.createElement('div');
 
 	// If the first element is a tr, the tr and subsequent tds are going to disappear with this method.
-	// All we have to do is change these to something else, and put them back afterwards. Quickest method is a simple replace.
+	// All we have to do is change these to something else, and put them back afterwards. A method is a replace. Probably could be better.
 	// It just needs to survive the insertion as innerHTML.
-	content = content.replace(/tr>/gmi, 'acssTrTag>').replace(/td>/gmi, 'acssTdTag>');
+	content = content.replace(/\/tr>/gmi, '\/acssTrTag>').
+		replace(/\/td>/gmi, '\/acssTdTag>').
+		replace(/\/table>/gmi, '\/acssTableTag>').
+		replace(/\/tbody>/gmi, '\/acssTbodyTag>').
+		replace(/\/th>/gmi, '\/acssThTag>').
+		replace(/<tr/gmi, '<acssTrTag').
+		replace(/<td/gmi, '<acssTdTag').
+		replace(/<table/gmi, '<acssTableTag').
+		replace(/<tbody/gmi, '<acssTbodyTag').
+		replace(/<th/gmi, '<acssThTag');
 
 	container.innerHTML = content;
 
@@ -3445,7 +3454,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	content = container.innerHTML;
 
 	// Put any trs and tds back.
-	content = content.replace(/acssTrTag>/gmi, 'tr>').replace(/acssTdTag>/gmi, 'td>');
+	content = content.replace(/acssTrTag/gmi, 'tr').
+		replace(/acssTdTag/gmi, 'td').
+		replace(/acssTableTag/gmi, 'table').
+		replace(/acssTbodyTag/gmi, 'tbody').
+		replace(/acssThTag/gmi, 'th');
 
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
@@ -4913,10 +4926,10 @@ const _startMainListen = () => {
 			if (templ && e.state.attrs) {
 				ok = true;
 				templ.removeChild(templ.firstChild);
-				templ.insertAdjacentHTML('beforeend', '<a href="' + e.state.url + '" ' + e.state.attrs + '>');
+				templ.insertAdjacentHTML('beforeend', '<a ' + e.state.attrs + '>');
 				ActiveCSS.trigger(templ.firstChild, 'click');
 			} else {
-				window.location.href = e.state.url;		// Not found - the SPA element has been removed - just redirect.
+				window.location = e.state.url;		// Not found - the SPA element has been removed - just redirect.
 			}
 		});
 	} else {
@@ -4980,8 +4993,7 @@ const _wrapUpStart = (o) => {
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
-			let full = new URL(window.location.href);
-			let url = full.pathname + full.search;
+			let url = window.location.href;
 			let urlObj = { url };
 			let pageItem = _getPageFromList(url);
 			if (pageItem) {
@@ -7837,9 +7849,9 @@ const _replaceTempActiveID = obj => {
 
 const _resolveURL = url => {
 	if (inIframe) return url;	// Won't allow changing the URL from an iframe.
-	let orig = document.location.href, st = history.state, t = document.title;
+	let orig = window.location.href, st = history.state, t = document.title;
 	history.replaceState(st, t, url);
-	let resUrl = document.location.href;
+	let resUrl = window.location.href;
 	history.replaceState(st, t, orig);
 	return resUrl;
 };

@@ -30,10 +30,10 @@ const _startMainListen = () => {
 			if (templ && e.state.attrs) {
 				ok = true;
 				templ.removeChild(templ.firstChild);
-				templ.insertAdjacentHTML('beforeend', '<a href="' + e.state.url + '" ' + e.state.attrs + '>');
+				templ.insertAdjacentHTML('beforeend', '<a ' + e.state.attrs + '>');
 				ActiveCSS.trigger(templ.firstChild, 'click');
 			} else {
-				window.location.href = e.state.url;		// Not found - the SPA element has been removed - just redirect.
+				window.location = e.state.url;		// Not found - the SPA element has been removed - just redirect.
 			}
 		});
 	} else {

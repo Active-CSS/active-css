@@ -38,8 +38,7 @@ const _wrapUpStart = (o) => {
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
-			let full = new URL(window.location.href);
-			let url = full.pathname + full.search;
+			let url = window.location.href;
 			let urlObj = { url };
 			let pageItem = _getPageFromList(url);
 			if (pageItem) {

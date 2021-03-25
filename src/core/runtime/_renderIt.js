@@ -30,9 +30,18 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	let container = document.createElement('div');
 
 	// If the first element is a tr, the tr and subsequent tds are going to disappear with this method.
-	// All we have to do is change these to something else, and put them back afterwards. Quickest method is a simple replace.
+	// All we have to do is change these to something else, and put them back afterwards. A method is a replace. Probably could be better.
 	// It just needs to survive the insertion as innerHTML.
-	content = content.replace(/tr>/gmi, 'acssTrTag>').replace(/td>/gmi, 'acssTdTag>');
+	content = content.replace(/\/tr>/gmi, '\/acssTrTag>').
+		replace(/\/td>/gmi, '\/acssTdTag>').
+		replace(/\/table>/gmi, '\/acssTableTag>').
+		replace(/\/tbody>/gmi, '\/acssTbodyTag>').
+		replace(/\/th>/gmi, '\/acssThTag>').
+		replace(/<tr/gmi, '<acssTrTag').
+		replace(/<td/gmi, '<acssTdTag').
+		replace(/<table/gmi, '<acssTableTag').
+		replace(/<tbody/gmi, '<acssTbodyTag').
+		replace(/<th/gmi, '<acssThTag');
 
 	container.innerHTML = content;
 
@@ -51,7 +60,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	content = container.innerHTML;
 
 	// Put any trs and tds back.
-	content = content.replace(/acssTrTag>/gmi, 'tr>').replace(/acssTdTag>/gmi, 'td>');
+	content = content.replace(/acssTrTag/gmi, 'tr').
+		replace(/acssTdTag/gmi, 'td').
+		replace(/acssTableTag/gmi, 'table').
+		replace(/acssTbodyTag/gmi, 'tbody').
+		replace(/acssThTag/gmi, 'th');
 
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
