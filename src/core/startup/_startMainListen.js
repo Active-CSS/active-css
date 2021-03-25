@@ -33,7 +33,11 @@ const _startMainListen = () => {
 				templ.insertAdjacentHTML('beforeend', '<a ' + e.state.attrs + '>');
 				ActiveCSS.trigger(templ.firstChild, 'click');
 			} else {
-				window.location = e.state.url;		// Not found - the SPA element has been removed - just redirect.
+				let url = new URL(e.state.url);
+				// Don't change URL if the main page hasn't changed - it's a regular hash that isn't in @pages.
+				if (url.href != window.location.href) {
+					window.location.href = e.state.url;
+				}
 			}
 		});
 	} else {
