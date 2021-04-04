@@ -21,13 +21,9 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot));
-						let hostCID = _getActiveID(shadHost).replace('d-', '');
-						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
-					} else {
-						return '';
-					}
+					res = (shadHost.hasAttribute(wot)) ? _escapeItem(shadHost.getAttribute(wot)) : '';
+					let hostCID = _getActiveID(shadHost).replace('d-', '');
+					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
 					console.log('Non component attribution substitution is not yet supported.');
 					return _;
@@ -42,7 +38,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
-
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.

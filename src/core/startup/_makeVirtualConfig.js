@@ -209,7 +209,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						if (!removeState) {
 							config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
-						} else {
+						} else if (config[sel] !== undefined) {
 							// Find and remove items from config based on file value.
 							let i, len = config[sel][ev][conditionName].length;
 							let toRemove = [];

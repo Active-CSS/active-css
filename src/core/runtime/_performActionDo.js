@@ -30,7 +30,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
-			console.log('Error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
+			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		if (els) {

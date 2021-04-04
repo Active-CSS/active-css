@@ -7,7 +7,10 @@ ActiveCSS.init = (config) => {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,
 			// then obviously the initialization events will not run.
 			lazyConfig = '';
+			initInlineLoading = true;
 			_getInline(inlineConfigTags);
+			initInlineLoading = false;
+			_readSiteMap();
 		}
 		autoStartInit = false;
 	} else {
@@ -30,7 +33,11 @@ ActiveCSS.init = (config) => {
 		let configArrTmp = config.configLocation.split(',');
 		concatConfigLen = configArrTmp.length;
 
-		if (inlineConfigTags) _getInline(inlineConfigTags);
+		if (inlineConfigTags) {
+			initInlineLoading = true;
+			_getInline(inlineConfigTags);
+			initInlineLoading = false;
+		}
 		for (thisFile of configArrTmp) {
 			thisFile = thisFile.trim();
 			configArr.push(_getBaseURL(thisFile));	// Build up the initial config list without anything after and including the "?".

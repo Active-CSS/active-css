@@ -1,6 +1,15 @@
 /*jslint browser: true */
 /*global alert, console, getSelection, inspect, self, window  */
 
+/***
+	When compiling the core, this file always goes first, and _core-end.js always goes last.
+	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
+	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
+	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
+	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an £60 Optiplex 780 from 2006 and it's fast enough. [Rob]
+*/
+
 (function (global, document) {
 	'use strict';
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
@@ -107,7 +116,10 @@
 		eventState = {},
 		flyCommands = [],
 		flyConds = [],
+		hashEventTrigger = false,
+		hashEventAjaxDelay = false,
 		idMap = [],
+		initInlineLoading = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
@@ -127,6 +139,7 @@
 		pageWildReg = [],
 		parsedConfig = {},
 		passiveEvents = true,
+		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
 		preSetupEvents = [],
@@ -160,4 +173,4 @@
 
 	ActiveCSS.customHTMLElements = {};
 
-/* Closure in _core-end.js */
+// Where's the end? Read the comments at the top.

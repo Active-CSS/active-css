@@ -2,20 +2,6 @@
 ActiveCSS._nodeMutations = function(mutations) {
 	mutations.forEach(mutation => {
 		if (mutation.type == 'childList') {
-			if (mutation.removedNodes) {
-				mutation.removedNodes.forEach(nod => {
-					if (!(nod instanceof HTMLElement)) return;
-					// Handle the removal of inline Active CSS styles from the config. This works with DevTools and also when navigating via SPA tools.
-					if (_isACSSStyleTag(nod)) {
-						_regenConfig(nod, 'remove');
-					} else {
-						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							_regenConfig(obj, 'remove');
-						});
-					}
-				});
-			}
-
 			if (mutation.addedNodes) {
 				if (DEVCORE) {
 					mutation.addedNodes.forEach(nod => {

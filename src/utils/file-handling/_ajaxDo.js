@@ -34,6 +34,10 @@ const _ajaxDo = o => {
 	url = _attachGetVals(o.actVal, url, o.doc, 'get-pars');
 	o.pars = _attachPostVals(o.actVal, o.pars);
 	o.finalURL = (o.formMethod == 'GET') ? url : _appendURIPar(url, o.pars, o.doc);	// Need the unique url including post vars to store for the caching.
+
+	// If there is a hash due to run at the end of this event loop, delay it until the afterAjax-type command.
+	if (hashEventTrigger) hashEventAjaxDelay = true;
+
 	if (ajaxResLocations[o.finalURL]) {
 		// No need to get it - we have it in cache.
 		if (!o.preGet) {
@@ -42,6 +46,10 @@ const _ajaxDo = o => {
 			_resolveAjaxVars(o);
 		}
 	} else {
+		if (o.preGet) {
+			if (preGetting[o.finalURL]) return;	// Already in the process of getting - skip. Note: skip race condition handling - pre-get is a nicety.
+			preGetting[o.finalURL] = true;
+		}
 		_ajax(o.formMethod, o.dataType, url, o.pars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
 	}
 };

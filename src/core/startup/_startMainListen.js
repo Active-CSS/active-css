@@ -22,23 +22,7 @@ const _startMainListen = () => {
 
 	if (!document.parentNode) {
 		window.addEventListener('popstate', function(e) {
-			if (!e.state.url) return;	// could be a hash link.
-			if (debuggerActive) {
-				_debugOutput('Popstate event');
-			}
-			let templ = document.querySelector('#data-acss-route'), ok = false;
-			if (templ && e.state.attrs) {
-				ok = true;
-				templ.removeChild(templ.firstChild);
-				templ.insertAdjacentHTML('beforeend', '<a ' + e.state.attrs + '>');
-				ActiveCSS.trigger(templ.firstChild, 'click');
-			} else {
-				let url = new URL(e.state.url);
-				// Don't change URL if the main page hasn't changed - it's a regular hash that isn't in @pages.
-				if (url.href != window.location.href) {
-					window.location.href = e.state.url;
-				}
-			}
+			_handleSpaPop(e);
 		});
 	} else {
 		// If this is an iframe, we are going to send an src change message to the parent whenever the iframe changes

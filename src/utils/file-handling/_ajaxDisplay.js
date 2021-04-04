@@ -6,4 +6,9 @@ const _ajaxDisplay = o => {
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;
 	}
+	if (hashEventAjaxDelay) {
+		// Run any delayed hash on the URL events that need running after an ajax call has loaded or is ready for the display.
+		hashEventAjaxDelay = false;
+		_trigHashState(o.e);
+	}
 };

@@ -1,6 +1,15 @@
 /*jslint browser: true */
 /*global alert, console, getSelection, inspect, self, window  */
 
+/***
+	When compiling the core, this file always goes first, and _core-end.js always goes last.
+	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
+	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
+	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
+	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an �60 Optiplex 780 from 2006 and it's fast enough. [Rob]
+*/
+
 (function (global, document) {
 	'use strict';
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
@@ -107,7 +116,10 @@
 		eventState = {},
 		flyCommands = [],
 		flyConds = [],
+		hashEventTrigger = false,
+		hashEventAjaxDelay = false,
 		idMap = [],
+		initInlineLoading = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
@@ -127,6 +139,7 @@
 		pageWildReg = [],
 		parsedConfig = {},
 		passiveEvents = true,
+		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
 		preSetupEvents = [],
@@ -160,7 +173,8 @@
 
 	ActiveCSS.customHTMLElements = {};
 
-/* Closure in _core-end.js */
+// Where's the end? Read the comments at the top.
+
 _a.AddClass = o => {	// Note thisID is needed in case the "parent" selector is used.
 	ActiveCSS._addClassObj(o.secSelObj, o.actVal);
 };
@@ -929,7 +943,7 @@ _a.MimicInto = o => {
 };
 
 _a.PreventDefault = o => {
-	if (o.e) o.e.preventDefault();	// Sometimes will get activated on a browser back-arrow, etc., so check first.
+	if (o.e && o.e.preventDefault) o.e.preventDefault();	// Sometimes will get activated on a browser back-arrow, etc., so check first.
 };
 
 _a.Remove = o => {
@@ -1213,7 +1227,7 @@ _a.SetCookie = o => {
 	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
 	if (maxAge) {
 		let numTest = new RegExp('^\\d+$');
-		if (!numTest.test(maxAge)) console.log('set-cookie error: maxAge is not a number.');
+		if (!numTest.test(maxAge)) console.log('Active CSS error: set-cookie maxAge is not a number.');
 	}
 
 	// Domain.
@@ -1279,13 +1293,13 @@ _a.StopImmediateEventPropagation = o => {
 
 _a.StopImmediatePropagation = o => {
 	// Don't bubble up the Active CSS element hierarchy and do any more target selectors and stop propagation in the browser too.
-	if (o.e) o.e.stopImmediatePropagation();
+	if (o.e && o.e.stopImmediatePropagation) o.e.stopImmediatePropagation();
 	_a.StopImmediateEventPropagation(o);
 };
 
 _a.StopPropagation = o => {
 	// Don't bubble up the Active CSS element hierarchy and stop propagation in the browser too.
-	if (o.e) o.e.stopPropagation();
+	if (o.e && o.e.stopPropagation) o.e.stopPropagation();
 	_a.StopEventPropagation(o);
 };
 
@@ -1322,8 +1336,8 @@ _a.Trigger = o => {
 			_runInnerEvent(o, null, 'draw');
 		} else if (o.secSel == 'body' || o.secSel == 'window') {
 			// Run any events on the body, followed by the window.
-			_handleEvents({ obj: 'body', evType: o.actVal, origO: o });
-			_handleEvents({ obj: 'window', evType: o.actVal, origO: o });
+			_handleEvents({ obj: 'body', evType: o.actVal, origO: o, compDoc: document });
+			_handleEvents({ obj: 'window', evType: o.actVal, origO: o, eve: o.e, compDoc: document });
 		} else {
 			_handleEvents({ obj: o.secSelObj, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		}
@@ -1357,6 +1371,11 @@ _a.UrlChange = o => {
 		titl = document.title;
 	}
 	_urlTitle(url, titl, o);
+};
+
+_a.UrlReplace = o => {
+	o._urlReplace = true;
+	_a.UrlChange(o);
 };
 
 _a.Var = o => {
@@ -1514,7 +1533,7 @@ ActiveCSS.previousCycle = sel => {
 	return _focusOn({ actVal: sel }, 'pcc', true);
 };
 
-ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope) => {
+ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope, eve) => {
 	/* API command */
 	/* Possibilities:
 	ActiveCSS.trigger('~restoreAfterTinyMCE', 'custom');		// Useful for calling random events.
@@ -1525,9 +1544,9 @@ ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope) => {
 	// Subject to conditionals.
 	if (typeof sel == 'object') {
 		// This is an object that was passed.
-		_handleEvents({ obj: sel, evType: ev, varScope: varScope, evScope: evScope, compDoc: compDoc, component: component });
+		_handleEvents({ obj: sel, evType: ev, varScope, evScope, compDoc, component, eve });
 	} else {
-		_a.Trigger({ secSel: sel, actVal: ev, varScope: varScope, evScope: evScope, compDoc: compDoc, component: component });
+		_a.Trigger({ secSel: sel, actVal: ev, varScope, evScope, compDoc, component, eve });
 	}
 };
 
@@ -1818,7 +1837,9 @@ const _addInlinePriorToRender = (str) => {
 		let fragRoot = document.createElement('div');
 		fragRoot.innerHTML = str;
 		let inlineConfigTags = fragRoot.querySelectorAll('style[type="text/acss"]');
-		if (inlineConfigTags) _getInline(inlineConfigTags);
+		if (inlineConfigTags) {
+			_getInline(inlineConfigTags);
+		}
 		str = fragRoot.innerHTML;	// needed to get all the IDs set up during this.
 	}
 	return str;
@@ -2190,6 +2211,10 @@ const _handleEvents = evObj => {
 			}
 		}
 	}
+
+	// We've hit the end of this event. Run any hash events if any are set.
+	_trigHashState(eve);
+
 	return true;
 };
 
@@ -2436,6 +2461,89 @@ const _handleLoop = (loopObj) => {
 	}
 };
 
+const _handleSpaPop = (e, init) => {
+	// Don't use the whole URL as the domain needs to be variable and it shouldn't be stored in @pages.
+	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, triggerOfflinePopstate = false, hashItem;
+
+	if (!init && !e.state) return;
+
+	hashEventTrigger = false;
+
+	loc = window.location;
+	if (init) {
+		realUrl = loc.href;
+	} else {
+		realUrl = e.state.url;
+	}
+
+	// Get the details of the hash event if there is one.
+	if (loc.protocol == 'file:') {
+		// The new URL handling will not work with file:// URLs, hence we also need this alternative handling to get the details.
+		// (ie. the local files could be anywhere on someone's file system. We can't easily find where the page root is, not for every scenario.)
+
+		// Handle the standalone local SPA format where '/' will be in the URL if there is a hash.
+		url = realUrl;
+		if (loc.hash != '') {
+			// If this is an offline file and there is a hash, then the hash should be the @pages ref.
+			pageGetUrl = loc.hash.substr(1);	// Remove the hash at the start.
+		} else {
+			// If there is no hash, assume the url is "/" for the benefit of @pages.
+			// This should have a command that initialises this as an SPA rather than assume that every file:// use is an offline SPA.
+			pageGetUrl = '/';
+		}
+		pageItem = _getPageFromList(pageGetUrl);
+		triggerOfflinePopstate = true;
+
+	} else {
+		if (init) {
+			let full = new URL(realUrl);
+			url = full.pathname + full.search;
+			pageItem = _getPageFromList(url);
+		} else {
+			pageItem = e.state;
+			url = e.state.url;
+		}
+
+		if (loc.hash != '') {
+			// Get the hash trigger if there is one.
+			pageItemHash = _getPageFromList(loc.hash);
+		}
+	}
+
+
+	let urlObj = { url };
+	if (pageItem) urlObj.attrs = pageItem.attrs;
+	if (pageItemHash) {
+		hashEventTrigger = pageItemHash.attrs;
+	}
+
+	if (init) {
+		// Handle immediate hash event if this is from a page refresh. 'init' is sent in from _wrapUpStart.
+		window.history.replaceState(urlObj, document.title, realUrl);
+	}
+
+	if (triggerOfflinePopstate) {
+		// If this is an offline SPA and the first page has a hash, trigger the popstate action (not the event) so that we get the correct initial events firing.
+		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
+	}
+
+	if (init) {
+		if (hashEventTrigger) {
+			// Page should be drawn and config loaded, so just trigger the hash event immediately.
+			_trigHashState(e);
+			return;
+		}
+	}
+
+	// This is from a popstate event.
+	let templ = document.querySelector('#data-acss-route');
+	if (templ && urlObj.attrs) {
+		templ.removeChild(templ.firstChild);
+		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
+		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
+	}
+};
+
 const _handleVarsInJS = function(str, varScope) {
 	/**
 	 * "str" is the full JavaScript content that is being prepared for evaluation.
@@ -2505,12 +2613,6 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		if (typ == 'click' && e.button !== 0) return;		// We only want the left button.
 		el = e.target;	// Take in the object if called direct, or the event.
 	}
-	if (typ == 'mouseover' && !bod) {
-		if (el.tagName == 'A' && el.__acssNavSet !== 1) {
-			// Set up any attributes needed for navigation from the routing declaration if this is being used.
-			_setUpNavAttrs(el);
-		}
-	}
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
@@ -2544,12 +2646,21 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// do still need it for cancelling browser behaviour. So therefore preventDefault() will correctly fatally error if cloned and re-used. [edit] Possibly could have
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
+		let navSet = false;
 		for (el of composedPath) {
+			if (typ == 'mouseover' && !bod) {
+				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
+					// Set up any attributes needed for navigation from the routing declaration if this is being used.
+					_setUpNavAttrs(el);
+					navSet = true;
+				}
+			}
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
+			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				_setUpNavAttrs(el);
+				navSet = true;
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
@@ -2568,20 +2679,6 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 ActiveCSS._nodeMutations = function(mutations) {
 	mutations.forEach(mutation => {
 		if (mutation.type == 'childList') {
-			if (mutation.removedNodes) {
-				mutation.removedNodes.forEach(nod => {
-					if (!(nod instanceof HTMLElement)) return;
-					// Handle the removal of inline Active CSS styles from the config. This works with DevTools and also when navigating via SPA tools.
-					if (_isACSSStyleTag(nod)) {
-						_regenConfig(nod, 'remove');
-					} else {
-						nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
-							_regenConfig(obj, 'remove');
-						});
-					}
-				});
-			}
-
 			if (mutation.addedNodes) {
 				if (DEVCORE) {
 					mutation.addedNodes.forEach(nod => {
@@ -2787,7 +2884,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
-			console.log('Error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
+			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		if (els) {
@@ -3423,19 +3520,26 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	let container = document.createElement('div');
 
-	// If the first element is a tr, the tr and subsequent tds are going to disappear with this method.
-	// All we have to do is change these to something else, and put them back afterwards. A method is a replace. Probably could be better.
-	// It just needs to survive the insertion as innerHTML.
-	content = content.replace(/\/tr>/gmi, '\/acssTrTag>').
-		replace(/\/td>/gmi, '\/acssTdTag>').
-		replace(/\/table>/gmi, '\/acssTableTag>').
-		replace(/\/tbody>/gmi, '\/acssTbodyTag>').
-		replace(/\/th>/gmi, '\/acssThTag>').
-		replace(/<tr/gmi, '<acssTrTag').
-		replace(/<td/gmi, '<acssTdTag').
-		replace(/<table/gmi, '<acssTableTag').
-		replace(/<tbody/gmi, '<acssTbodyTag').
-		replace(/<th/gmi, '<acssThTag');
+	// If the first element is a table inner element like a tr, things like tr and subsequent tds are going to disappear with this method.
+	// All we have to do is change these to something else, and put them back afterwards. One method used here is a replace. Probably could be better.
+	// It just needs to survive the insertion as innerHTML. Test case is /manual/each.html from docs site - "@each - array of objects".
+	let trFix = false;
+	if (/^<t(r|d|body)/.test(content)) {
+		// Optimization idea: It may be quicker to just wrap the whole string in a table tag, with a tr if it's a td. Should then convert fine in theory.
+		// Then just remove afterwards. Rather than this hacky workaround. Or maybe not - we would still need the active ID carried over, which would have to
+		// be done lower down. The question is, is that handling faster than the current one? If so, do it, but it's not clear-cut at this point without doing it.
+		trFix = true;
+		content = content.replace(/\/tr>/gmi, '\/acssTrTag>').
+			replace(/\/td>/gmi, '\/acssTdTag>').
+			replace(/\/table>/gmi, '\/acssTableTag>').
+			replace(/\/tbody>/gmi, '\/acssTbodyTag>').
+			replace(/\/th>/gmi, '\/acssThTag>').
+			replace(/<tr/gmi, '<acssTrTag').
+			replace(/<td/gmi, '<acssTdTag').
+			replace(/<table/gmi, '<acssTableTag').
+			replace(/<tbody/gmi, '<acssTbodyTag').
+			replace(/<th/gmi, '<acssThTag');
+	}
 
 	container.innerHTML = content;
 
@@ -3454,14 +3558,37 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	content = container.innerHTML;
 
 	// Put any trs and tds back.
-	content = content.replace(/acssTrTag/gmi, 'tr').
-		replace(/acssTdTag/gmi, 'td').
-		replace(/acssTableTag/gmi, 'table').
-		replace(/acssTbodyTag/gmi, 'tbody').
-		replace(/acssThTag/gmi, 'th');
+	if (trFix) {
+		content = content.replace(/acssTrTag/gmi, 'tr').
+			replace(/acssTdTag/gmi, 'td').
+			replace(/acssTableTag/gmi, 'table').
+			replace(/acssTbodyTag/gmi, 'tbody').
+			replace(/acssThTag/gmi, 'th');
+	}
 
 	// We only do this next one from the document scope and only once.
 	if (!o.component) {
+		// First remove any tags that are about to be removed. This MUST happen before the addition - don't put it into node mutation.
+		let configRemovalCheck = true;
+		if (o.renderPos && !isIframe) {
+			if (o.renderPos == 'replace') {
+				// Check everything from o.secSelObj down. Here, just check the o.secSelObj and check the rest below.
+				if (_isACSSStyleTag(o.secSelObj)) {
+					_regenConfig(o.secSelObj, 'remove');
+				}
+			} else {
+				// No need to do anything - content isn't being replaced.
+				configRemovalCheck = false;
+			}
+		}
+		if (configRemovalCheck) {
+			// Check everything below o.secSelObj down.
+			o.secSelObj.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
+				_regenConfig(obj, 'remove');
+			});
+		}
+
+		// Now it is safe to add new config.
 		content = _addInlinePriorToRender(content);
 	}
 
@@ -3845,6 +3972,24 @@ const _splitIframeEls = (sel, o) => {
 	return [doc, targSel, iframeID];
 };
 
+const _trigHashState = (e) => {
+	// Either there isn't anything to run yet or it's not ready to run now.
+	if (hashEventAjaxDelay || !hashEventTrigger) return;
+
+	let str = hashEventTrigger.substr(hashEventTrigger.indexOf('=') + 1).trim()._ACSSRepQuo();
+	hashEventTrigger = false;
+	let lastPos = str.lastIndexOf(':');
+	let sel = str.substr(0, lastPos).trim();
+	let ev = str.substr(lastPos + 1).trim();
+
+	// Currently this will only work if the hash trigger is in the document scope.
+	// This could be upgraded later but is a little involved due to component uniqueness.
+	let el = document.querySelector(sel);
+	if (el && ev != '') {
+		ActiveCSS.trigger(el, ev, null, document, null, null, e);
+	}
+};
+
 const _addACSSStyleTag = (acssTag) => {
 	let activeID = _getActiveID(acssTag);
 	inlineIDArr.push(activeID);
@@ -3872,7 +4017,7 @@ const _addConfig = (str, o) => {
 	parsedConfig = Object.assign(tmpParse, parsedConfig, configItems);
 
 	// If this is last file, run the config generator.
-	if (concatConfigCo >= concatConfigLen) {
+	if (!initInlineLoading && concatConfigCo >= concatConfigLen) {
 		_readSiteMap(o);
 	}
 };
@@ -4495,7 +4640,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						if (!removeState) {
 							config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
-						} else {
+						} else if (config[sel] !== undefined) {
 							// Find and remove items from config based on file value.
 							let i, len = config[sel][ev][conditionName].length;
 							let toRemove = [];
@@ -4744,25 +4889,24 @@ const _readSiteMap = (o) => {
 
 const _regenConfig = (styleTag, opt) => {
 	// Regenerate the config at the end of the current stack so we don't get a condition in the event flow that actions no longer exist.
-	setTimeout(function() {
-		let activeID = styleTag._acssActiveID;
-		switch (opt) {
-			case 'remove':
-				// Remove the tag details from the config.
-				parsedConfig = configBox.find(item => item.file == '_inline_' + activeID).styles;
-				// Now run _makeVirtualConfig() with the option to remove matching config.
-				_makeVirtualConfig('', '', null, true, '_inline_' + activeID);
-				// Now remove the tag from configBox.
-				concatConfigCo--;
-				concatConfigLen--;
-				configBox = configBox.filter(item => item.file != '_inline_' + activeID);
-				parsedConfig = {};
-				break;
+	// There was a end-stack delay I don't think we need the delay now - the removal of config has been placed inside render itself.
+	let activeID = styleTag._acssActiveID;
+	switch (opt) {
+		case 'remove':
+			// Remove the tag details from the config.
+			parsedConfig = configBox.find(item => item.file == '_inline_' + activeID).styles;
+			// Now run _makeVirtualConfig() with the option to remove matching config.
+			_makeVirtualConfig('', '', null, true, '_inline_' + activeID);
+			// Now remove the tag from configBox.
+			concatConfigCo--;
+			concatConfigLen--;
+			configBox = configBox.filter(item => item.file != '_inline_' + activeID);
+			parsedConfig = {};
+			break;
 
-			case 'addDevTools':
-				_addACSSStyleTag(styleTag);
-		}
-	}, 0);
+		case 'addDevTools':
+			_addACSSStyleTag(styleTag);
+	}
 };
 
 const _runInlineLoaded = () => {
@@ -4918,23 +5062,7 @@ const _startMainListen = () => {
 
 	if (!document.parentNode) {
 		window.addEventListener('popstate', function(e) {
-			if (!e.state.url) return;	// could be a hash link.
-			if (debuggerActive) {
-				_debugOutput('Popstate event');
-			}
-			let templ = document.querySelector('#data-acss-route'), ok = false;
-			if (templ && e.state.attrs) {
-				ok = true;
-				templ.removeChild(templ.firstChild);
-				templ.insertAdjacentHTML('beforeend', '<a ' + e.state.attrs + '>');
-				ActiveCSS.trigger(templ.firstChild, 'click');
-			} else {
-				let url = new URL(e.state.url);
-				// Don't change URL if the main page hasn't changed - it's a regular hash that isn't in @pages.
-				if (url.href != window.location.href) {
-					window.location.href = e.state.url;
-				}
-			}
+			_handleSpaPop(e);
 		});
 	} else {
 		// If this is an iframe, we are going to send an src change message to the parent whenever the iframe changes
@@ -4997,13 +5125,7 @@ const _wrapUpStart = (o) => {
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
-			let url = window.location.href;
-			let urlObj = { url };
-			let pageItem = _getPageFromList(url);
-			if (pageItem) {
-				urlObj.attrs = pageItem.attrs;
-			}
-			window.history.replaceState(urlObj, document.title, url);
+			_handleSpaPop({}, true);	// true = initialize.
 		}
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
@@ -5015,7 +5137,6 @@ const _wrapUpStart = (o) => {
 				for (configFile of arr) {
 					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
 				}
-//				lazyConfig = '';
 			}, 1000);
 		}
 	} else {
@@ -5056,7 +5177,10 @@ ActiveCSS.init = (config) => {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,
 			// then obviously the initialization events will not run.
 			lazyConfig = '';
+			initInlineLoading = true;
 			_getInline(inlineConfigTags);
+			initInlineLoading = false;
+			_readSiteMap();
 		}
 		autoStartInit = false;
 	} else {
@@ -5079,7 +5203,11 @@ ActiveCSS.init = (config) => {
 		let configArrTmp = config.configLocation.split(',');
 		concatConfigLen = configArrTmp.length;
 
-		if (inlineConfigTags) _getInline(inlineConfigTags);
+		if (inlineConfigTags) {
+			initInlineLoading = true;
+			_getInline(inlineConfigTags);
+			initInlineLoading = false;
+		}
 		for (thisFile of configArrTmp) {
 			thisFile = thisFile.trim();
 			configArr.push(_getBaseURL(thisFile));	// Build up the initial config list without anything after and including the "?".
@@ -6335,13 +6463,9 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot));
-						let hostCID = _getActiveID(shadHost).replace('d-', '');
-						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
-					} else {
-						return '';
-					}
+					res = (shadHost.hasAttribute(wot)) ? _escapeItem(shadHost.getAttribute(wot)) : '';
+					let hostCID = _getActiveID(shadHost).replace('d-', '');
+					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
 					console.log('Non component attribution substitution is not yet supported.');
 					return _;
@@ -6356,7 +6480,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
-
 			if (isBound && func.indexOf('Render') !== -1) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
@@ -7003,6 +7126,9 @@ const _ajaxCallbackDisplay = (o) => {
 		// Store it for later. May need it in the afterAjaxPreGet event if it is run.
 		ajaxResLocations[o.finalURL] = o.res;
 	}
+	if (o.preGet) {
+		delete preGetting[o.finalURL];
+	}
 	if (!o.error && o.preGet) {
 		// Run the afterAjaxPreGet event.
 		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet' + ((o.error) ? o.errorCode : ''), eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
@@ -7034,6 +7160,11 @@ const _ajaxDisplay = o => {
 	if (o.hash !== '') {
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;
+	}
+	if (hashEventAjaxDelay) {
+		// Run any delayed hash on the URL events that need running after an ajax call has loaded or is ready for the display.
+		hashEventAjaxDelay = false;
+		_trigHashState(o.e);
 	}
 };
 
@@ -7073,6 +7204,10 @@ const _ajaxDo = o => {
 	url = _attachGetVals(o.actVal, url, o.doc, 'get-pars');
 	o.pars = _attachPostVals(o.actVal, o.pars);
 	o.finalURL = (o.formMethod == 'GET') ? url : _appendURIPar(url, o.pars, o.doc);	// Need the unique url including post vars to store for the caching.
+
+	// If there is a hash due to run at the end of this event loop, delay it until the afterAjax-type command.
+	if (hashEventTrigger) hashEventAjaxDelay = true;
+
 	if (ajaxResLocations[o.finalURL]) {
 		// No need to get it - we have it in cache.
 		if (!o.preGet) {
@@ -7081,6 +7216,10 @@ const _ajaxDo = o => {
 			_resolveAjaxVars(o);
 		}
 	} else {
+		if (o.preGet) {
+			if (preGetting[o.finalURL]) return;	// Already in the process of getting - skip. Note: skip race condition handling - pre-get is a nicety.
+			preGetting[o.finalURL] = true;
+		}
 		_ajax(o.formMethod, o.dataType, url, o.pars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
 	}
 };
@@ -8000,16 +8139,37 @@ const _urlTitle = (url, titl, o) => {
 	if (inIframe) return;
 	url = url.replace(/"/g, '');
 	titl = titl._ACSSRepQuo();
+
+	let emptyPageClick = false;
+	if (url == '') {
+		// This should only get called from an in-page event, with the url-change/url-replace command url set to "".
+		// This should remove the hash from the URL if it is there, otherwise it will do nothing and assume it's the same page.
+		url = window.location.pathname + window.location.search;
+		emptyPageClick = true;
+	}
+
 	url = _resolveURL(url);
-	if (window.location.href != url) {
+
+	// Detect if this is a popstate event and skip the next bit if it is. If it is, we don't need to update the URL as it has already changed.
+	// Add/change history object if applicable.
+	if (window.location.href != url && o.e.type != 'popstate') {	// needs the popstate check, otherwise we add a new history object.
 		let attrs = '';
 
-		[...o.secSelObj.attributes].forEach((attr) => {
-			if (attr.name == 'id') return;
-			attrs += attr.name + '="' + attr.value + '" ';
-		});
+		// If this is a new hash url, get the original page that called this rather than the hash link object so we get the correct underlying page change attributes.
+		if (typeof o.secSelObj == 'object') {
+			if (emptyPageClick || url.indexOf('#') !== -1) {
+				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
+				attrs = window.history.state.attrs;
+			} else {
+				[...o.secSelObj.attributes].forEach((attr) => {
+					if (attr.name == 'id') return;	// mustn't set these, otherwise the url could change again in the SPA trigger event.
+					attrs += attr.name + '="' + attr.value + '" ';
+				});
+			}
+		}
 
-		window.history.pushState({ url, attrs: attrs.trimEnd() }, titl, url);
+		let doWhat = (o._urlReplace) ? 'replaceState' : 'pushState';
+		window.history[doWhat]({ url, attrs: attrs.trimEnd() }, titl, url);
 	}
 	_setDocTitle(titl);
 };
