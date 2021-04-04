@@ -1,13 +1,17 @@
 const _handleSpaPop = (e, init) => {
 	// Don't use the whole URL as the domain needs to be variable and it shouldn't be stored in @pages.
-	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, triggerOfflinePopstate = false, hashItem;
+	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, triggerOfflinePopstate = false;
 
-	if (!init && !e.state) return;
+	if (init || !init && !e.state) {
+		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
+		// this existing history object needs replacing.
+		manualChange = true;
+	}
 
 	hashEventTrigger = false;
 
 	loc = window.location;
-	if (init) {
+	if (manualChange) {
 		realUrl = loc.href;
 	} else {
 		realUrl = e.state.url;
@@ -32,7 +36,7 @@ const _handleSpaPop = (e, init) => {
 		triggerOfflinePopstate = true;
 
 	} else {
-		if (init) {
+		if (manualChange) {
 			let full = new URL(realUrl);
 			url = full.pathname + full.search;
 			pageItem = _getPageFromList(url);
@@ -54,8 +58,8 @@ const _handleSpaPop = (e, init) => {
 		hashEventTrigger = pageItemHash.attrs;
 	}
 
-	if (init) {
-		// Handle immediate hash event if this is from a page refresh. 'init' is sent in from _wrapUpStart.
+	if (manualChange) {
+		// Handle immediate hash event if this is from a page refresh or a manual hash change.
 		window.history.replaceState(urlObj, document.title, realUrl);
 	}
 
@@ -64,7 +68,7 @@ const _handleSpaPop = (e, init) => {
 		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
 	}
 
-	if (init) {
+	if (manualChange) {
 		if (hashEventTrigger) {
 			// Page should be drawn and config loaded, so just trigger the hash event immediately.
 			_trigHashState(e);
