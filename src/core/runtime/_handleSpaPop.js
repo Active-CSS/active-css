@@ -1,5 +1,4 @@
 const _handleSpaPop = (e, init) => {
-	// Don't use the whole URL as the domain needs to be variable and it shouldn't be stored in @pages.
 	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, triggerOfflinePopstate = false;
 
 	if (init || !init && !e.state) {
@@ -76,7 +75,7 @@ const _handleSpaPop = (e, init) => {
 		}
 	}
 
-	// This is from a popstate event.
+	// This is always from a popstate event.
 	let templ = document.querySelector('#data-acss-route');
 	if (templ && urlObj.attrs) {
 		templ.removeChild(templ.firstChild);
