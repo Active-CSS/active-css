@@ -97,7 +97,8 @@ _a.Var = o => {
 	varDetails = '{=' + varDetails + '=}';
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
-	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
+	// Allow the o object to get evaluated in the expression if references are there.
+	let expr = _replaceJSExpression(varDetails, true, false, o.varScope, -1, o);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 
 	// Escape result for curlies to stop possible re-evaluation on re-assignment.
 	if (typeof expr === 'string') {

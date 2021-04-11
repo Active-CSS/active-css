@@ -4,10 +4,37 @@ const _urlTitle = (url, titl, o) => {
 	titl = titl._ACSSRepQuo();
 
 	let emptyPageClick = false;
-	if (url == '') {
+	if (o._addHash || o._removeHash) {
+		let hashSplit = window.location.hash.split('#');
+		url = url.substr(1);	// Won't work if adding or removing "#house#corridor", items must be singular.
+		let hashSplitLen = hashSplit.length;
+		let n, hashIsThere = 0;
+		for (n = 0; n < hashSplitLen; n++) {
+			if (url == hashSplit[n]) {
+				hashIsThere = n;
+			}
+		}
+		if (!hashIsThere && o._addHash) {
+			// Add the hash.
+			hashSplit.push(url);
+		} else if (hashIsThere && o._removeHash) {
+			// Remove the hash.
+			hashSplit.splice(hashIsThere, 1);
+		}
+		url = window.location.pathname + window.location.search + hashSplit.join('#');
+		emptyPageClick = true;
+
+	} else if (url == '') {
 		// This should only get called from an in-page event, with the url-change/url-replace command url set to "".
 		// This should remove the hash from the URL if it is there, otherwise it will do nothing and assume it's the same page.
-		url = window.location.pathname + window.location.search;
+		let currHash = window.location.hash;
+		let lastHash = currHash.lastIndexOf('#');
+		if (lastHash !== -1 && lastHash != currHash.indexOf('#')) {
+			// If it's an offline SPA with a double-hash, set the URL to the part after the first hash as this will be the SPA root page.
+			url = window.location.pathname + window.location.search + currHash.substr(0, lastHash);
+		} else {
+			url = window.location.pathname + window.location.search;
+		}
 		emptyPageClick = true;
 	}
 
@@ -22,7 +49,7 @@ const _urlTitle = (url, titl, o) => {
 		if (typeof o.secSelObj == 'object') {
 			if (emptyPageClick || url.indexOf('#') !== -1) {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
-				attrs = window.history.state.attrs;
+				attrs = window.history.state.attrs || '';
 			} else {
 				[...o.secSelObj.attributes].forEach((attr) => {
 					if (attr.name == 'id') return;	// mustn't set these, otherwise the url could change again in the SPA trigger event.

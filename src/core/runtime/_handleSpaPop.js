@@ -1,5 +1,5 @@
 const _handleSpaPop = (e, init) => {
-	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, triggerOfflinePopstate = false;
+	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
 	if (init || !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
@@ -26,6 +26,13 @@ const _handleSpaPop = (e, init) => {
 		if (loc.hash != '') {
 			// If this is an offline file and there is a hash, then the hash should be the @pages ref.
 			pageGetUrl = loc.hash.substr(1);	// Remove the hash at the start.
+			let anotherHash = pageGetUrl.indexOf('#');
+			if (anotherHash !== -1) {
+				// There's at least one more hash. Extract the url up to the first hash - that is our root.
+				thisHashStr = pageGetUrl.substr(anotherHash);
+				pageGetUrl = pageGetUrl.substr(0, anotherHash);
+				multipleOfflineHash = true;
+			}
 		} else {
 			// If there is no hash, assume the url is "/" for the benefit of @pages.
 			// This should have a command that initialises this as an SPA rather than assume that every file:// use is an offline SPA.
@@ -44,18 +51,26 @@ const _handleSpaPop = (e, init) => {
 			url = e.state.url;
 		}
 
-		if (loc.hash != '') {
-			// Get the hash trigger if there is one.
-			pageItemHash = _getPageFromList(loc.hash);
+		thisHashStr = loc.hash;
+	}
+
+	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
+	if (thisHashStr != '') {
+		// Get the hash trigger if there is one.
+		let hashSplit = thisHashStr.split('#');
+		let hashSplitLen = hashSplit.length;
+		for (n = 0; n < hashSplitLen; n++) {
+			if (hashSplit[n] == '') continue;
+			pageItemHash = _getPageFromList('#' + hashSplit[n]);
+			if (pageItemHash) {
+				hashEvents.push(pageItemHash.attrs);
+				hashEventTrigger = true;
+			}
 		}
 	}
 
-
 	let urlObj = { url };
 	if (pageItem) urlObj.attrs = pageItem.attrs;
-	if (pageItemHash) {
-		hashEventTrigger = pageItemHash.attrs;
-	}
 
 	if (manualChange) {
 		// Handle immediate hash event if this is from a page refresh or a manual hash change.
@@ -67,12 +82,10 @@ const _handleSpaPop = (e, init) => {
 		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
 	}
 
-	if (manualChange) {
-		if (hashEventTrigger) {
-			// Page should be drawn and config loaded, so just trigger the hash event immediately.
-			_trigHashState(e);
-			return;
-		}
+	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
+		// Page should be drawn and config loaded, so just trigger the hash event immediately.
+		_trigHashState(e);
+		return;
 	}
 
 	// This is always from a popstate event.

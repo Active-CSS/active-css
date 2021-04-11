@@ -14,16 +14,20 @@ const _handleVarsInJS = function(str, varScope) {
 	*/
 	let mapObj = {}, mapObj2 = {};
 	let found = false;
-	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, ]+)[\s]*\;/gi, function(_, varList) {
+	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, \$]+)[\s]*\;/gi, function(_, varList) {
 		// We should have one or more variables in a comma delimited list. Split it up.
 		let listArr = varList.split(','), thisVar, varObj;
 		// Remove dupes from the list by using the Set command.
 		listArr = [...new Set(listArr)];
-		let negLook = '(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)';
+		let negLookLetter = '(\\b)';		// Specifies same-type boundary to limit regex to that exact variable. For var starting with letter.
+		let negLookDollar = '(\\B)';		// Specifies same-type boundary to limit regex to that exact variable. For var starting with $.
 		found = true;
 		for (thisVar of listArr) {
 			thisVar = thisVar.trim();
-			mapObj[negLook + '(' + thisVar + ')' + negLook] = '';
+			let negLookStart = thisVar.startsWith('$') ? negLookDollar : negLookLetter;
+			let negLookEnd = thisVar.endsWith('$') ? negLookDollar : negLookLetter;
+			let escapedVar = thisVar.replace(/\$/gm, '\\$');
+			mapObj[negLookStart + '(' + escapedVar + ')' + negLookEnd] = '';
 			// Variable can be evaluated at this point as the command runs dynamically. This is not the case with create-command which tends to run in places like
 			// body:init and the actual command referenced needs to be dynamically.
 			// So a different method is used there. But here for speed we can do it dynamically before the command is actually run.
@@ -32,6 +36,7 @@ const _handleVarsInJS = function(str, varScope) {
 		}
 		return '';	// Return an empty line - the vars line was Active CSS syntax, not native JavaScript.
 	});
+
 	if (found) {
 		// We don't want variables in quotes to show the internal variable name. And the solution needs to cater for escaped quotes.
 		// At this point there is an array of regexes for all the variables we want to replace.
@@ -40,11 +45,11 @@ const _handleVarsInJS = function(str, varScope) {
 		str = str.replace(/\\'/g, 'cjs_tmp-sq');
 		// By this point we should have a handy array of all the variables to be used in the native JavaScript.
 		// We are going to used this as a regex map to substitute scoped prefixes into the code. But we use a non-regex replace object.
-		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2);
+		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2, true);	// true = case-sensitive.
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// Remove any /scopedProxy.*./ anywhere in single or double quotes catering for escaped quotes, this whole function could be optimised.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_]+\./g, '');
+			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$]+\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");

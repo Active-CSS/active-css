@@ -116,8 +116,9 @@
 		eventState = {},
 		flyCommands = [],
 		flyConds = [],
-		hashEventTrigger = false,
 		hashEventAjaxDelay = false,
+		hashEvents = [],
+		hashEventTrigger = false,
 		idMap = [],
 		initInlineLoading = false,
 		inIframe = (window.location !== window.parent.location),
@@ -177,6 +178,11 @@
 
 _a.AddClass = o => {	// Note thisID is needed in case the "parent" selector is used.
 	ActiveCSS._addClassObj(o.secSelObj, o.actVal);
+};
+
+_a.AddHash = o => {
+	o._addHash = true;
+	_a.UrlChange(o);
 };
 
 _a.Ajax = o => {
@@ -774,6 +780,23 @@ _a.IframeReload = o => {
 	ActiveCSS._removeObj(o.secSelObj);
 };
 
+_a.LoadAsAjax = o => {
+	let el = document.querySelector(o.actVal);
+	if (!el) {
+		let pageContents = '<p>Active CSS Error: could not find template (' + o.actVal + ').</p>';
+	} else {
+		if (typeof o.secSelObj == 'object') {
+			// This is an object that was passed.
+			o.res = el.innerHTML;
+			o.res = _escapeInline(o.res, 'script');
+			o.res = _escapeInline(o.res, 'style type="text/acss"');
+			_setHTMLVars({res: o.res});
+			_handleEvents({ obj: o.obj, evType: 'afterLoadAsAjax', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		}
+	}
+
+};
+
 _a.LoadConfig = o => {
 	// Dynamically load additional config if it has not already been loaded and append to existing unprocessed concatenated config.
 	o.actVal = o.actVal._ACSSRepQuo();
@@ -997,6 +1020,11 @@ _a.RemoveCookie = o => {
 	str += cookiePath ? ` path=${cookiePath};` : '';
 
 	document.cookie = str;
+};
+
+_a.RemoveHash = o => {
+	o._removeHash = true;
+	_a.UrlChange(o);
 };
 
 _a.RemoveProperty = o => {
@@ -1477,7 +1505,8 @@ _a.Var = o => {
 	varDetails = '{=' + varDetails + '=}';
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
-	let expr = _replaceJSExpression(varDetails, true, null, o.varScope);	// realVal=false, quoteIfString=false
+	// Allow the o object to get evaluated in the expression if references are there.
+	let expr = _replaceJSExpression(varDetails, true, false, o.varScope, -1, o);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 
 	// Escape result for curlies to stop possible re-evaluation on re-assignment.
 	if (typeof expr === 'string') {
@@ -1810,7 +1839,7 @@ const _run = (str, varScope, o) => {
 	});
 
 	try {
-		return Function('scopedProxy, o', funky)(scopedProxy, o);		// jshint ignore:line
+		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars);		// jshint ignore:line
 	} catch (err) {
 		console.log('Function syntax error (' + err + '): ' + funky);
 	}
@@ -2236,9 +2265,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 					_unloadAllCancelTimerLoop(delayActiveID);
 				}
 				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
-				delayArr.splice(delayArr.indexOf(activeID), 1);
-				cancelIDArr.splice(cancelIDArr.indexOf(activeID), 1);
-				cancelCustomArr.splice(cancelCustomArr.indexOf(activeID), 1);
+				delayArr.splice(delayArr.indexOf(delayActiveID), 1);
+				cancelIDArr.splice(cancelIDArr.indexOf(delayActiveID), 1);
+				cancelCustomArr.splice(cancelCustomArr.indexOf(delayActiveID), 1);
 			}
 			_a.StopPropagation(o);
 			return;
@@ -2359,7 +2388,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
+	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview', 'LoadAsAjax'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}
@@ -2462,8 +2491,7 @@ const _handleLoop = (loopObj) => {
 };
 
 const _handleSpaPop = (e, init) => {
-	// Don't use the whole URL as the domain needs to be variable and it shouldn't be stored in @pages.
-	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, triggerOfflinePopstate = false;
+	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
 	if (init || !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
@@ -2490,6 +2518,13 @@ const _handleSpaPop = (e, init) => {
 		if (loc.hash != '') {
 			// If this is an offline file and there is a hash, then the hash should be the @pages ref.
 			pageGetUrl = loc.hash.substr(1);	// Remove the hash at the start.
+			let anotherHash = pageGetUrl.indexOf('#');
+			if (anotherHash !== -1) {
+				// There's at least one more hash. Extract the url up to the first hash - that is our root.
+				thisHashStr = pageGetUrl.substr(anotherHash);
+				pageGetUrl = pageGetUrl.substr(0, anotherHash);
+				multipleOfflineHash = true;
+			}
 		} else {
 			// If there is no hash, assume the url is "/" for the benefit of @pages.
 			// This should have a command that initialises this as an SPA rather than assume that every file:// use is an offline SPA.
@@ -2508,18 +2543,26 @@ const _handleSpaPop = (e, init) => {
 			url = e.state.url;
 		}
 
-		if (loc.hash != '') {
-			// Get the hash trigger if there is one.
-			pageItemHash = _getPageFromList(loc.hash);
+		thisHashStr = loc.hash;
+	}
+
+	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
+	if (thisHashStr != '') {
+		// Get the hash trigger if there is one.
+		let hashSplit = thisHashStr.split('#');
+		let hashSplitLen = hashSplit.length;
+		for (n = 0; n < hashSplitLen; n++) {
+			if (hashSplit[n] == '') continue;
+			pageItemHash = _getPageFromList('#' + hashSplit[n]);
+			if (pageItemHash) {
+				hashEvents.push(pageItemHash.attrs);
+				hashEventTrigger = true;
+			}
 		}
 	}
 
-
 	let urlObj = { url };
 	if (pageItem) urlObj.attrs = pageItem.attrs;
-	if (pageItemHash) {
-		hashEventTrigger = pageItemHash.attrs;
-	}
 
 	if (manualChange) {
 		// Handle immediate hash event if this is from a page refresh or a manual hash change.
@@ -2531,15 +2574,13 @@ const _handleSpaPop = (e, init) => {
 		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
 	}
 
-	if (manualChange) {
-		if (hashEventTrigger) {
-			// Page should be drawn and config loaded, so just trigger the hash event immediately.
-			_trigHashState(e);
-			return;
-		}
+	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
+		// Page should be drawn and config loaded, so just trigger the hash event immediately.
+		_trigHashState(e);
+		return;
 	}
 
-	// This is from a popstate event.
+	// This is always from a popstate event.
 	let templ = document.querySelector('#data-acss-route');
 	if (templ && urlObj.attrs) {
 		templ.removeChild(templ.firstChild);
@@ -2564,16 +2605,20 @@ const _handleVarsInJS = function(str, varScope) {
 	*/
 	let mapObj = {}, mapObj2 = {};
 	let found = false;
-	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, ]+)[\s]*\;/gi, function(_, varList) {
+	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, \$]+)[\s]*\;/gi, function(_, varList) {
 		// We should have one or more variables in a comma delimited list. Split it up.
 		let listArr = varList.split(','), thisVar, varObj;
 		// Remove dupes from the list by using the Set command.
 		listArr = [...new Set(listArr)];
-		let negLook = '(?!\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w)';
+		let negLookLetter = '(\\b)';		// Specifies same-type boundary to limit regex to that exact variable. For var starting with letter.
+		let negLookDollar = '(\\B)';		// Specifies same-type boundary to limit regex to that exact variable. For var starting with $.
 		found = true;
 		for (thisVar of listArr) {
 			thisVar = thisVar.trim();
-			mapObj[negLook + '(' + thisVar + ')' + negLook] = '';
+			let negLookStart = thisVar.startsWith('$') ? negLookDollar : negLookLetter;
+			let negLookEnd = thisVar.endsWith('$') ? negLookDollar : negLookLetter;
+			let escapedVar = thisVar.replace(/\$/gm, '\\$');
+			mapObj[negLookStart + '(' + escapedVar + ')' + negLookEnd] = '';
 			// Variable can be evaluated at this point as the command runs dynamically. This is not the case with create-command which tends to run in places like
 			// body:init and the actual command referenced needs to be dynamically.
 			// So a different method is used there. But here for speed we can do it dynamically before the command is actually run.
@@ -2582,6 +2627,7 @@ const _handleVarsInJS = function(str, varScope) {
 		}
 		return '';	// Return an empty line - the vars line was Active CSS syntax, not native JavaScript.
 	});
+
 	if (found) {
 		// We don't want variables in quotes to show the internal variable name. And the solution needs to cater for escaped quotes.
 		// At this point there is an array of regexes for all the variables we want to replace.
@@ -2590,11 +2636,11 @@ const _handleVarsInJS = function(str, varScope) {
 		str = str.replace(/\\'/g, 'cjs_tmp-sq');
 		// By this point we should have a handy array of all the variables to be used in the native JavaScript.
 		// We are going to used this as a regex map to substitute scoped prefixes into the code. But we use a non-regex replace object.
-		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2);
+		str = ActiveCSS._mapRegexReturn(mapObj, str, mapObj2, true);	// true = case-sensitive.
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// Remove any /scopedProxy.*./ anywhere in single or double quotes catering for escaped quotes, this whole function could be optimised.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_]+\./g, '');
+			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$]+\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");
@@ -3979,18 +4025,38 @@ const _splitIframeEls = (sel, o) => {
 const _trigHashState = (e) => {
 	// Either there isn't anything to run yet or it's not ready to run now.
 	if (hashEventAjaxDelay || !hashEventTrigger) return;
-
-	let str = hashEventTrigger.substr(hashEventTrigger.indexOf('=') + 1).trim()._ACSSRepQuo();
 	hashEventTrigger = false;
-	let lastPos = str.lastIndexOf(':');
-	let sel = str.substr(0, lastPos).trim();
-	let ev = str.substr(lastPos + 1).trim();
 
-	// Currently this will only work if the hash trigger is in the document scope.
-	// This could be upgraded later but is a little involved due to component uniqueness.
-	let el = document.querySelector(sel);
-	if (el && ev != '') {
-		ActiveCSS.trigger(el, ev, null, document, null, null, e);
+	let n, el, eventsLen = hashEvents.length, runEvents = [];
+	for (n = 0; n < eventsLen; n++) {
+		let str = hashEvents[n].substr(hashEvents[n].indexOf('=') + 1).trim()._ACSSRepQuo();
+		let lastPos = str.lastIndexOf(':');
+		let sel = str.substr(0, lastPos).trim();
+		let ev = str.substr(lastPos + 1).trim();
+
+		// Put all these details into an array to iterate in one bash.
+		// This should avoid any subsequent race conditions when hitting the event triggers as potentially anything could happen.
+		runEvents.push({ sel, ev });
+	}
+
+	// Wipe any outstanding global hash events.
+	hashEvents = [];
+
+	// Iterate the stored triggers. The runEvents array is locally immutable here so won't be affected by actions happening during any triggers.
+	for (n = 0; n < eventsLen; n++) {
+		// Currently this will only work if the hash trigger is in the document scope.
+		// This could be upgraded later but is a little involved due to component uniqueness.
+		el = document.querySelector(runEvents[n].sel);
+		if (el && runEvents[n].ev != '') {
+			ActiveCSS.trigger(el, runEvents[n].ev, null, document, null, null, e);
+		} else {
+			// Try it at the end of the stack as it could be waiting for something to render.
+			let trySel = runEvents[n];
+			setTimeout(function() {		// jshint ignore:line
+				el = document.querySelector(trySel.sel);
+				ActiveCSS.trigger(el, trySel.ev, null, document, null, null, e);
+			}, 0);
+		}
 	}
 };
 
@@ -4692,9 +4758,9 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 	}
 };
 
-ActiveCSS._mapRegexReturn = (mapObj, str, mapObj2=null) => {
+ActiveCSS._mapRegexReturn = (mapObj, str, mapObj2=null, caseSensitive=false) => {
 	if (typeof str !== 'string') return str;	// If it's not a string, we don't have to replace anything. Here for speed.
-	let reg = new RegExp(Object.keys(mapObj).join('|'), 'gim');
+	let reg = new RegExp(Object.keys(mapObj).join('|'), 'g' + (!caseSensitive ? 'i' : '') + 'm');
 	str = str.replace(reg, function(matched){
 		if (!mapObj2) {
 			return mapObj[matched];
@@ -6325,7 +6391,7 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 	return str;
 };
 
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null) => {
 	if (sel.indexOf('{=') === -1) return sel;
 	let res;
 
@@ -6344,10 +6410,10 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy', '"use strict";return (' + wot + ');')(scopedProxy);		// jshint ignore:line
+			res = Function('scopedProxy, o', '"use strict";return (' + wot + ');')(scopedProxy, o);		// jshint ignore:line
 		} catch (err) {
 			try {
-				res = Function('scopedProxy', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy);		// jshint ignore:line
+				res = Function('scopedProxy, o', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');
@@ -8145,10 +8211,37 @@ const _urlTitle = (url, titl, o) => {
 	titl = titl._ACSSRepQuo();
 
 	let emptyPageClick = false;
-	if (url == '') {
+	if (o._addHash || o._removeHash) {
+		let hashSplit = window.location.hash.split('#');
+		url = url.substr(1);	// Won't work if adding or removing "#house#corridor", items must be singular.
+		let hashSplitLen = hashSplit.length;
+		let n, hashIsThere = 0;
+		for (n = 0; n < hashSplitLen; n++) {
+			if (url == hashSplit[n]) {
+				hashIsThere = n;
+			}
+		}
+		if (!hashIsThere && o._addHash) {
+			// Add the hash.
+			hashSplit.push(url);
+		} else if (hashIsThere && o._removeHash) {
+			// Remove the hash.
+			hashSplit.splice(hashIsThere, 1);
+		}
+		url = window.location.pathname + window.location.search + hashSplit.join('#');
+		emptyPageClick = true;
+
+	} else if (url == '') {
 		// This should only get called from an in-page event, with the url-change/url-replace command url set to "".
 		// This should remove the hash from the URL if it is there, otherwise it will do nothing and assume it's the same page.
-		url = window.location.pathname + window.location.search;
+		let currHash = window.location.hash;
+		let lastHash = currHash.lastIndexOf('#');
+		if (lastHash !== -1 && lastHash != currHash.indexOf('#')) {
+			// If it's an offline SPA with a double-hash, set the URL to the part after the first hash as this will be the SPA root page.
+			url = window.location.pathname + window.location.search + currHash.substr(0, lastHash);
+		} else {
+			url = window.location.pathname + window.location.search;
+		}
 		emptyPageClick = true;
 	}
 
@@ -8163,7 +8256,7 @@ const _urlTitle = (url, titl, o) => {
 		if (typeof o.secSelObj == 'object') {
 			if (emptyPageClick || url.indexOf('#') !== -1) {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
-				attrs = window.history.state.attrs;
+				attrs = window.history.state.attrs || '';
 			} else {
 				[...o.secSelObj.attributes].forEach((attr) => {
 					if (attr.name == 'id') return;	// mustn't set these, otherwise the url could change again in the SPA trigger event.
