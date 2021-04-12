@@ -88,9 +88,13 @@ _a.Var = o => {
 			varScope: o.varScope
 		}
 	);
+
 	varDetails = _resolveVars(strObj.str, strObj.ref);
 
+	varDetails = _unHtmlEntities(varDetails);	// variables are not escaped when assigned at this point.
+
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.

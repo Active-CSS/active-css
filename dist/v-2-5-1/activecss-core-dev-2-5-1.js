@@ -372,10 +372,18 @@ _a.ConsoleLog = o => {
 		wot = o;
 	} else if (o.actVal == 'variables') {
 		wot = scopedProxy;
+	} else if (o.actVal == 'conditionals') {
+		wot = conditionals;
+	} else if (o.actVal == 'config') {
+		wot = config;
+	} else if (o.actVal == 'components') {
+		wot = components;
 	} else {
 		wot = o.actVal._ACSSRepQuo();
+		console.log(wot);
+		return;
 	}
-	console.log(wot);
+	console.log(o.actVal._ACSSCapitalize() + ':', wot);
 };
 
 _a.CopyToClipboard = o => {
@@ -1496,9 +1504,13 @@ _a.Var = o => {
 			varScope: o.varScope
 		}
 	);
+
 	varDetails = _resolveVars(strObj.str, strObj.ref);
 
+	varDetails = _unHtmlEntities(varDetails);	// variables are not escaped when assigned at this point.
+
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
+
 	varDetails = _prefixScopedVars(varDetails, o.varScope);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
@@ -1708,17 +1720,42 @@ _c.IfVar = o => {
 	let spl = actVal.split(' ');
 	let compareVal, varName;
 	varName = spl.shift();	// Remove the first element from the array.
+
 	compareVal = spl.join(' ')._ACSSSpaceQuoOut();
 	compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
-	if (typeof compareVal !== 'boolean') {
-		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			compareVal = Number(compareVal._ACSSRepQuo());
-		} else {
-			compareVal = compareVal._ACSSRepQuo();
-		}
-	}
 	let scoped = _getScopedVar(varName, o.varScope);
 	let varValue = scoped.val;
+
+	if (typeof compareVal !== 'boolean') {
+		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
+			if (Array.isArray(varValue)) {
+				if (compareVal == '') {
+					// Nothing to compare, return whether this value to check is a populated array.
+					return (varValue.length > 0) ? true : false;
+				}
+			} else {
+				if (compareVal == '') {
+					// Nothing to compare, return whether this value equates to true.
+					return (varValue) ? true : false;
+				}
+				compareVal = Number(compareVal._ACSSRepQuo());
+			}
+		} else {
+			if (Array.isArray(varValue)) {
+				try {
+					// Convert compare var to an array.
+					compareVal = JSON.stringify(JSON.parse(compareVal));
+					// Stringify allows us to compare two arrays later on.
+					varValue = JSON.stringify(varValue);
+				} catch(err) {
+					// If there's an error, it's probably because the comparison didn't convert to an array, so it doesn't match.
+					return false;
+				}
+			} else {
+				compareVal = compareVal._ACSSRepQuo();
+			}
+		}
+	}
 
 	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };
@@ -1897,7 +1934,7 @@ const _checkCond = condObj => {
 
 	aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
-	condVals = aV.split('_ACSSComma');
+	condVals = aV.replace(/_ACSSEscComma/g, ',').split('_ACSSComma');
 	condValsLen = condVals.length;
 
 	for (n = 0; n < condValsLen; n++) {
@@ -2812,11 +2849,19 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 
 	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
+
+	condList = condList.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
+		return _.replace(/ /g, '_ACSSspace').replace(/,/g, '_ACSSEscComma');
+	});
+
 	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
+
 	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
 	let actionBoolState = false;
 
 	for (cond of conds) {
+		cond = cond.replace(/_ACSSspace/g, ' ');
+
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.
@@ -4783,11 +4828,11 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	if (inlineActiveID) str = _unEscNoVars(str);
 	// Remove all comments. But not comments within quotes. Easy way is to escape the ones inside, then run a general removal, and then unescape.
-	str = str.replace(INQUOTES, function(_, innards) {
-		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
-	});
+//	str = str.replace(INQUOTES, function(_, innards) {
+//		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
+//	});
 	str = str.replace(COMMENTS, '');
-	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
+//	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
@@ -6399,6 +6444,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		wot = _replaceScopedVarsExpr(wot, varScope);
+
 		let q = '';
 		if (quoteIfString) {
 			q = '"';
@@ -6493,7 +6539,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 			txt = el.textContent;
 			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
 			actualHost = (thisHost) ? thisHost : shadHost;
-			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, varScope);
+			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, varScope, undefined, true);
 		}
 
 		// Convert the fragment back into a string.
@@ -6511,7 +6557,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 };
 
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
@@ -6533,7 +6579,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					res = (shadHost.hasAttribute(wot)) ? _escapeItem(shadHost.getAttribute(wot)) : '';
+					res = (shadHost.hasAttribute(wot)) ? (noHTMLEscape) ? shadHost.getAttribute(wot) : _escapeItem(shadHost.getAttribute(wot)) : '';
 					let hostCID = _getActiveID(shadHost).replace('d-', '');
 					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
@@ -6547,7 +6593,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
 				res = scoped.val;
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape) ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
 			if (isBound && func.indexOf('Render') !== -1) {
@@ -7021,7 +7067,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				varMap[change.currentPath].splice(i, 1);
 			} else {
 				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
-				nod.textContent = _unEscNoVars(_escapeItem(refObj));
+				nod.textContent = _unEscNoVars(refObj);
 			}
 		});
 	}
@@ -7053,7 +7099,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 						}
 					}
 				});
-				nod.textContent = _unEscNoVars(_escapeItem(str));	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+				nod.textContent = _unEscNoVars(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 			}
 		});
 	}
@@ -8868,6 +8914,12 @@ const _toggleClassObj = (obj, str) => {
 
 const _unEscNoVars = str => {
 	return str.replace(/__ACSSnoVarsOpCurly/gim, '{').replace(/__ACSSnoVarsClCurly/gim, '}');
+};
+
+const _unHtmlEntities = str => {
+	let txt = document.createElement("textarea");
+	txt.innerHTML = str;
+	return txt.value;
 };
 
 const _unSafeTags = str => {

@@ -21,7 +21,7 @@ const _checkCond = condObj => {
 
 	aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
 
-	condVals = aV.split('_ACSSComma');
+	condVals = aV.replace(/_ACSSEscComma/g, ',').split('_ACSSComma');
 	condValsLen = condVals.length;
 
 	for (n = 0; n < condValsLen; n++) {

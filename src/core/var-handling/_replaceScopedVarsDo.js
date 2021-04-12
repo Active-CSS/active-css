@@ -1,5 +1,5 @@
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
@@ -21,7 +21,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					res = (shadHost.hasAttribute(wot)) ? _escapeItem(shadHost.getAttribute(wot)) : '';
+					res = (shadHost.hasAttribute(wot)) ? (noHTMLEscape) ? shadHost.getAttribute(wot) : _escapeItem(shadHost.getAttribute(wot)) : '';
 					let hostCID = _getActiveID(shadHost).replace('d-', '');
 					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
@@ -35,7 +35,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
 				res = scoped.val;
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape) ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
 			if (isBound && func.indexOf('Render') !== -1) {

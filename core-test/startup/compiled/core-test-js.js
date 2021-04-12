@@ -1628,7 +1628,7 @@ function checkRenderEscaping(o) {
 	// First check escape rendering.
 	let pTag = _getObj('#renderEscapePTag');
 
-	if (pTag.textContent !== 'Check for escaped variable: &lt;script&gt;createHavoc()&lt;/script&gt; &lt;script&gt;doMoreHavoc()&lt;/script&gt;. You should see the tag here in text form.') {
+	if (pTag.textContent !== 'Check for escaped variable: <script>createHavoc()</script> <script>doMoreHavoc()</script>. You should see the tag here in text form.') {
 		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. #renderEscapePTag.textContent:', pTag.textContent);
 	}
 
@@ -2131,4 +2131,35 @@ function checkVar(o, pars) {
 
 	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
 	_addSuccessClass(checkVarEl);
+}
+
+function checkIfVarEmptyArrayFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'if-var failed with the checking of an empty array');
+}
+
+function checkIfVarNotPopulatedArrayFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'not-if-var failed with the checking of a non-populated array');
+}
+
+function checkIfVarArrayEqualsFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'not-if-var failed with the equals checking of array');
+}
+
+function checkIfVarFinal(o, pars) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	if (pars[0] == 3) {
+		// Finish up. If it's failed by this point it will error.
+		_addSuccessClass(checkIfVarEl);
+	}
 }

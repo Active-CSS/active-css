@@ -1646,3 +1646,50 @@ create-element-tag:connectedCallback {
 		<div>{|checkVarPrivateHTML}</div>
 	}
 }
+
+#content:draw {
+	render-before-end: "<div id=\"checkIfVar\" data-desc=\"Basic if-var conditional\" class=\"coreTest\">{|checkIfVarHTML}</div>";
+}
+
+@component checkIfVarHTML {
+	&:beforeComponentOpen {
+		var: ifVarEmptyArr [],
+			ifVarPopulatedArr ["cheese", "dave"],
+			ifVarNumber 2,
+			ifVarOkCounter 0;
+	}
+	html {
+		<div id="ifVarDiv">dummy data</div>
+	}
+}
+
+/* Empty array check */
+#ifVarDiv:if-var(ifVarEmptyArr):draw {
+	func: checkIfVarEmptyArrayFail;
+}
+#ifVarDiv:not-if-var(ifVarEmptyArr):draw {
+	var: ifVarOkCounter++;
+}
+
+/* Populated array check */
+#ifVarDiv:if-var(ifVarPopulatedArr):draw {
+	var: ifVarOkCounter++;
+}
+
+#ifVarDiv:not-if-var(ifVarPopulatedArr):draw {
+	func: checkIfVarNotPopulatedArrayFail;
+}
+
+/* Array equals check */
+#ifVarDiv:if-var(ifVarPopulatedArr ["cheese", "dave"]):draw {
+	var: ifVarOkCounter++;
+}
+
+#ifVarDiv:not-if-var(ifVarPopulatedArr ["cheese", "dave"]):draw {
+	func: checkIfVarArrayEqualsFail;
+}
+
+/* End test */
+#ifVarDiv:draw {
+	func: checkIfVarFinal {ifVarOkCounter};
+}

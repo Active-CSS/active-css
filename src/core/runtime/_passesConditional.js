@@ -4,11 +4,19 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 
 	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
+
+	condList = condList.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
+		return _.replace(/ /g, '_ACSSspace').replace(/,/g, '_ACSSEscComma');
+	});
+
 	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
+
 	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
 	let actionBoolState = false;
 
 	for (cond of conds) {
+		cond = cond.replace(/_ACSSspace/g, ' ');
+
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.

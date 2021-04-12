@@ -6,6 +6,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		wot = _replaceScopedVarsExpr(wot, varScope);
+
 		let q = '';
 		if (quoteIfString) {
 			q = '"';
