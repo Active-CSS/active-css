@@ -50,6 +50,8 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			replace(/<th/gmi, '<acssThTag');
 	}
 
+	content = _escapeInnerQuotes(content);
+
 	container.innerHTML = content;
 
 	let cid;

@@ -2530,7 +2530,7 @@ const _handleLoop = (loopObj) => {
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
-	if (init || !init && !e.state) {
+	if (init|| !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
 		// this existing history object needs replacing.
 		manualChange = true;
@@ -2617,9 +2617,15 @@ const _handleSpaPop = (e, init) => {
 		return;
 	}
 
-	// This is always from a popstate event.
+	// This is always from a popstate event or an initial page that needs some sort of additional hash handling.
 	let templ = document.querySelector('#data-acss-route');
-	if (templ && urlObj.attrs) {
+	if ((!init ||
+			init &&
+			(hashEventTrigger || triggerOfflinePopstate)) &&
+			window.location.href.slice(-2) != '#/' &&
+			templ &&
+			urlObj.attrs
+		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
@@ -3635,6 +3641,8 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			replace(/<tbody/gmi, '<acssTbodyTag').
 			replace(/<th/gmi, '<acssThTag');
 	}
+
+	content = _escapeInnerQuotes(content);
 
 	container.innerHTML = content;
 
@@ -4806,9 +4814,10 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 ActiveCSS._mapRegexReturn = (mapObj, str, mapObj2=null, caseSensitive=false) => {
 	if (typeof str !== 'string') return str;	// If it's not a string, we don't have to replace anything. Here for speed.
 	let reg = new RegExp(Object.keys(mapObj).join('|'), 'g' + (!caseSensitive ? 'i' : '') + 'm');
+
 	str = str.replace(reg, function(matched){
 		if (!mapObj2) {
-			return mapObj[matched];
+			return matched == '\\' ? mapObj['\\\\'] : mapObj[matched];
 		} else {
 			// Match with a second object, not the regex object.
 			return mapObj2[matched];
@@ -6313,7 +6322,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex);
-				if (ret) return _preReplaceVar(ret, varReplacementRef);
+				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
@@ -6340,17 +6349,17 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef));
 					} else {
 						ret = _getAttrOrProp(el, wat, getProperty);
-						if (ret) return _preReplaceVar(ret, varReplacementRef);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
 					}
 				} else {
 					if (obj && typeof obj !== 'string') {
 						if (secSelObj) {
 							ret = _getAttrOrProp(secSelObj, wot, getProperty);
-							if (ret) return _preReplaceVar(ret, varReplacementRef);
+							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						}
 						ret = _getAttrOrProp(obj, wot, getProperty);
-						if (ret) return _preReplaceVar(ret, varReplacementRef);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
 					}
 				}
@@ -6579,7 +6588,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					res = (shadHost.hasAttribute(wot)) ? (noHTMLEscape) ? shadHost.getAttribute(wot) : _escapeItem(shadHost.getAttribute(wot)) : '';
+					res = (shadHost.hasAttribute(wot)) ? (noHTMLEscape || func == 'SetAttribute') ? shadHost.getAttribute(wot) : _escapeItem(shadHost.getAttribute(wot)) : '';
 					let hostCID = _getActiveID(shadHost).replace('d-', '');
 					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
@@ -6593,7 +6602,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
 				res = scoped.val;
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape) ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
 			if (isBound && func.indexOf('Render') !== -1) {
@@ -7067,7 +7076,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 				varMap[change.currentPath].splice(i, 1);
 			} else {
 				// Update node. By this point, all comment nodes surrounding the actual variable placeholder have been removed.
-				nod.textContent = _unEscNoVars(refObj);
+				nod.textContent = _unEscNoVars(refObj.toString());
 			}
 		});
 	}
@@ -7099,7 +7108,7 @@ const _varUpdateDomDo = (change, dataObj) => {
 						}
 					}
 				});
-				nod.textContent = _unEscNoVars(str);	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
+				nod.textContent = _unEscNoVars(str.toString());	// Set all instances of this variable in the style at once - may be more than one instance of the same variable.
 			}
 		});
 	}
@@ -7553,6 +7562,40 @@ const _eachRemoveClass = (inClass, classToRemove, doc) => {
 	});
 };
 
+const _escapeInnerQuotes = str => {
+	// This sorts out any errant unentitied double-quotes than may be within other double-quotes in tags.
+	const reg = /( [\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+\=\")/;
+	let newStr = str.replace(/(<\s*[\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[^>]*>)/gm, function(_, wot) {
+		let arr = wot.split(reg), newStr = '', i, pos, numQuo;
+		let arrLen = arr.length;
+
+	    for (i = 0; i < arrLen; i++) {
+	    	let checkSplitStr = arr[i].indexOf('="');
+    		if (i > 0 && checkSplitStr !== -1 && arr[i - 1].slice(-1) != '"' && arr[i - 1].indexOf('<') === -1) {
+				// Replace all quotes, as this item is in the middle of a quoted string.
+				newStr += arr[i].replace(/"/gm, '&quot;');
+			} else if (checkSplitStr !== -1 || arr[i].indexOf('"') === -1) {
+				// This doesn\'t need anything doing to it. This needs to be after the last condition to work.
+				newStr += arr[i];
+			} else {
+				// Replace all quotes.
+				let tmpStr = arr[i].replace(/"/gm, '&quot;');
+				// Put back the last one.
+				pos = tmpStr.lastIndexOf('&quot;');
+				newStr += tmpStr.substring(0, pos) + '"' + tmpStr.substring(pos + 6);
+			}
+		}
+
+		return newStr;
+	});
+
+	return newStr;
+};
+
+const _escapeQuo = str => {
+	return str.replace(/"/g, '\\"');
+};
+
 function _escCommaBrack(str, o) {
 	/**
 	 * "o" is used for reporting on any failing line in the config.
@@ -7698,7 +7741,7 @@ const _getAttrOrProp = (el, attr, getProp, ind=null) => {
 	}
 	// Check for property.
 	ret = (ind) ? el.options[ind][attr] : el[attr];
-	if (ret || typeof ret == 'string') return _escapeItem(ret);
+	if (ret || typeof ret == 'string') return _escapeItem(ret.replace(/\\/gm, '\\\\'));	// properties get escaped as if they are from attributes.
 	return '';
 };
 
@@ -8116,6 +8159,7 @@ const _resolveURL = url => {
 };
 
 const _safeTags = str => {
+	// Note the backslashes are for ensuring proper escaping happens when used in the regex.
 	let mapObj = {
 		'&': '&amp;',
 		'<': '&lt;',
@@ -8123,6 +8167,9 @@ const _safeTags = str => {
 		'/': '&sol;',
 		'{': '&#123;',
 		'}': '&#125;',
+		'"': '&quot;',
+		'\'': '&#39;',
+		'\\\\': '&#92;',
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
@@ -8246,6 +8293,7 @@ const _unHtmlEntities = str => {
 };
 
 const _unSafeTags = str => {
+	// _safeTags is the opposite function. Backslashes are further escaped from here to remain intact for use.
 	let mapObj = {
 		'&amp;': '&',
 		'&lt;': '<',
@@ -8253,6 +8301,9 @@ const _unSafeTags = str => {
 		'&sol;': '/',
 		'&#123;': '{',
 		'&#125;': '}',
+		'&quot;': '"',
+		'&#39;': '\'',
+		'&#92;': '\\\\',
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };

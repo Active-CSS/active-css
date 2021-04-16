@@ -17,7 +17,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex);
-				if (ret) return _preReplaceVar(ret, varReplacementRef);
+				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
@@ -44,17 +44,17 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef));
 					} else {
 						ret = _getAttrOrProp(el, wat, getProperty);
-						if (ret) return _preReplaceVar(ret, varReplacementRef);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
 					}
 				} else {
 					if (obj && typeof obj !== 'string') {
 						if (secSelObj) {
 							ret = _getAttrOrProp(secSelObj, wot, getProperty);
-							if (ret) return _preReplaceVar(ret, varReplacementRef);
+							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						}
 						ret = _getAttrOrProp(obj, wot, getProperty);
-						if (ret) return _preReplaceVar(ret, varReplacementRef);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
 						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
 					}
 				}

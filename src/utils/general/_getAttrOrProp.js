@@ -8,6 +8,6 @@ const _getAttrOrProp = (el, attr, getProp, ind=null) => {
 	}
 	// Check for property.
 	ret = (ind) ? el.options[ind][attr] : el[attr];
-	if (ret || typeof ret == 'string') return _escapeItem(ret);
+	if (ret || typeof ret == 'string') return _escapeItem(ret.replace(/\\/gm, '\\\\'));	// properties get escaped as if they are from attributes.
 	return '';
 };

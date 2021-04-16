@@ -1,7 +1,7 @@
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
-	if (init || !init && !e.state) {
+	if (init|| !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
 		// this existing history object needs replacing.
 		manualChange = true;
@@ -88,9 +88,15 @@ const _handleSpaPop = (e, init) => {
 		return;
 	}
 
-	// This is always from a popstate event.
+	// This is always from a popstate event or an initial page that needs some sort of additional hash handling.
 	let templ = document.querySelector('#data-acss-route');
-	if (templ && urlObj.attrs) {
+	if ((!init ||
+			init &&
+			(hashEventTrigger || triggerOfflinePopstate)) &&
+			window.location.href.slice(-2) != '#/' &&
+			templ &&
+			urlObj.attrs
+		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
