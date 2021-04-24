@@ -25,7 +25,7 @@ This is a one man project and if anyone wants to get involved then there is a di
 * **Fast to learn:** Active CSS is quick to learn, as it looks like CSS. Just learn some new commands like "add-class", "remove-class", etc., plus a few new concepts that turn CSS into a proper programming language.
 * **Fast, intuitive to write:** Active CSS converts common JavaScript actions to a higher-level one-liner CSS syntax. Around 100 new commands and pseudo-selectors for all common website building tasks.
 * **Supports all DOM events:** If the event is available in the browser as a DOM event it should work with Active CSS automatically, even the experimental events that are being worked on right now by the browser developers.
-* **Easy to debug:** Active CSS is easy to debug, even easier than CSS. All declarations are cumulative which means that there are no cascading commands - no hierarchical rules to slow you down trying to get things to work.
+* **Easy to debug:** Active CSS is easy to debug. All declarations are cumulative and there are no hierarchical rules. Every command counts.
 * **A true reactive framework:** Active CSS has the simplest method of automatically updating drawn content based on variable changes. Why suffer with unnecessarily complicated frameworks, when you can set up easy to read CSS-style declarations for components and write your code in one-liners?
 * **Responsive events:** Because Active CSS supports CSS media queries, you can have different events happening at different screen sizes. How easy is that with other frameworks without things getting messy?
 * **Apply CSS variables dynamically:** Active CSS can dynamically apply standard CSS variables to the document, element or shadow DOM scope without fuss.
