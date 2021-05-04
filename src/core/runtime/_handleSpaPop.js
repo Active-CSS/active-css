@@ -55,6 +55,7 @@ const _handleSpaPop = (e, init) => {
 	}
 
 	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
+
 	if (thisHashStr != '') {
 		// Get the hash trigger if there is one.
 		let hashSplit = thisHashStr.split('#');
@@ -83,11 +84,11 @@ const _handleSpaPop = (e, init) => {
 
 
 	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
-		// Page should be drawn and config loaded, so just trigger the hash event immediately if it's ready to run.
+		// Page should be drawn and config loaded, so just trigger the hash event immediately if it isn't delayed.
 		_trigHashState(e);
 	}
 
-	// Run the trigger to load the underlying page.
+	// Trigger the underlying page switch.
 	let templ = document.querySelector('#data-acss-route');
 	if ((!init ||
 			init &&
@@ -101,6 +102,7 @@ const _handleSpaPop = (e, init) => {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
+
 		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
 		_trigHashState(e);
 
@@ -111,4 +113,5 @@ const _handleSpaPop = (e, init) => {
 			window.location.href = realUrl;
 		}
 	}
+
 };

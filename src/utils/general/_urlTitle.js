@@ -10,21 +10,25 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 		if (tmpHash !== '') {
 			tmpHash = tmpHash.substr(1).trim();
 		}
+
 		let hashSplit = tmpHash.split('#');
 		url = url.substr(1);	// Won't work if adding or removing "#house#corridor", items must be singular.
 		let hashSplitLen = hashSplit.length;
 		let n, hashIsThere = false, otherHashToRemove = 0, lastHash;
+
+		if (o._removeLastHash && (window.location.protocol != 'file:' || hashSplitLen > 1)) {
+			// Remove the last hash in the string. This is all that the remove option supports at the moment.
+			// If this is an offline site, don't remove the first hash as it's going to be an underlying page. That's the rule for this option.
+			hashSplit.pop();
+		}
+
 		for (n = 0; n < hashSplitLen; n++) {
 			if (url == hashSplit[n]) {
 				hashIsThere = n;
 				break;
 			}
 		}
-		if (o._removeLastHash && (window.location.protocol != 'file:' || hashSplitLen > 1)) {
-			// Remove the last hash in the string. This is all that the remove option supports at the moment.
-			// If this is an offline site, don't remove the first hash as it's going to be an underlying page. That's the rule for this option.
-			hashSplit.pop();
-		}
+
 		if (hashIsThere === false && o._addHash) {
 			// Add the hash.
 			hashSplit.push(url);
