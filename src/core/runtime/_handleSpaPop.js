@@ -1,5 +1,5 @@
 const _handleSpaPop = (e, init) => {
-	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
+	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
 	if (init|| !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
@@ -61,11 +61,9 @@ const _handleSpaPop = (e, init) => {
 		let hashSplitLen = hashSplit.length;
 		for (n = 0; n < hashSplitLen; n++) {
 			if (hashSplit[n] == '') continue;
-			pageItemHash = _getPageFromList('#' + hashSplit[n]);
-			if (pageItemHash) {
-				hashEvents.push(pageItemHash.attrs);
-				hashEventTrigger = true;
-			}
+			// Store the hash for when the page has loaded. It could be an inline reference so we can only get the event once the page has loaded.
+			hashEvents.push(hashSplit[n]);
+			hashEventTrigger = true;
 		}
 	}
 
@@ -75,6 +73,7 @@ const _handleSpaPop = (e, init) => {
 	if (manualChange) {
 		// Handle immediate hash event if this is from a page refresh or a manual hash change.
 		window.history.replaceState(urlObj, document.title, realUrl);
+		_setUnderPage();
 	}
 
 	if (triggerOfflinePopstate) {
@@ -82,23 +81,34 @@ const _handleSpaPop = (e, init) => {
 		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
 	}
 
+
 	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
-		// Page should be drawn and config loaded, so just trigger the hash event immediately.
+		// Page should be drawn and config loaded, so just trigger the hash event immediately if it's ready to run.
 		_trigHashState(e);
-		return;
 	}
 
-	// This is always from a popstate event or an initial page that needs some sort of additional hash handling.
+	// Run the trigger to load the underlying page.
 	let templ = document.querySelector('#data-acss-route');
 	if ((!init ||
 			init &&
-			(hashEventTrigger || triggerOfflinePopstate)) &&
+			(hashEventTrigger || triggerOfflinePopstate) &&
 			window.location.href.slice(-2) != '#/' &&
+			(triggerOfflinePopstate || !triggerOfflinePopstate && currUnderPage != window.location.pathname + window.location.search)
+			) &&
 			templ &&
 			urlObj.attrs
 		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
+		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
+		_trigHashState(e);
+
+	} else if (!urlObj.attrs) {
+		// Fallback to regular page load if underlying page is not found in @pages.
+		let url = new URL(realUrl);
+		if (url.href != realUrl) {
+			window.location.href = realUrl;
+		}
 	}
 };

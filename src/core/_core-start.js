@@ -99,6 +99,7 @@
 		concatConfigLen = 0,
 		conditionals = [],
 		currDocTitle = document.title,
+		currUnderPage = '',
 		currentPage = '',
 		customTags = [],
 		debuggerActive = false,

@@ -99,6 +99,7 @@
 		concatConfigLen = 0,
 		conditionals = [],
 		currDocTitle = document.title,
+		currUnderPage = '',
 		currentPage = '',
 		customTags = [],
 		debuggerActive = false,
@@ -611,6 +612,9 @@ const _focusOn = (o, wot, justObj=false) => {
 		endOfField = true;
 		val = val.replace(/ end-of-field/, '');
 	}
+	let startingFrom = _getParVal(val, 'starting-from');	// Need to write a better function for getting values like this at some point, should return the remaining actVal string with properties in object form.
+	if (startingFrom !== '') val = val.substr(0, val.indexOf('starting-from')).trim();
+
 	if (wot == 'pcc' || wot == 'ncc') {
 		if (val.indexOf(' click') !== -1) {
 			doClick = true;
@@ -622,10 +626,11 @@ const _focusOn = (o, wot, justObj=false) => {
 		});
 		val = val.trim();
 	}
+
 	let map = [ 'l', 'n', 'p', 'nc', 'pc', 'ncc', 'pcc' ];
 	if (map.indexOf(wot) !== -1) {
 		if (wot != 'l') {
-			arr = _getFocusedOfNodes(val, o);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
+			arr = _getFocusedOfNodes(val, o, startingFrom);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
 			nodes = arr[0];
 			useI = arr[1];
 			if (wot == 'pcc' || wot == 'ncc') {
@@ -1399,14 +1404,19 @@ _a.UrlChange = o => {
 	// Check that url-change hasn't been just run, as if so we don't want to run it twice.
 	// Check if there is a page-title in the rules. If so, this needs to be set at the same time, so we know what
 	// url to go back to.
-	let wot = o.actVal.split(' ');
+	let val = o.actVal, alsoRemove;
+	if (val.indexOf('remove-last-hash') !== -1) {
+		val = val.replace(/remove\-last\-hash/g, '').trim();
+		o._removeLastHash = true;
+	}
+	let wot = val.split(' ');
 	let url = wot[0];
-	let titl = o.actVal.replace(url, '').trim();
+	let titl = val.replace(url, '').trim();
 	if (titl == '') {
 		// default to current title if no parameter set.
 		titl = document.title;
 	}
-	_urlTitle(url, titl, o);
+	_urlTitle(url, titl, o, alsoRemove);
 };
 
 _a.UrlReplace = o => {
@@ -2278,9 +2288,6 @@ const _handleEvents = evObj => {
 		}
 	}
 
-	// We've hit the end of this event. Run any hash events if any are set.
-	_trigHashState(eve);
-
 	return true;
 };
 
@@ -2528,7 +2535,7 @@ const _handleLoop = (loopObj) => {
 };
 
 const _handleSpaPop = (e, init) => {
-	let loc, realUrl, url, pageItem, pageGetUrl, pageItemHash, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
+	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
 	if (init|| !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
@@ -2590,11 +2597,9 @@ const _handleSpaPop = (e, init) => {
 		let hashSplitLen = hashSplit.length;
 		for (n = 0; n < hashSplitLen; n++) {
 			if (hashSplit[n] == '') continue;
-			pageItemHash = _getPageFromList('#' + hashSplit[n]);
-			if (pageItemHash) {
-				hashEvents.push(pageItemHash.attrs);
-				hashEventTrigger = true;
-			}
+			// Store the hash for when the page has loaded. It could be an inline reference so we can only get the event once the page has loaded.
+			hashEvents.push(hashSplit[n]);
+			hashEventTrigger = true;
 		}
 	}
 
@@ -2604,6 +2609,7 @@ const _handleSpaPop = (e, init) => {
 	if (manualChange) {
 		// Handle immediate hash event if this is from a page refresh or a manual hash change.
 		window.history.replaceState(urlObj, document.title, realUrl);
+		_setUnderPage();
 	}
 
 	if (triggerOfflinePopstate) {
@@ -2611,24 +2617,35 @@ const _handleSpaPop = (e, init) => {
 		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
 	}
 
+
 	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
-		// Page should be drawn and config loaded, so just trigger the hash event immediately.
+		// Page should be drawn and config loaded, so just trigger the hash event immediately if it's ready to run.
 		_trigHashState(e);
-		return;
 	}
 
-	// This is always from a popstate event or an initial page that needs some sort of additional hash handling.
+	// Run the trigger to load the underlying page.
 	let templ = document.querySelector('#data-acss-route');
 	if ((!init ||
 			init &&
-			(hashEventTrigger || triggerOfflinePopstate)) &&
+			(hashEventTrigger || triggerOfflinePopstate) &&
 			window.location.href.slice(-2) != '#/' &&
+			(triggerOfflinePopstate || !triggerOfflinePopstate && currUnderPage != window.location.pathname + window.location.search)
+			) &&
 			templ &&
 			urlObj.attrs
 		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
+		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
+		_trigHashState(e);
+
+	} else if (!urlObj.attrs) {
+		// Fallback to regular page load if underlying page is not found in @pages.
+		let url = new URL(realUrl);
+		if (url.href != realUrl) {
+			window.location.href = realUrl;
+		}
 	}
 };
 
@@ -4078,25 +4095,32 @@ const _splitIframeEls = (sel, o) => {
 const _trigHashState = (e) => {
 	// Either there isn't anything to run yet or it's not ready to run now.
 	if (hashEventAjaxDelay || !hashEventTrigger) return;
+
 	hashEventTrigger = false;
 
-	let n, el, eventsLen = hashEvents.length, runEvents = [];
+	let n, el, eventsLen = hashEvents.length, runEvents = [], thisHashRef, thisHashEvent;
 	for (n = 0; n < eventsLen; n++) {
-		let str = hashEvents[n].substr(hashEvents[n].indexOf('=') + 1).trim()._ACSSRepQuo();
-		let lastPos = str.lastIndexOf(':');
-		let sel = str.substr(0, lastPos).trim();
-		let ev = str.substr(lastPos + 1).trim();
+		thisHashRef = _getPageFromList('#' + hashEvents[n]);
+		if (thisHashRef) {
+			thisHashEvent = thisHashRef.attrs;
 
-		// Put all these details into an array to iterate in one bash.
-		// This should avoid any subsequent race conditions when hitting the event triggers as potentially anything could happen.
-		runEvents.push({ sel, ev });
+			let str = thisHashEvent.substr(thisHashEvent.indexOf('=') + 1).trim()._ACSSRepQuo();
+			let lastPos = str.lastIndexOf(':');
+			let sel = str.substr(0, lastPos).trim();
+			let ev = str.substr(lastPos + 1).trim();
+
+			// Put all these details into an array to iterate in one bash.
+			// This should avoid any subsequent race conditions when hitting the event triggers as potentially anything could happen.
+			runEvents.push({ sel, ev });
+		}
 	}
 
 	// Wipe any outstanding global hash events.
 	hashEvents = [];
 
 	// Iterate the stored triggers. The runEvents array is locally immutable here so won't be affected by actions happening during any triggers.
-	for (n = 0; n < eventsLen; n++) {
+	let runEventsLen = runEvents.length;
+	for (n = 0; n < runEventsLen; n++) {
 		// Currently this will only work if the hash trigger is in the document scope.
 		// This could be upgraded later but is a little involved due to component uniqueness.
 		el = document.querySelector(runEvents[n].sel);
@@ -4467,38 +4491,32 @@ const _iteratePageList = (pages, removeState=false) => {
 		let isWild = (page.indexOf('*') !== -1);
 
 		if (removeState) {
-			// Could use a filter for find url, but that won't be even vaguely optimum if there is more than one page to remove.
-			// Better to find each one, make a list and then remove at the end.
+			// Will be faster to run one filter at the end and just store the values to remove in an array here, rather than a filter for each iteration.
 			if (isWild) {
-				toRemoveWild.push(pageWildcards.findIndex(item => item[url] === page));
+				toRemoveWild.push(page);
 			} else {
-				toRemove.push(pageList.findIndex(item => item[url] === page));
+				toRemove.push(page);
 			}
-		}
-
-		obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
-		if (isWild) {
-			// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
-			regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
-			obj.regex = regex;
-			pageWildcards.push(obj);
 		} else {
-			pageList.push(obj);
+			obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
+			if (isWild) {
+				// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
+				regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
+				obj.regex = regex;
+				pageWildcards.push(obj);
+			} else {
+				pageList.push(obj);
+			}
 		}
 	});
 
 	if (removeState) {
-		// Now remove pages from a list.
-		let toRemoveLen = toRemove.length, i = 0;
-		for (i; i < toRemoveLen; i++) {
-			pageList.splice(toRemove[i], 1);
-		}
-		let toRemoveWildLen = toRemoveWild.length;
-		for (i = 0; i < toRemoveWildLen; i++) {
-			pageWildcards.splice(toRemoveWild[i], 1);
+		if (isWild) {
+			pageWildcards = pageWildcards.filter(item => toRemoveWild.indexOf(item.url) == -1);
+		} else {
+			pageList = pageList.filter(item => toRemove.indexOf(item.url) == -1);
 		}
 	}
-
 };
 
 const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null) => {
@@ -8499,16 +8517,17 @@ const _getFieldValType = obj => {
 	}
 };
 
-const _getFocusedOfNodes = (sel, o) => {
+const _getFocusedOfNodes = (sel, o, startingFrom='') => {
 	// Find the current focused node in the list, if there is one.
-	let targArr, nodes, obj, i = -1, useI = -1;
+	let targArr, nodes, obj, i = -1, useI = -1, checkNode;
 	targArr = _splitIframeEls(sel, o);
 	if (!targArr) return false;	// invalid target.
-	if (targArr[0].activeElement === null) return -1;
+	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : targArr[0].activeElement;
+	if (!checkNode) return -1;
 	nodes = targArr[0].querySelectorAll(targArr[1]) || null;
 	for (obj of nodes) {
 		i++;
-		if (obj.isSameNode(targArr[0].activeElement)) {
+		if (obj.isSameNode(checkNode)) {
 			useI = i;
 			break;
 		}
@@ -8954,6 +8973,10 @@ const _setsrcObj = (obj, inSrc) => {
 	obj.src = inSrc;
 };
 
+const _setUnderPage = () => {
+	currUnderPage = window.location.pathname + window.location.search;
+};
+
 const _toggleClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	obj.classList.toggle(str);
@@ -8985,30 +9008,42 @@ const _unSafeTags = str => {
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
 
-const _urlTitle = (url, titl, o) => {
+const _urlTitle = (url, titl, o, alsoRemove='') => {
 	if (inIframe) return;
 	url = url.replace(/"/g, '');
 	titl = titl._ACSSRepQuo();
 
 	let emptyPageClick = false;
+
 	if (o._addHash || o._removeHash) {
-		let hashSplit = window.location.hash.split('#');
+		let tmpHash = window.location.hash;
+		if (tmpHash !== '') {
+			tmpHash = tmpHash.substr(1).trim();
+		}
+		let hashSplit = tmpHash.split('#');
 		url = url.substr(1);	// Won't work if adding or removing "#house#corridor", items must be singular.
 		let hashSplitLen = hashSplit.length;
-		let n, hashIsThere = 0;
+		let n, hashIsThere = false, otherHashToRemove = 0, lastHash;
 		for (n = 0; n < hashSplitLen; n++) {
 			if (url == hashSplit[n]) {
 				hashIsThere = n;
+				break;
 			}
 		}
-		if (!hashIsThere && o._addHash) {
+		if (o._removeLastHash && (window.location.protocol != 'file:' || hashSplitLen > 1)) {
+			// Remove the last hash in the string. This is all that the remove option supports at the moment.
+			// If this is an offline site, don't remove the first hash as it's going to be an underlying page. That's the rule for this option.
+			hashSplit.pop();
+		}
+		if (hashIsThere === false && o._addHash) {
 			// Add the hash.
 			hashSplit.push(url);
-		} else if (hashIsThere && o._removeHash) {
+		} else if (hashIsThere !== false && o._removeHash) {
 			// Remove the hash.
 			hashSplit.splice(hashIsThere, 1);
 		}
-		url = window.location.pathname + window.location.search + hashSplit.join('#');
+
+		url = window.location.pathname + window.location.search + (hashSplit.length > 0 ? '#' + hashSplit.join('#') : '');
 		emptyPageClick = true;
 
 	} else if (url == '') {
@@ -9029,7 +9064,7 @@ const _urlTitle = (url, titl, o) => {
 
 	// Detect if this is a popstate event and skip the next bit if it is. If it is, we don't need to update the URL as it has already changed.
 	// Add/change history object if applicable.
-	if (window.location.href != url && o.e.type != 'popstate') {	// needs the popstate check, otherwise we add a new history object.
+	if (window.location.href != url && (!o.e || o.e.type != 'popstate')) {	// needs the popstate check, otherwise we add a new history object.
 		let attrs = '';
 
 		// If this is a new hash url, get the original page that called this rather than the hash link object so we get the correct underlying page change attributes.
@@ -9046,7 +9081,9 @@ const _urlTitle = (url, titl, o) => {
 		}
 
 		let doWhat = (o._urlReplace) ? 'replaceState' : 'pushState';
+
 		window.history[doWhat]({ url, attrs: attrs.trimEnd() }, titl, url);
+		_setUnderPage();
 	}
 	_setDocTitle(titl);
 };

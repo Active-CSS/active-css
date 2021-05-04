@@ -216,8 +216,5 @@ const _handleEvents = evObj => {
 		}
 	}
 
-	// We've hit the end of this event. Run any hash events if any are set.
-	_trigHashState(eve);
-
 	return true;
 };

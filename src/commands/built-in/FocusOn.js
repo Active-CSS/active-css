@@ -10,6 +10,9 @@ const _focusOn = (o, wot, justObj=false) => {
 		endOfField = true;
 		val = val.replace(/ end-of-field/, '');
 	}
+	let startingFrom = _getParVal(val, 'starting-from');	// Need to write a better function for getting values like this at some point, should return the remaining actVal string with properties in object form.
+	if (startingFrom !== '') val = val.substr(0, val.indexOf('starting-from')).trim();
+
 	if (wot == 'pcc' || wot == 'ncc') {
 		if (val.indexOf(' click') !== -1) {
 			doClick = true;
@@ -21,10 +24,11 @@ const _focusOn = (o, wot, justObj=false) => {
 		});
 		val = val.trim();
 	}
+
 	let map = [ 'l', 'n', 'p', 'nc', 'pc', 'ncc', 'pcc' ];
 	if (map.indexOf(wot) !== -1) {
 		if (wot != 'l') {
-			arr = _getFocusedOfNodes(val, o);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
+			arr = _getFocusedOfNodes(val, o, startingFrom);	// compares the focused element to the list and gives the position and returns the nodes. Could optimize this for when moveNum > 0.
 			nodes = arr[0];
 			useI = arr[1];
 			if (wot == 'pcc' || wot == 'ncc') {

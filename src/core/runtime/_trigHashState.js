@@ -1,25 +1,32 @@
 const _trigHashState = (e) => {
 	// Either there isn't anything to run yet or it's not ready to run now.
 	if (hashEventAjaxDelay || !hashEventTrigger) return;
+
 	hashEventTrigger = false;
 
-	let n, el, eventsLen = hashEvents.length, runEvents = [];
+	let n, el, eventsLen = hashEvents.length, runEvents = [], thisHashRef, thisHashEvent;
 	for (n = 0; n < eventsLen; n++) {
-		let str = hashEvents[n].substr(hashEvents[n].indexOf('=') + 1).trim()._ACSSRepQuo();
-		let lastPos = str.lastIndexOf(':');
-		let sel = str.substr(0, lastPos).trim();
-		let ev = str.substr(lastPos + 1).trim();
+		thisHashRef = _getPageFromList('#' + hashEvents[n]);
+		if (thisHashRef) {
+			thisHashEvent = thisHashRef.attrs;
 
-		// Put all these details into an array to iterate in one bash.
-		// This should avoid any subsequent race conditions when hitting the event triggers as potentially anything could happen.
-		runEvents.push({ sel, ev });
+			let str = thisHashEvent.substr(thisHashEvent.indexOf('=') + 1).trim()._ACSSRepQuo();
+			let lastPos = str.lastIndexOf(':');
+			let sel = str.substr(0, lastPos).trim();
+			let ev = str.substr(lastPos + 1).trim();
+
+			// Put all these details into an array to iterate in one bash.
+			// This should avoid any subsequent race conditions when hitting the event triggers as potentially anything could happen.
+			runEvents.push({ sel, ev });
+		}
 	}
 
 	// Wipe any outstanding global hash events.
 	hashEvents = [];
 
 	// Iterate the stored triggers. The runEvents array is locally immutable here so won't be affected by actions happening during any triggers.
-	for (n = 0; n < eventsLen; n++) {
+	let runEventsLen = runEvents.length;
+	for (n = 0; n < runEventsLen; n++) {
 		// Currently this will only work if the hash trigger is in the document scope.
 		// This could be upgraded later but is a little involved due to component uniqueness.
 		el = document.querySelector(runEvents[n].sel);

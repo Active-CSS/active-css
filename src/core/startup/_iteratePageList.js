@@ -15,36 +15,30 @@ const _iteratePageList = (pages, removeState=false) => {
 		let isWild = (page.indexOf('*') !== -1);
 
 		if (removeState) {
-			// Could use a filter for find url, but that won't be even vaguely optimum if there is more than one page to remove.
-			// Better to find each one, make a list and then remove at the end.
+			// Will be faster to run one filter at the end and just store the values to remove in an array here, rather than a filter for each iteration.
 			if (isWild) {
-				toRemoveWild.push(pageWildcards.findIndex(item => item[url] === page));
+				toRemoveWild.push(page);
 			} else {
-				toRemove.push(pageList.findIndex(item => item[url] === page));
+				toRemove.push(page);
 			}
-		}
-
-		obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
-		if (isWild) {
-			// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
-			regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
-			obj.regex = regex;
-			pageWildcards.push(obj);
 		} else {
-			pageList.push(obj);
+			obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
+			if (isWild) {
+				// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
+				regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
+				obj.regex = regex;
+				pageWildcards.push(obj);
+			} else {
+				pageList.push(obj);
+			}
 		}
 	});
 
 	if (removeState) {
-		// Now remove pages from a list.
-		let toRemoveLen = toRemove.length, i = 0;
-		for (i; i < toRemoveLen; i++) {
-			pageList.splice(toRemove[i], 1);
-		}
-		let toRemoveWildLen = toRemoveWild.length;
-		for (i = 0; i < toRemoveWildLen; i++) {
-			pageWildcards.splice(toRemoveWild[i], 1);
+		if (isWild) {
+			pageWildcards = pageWildcards.filter(item => toRemoveWild.indexOf(item.url) == -1);
+		} else {
+			pageList = pageList.filter(item => toRemove.indexOf(item.url) == -1);
 		}
 	}
-
 };

@@ -1,27 +1,39 @@
-const _urlTitle = (url, titl, o) => {
+const _urlTitle = (url, titl, o, alsoRemove='') => {
 	if (inIframe) return;
 	url = url.replace(/"/g, '');
 	titl = titl._ACSSRepQuo();
 
 	let emptyPageClick = false;
+
 	if (o._addHash || o._removeHash) {
-		let hashSplit = window.location.hash.split('#');
+		let tmpHash = window.location.hash;
+		if (tmpHash !== '') {
+			tmpHash = tmpHash.substr(1).trim();
+		}
+		let hashSplit = tmpHash.split('#');
 		url = url.substr(1);	// Won't work if adding or removing "#house#corridor", items must be singular.
 		let hashSplitLen = hashSplit.length;
-		let n, hashIsThere = 0;
+		let n, hashIsThere = false, otherHashToRemove = 0, lastHash;
 		for (n = 0; n < hashSplitLen; n++) {
 			if (url == hashSplit[n]) {
 				hashIsThere = n;
+				break;
 			}
 		}
-		if (!hashIsThere && o._addHash) {
+		if (o._removeLastHash && (window.location.protocol != 'file:' || hashSplitLen > 1)) {
+			// Remove the last hash in the string. This is all that the remove option supports at the moment.
+			// If this is an offline site, don't remove the first hash as it's going to be an underlying page. That's the rule for this option.
+			hashSplit.pop();
+		}
+		if (hashIsThere === false && o._addHash) {
 			// Add the hash.
 			hashSplit.push(url);
-		} else if (hashIsThere && o._removeHash) {
+		} else if (hashIsThere !== false && o._removeHash) {
 			// Remove the hash.
 			hashSplit.splice(hashIsThere, 1);
 		}
-		url = window.location.pathname + window.location.search + hashSplit.join('#');
+
+		url = window.location.pathname + window.location.search + (hashSplit.length > 0 ? '#' + hashSplit.join('#') : '');
 		emptyPageClick = true;
 
 	} else if (url == '') {
@@ -42,7 +54,7 @@ const _urlTitle = (url, titl, o) => {
 
 	// Detect if this is a popstate event and skip the next bit if it is. If it is, we don't need to update the URL as it has already changed.
 	// Add/change history object if applicable.
-	if (window.location.href != url && o.e.type != 'popstate') {	// needs the popstate check, otherwise we add a new history object.
+	if (window.location.href != url && (!o.e || o.e.type != 'popstate')) {	// needs the popstate check, otherwise we add a new history object.
 		let attrs = '';
 
 		// If this is a new hash url, get the original page that called this rather than the hash link object so we get the correct underlying page change attributes.
@@ -59,7 +71,9 @@ const _urlTitle = (url, titl, o) => {
 		}
 
 		let doWhat = (o._urlReplace) ? 'replaceState' : 'pushState';
+
 		window.history[doWhat]({ url, attrs: attrs.trimEnd() }, titl, url);
+		_setUnderPage();
 	}
 	_setDocTitle(titl);
 };
