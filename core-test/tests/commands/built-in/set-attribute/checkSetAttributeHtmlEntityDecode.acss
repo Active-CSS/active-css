@@ -1,0 +1,28 @@
+#content:draw {
+	render-before-end: "<div id=\"checkSetAttributeHtmlEntityDecode\" data-desc=\"set-attribute command - no-double-escape option\" class=\"coreTest\">{|checkSetAttributeHtmlEntityDecodeHTML}</div>";
+}
+
+@component checkSetAttributeHtmlEntityDecodeHTML {
+	html {
+		<div id="setAttributeHtmlEntityDecodeDiv"></div>
+	}
+}
+
+#checkSetAttributeHtmlEntityDecode:test {
+	#setAttributeHtmlEntityDecodeDiv {
+		/* From html escaped string */
+		set-attribute: data-test "&lt;marquee&gt;Hi&lt;/marquee&gt;";
+		func: checkSetAttributeHtmlEntityDecode_1;
+		set-attribute: data-test "&lt;marquee&gt;Hi&lt;/marquee&gt;" html-entity-decode;
+		func: checkSetAttributeHtmlEntityDecode_2;
+
+		/* From html escaped variable */
+		var: setAttributeHtmlEntityDecodeVar "&lt;marquee&gt;Hi&lt;/marquee&gt;";
+		set-attribute: data-test "{setAttributeHtmlEntityDecodeVar}";
+		func: checkSetAttributeHtmlEntityDecode_3;
+		set-attribute: data-test "{setAttributeHtmlEntityDecodeVar}" html-entity-decode;
+		func: checkSetAttributeHtmlEntityDecode_4;
+	}
+	func: checkSetAttributeHtmlEntityDecodeFinal;
+}
+

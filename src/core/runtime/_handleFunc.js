@@ -102,7 +102,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				varScope: o.varScope
 			}
 		);
-		o.actVal = _resolveVars(strObj.str, strObj.ref);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 	}
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.

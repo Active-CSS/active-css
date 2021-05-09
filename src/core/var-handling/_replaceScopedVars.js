@@ -51,7 +51,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 			txt = el.textContent;
 			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
 			actualHost = (thisHost) ? thisHost : shadHost;
-			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, varScope, undefined, true);
+			el.textContent = _replaceScopedVarsDo(txt, owner, 'asRender', null, true, actualHost, varScope, undefined, true);
 		}
 
 		// Convert the fragment back into a string.

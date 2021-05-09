@@ -16,8 +16,9 @@ function checkRenderEscaping(o) {
 	// First check escape rendering.
 	let pTag = _getObj('#renderEscapePTag');
 
-	if (pTag.textContent !== 'Check for escaped variable: <script>createHavoc()</script> <script>doMoreHavoc()</script>. You should see the tag here in text form.') {
-		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. #renderEscapePTag.textContent:', pTag.textContent);
+	let checkText = 'Check for escaped variable: <script>createHavoc()</script> <script>doMoreHavoc()</script>. You should see the tag here in text form.';
+	if (pTag.textContent !== checkText) {
+		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. Should be: "' + checkText + '", but #renderEscapePTag.textContent:', pTag.textContent);
 	}
 
 	let attrA = pTag.getAttribute('data-hackA');

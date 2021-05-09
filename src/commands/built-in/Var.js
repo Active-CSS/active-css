@@ -91,8 +91,6 @@ _a.Var = o => {
 
 	varDetails = _resolveVars(strObj.str, strObj.ref);
 
-	varDetails = _unHtmlEntities(varDetails);	// variables are not escaped when assigned at this point.
-
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
 
 	varDetails = _prefixScopedVars(varDetails, o.varScope);

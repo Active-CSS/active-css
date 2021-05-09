@@ -1,7 +1,9 @@
 const _escapeInnerQuotes = str => {
 	// This sorts out any errant unentitied double-quotes than may be within other double-quotes in tags.
 	const reg = /( [\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+\=\")/;
+
 	let newStr = str.replace(/(<\s*[\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[^>]*>)/gm, function(_, wot) {
+		wot = wot.replace(/\\"/gm, '____acssEscQuo');
 		let arr = wot.split(reg), newStr = '', i, pos, numQuo;
 		let arrLen = arr.length;
 
@@ -24,6 +26,10 @@ const _escapeInnerQuotes = str => {
 
 		return newStr;
 	});
+	newStr = newStr.replace(/____acssEscQuo/gm, '"');	// This replaces the escaped quote with a regular quote. It's used prior to rendering.
+
+	// Put escaped backslashes back that were set up in _resolveVars.
+	newStr = newStr.replace(/____acssEscBkSl/gm, '\\');	// This replaces the escaped quote with a regular quote. It's used prior to rendering.
 
 	return newStr;
 };

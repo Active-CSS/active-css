@@ -1210,10 +1210,21 @@ _a.SelectNone = o => {
 };
 
 _a.SetAttribute = o => {
-	o.actVal = o.actVal._ACSSSpaceQuoIn();
-	let attrArr = o.actVal.split(' ');
-	attrArr[1] = _handleQuoAjax(o, attrArr[1])._ACSSSpaceQuoOut();
-	o.secSelObj.setAttribute(attrArr[0], attrArr[1]);
+	let htmlEntityDecode = false;
+	let str = o.actVal;
+	if (str.endsWith(' html-entity-decode')) {
+		htmlEntityDecode = true;
+		str = str.substr(0, str.length - 19).trim();
+	}
+	str = str._ACSSSpaceQuoIn();
+	let attrArr = str.split(' ');
+	let strToInsert = _handleQuoAjax(o, attrArr[1])._ACSSSpaceQuoOut();
+	strToInsert = (htmlEntityDecode) ? _unHtmlEntities(strToInsert) : strToInsert;
+	if (o.func == 'SetProperty') {
+		o.secSelObj[attrArr[0]] = (strToInsert == 'true') ? true : (strToInsert == 'false') ? false : strToInsert;
+	} else {
+		o.secSelObj.setAttribute(attrArr[0], strToInsert);
+	}
 };
 
 _a.SetClass = o => {
@@ -1308,12 +1319,7 @@ _a.SetCookie = o => {
 	document.cookie = str;
 };
 
-_a.SetProperty = o => {
-	o.actVal = o.actVal._ACSSSpaceQuoIn();
-	let attrArr = o.actVal.split(' ');
-	attrArr[1] = _handleQuoAjax(o, attrArr[1])._ACSSSpaceQuoOut();
-	o.secSelObj[attrArr[0]] = (attrArr[1] == 'true') ? true : (attrArr[1] == 'false') ? false : attrArr[1];
-};
+_a.SetProperty = o => _a.SetAttribute(o);
 
 _a.StopEventPropagation = o => {
 	// Don't bubble up the Active CSS component element hierarchy.
@@ -1516,8 +1522,6 @@ _a.Var = o => {
 	);
 
 	varDetails = _resolveVars(strObj.str, strObj.ref);
-
-	varDetails = _unHtmlEntities(varDetails);	// variables are not escaped when assigned at this point.
 
 	varDetails = _resolveInnerBracketVars(varDetails, o.varScope);
 
@@ -2395,7 +2399,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				varScope: o.varScope
 			}
 		);
-		o.actVal = _resolveVars(strObj.str, strObj.ref);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 	}
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
@@ -5393,8 +5397,8 @@ const _escapeItem = (str='', varName=null) => {
 	// This is for putting content directly into html. It needs to be in string format and may not come in as such.
 	if (varName && varName.substr(0, 1) == '$' && varName !== '$HTML_ESCAPED') return str;		// Don't escape html variables.
 	let div = document.createElement('div');
-	div.textContent = ('' + str).replace(/\{\=|\=\}/gm, '');
 	// Remove possibility of JavaScript evaluation later on in a random place.
+	div.textContent = ('' + str).replace(/\{\=|\=\}/gm, '');
 	return div.innerHTML;
 };
 
@@ -6232,12 +6236,13 @@ const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	return str;
 };
 
-const _preReplaceVar = (str, varReplacementRef=-1) => {
-	if (varReplacementRef === -1) return str;
+const _preReplaceVar = (str, varReplacementRef=-1, func='') => {
+	let isRender = func.startsWith('Render');
+	if (varReplacementRef === -1) return (isRender) ? _escapeItem(str) : str;
 	if (typeof resolvingObj[varReplacementRef] === 'undefined') resolvingObj[varReplacementRef] = [];
 	let subRef = resolvingObj[varReplacementRef].length;
 	let ret = '__acss' + UNIQUEREF + '_' + varReplacementRef + '_' + subRef + '_';
-	resolvingObj[varReplacementRef][subRef] = str;
+	resolvingObj[varReplacementRef][subRef] = (isRender) ? _escapeItem(str) : str;
 	return ret;
 };
 
@@ -6342,8 +6347,8 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			let wotArr = wot.split('.'), ret, err = [];
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
-				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex);
-				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
+				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex, func);
+				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
 				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
@@ -6367,20 +6372,20 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					if (el.tagName == 'IFRAME' && wat == 'url') {
 						// If this is an iframe and the virtual attribute url is chosen, get the actual url inside the iframe.
 						// We can't rely on the src of the iframe element being accurate, as it is not always updated.
-						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef));
+						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef), func);
 					} else {
-						ret = _getAttrOrProp(el, wat, getProperty);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
+						ret = _getAttrOrProp(el, wat, getProperty, null, func);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
 						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
 					}
 				} else {
 					if (obj && typeof obj !== 'string') {
 						if (secSelObj) {
-							ret = _getAttrOrProp(secSelObj, wot, getProperty);
-							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
+							ret = _getAttrOrProp(secSelObj, wot, getProperty, null, func);
+							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
 						}
-						ret = _getAttrOrProp(obj, wot, getProperty);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef);
+						ret = _getAttrOrProp(obj, wot, getProperty, null, func);
+						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
 						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
 					}
 				}
@@ -6569,7 +6574,7 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 			txt = el.textContent;
 			thisHost = (el.parentElement) ? el.parentElement.closest('[data-active-scoped]') : null;
 			actualHost = (thisHost) ? thisHost : shadHost;
-			el.textContent = _replaceScopedVarsDo(txt, owner, 'Render', null, true, actualHost, varScope, undefined, true);
+			el.textContent = _replaceScopedVarsDo(txt, owner, 'asRender', null, true, actualHost, varScope, undefined, true);
 		}
 
 		// Convert the fragment back into a string.
@@ -6620,13 +6625,13 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
 				// Return the wot if it's a window variable.
-				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
+				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef, func);
 				res = scoped.val;
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
-			if (isBound && func.indexOf('Render') !== -1) {
+			if (isBound && (func == 'asRender' || func.indexOf('Render') !== -1)) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
 				_addScopedCID(realWot, obj, varScope);
@@ -6650,6 +6655,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			}
 		});
 	}
+
 	return str;
 };
 
@@ -6864,11 +6870,19 @@ const _resolveInnerBracketVars = (str, scope) => {
 	return newStr;
 };
 
-const _resolveVars = (str, varReplacementRef) => {
+const _resolveVars = (str, varReplacementRef, func='') => {
  	if (varReplacementRef === -1 || typeof resolvingObj[varReplacementRef] === 'undefined') return str;
 	let regex = new RegExp('__acss' + UNIQUEREF + '_(\\d+)_(\\d+)_', 'gm');
 	str = str.replace(regex, function(_, ref, subRef) {
-		return (typeof resolvingObj[ref] !== 'undefined' && typeof resolvingObj[ref][subRef] !== 'undefined') ? _escNoVars(resolvingObj[ref][subRef]) : _;
+		let res;
+		if (typeof resolvingObj[ref] !== 'undefined' && typeof resolvingObj[ref][subRef] !== 'undefined') {
+			res = _escNoVars(resolvingObj[ref][subRef]);
+			if (func.startsWith('Render')) {
+				// Escape backslashes from variables prior to render.
+				res = res.replace(/\\/gm, '____acssEscBkSl');
+			}
+		}
+		return (res) ? res : _;
 	});
 	// Clean-up
 	delete resolvingObj[varReplacementRef];
@@ -7586,7 +7600,9 @@ const _eachRemoveClass = (inClass, classToRemove, doc) => {
 const _escapeInnerQuotes = str => {
 	// This sorts out any errant unentitied double-quotes than may be within other double-quotes in tags.
 	const reg = /( [\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+\=\")/;
+
 	let newStr = str.replace(/(<\s*[\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[^>]*>)/gm, function(_, wot) {
+		wot = wot.replace(/\\"/gm, '____acssEscQuo');
 		let arr = wot.split(reg), newStr = '', i, pos, numQuo;
 		let arrLen = arr.length;
 
@@ -7609,6 +7625,10 @@ const _escapeInnerQuotes = str => {
 
 		return newStr;
 	});
+	newStr = newStr.replace(/____acssEscQuo/gm, '"');	// This replaces the escaped quote with a regular quote. It's used prior to rendering.
+
+	// Put escaped backslashes back that were set up in _resolveVars.
+	newStr = newStr.replace(/____acssEscBkSl/gm, '\\');	// This replaces the escaped quote with a regular quote. It's used prior to rendering.
 
 	return newStr;
 };
@@ -7752,17 +7772,21 @@ const _getActiveID = obj => {
 	return false;
 };
 
-const _getAttrOrProp = (el, attr, getProp, ind=null) => {
-	let ret;
+const _getAttrOrProp = (el, attr, getProp, ind=null, func='') => {
+	let ret, isRender = func.startsWith('Render');
+
 	if (!getProp) {
 		// Check for attribute.
 		ret = (ind) ? el.options[ind].getAttribute(attr) : el.getAttribute(attr);
-		if (ret) return _escapeItem(ret);
+		if (ret) return ret;
 		// Check for property next as fallback.
 	}
 	// Check for property.
 	ret = (ind) ? el.options[ind][attr] : el[attr];
-	if (ret || typeof ret == 'string') return _escapeItem(ret.replace(/\\/gm, '\\\\'));	// properties get escaped as if they are from attributes.
+	if (ret || typeof ret == 'string') {
+		let newRet = ret.replace(/\\/gm, '\\\\');
+		return (isRender) ? _escapeItem(newRet) : newRet;	// properties get escaped as if they are from attributes.
+	}
 	return '';
 };
 

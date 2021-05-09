@@ -4,7 +4,7 @@
 
 @component checkSetPropertyHTML {
 	html {
-		<input id="setPropertyInput" name="setPropertyInput" disabled></div>
+		<input id="setPropertyInput" name="setPropertyInput" disabled />
 	}
 }
 
