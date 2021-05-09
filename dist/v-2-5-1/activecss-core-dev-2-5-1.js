@@ -178,6 +178,7 @@
 // Where's the end? Read the comments at the top.
 
 _a.AddClass = o => {	// Note thisID is needed in case the "parent" selector is used.
+	if (!_isConnected(o.secSelObj)) return false;
 	ActiveCSS._addClassObj(o.secSelObj, o.actVal);
 };
 
@@ -219,6 +220,7 @@ _a.Alert = o => {
 };
 
 _a.Blur = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	document.activeElement.blur();
 };
 
@@ -333,6 +335,7 @@ _a.ClickOnPrevious = o => { _focusOn(o, 'p'); };		//	Previous selector in list
 _a.ClickOnPreviousCycle = o => { _focusOn(o, 'pc'); };	//	Previous selector in list, then cycles
 
 _a.ClickoutsideEvent = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let cid = _getActiveID(o.secSelObj);
 	if (o.actVal.indexOf('true') !== -1) {
 		clickOutsideSels[cid] = [];
@@ -598,7 +601,10 @@ _a.Eval = o => {
 	eval(evalContent);		// jshint ignore:line
 };
 
-_a.FocusOff = o => { _a.Blur(o); };
+_a.FocusOff = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	_a.Blur(o);
+};
 
 _a.FocusOn = o => { _focusOn(o); };
 
@@ -873,6 +879,7 @@ _a.Location = o => {
 
 _a.MediaControl = o => {
 	// Works with audio or video.
+	if (!_isConnected(o.secSelObj)) return false;
 	let secSelObj = o.secSelObj;	// This minifies better.
 	let arr = o.actVal.split(' ');
 	if (arr[1]) {
@@ -908,6 +915,7 @@ _a.MediaControl = o => {
 };
 
 _a.MimicInto = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let el, mType, val, valRef, targEl;
 	el = o.secSelObj;
 	// Get some properties of the target.
@@ -997,10 +1005,12 @@ _a.Remove = o => {
 };
 
 _a.RemoveAttribute = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	o.secSelObj.removeAttribute(o.actVal);
 };
 
 _a.RemoveClass = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	ActiveCSS._removeClassObj(o.secSelObj, o.actVal);
 	return true;	// true used with take-class.
 };
@@ -1041,11 +1051,13 @@ _a.RemoveHash = o => {
 };
 
 _a.RemoveProperty = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	o.secSelObj.style.removeProperty(o.actVal);
 };
 
 // Note: beforebegin = as previous sibling, afterbegin = as first-child, beforeend = as last-child, afterend = as next sibling.
 _a.Render = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	// Handle quotes.
 	let content = _handleQuoAjax(o, o.actVal);	// Rejoin the string.
 
@@ -1082,16 +1094,32 @@ _a.Render = o => {
 	_renderIt(o, content, childTree, selfTree);
 };
 
-_a.RenderAfterBegin = o => { o.renderPos = 'afterbegin'; _a.Render(o); };
+_a.RenderAfterBegin = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'afterbegin'; _a.Render(o);
+};
 
-_a.RenderAfterEnd = o => { o.renderPos = 'afterend'; _a.Render(o); };
-_a.RenderBeforeBegin = o => { o.renderPos = 'beforebegin'; _a.Render(o); };
+_a.RenderAfterEnd = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'afterend'; _a.Render(o);
+};
+_a.RenderBeforeBegin = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'beforebegin'; _a.Render(o);
+};
 
-_a.RenderBeforeEnd = o => { o.renderPos = 'beforeend'; _a.Render(o); };
+_a.RenderBeforeEnd = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'beforeend'; _a.Render(o);
+};
 
-_a.RenderReplace = o => { o.renderPos = 'replace'; _a.Render(o); };
+_a.RenderReplace = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'replace'; _a.Render(o);
+};
 
 _a.RestoreClone = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	// This has a settimeout so it puts it at the end of the queue so other things can be destroyed if they are going on.
 	let el = _getSel(o, o.actVal);
 	let ref = _getActiveID(el);
@@ -1118,6 +1146,7 @@ _a.Run = o => {
 };
 
 _a.ScrollIntoView = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	/* Parameters
 	true = block-start block-nearest
 	false = block-end block-nearest
@@ -1156,6 +1185,7 @@ _a.ScrollIntoView = o => {
 };
 
 _a.ScrollX = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	if (o.secSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'left') {
@@ -1178,6 +1208,7 @@ _a.ScrollX = o => {
 };
 
 _a.ScrollY = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	if (o.secSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'top') {
@@ -1210,6 +1241,7 @@ _a.SelectNone = o => {
 };
 
 _a.SetAttribute = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let htmlEntityDecode = false;
 	let str = o.actVal;
 	if (str.endsWith(' html-entity-decode')) {
@@ -1228,6 +1260,7 @@ _a.SetAttribute = o => {
 };
 
 _a.SetClass = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let str = o.actVal.replace(/\./g, '')._ACSSRepQuo();
 	_setClassObj(o.secSelObj, str);
 };
@@ -1319,7 +1352,10 @@ _a.SetCookie = o => {
 	document.cookie = str;
 };
 
-_a.SetProperty = o => _a.SetAttribute(o);
+_a.SetProperty = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	_a.SetAttribute(o);
+};
 
 _a.StopEventPropagation = o => {
 	// Don't bubble up the Active CSS component element hierarchy.
@@ -1351,12 +1387,14 @@ _a.StopPropagation = o => {
 };
 
 _a.Style = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let str = _handleQuoAjax(o, o.actVal);
 	let wot = str.split(' '), prop = wot.shift();
 	o.secSelObj.style[prop] = wot.join(' ');
 };
 
 _a.TakeClass = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	// Take class away from any element that has it.
 	let cl = o.actVal.substr(1);
 	_eachRemoveClass(cl, cl, o.doc);
@@ -1364,6 +1402,7 @@ _a.TakeClass = o => {
 };
 
 _a.ToggleClass = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let str = o.actVal.replace(/\./g, '');
 	_toggleClassObj(o.secSelObj, str);
 };
@@ -1396,7 +1435,7 @@ _a.TriggerReal = o => {
 	if (!_isConnected(o.secSelObj)) {
 		// Skip it if it's no longer there and cancel all Active CSS bubbling.
 		_a.StopPropagation(o);
-		return;
+		return false;
 	}
 	try {
 		o.secSelObj.addEventListener(o.actVal, function(e) {}, {capture: true, once: true});	// once = automatically removed after running.
@@ -2301,25 +2340,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = (o.evScope ? o.evScope : 'doc') + o.secSel;
 	} else {
-		// Note: re runButElNotThere) {
-		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
-		// If the original object that has been removed is referenced in the code, this is an error by the user.
-		if (!runButElNotThere && !_isConnected(o.secSelObj)) {
-			// Skip it if the object is no longer there and cancel all Active CSS bubbling.
-			if (delayActiveID) {
-				// Cleanup any delayed actions if the element is no longer there.
-				if (delayArr[delayActiveID]) {
-					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
-					_unloadAllCancelTimerLoop(delayActiveID);
-				}
-				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
-				delayArr.splice(delayArr.indexOf(delayActiveID), 1);
-				cancelIDArr.splice(cancelIDArr.indexOf(delayActiveID), 1);
-				cancelCustomArr.splice(cancelCustomArr.indexOf(delayActiveID), 1);
-			}
-			_a.StopPropagation(o);
-			return;
-		}
 		delayRef = _getActiveID(o.secSelObj);
 	}
 
@@ -2414,7 +2434,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 			_setCSSVariable(o);
 			cssVariableChange = true;
 		} else {
-			o.secSelObj.style[o.actName] = o.actVal;
+			if (_isConnected(o.secSelObj)) {
+				o.secSelObj.style[o.actName] = o.actVal;
+			}
 		}
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
@@ -3012,31 +3034,19 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
-		if (els) {
-			els.forEach((obj) => {
-				// Loop over each target selector object and handle all the action commands for each one.
-				checkThere = true;
-				let oCopy = Object.assign({}, o);
-				_actionValLoop(oCopy, pars, obj);
-			});
+
+		els.forEach((obj) => {
+			// Loop over each target selector object and handle all the action commands for each one.
+			checkThere = true;
+			let oCopy = Object.assign({}, o);
+			_actionValLoop(oCopy, pars, obj);
+		});
+
+		if (els.length == 0 && NodeList.prototype.isPrototypeOf(els)) {
+			// Element is no longer there - run anyway.
+			_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
 		}
 
-/* Pretty sure we don't need this anymore. References to data-activeid in the o.secSel has been replaced by an object and should be covered in the section below this.
-		if (!checkThere) {
-			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
-			// Only by doing this can we ensure that this is an action which will only target elements that exist.
-			let oCopy = Object.assign({}, o);
-			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceRand(oCopy.actValSing);
-				oCopy.actVal = ActiveCSS._sortOutFlowEscapeChars(oCopy.actVal);
-				oCopy.actVal = _replaceJSExpression(oCopy.actVal, null, null, oCopy.varScope);
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actVal, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
-				oCopy.actVal = _replaceStringVars(oCopy, oCopy.actVal, oCopy.varScope);
-				oCopy.actVal = _replaceScopedVars(oCopy.actVal, oCopy.secSelObj, oCopy.func, oCopy, null, null, oCopy.varScope);
-				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
-			}
-		}
-*/
 	} else {
 		let oCopy = Object.assign({}, o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -6882,7 +6892,7 @@ const _resolveVars = (str, varReplacementRef, func='') => {
 				res = res.replace(/\\/gm, '____acssEscBkSl');
 			}
 		}
-		return (res) ? res : _;
+		return (res) ? res : '';
 	});
 	// Clean-up
 	delete resolvingObj[varReplacementRef];

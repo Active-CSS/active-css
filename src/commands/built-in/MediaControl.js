@@ -1,5 +1,6 @@
 _a.MediaControl = o => {
 	// Works with audio or video.
+	if (!_isConnected(o.secSelObj)) return false;
 	let secSelObj = o.secSelObj;	// This minifies better.
 	let arr = o.actVal.split(' ');
 	if (arr[1]) {

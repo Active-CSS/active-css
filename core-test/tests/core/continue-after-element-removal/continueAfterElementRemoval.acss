@@ -1,0 +1,19 @@
+#content:draw {
+	render-before-end: "<div id=\"continueAfterElementRemoval\" data-desc=\"Core - continue running action commands after element removal\" class=\"coreTest\">{|continueAfterElementRemovalHTML}</div>";
+}
+
+@component continueAfterElementRemovalHTML {
+	html {
+		<div id="continueAfterElementRemovalDiv"></div>
+	}
+}
+
+#continueAfterElementRemoval:test {
+	func: continueAfterElementRemoval_1;
+	#continueAfterElementRemovalDiv {
+		remove: self;
+		var: continueAfterElementVar "this ran";
+	}
+	func: continueAfterElementRemovalFinal "{continueAfterElementVar}";
+}
+

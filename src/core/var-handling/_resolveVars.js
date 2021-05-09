@@ -10,7 +10,7 @@ const _resolveVars = (str, varReplacementRef, func='') => {
 				res = res.replace(/\\/gm, '____acssEscBkSl');
 			}
 		}
-		return (res) ? res : _;
+		return (res) ? res : '';
 	});
 	// Clean-up
 	delete resolvingObj[varReplacementRef];

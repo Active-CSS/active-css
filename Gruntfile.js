@@ -63,7 +63,9 @@
 						'core-test/tests/initialize/**/*.js',
 						'core-test/tests/to-run-first/**/*.js',
 						'core-test/tests/commands/**/*.js',
+						'core-test/tests/components/**/*.js',
 						'core-test/tests/conditionals/**/*.js',
+						'core-test/tests/core/**/*.js',
 					],
 					dest: 'core-test/startup/compiled/core-test-js.js'
 				},
@@ -72,7 +74,9 @@
 						'core-test/tests/initialize/**/*.acss',
 						'core-test/tests/to-run-first/**/*.acss',
 						'core-test/tests/commands/**/*.acss',
+						'core-test/tests/components/**/*.acss',
 						'core-test/tests/conditionals/**/*.acss',
+						'core-test/tests/core/**/*.acss',
 					],
 					dest: 'core-test/startup/compiled/core-test-config.acss'
 				},

@@ -1,4 +1,5 @@
 _a.SetAttribute = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let htmlEntityDecode = false;
 	let str = o.actVal;
 	if (str.endsWith(' html-entity-decode')) {

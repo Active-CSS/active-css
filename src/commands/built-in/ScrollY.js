@@ -1,4 +1,5 @@
 _a.ScrollY = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	if (o.secSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'top') {
