@@ -41,9 +41,14 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			_actionValLoop(oCopy, pars, obj);
 		});
 
-		if (els.length == 0 && NodeList.prototype.isPrototypeOf(els)) {
-			// Element is no longer there - run anyway.
-			_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+		if (!checkThere) {
+			if (o.ranAction === true) {
+				// Element is no longer there - run anyway, as the target selector was only just removed.
+				_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+			} else {
+				// Element was never there in this run of target selector action commands.
+				return false;
+			}
 		}
 
 	} else {
@@ -64,4 +69,5 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
+	return true;
 };

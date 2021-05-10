@@ -2249,6 +2249,10 @@ function continueAfterElementRemovalFinal(o, pars) {
 	if (pars && pars[0] === 'this ran') {
 		_addSuccessClass(continueAfterElementRemovalEl);
 	} else {
-		_fail(continueAfterElementRemovalEl, 'Failed to continue running actions after element was removed.');
+		if (pars && pars[0] === 'This shouldn\'t run at all') {
+			_fail(continueAfterElementRemovalEl, 'The system is running actions on elements that didn\'t exist when the action command loop was entered and it shouldn\'t.');
+		} else {
+			_fail(continueAfterElementRemovalEl, 'Failed to continue running actions after element was removed. pars:', pars);
+		}
 	}
 }

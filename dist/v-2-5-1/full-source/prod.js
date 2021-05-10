@@ -2996,7 +2996,7 @@ const _performAction = (o, runButElNotThere=false) => {
 		return false;
 	}
 	// Just do the actions with no loops on the secSel.
-	_performActionDo(o, null, runButElNotThere);
+	return _performActionDo(o, null, runButElNotThere);		// eturn false if no further actions are to be run.
 };
 
 const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
@@ -3042,9 +3042,14 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			_actionValLoop(oCopy, pars, obj);
 		});
 
-		if (els.length == 0 && NodeList.prototype.isPrototypeOf(els)) {
-			// Element is no longer there - run anyway.
-			_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+		if (!checkThere) {
+			if (o.ranAction === true) {
+				// Element is no longer there - run anyway, as the target selector was only just removed.
+				_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+			} else {
+				// Element was never there in this run of target selector action commands.
+				return false;
+			}
 		}
 
 	} else {
@@ -3065,6 +3070,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
+	return true;
 };
 
 const _performSecSel = (loopObj) => {
@@ -3200,8 +3206,11 @@ const _performSecSel = (loopObj) => {
 					let rootNode = _getRootNode(obj);
 					passTargSel = (rootNode._acssScoped) ? rootNode : rootNode.host;
 				}
+
 				let act;
+				let allowFurtherActionCommands;	// This gets set to true when an valid selector is found and allows the continuing of running action commands.
 				for (m in chilsObj[secSelLoops][secSelCounter][targetSelector]) {
+					if (allowFurtherActionCommands === false) break;
 					if (chilsObj[secSelLoops][secSelCounter][targetSelector][m].name.indexOf('@each') !== -1) {
 						let outerFill = [];
 						outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector][m].value);
@@ -3265,9 +3274,10 @@ const _performSecSel = (loopObj) => {
 						compDoc,
 						component,
 						loopVars,
-						loopRef
+						loopRef,
+						ranAction: allowFurtherActionCommands
 					};
-					_performAction(act, runButElNotThere);
+					allowFurtherActionCommands = _performAction(act, runButElNotThere);
 				}
 			}
 		}

@@ -6,5 +6,5 @@ const _performAction = (o, runButElNotThere=false) => {
 		return false;
 	}
 	// Just do the actions with no loops on the secSel.
-	_performActionDo(o, null, runButElNotThere);
+	return _performActionDo(o, null, runButElNotThere);		// eturn false if no further actions are to be run.
 };
