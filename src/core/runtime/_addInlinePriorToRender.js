@@ -8,7 +8,9 @@ const _addInlinePriorToRender = (str) => {
 		let fragRoot = document.createElement('div');
 		fragRoot.innerHTML = str;
 		let inlineConfigTags = fragRoot.querySelectorAll('style[type="text/acss"]');
-		if (inlineConfigTags) _getInline(inlineConfigTags);
+		if (inlineConfigTags) {
+			_getInline(inlineConfigTags);
+		}
 		str = fragRoot.innerHTML;	// needed to get all the IDs set up during this.
 	}
 	return str;

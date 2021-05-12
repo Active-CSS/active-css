@@ -8,17 +8,42 @@ _c.IfVar = o => {
 	let spl = actVal.split(' ');
 	let compareVal, varName;
 	varName = spl.shift();	// Remove the first element from the array.
+
 	compareVal = spl.join(' ')._ACSSSpaceQuoOut();
 	compareVal = (compareVal == 'true') ? true : (compareVal == 'false') ? false : compareVal;
-	if (typeof compareVal !== 'boolean') {
-		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			compareVal = Number(compareVal._ACSSRepQuo());
-		} else {
-			compareVal = compareVal._ACSSRepQuo();
-		}
-	}
 	let scoped = _getScopedVar(varName, o.varScope);
 	let varValue = scoped.val;
+
+	if (typeof compareVal !== 'boolean') {
+		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
+			if (Array.isArray(varValue)) {
+				if (compareVal == '') {
+					// Nothing to compare, return whether this value to check is a populated array.
+					return (varValue.length > 0) ? true : false;
+				}
+			} else {
+				if (compareVal == '') {
+					// Nothing to compare, return whether this value equates to true.
+					return (varValue) ? true : false;
+				}
+				compareVal = Number(compareVal._ACSSRepQuo());
+			}
+		} else {
+			if (Array.isArray(varValue)) {
+				try {
+					// Convert compare var to an array.
+					compareVal = JSON.stringify(JSON.parse(compareVal));
+					// Stringify allows us to compare two arrays later on.
+					varValue = JSON.stringify(varValue);
+				} catch(err) {
+					// If there's an error, it's probably because the comparison didn't convert to an array, so it doesn't match.
+					return false;
+				}
+			} else {
+				compareVal = compareVal._ACSSRepQuo();
+			}
+		}
+	}
 
 	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };

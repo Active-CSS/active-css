@@ -13,8 +13,8 @@ _a.Trigger = o => {
 			_runInnerEvent(o, null, 'draw');
 		} else if (o.secSel == 'body' || o.secSel == 'window') {
 			// Run any events on the body, followed by the window.
-			_handleEvents({ obj: 'body', evType: o.actVal, origO: o });
-			_handleEvents({ obj: 'window', evType: o.actVal, origO: o });
+			_handleEvents({ obj: 'body', evType: o.actVal, origO: o, compDoc: document });
+			_handleEvents({ obj: 'window', evType: o.actVal, origO: o, eve: o.e, compDoc: document });
 		} else {
 			_handleEvents({ obj: o.secSelObj, evType: o.actVal, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 		}

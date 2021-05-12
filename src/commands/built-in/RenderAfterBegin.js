@@ -1,1 +1,4 @@
-_a.RenderAfterBegin = o => { o.renderPos = 'afterbegin'; _a.Render(o); };
+_a.RenderAfterBegin = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	o.renderPos = 'afterbegin'; _a.Render(o);
+};

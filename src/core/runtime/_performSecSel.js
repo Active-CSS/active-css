@@ -131,8 +131,11 @@ const _performSecSel = (loopObj) => {
 					let rootNode = _getRootNode(obj);
 					passTargSel = (rootNode._acssScoped) ? rootNode : rootNode.host;
 				}
+
 				let act;
+				let allowFurtherActionCommands;	// This gets set to true when an valid selector is found and allows the continuing of running action commands.
 				for (m in chilsObj[secSelLoops][secSelCounter][targetSelector]) {
+					if (allowFurtherActionCommands === false) break;
 					if (chilsObj[secSelLoops][secSelCounter][targetSelector][m].name.indexOf('@each') !== -1) {
 						let outerFill = [];
 						outerFill.push(chilsObj[secSelLoops][secSelCounter][targetSelector][m].value);
@@ -196,9 +199,10 @@ const _performSecSel = (loopObj) => {
 						compDoc,
 						component,
 						loopVars,
-						loopRef
+						loopRef,
+						ranAction: allowFurtherActionCommands
 					};
-					_performAction(act, runButElNotThere);
+					allowFurtherActionCommands = _performAction(act, runButElNotThere);
 				}
 			}
 		}

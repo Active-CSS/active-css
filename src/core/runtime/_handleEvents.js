@@ -215,5 +215,6 @@ const _handleEvents = evObj => {
 			}
 		}
 	}
+
 	return true;
 };

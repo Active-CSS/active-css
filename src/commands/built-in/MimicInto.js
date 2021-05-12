@@ -1,4 +1,5 @@
 _a.MimicInto = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	let el, mType, val, valRef, targEl;
 	el = o.secSelObj;
 	// Get some properties of the target.

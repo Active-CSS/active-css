@@ -3,7 +3,7 @@ _a.TriggerReal = o => {
 	if (!_isConnected(o.secSelObj)) {
 		// Skip it if it's no longer there and cancel all Active CSS bubbling.
 		_a.StopPropagation(o);
-		return;
+		return false;
 	}
 	try {
 		o.secSelObj.addEventListener(o.actVal, function(e) {}, {capture: true, once: true});	// once = automatically removed after running.

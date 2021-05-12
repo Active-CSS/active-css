@@ -1628,25 +1628,26 @@ function checkRenderEscaping(o) {
 	// First check escape rendering.
 	let pTag = _getObj('#renderEscapePTag');
 
-	if (pTag.textContent !== 'Check for escaped variable: &lt;script&gt;createHavoc()&lt;/script&gt; &lt;script&gt;doMoreHavoc()&lt;/script&gt;. You should see the tag here in text form.') {
-		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. #renderEscapePTag.textContent:', pTag.textContent);
+	let checkText = 'Check for escaped variable: <script>createHavoc()</script> <script>doMoreHavoc()</script>. You should see the tag here in text form.';
+	if (pTag.textContent !== checkText) {
+		_fail(checkRenderEl, 'Render did not properly escape the script tag variables in the HTML content area. Should be: "' + checkText + '", but #renderEscapePTag.textContent:', pTag.textContent);
 	}
 
 	let attrA = pTag.getAttribute('data-hackA');
 	let attrB = pTag.getAttribute('data-hackB');
 
 	if (attrA !== '&lt;script&gt;createHavoc()&lt;/script&gt;') {
-		_fail(checkRenderEl, 'Render did not properly escape the one-off variable in the test attribute.');
+		_fail(checkRenderEl, 'Render did not properly escape the one-off variable in the test attribute. attrA:', attrA);
 	}
 
 	if (attrB !== '&lt;script&gt;doMoreHavoc()&lt;/script&gt;') {
-		_fail(checkRenderEl, 'Render did not properly escape the reactive variable in the test attribute.');
+		_fail(checkRenderEl, 'Render did not properly escape the reactive variable in the test attribute. attrB:', attrB);
 	}
 
 	// Test inserted attribute substitution inside a render.
 	let attrHackTag = _getObj('#checkRenderAttrSubHack');
 
-	if (attrHackTag.textContent !== '&lt;script&gt;createHavoc()&lt;/script&gt;') {
+	if (attrHackTag.textContent !== '<script>createHavoc()</script>') {
 		_fail(checkRenderEl, 'Render did not properly escape the insert attribute variable into the test content area. #checkRenderAttrSubHack.textContent:', attrHackTag.textContent);
 	}
 
@@ -1783,6 +1784,68 @@ function checkSetAttribute(o) {
 		_fail(checkSetAttributeEl, 'Failed to add the attribute "data-test" to #setAttributeDiv. Element:', el);
 	}
 }
+
+function checkSetAttributeHtmlEntityDecode_1(o) {
+	let checkSetAttributeHtmlEntityDecodeEl = _initTest('checkSetAttributeHtmlEntityDecode');
+	if (!checkSetAttributeHtmlEntityDecodeEl) return;
+
+	let el = _getObj('#setAttributeHtmlEntityDecodeDiv');
+	if (!el) {
+		_fail(checkSetAttributeHtmlEntityDecodeEl, '#setAttributeHtmlEntityDecodeDiv not present to perform set-attribute command.');
+	}
+
+	if (!el.hasAttribute('data-test')) {
+		_fail(checkSetAttributeHtmlEntityDecodeEl, 'Failed to add the attribute "data-test" to #setAttributeHtmlEntityDecodeDiv. el:', el);
+	} else {
+		if (el.getAttribute('data-test') != '&lt;marquee&gt;Hi&lt;/marquee&gt;') {
+			_fail(checkSetAttributeHtmlEntityDecodeEl, 'Added attribute "data-test" to #setAttributeHtmlEntityDecodeDiv but it did not equals "&lt;marquee&gt;Hi&lt;/marquee&gt;" from escaped string. el.getAttribute(\'data-test\'):', el.getAttribute('data-test'));
+		}
+	}
+}
+
+function checkSetAttributeHtmlEntityDecode_2(o) {
+	let checkSetAttributeHtmlEntityDecodeEl = _initTest('checkSetAttributeHtmlEntityDecode');
+	if (!checkSetAttributeHtmlEntityDecodeEl) return;
+
+	let el = _getObj('#setAttributeHtmlEntityDecodeDiv');
+	if (el) {
+		if (el.getAttribute('data-test') != '<marquee>Hi</marquee>') {
+			_fail(checkSetAttributeHtmlEntityDecodeEl, 'Added attribute "data-test" to #setAttributeHtmlEntityDecodeDiv but it did not escape to "<marquee>Hi</marquee>" from escaped string. el.getAttribute(\'data-test\'):', el.getAttribute('data-test'));
+		}
+	}
+}
+
+function checkSetAttributeHtmlEntityDecode_3(o) {
+	let checkSetAttributeHtmlEntityDecodeEl = _initTest('checkSetAttributeHtmlEntityDecode');
+	if (!checkSetAttributeHtmlEntityDecodeEl) return;
+
+	let el = _getObj('#setAttributeHtmlEntityDecodeDiv');
+	if (el) {
+		if (el.getAttribute('data-test') != '&lt;marquee&gt;Hi&lt;/marquee&gt;') {
+			_fail(checkSetAttributeHtmlEntityDecodeEl, 'Added attribute "data-test" to #setAttributeHtmlEntityDecodeDiv but it did not equals "&lt;marquee&gt;Hi&lt;/marquee&gt;" from escaped variable. el.getAttribute(\'data-test\'):', el.getAttribute('data-test'));
+		}
+	}
+}
+
+function checkSetAttributeHtmlEntityDecode_4(o) {
+	let checkSetAttributeHtmlEntityDecodeEl = _initTest('checkSetAttributeHtmlEntityDecode');
+	if (!checkSetAttributeHtmlEntityDecodeEl) return;
+
+	let el = _getObj('#setAttributeHtmlEntityDecodeDiv');
+	if (el) {
+		if (el.getAttribute('data-test') != '<marquee>Hi</marquee>') {
+			_fail(checkSetAttributeHtmlEntityDecodeEl, 'Added attribute "data-test" to #setAttributeHtmlEntityDecodeDiv but it did not escape to "<marquee>Hi</marquee>" from escaped variable. el.getAttribute(\'data-test\'):', el.getAttribute('data-test'));
+		}
+	}
+}
+
+function checkSetAttributeHtmlEntityDecodeFinal(o) {
+	let checkSetAttributeHtmlEntityDecodeEl = _initTest('checkSetAttributeHtmlEntityDecode');
+	if (!checkSetAttributeHtmlEntityDecodeEl) return;
+
+	_addSuccessClass(checkSetAttributeHtmlEntityDecodeEl);
+}
+
 
 // set-class: "classes with .quotes";
 // func: checkSetClassA;
@@ -2131,4 +2194,65 @@ function checkVar(o, pars) {
 
 	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
 	_addSuccessClass(checkVarEl);
+}
+
+function checkIfVarEmptyArrayFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'if-var failed with the checking of an empty array');
+}
+
+function checkIfVarNotPopulatedArrayFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'not-if-var failed with the checking of a non-populated array');
+}
+
+function checkIfVarArrayEqualsFail(o) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	_fail(checkIfVarEl, 'not-if-var failed with the equals checking of array');
+}
+
+function checkIfVarFinal(o, pars) {
+	let checkIfVarEl = _initTest('checkIfVar');
+	if (!checkIfVarEl) return;
+
+	if (pars[0] == 3) {
+		// Finish up. If it's failed by this point it will error.
+		_addSuccessClass(checkIfVarEl);
+	}
+}
+
+function continueAfterElementRemoval_1(o) {
+	let continueAfterElementRemovalEl = _initTest('continueAfterElementRemoval');
+	if (!continueAfterElementRemovalEl) return;
+
+	let el = _getObj('#continueAfterElementRemoval');
+	if (!el) {
+		_fail(continueAfterElementRemovalEl, '#continueAfterElementRemoval was not present to perform test.');
+	}
+}
+
+function continueAfterElementRemovalFinal(o, pars) {
+	let continueAfterElementRemovalEl = _initTest('continueAfterElementRemoval');
+	if (!continueAfterElementRemovalEl) return;
+
+	let el = _getObj('#continueAfterElementRemoval');
+	if (!el) {
+		_fail(continueAfterElementRemovalEl, '#continueAfterElementRemoval was still there after it was supposed to be removed.');
+	}
+
+	if (pars && pars[0] === 'this ran') {
+		_addSuccessClass(continueAfterElementRemovalEl);
+	} else {
+		if (pars && pars[0] === 'This shouldn\'t run at all') {
+			_fail(continueAfterElementRemovalEl, 'The system is running actions on elements that didn\'t exist when the action command loop was entered and it shouldn\'t.');
+		} else {
+			_fail(continueAfterElementRemovalEl, 'Failed to continue running actions after element was removed. pars:', pars);
+		}
+	}
 }

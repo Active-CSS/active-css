@@ -1,5 +1,5 @@
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
-const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1) => {
+const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
@@ -21,13 +21,9 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				if (wot.indexOf(hostColon) !== -1) {
 					isHost = true;
 					wot = wot.replace(hostColon, '');
-					if (shadHost.hasAttribute(wot)) {
-						res = _escapeItem(shadHost.getAttribute(wot));
-						let hostCID = _getActiveID(shadHost).replace('d-', '');
-						realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
-					} else {
-						return '';
-					}
+					res = (shadHost.hasAttribute(wot)) ? (noHTMLEscape || func == 'SetAttribute') ? shadHost.getAttribute(wot) : _escapeItem(shadHost.getAttribute(wot)) : '';
+					let hostCID = _getActiveID(shadHost).replace('d-', '');
+					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
 					console.log('Non component attribution substitution is not yet supported.');
 					return _;
@@ -36,14 +32,13 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
 				// Return the wot if it's a window variable.
-				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef);
+				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef, func);
 				res = scoped.val;
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? _escapeItem(res, origVar) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
-
-			if (isBound && func.indexOf('Render') !== -1) {
+			if (isBound && (func == 'asRender' || func.indexOf('Render') !== -1)) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
 				_addScopedCID(realWot, obj, varScope);
@@ -67,5 +62,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			}
 		});
 	}
+
 	return str;
 };

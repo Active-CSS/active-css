@@ -1,4 +1,5 @@
 _a.ScrollIntoView = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	/* Parameters
 	true = block-start block-nearest
 	false = block-end block-nearest

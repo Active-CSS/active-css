@@ -4,25 +4,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = (o.evScope ? o.evScope : 'doc') + o.secSel;
 	} else {
-		// Note: re runButElNotThere) {
-		// "runButElNotThere" is a custom element disconnect callback. We know the original object is no longer on the page, but we still want to run functions.
-		// If the original object that has been removed is referenced in the code, this is an error by the user.
-		if (!runButElNotThere && !_isConnected(o.secSelObj)) {
-			// Skip it if the object is no longer there and cancel all Active CSS bubbling.
-			if (delayActiveID) {
-				// Cleanup any delayed actions if the element is no longer there.
-				if (delayArr[delayActiveID]) {
-					// This needs to clear all of the delayed actions associated to an element - not just one, otherwise this could affect performance.
-					_unloadAllCancelTimerLoop(delayActiveID);
-				}
-				// Don't move these out of here and put them in general ID clean-up. They need to remain after deletion and get cleaned up here.
-				delayArr.splice(delayArr.indexOf(activeID), 1);
-				cancelIDArr.splice(cancelIDArr.indexOf(activeID), 1);
-				cancelCustomArr.splice(cancelCustomArr.indexOf(activeID), 1);
-			}
-			_a.StopPropagation(o);
-			return;
-		}
 		delayRef = _getActiveID(o.secSelObj);
 	}
 
@@ -102,7 +83,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				varScope: o.varScope
 			}
 		);
-		o.actVal = _resolveVars(strObj.str, strObj.ref);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 	}
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
@@ -117,7 +98,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 			_setCSSVariable(o);
 			cssVariableChange = true;
 		} else {
-			o.secSelObj.style[o.actName] = o.actVal;
+			if (_isConnected(o.secSelObj)) {
+				o.secSelObj.style[o.actName] = o.actVal;
+			}
 		}
 	} else {
 		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
@@ -139,7 +122,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview'].indexOf(o.func) === -1) {
+	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview', 'LoadAsAjax'].indexOf(o.func) === -1) {
 		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
 		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
 	}

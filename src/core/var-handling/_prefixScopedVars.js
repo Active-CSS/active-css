@@ -1,6 +1,6 @@
 const _prefixScopedVars = (str, varScope=null) => {
 	// Handle those inside double quotes.
-	str = str.replace(/("([^"]|"")*"|'([^']|'')*')/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		return _prefixScopedVarsDo(innards, varScope, true);
 	});
 	// Handle the rest.

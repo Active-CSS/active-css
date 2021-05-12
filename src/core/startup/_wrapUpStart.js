@@ -38,8 +38,7 @@ const _wrapUpStart = (o) => {
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
-			let url = _resolveURL(window.location.href);
-			window.history.replaceState(url, document.title, url);
+			_handleSpaPop({}, true);	// true = initialize.
 		}
 
 		document.dispatchEvent(new CustomEvent('ActiveCSSInitialized', {}));
@@ -51,7 +50,6 @@ const _wrapUpStart = (o) => {
 				for (configFile of arr) {
 					_a.LoadConfig({ actName: 'load-config', actVal: configFile, doc: document});	// load-config param updates the panel.
 				}
-//				lazyConfig = '';
 			}, 1000);
 		}
 	} else {

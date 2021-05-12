@@ -30,34 +30,27 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
-			console.log('Error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
+			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
-		if (els) {
-			els.forEach((obj) => {
-				// Loop over each target selector object and handle all the action commands for each one.
-				checkThere = true;
-				let oCopy = Object.assign({}, o);
-				_actionValLoop(oCopy, pars, obj);
-			});
-		}
 
-/* Pretty sure we don't need this anymore. References to data-activeid in the o.secSel has been replaced by an object and should be covered in the section below this.
-		if (!checkThere) {
-			// If the object isn't there, we run it with the remembered object, as it could be from a popstate, but only if this is top-level action command.
-			// Only by doing this can we ensure that this is an action which will only target elements that exist.
+		els.forEach((obj) => {
+			// Loop over each target selector object and handle all the action commands for each one.
+			checkThere = true;
 			let oCopy = Object.assign({}, o);
-			if (o.secSel.lastIndexOf('data-activeid') !== -1) {
-				oCopy.actVal = _replaceRand(oCopy.actValSing);
-				oCopy.actVal = ActiveCSS._sortOutFlowEscapeChars(oCopy.actVal);
-				oCopy.actVal = _replaceJSExpression(oCopy.actVal, null, null, oCopy.varScope);
-				oCopy.actVal = _replaceAttrs(oCopy.obj, oCopy.actVal, oCopy.secSelObj, oCopy, oCopy.func, oCopy.varScope);
-				oCopy.actVal = _replaceStringVars(oCopy, oCopy.actVal, oCopy.varScope);
-				oCopy.actVal = _replaceScopedVars(oCopy.actVal, oCopy.secSelObj, oCopy.func, oCopy, null, null, oCopy.varScope);
-				_actionValLoop(o, pars, oCopy.obj, runButElNotThere);
+			_actionValLoop(oCopy, pars, obj);
+		});
+
+		if (!checkThere) {
+			if (o.ranAction === true) {
+				// Element is no longer there - run anyway, as the target selector was only just removed.
+				_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+			} else {
+				// Element was never there in this run of target selector action commands.
+				return false;
 			}
 		}
-*/
+
 	} else {
 		let oCopy = Object.assign({}, o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -76,4 +69,5 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
+	return true;
 };

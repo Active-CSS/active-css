@@ -1,4 +1,5 @@
 _a.RestoreClone = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	// This has a settimeout so it puts it at the end of the queue so other things can be destroyed if they are going on.
 	let el = _getSel(o, o.actVal);
 	let ref = _getActiveID(el);

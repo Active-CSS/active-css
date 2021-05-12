@@ -13,25 +13,16 @@ const _startMainListen = () => {
 				break;
 		}
 	});
+
+	// Create the routing node. We need a real but invisible DOM route so we can trigger a valid click for SPAing.
+	let templ = document.createElement('template');
+	templ.id = 'data-acss-route';
+	templ.insertAdjacentHTML('beforeend', '<div>');		// We do this here so we don't have to check for a child before removing it - it'll be faster in the nav.
+	document.body.appendChild(templ);
+
 	if (!document.parentNode) {
 		window.addEventListener('popstate', function(e) {
-			let page = e.state, obj;
-			if (!page) return;	// could be a hash link.
-			if (debuggerActive) {
-				_debugOutput('Popstate event');
-			}
-			let templ = document.querySelector('#data-active-pages');
-			let ok = false;
-			if (page && templ) {
-				let full = new URL(page);
-				let shortAttr = full.pathname + full.search;
-				let navEl = templ.querySelector('a[href="' + shortAttr + '"]');
-				if (navEl) {
-					ActiveCSS.trigger(navEl, 'click');
-					ok = true;
-				}
-			}
-			if (!ok) window.location.href = page;		// Not found - redirect.
+			_handleSpaPop(e);
 		});
 	} else {
 		// If this is an iframe, we are going to send an src change message to the parent whenever the iframe changes

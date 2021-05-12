@@ -1,6 +1,15 @@
 /*jslint browser: true */
 /*global alert, console, getSelection, inspect, self, window  */
 
+/***
+	When compiling the core, this file always goes first, and _core-end.js always goes last.
+	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
+	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
+	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
+	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an £60 Optiplex 780 from 2006 and it's fast enough. [Rob]
+*/
+
 (function (global, document) {
 	'use strict';
 	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
@@ -22,6 +31,7 @@
 			':': '_ACSS_later_colon',
 			'"': '_ACSS_later_double_quote'
 		},
+		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -30,6 +40,7 @@
 		PARSESEL = 1,
 		RANDHEX = 'ABCDEF',
 		RANDNUMS = '0123456789',
+		REGEXCHARS = /[\\^$.*+?\/()[\]{}|]/g,
 		SELFREGEX = /\{\$SELF\}/g,
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
@@ -88,6 +99,7 @@
 		concatConfigLen = 0,
 		conditionals = [],
 		currDocTitle = document.title,
+		currUnderPage = '',
 		currentPage = '',
 		customTags = [],
 		debuggerActive = false,
@@ -105,7 +117,11 @@
 		eventState = {},
 		flyCommands = [],
 		flyConds = [],
+		hashEventAjaxDelay = false,
+		hashEvents = [],
+		hashEventTrigger = false,
 		idMap = [],
+		initInlineLoading = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
@@ -121,10 +137,11 @@
 		mimicClones = [],
 		nonPassiveEvents = [],
 		pageList = [],
-		pagesDisplayed = [],
-		pageStore,
+		pageWildcards = [],
+		pageWildReg = [],
 		parsedConfig = {},
 		passiveEvents = true,
+		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
 		preSetupEvents = [],
@@ -158,4 +175,4 @@
 
 	ActiveCSS.customHTMLElements = {};
 
-/* Closure in _core-end.js */
+// Where's the end? Read the comments at the top.

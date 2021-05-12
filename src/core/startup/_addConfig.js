@@ -17,7 +17,7 @@ const _addConfig = (str, o) => {
 	parsedConfig = Object.assign(tmpParse, parsedConfig, configItems);
 
 	// If this is last file, run the config generator.
-	if (concatConfigCo >= concatConfigLen) {
+	if (!initInlineLoading && concatConfigCo >= concatConfigLen) {
 		_readSiteMap(o);
 	}
 };

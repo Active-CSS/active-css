@@ -1,1 +1,4 @@
-_a.FocusOff = o => { _a.Blur(o); };
+_a.FocusOff = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	_a.Blur(o);
+};

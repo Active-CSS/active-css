@@ -13,12 +13,6 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		if (typ == 'click' && e.button !== 0) return;		// We only want the left button.
 		el = e.target;	// Take in the object if called direct, or the event.
 	}
-	if (typ == 'mouseover' && !bod) {
-		if (el.tagName == 'A' && el['data-active-nav'] !== 1) {
-			// Set up any attributes needed for navigation from the routing declaration if this is being used.
-			_setUpNavAttrs(el);
-		}
-	}
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
 		// true above here means just check, don't run.
@@ -52,12 +46,21 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// do still need it for cancelling browser behaviour. So therefore preventDefault() will correctly fatally error if cloned and re-used. [edit] Possibly could have
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
+		let navSet = false;
 		for (el of composedPath) {
+			if (typ == 'mouseover' && !bod) {
+				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
+					// Set up any attributes needed for navigation from the routing declaration if this is being used.
+					_setUpNavAttrs(el);
+					navSet = true;
+				}
+			}
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (typ == 'click' && el.tagName == 'A' && el['data-active-nav'] !== 1) {
+			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				_setUpNavAttrs(el);
+				navSet = true;
 			}
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);

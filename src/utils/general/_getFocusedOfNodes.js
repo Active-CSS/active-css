@@ -1,13 +1,14 @@
-const _getFocusedOfNodes = (sel, o) => {
+const _getFocusedOfNodes = (sel, o, startingFrom='') => {
 	// Find the current focused node in the list, if there is one.
-	let targArr, nodes, obj, i = -1, useI = -1;
+	let targArr, nodes, obj, i = -1, useI = -1, checkNode;
 	targArr = _splitIframeEls(sel, o);
 	if (!targArr) return false;	// invalid target.
-	if (targArr[0].activeElement === null) return -1;
+	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : targArr[0].activeElement;
+	if (!checkNode) return -1;
 	nodes = targArr[0].querySelectorAll(targArr[1]) || null;
 	for (obj of nodes) {
 		i++;
-		if (obj.isSameNode(targArr[0].activeElement)) {
+		if (obj.isSameNode(checkNode)) {
 			useI = i;
 			break;
 		}

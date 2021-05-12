@@ -9,5 +9,5 @@ const _cloneAttrs = (el, srcEl) => {
 			if (!el.getAttribute(attr.nodeName)) el.setAttribute(attr.nodeName, attr.nodeValue);
 		}
 	}
-	el.setAttribute('data-active-nav', '1');
+	el.__acssNavSet = 1;
 };

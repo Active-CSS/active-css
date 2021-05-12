@@ -1,4 +1,4 @@
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null) => {
 	if (sel.indexOf('{=') === -1) return sel;
 	let res;
 
@@ -6,6 +6,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		wot = _replaceScopedVarsExpr(wot, varScope);
+
 		let q = '';
 		if (quoteIfString) {
 			q = '"';
@@ -17,10 +18,10 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy', '"use strict";return (' + wot + ');')(scopedProxy);		// jshint ignore:line
+			res = Function('scopedProxy, o', '"use strict";return (' + wot + ');')(scopedProxy, o);		// jshint ignore:line
 		} catch (err) {
 			try {
-				res = Function('scopedProxy', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy);		// jshint ignore:line
+				res = Function('scopedProxy, o', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');

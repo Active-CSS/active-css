@@ -1,5 +1,6 @@
 // Note: beforebegin = as previous sibling, afterbegin = as first-child, beforeend = as last-child, afterend = as next sibling.
 _a.Render = o => {
+	if (!_isConnected(o.secSelObj)) return false;
 	// Handle quotes.
 	let content = _handleQuoAjax(o, o.actVal);	// Rejoin the string.
 
