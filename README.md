@@ -17,7 +17,7 @@ You won't need a computer science degree to write in Active CSS if you already k
 
 It works dynamically with the contents of the DOM at any given time.
 
-This is a one man project and if anyone wants to get involved then there is a discussions section on this repo.
+If anyone wants to get involved then there is a discussions section on this repo.
 
 * **Easy to install and setup:** Active CSS is just a plugin. You can write your own Active CSS files or use it in inline styles, just like CSS. You can quickly download a regular JavaScript plugin for use in a script tag, or use an NPM version. No pre-processing or complicated setups - Active CSS works in runtime. The code you write in comparison to regular JavaScript is tiny, so runtime performance is practical even for a large site. You don't have to worry about performance at all. Test it in Lighthouse if you want to compare.
 * **Works with plugins out-of-the-box:** The new tinymce \<tinymce-editor>\</tinymce-editor> shadow DOM tag? Works with that. Photoswipe? Works with that. JQuery? Of course. All these amazingly crafted pieces of JS should all work with Active CSS, because Active CSS works dynamically with the DOM at any one time. Change the DOM externally? All the Active CSS events still work. It works dynamically with the DOM at any snapshot in time, just like CSS. It's a benefit of not using a virtual DOM. Just set up your events and commands. Things will just work. No mucking about with event listeners - nothing to maintain.
