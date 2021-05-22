@@ -14,7 +14,7 @@
 
 module.exports = function(config) {
 	/* Core version */
-	const activeCSSVersion = '2-5-1';
+	const activeCSSVersion = '2-5-2';
 
 	/* Core files (comment as required) */
 	const activeCSSProduction = 'dist/v-' + activeCSSVersion + '/activecss-' + activeCSSVersion + '.min.js';

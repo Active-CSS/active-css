@@ -33,7 +33,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	// All we have to do is change these to something else, and put them back afterwards. One method used here is a replace. Probably could be better.
 	// It just needs to survive the insertion as innerHTML. Test case is /manual/each.html from docs site - "@each - array of objects".
 	let trFix = false;
-	if (/^<t(r|d|body)/.test(content)) {
+	if (/^\s*<t(r|d|body)/m.test(content)) {
 		// Optimization idea: It may be quicker to just wrap the whole string in a table tag, with a tr if it's a td. Should then convert fine in theory.
 		// Then just remove afterwards. Rather than this hacky workaround. Or maybe not - we would still need the active ID carried over, which would have to
 		// be done lower down. The question is, is that handling faster than the current one? If so, do it, but it's not clear-cut at this point without doing it.
