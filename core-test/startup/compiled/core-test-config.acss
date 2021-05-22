@@ -116,6 +116,31 @@ body:init {
 }
 
 #content:draw {
+	render-before-end: "<div id=\"checkAjaxError\" data-desc=\"Ajax error events (error code followed by general error)\" class=\"coreTest\">{|checkAjaxErrorHTML}</div>";
+}
+
+@component checkAjaxErrorHTML {
+	&:beforeComponentOpen {
+		ajax: "/base/core-test/tests/resource-files/file-not-there.txt";
+	}
+	&:afterAjaxError {
+		/* This should run second */
+		func: checkAjaxError;
+	}
+	&:afterAjax404 {
+		/* This should run first */
+		func: checkAjaxError404;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkAjaxError:test {
+	/* Nothing to see here - the test function gets run from afterAjax in the component. */
+}
+
+#content:draw {
 	render-before-end: "<div id=\"checkAlert\" data-desc=\"Basic alert command\" class=\"coreTest\"></div>";
 }
 
