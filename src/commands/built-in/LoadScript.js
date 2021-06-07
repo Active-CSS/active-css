@@ -12,8 +12,18 @@ _a.LoadScript = (o, opt) => {
 			scrip.rel = 'stylesheet';
 		}
 		scrip[srcTag] = scr;
+		let afterEvent = 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script');
 		scrip.onload = function() {
-			_handleEvents({ obj: o.obj, evType: 'afterLoad' + ((opt == 'style') ? 'Style' : 'Script'), eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			// Run the after event for this command if successful.
+			_handleEvents({ obj: o.obj, evType: afterEvent, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+			// Restart the sync queue if await was used.
+			_syncRestart(o, o._subEvCo);
+		};
+		scrip.onerror = function() {
+			// Wipe any existing action commands after await, if await was used.
+			_syncEmpty(o._subEvCo);
+			// Call the general error callback event for this command.
+			_handleEvents({ obj: o.obj, evType: afterEvent + 'Error', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		};
 		if (forShadow) {
 			o.compDoc.appendChild(scrip);

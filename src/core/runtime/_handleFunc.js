@@ -1,6 +1,27 @@
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
-	let delayRef;
+	// Store sync queue if necessary.
+	let syncQueueSet = _isSyncQueueSet(o._subEvCo);
 
+	// Set async flag if this is a true asynchronous command.
+	o.isAsync = ASYNCCOMMANDS.indexOf(o.func) !== -1;
+	o.isTimed = o.actVal.match(TIMEDREGEX);
+	runButElNotThere = o.elNotThere || runButElNotThere;
+
+	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) {
+//		_nextFunc(o);
+		return;
+	}
+
+	// Check and set up sync commands.
+	_syncCheckAndSet(o, syncQueueSet);
+
+	// Handle the pause command, which uses a similar method as "await".
+	if (o.func == 'Pause') {
+		_pauseHandler(o);
+		return;
+	}
+
+	let delayRef;
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
 		delayRef = (o.evScope ? o.evScope : 'doc') + o.secSel;
 	} else {
@@ -13,8 +34,8 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Delayed / interval events need to happen at this level.
-	if (o.actVal.match(/(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm)) {
-		let o2 = Object.assign({}, o), delLoop = ['after', 'every'], aftEv;
+	if (o.isTimed) {
+		let o2 = _clone(o), delLoop = ['after', 'every'], aftEv;
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
 			splitArr = _delaySplit(o2.actVal, aftEv, o.varScope);
@@ -34,12 +55,13 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				}
 				o2.delayed = true;
 				if (aftEv == 'after') {
-					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setTimeout(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
-					return;
+					_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, o._subEvCo, setTimeout(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
+					 _nextFunc(o);
+			 		return;
 				}
 				o2.interval = true;
 				o2.origActValSing = o2.actValSing;
-				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
+				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, o._subEvCo, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
 				// Carry on down and perform the first action. The interval has been set.
 				o.interval = true;
 				o.actValSing = splitArr.str;
@@ -51,7 +73,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Remove any labels from the command string. We can't remove this earlier, as we need the label to exist for either "after" or "every", or both.
 	if (o.actValSing.indexOf(' label ') !== -1) {
-		o.actValSing = o.actValSing.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm, '');
+		o.actValSing = o.actValSing.replace(LABELREGEX, '');
 	}
 
 	if (typeof o.secSel === 'string' && ['~', '|'].includes(o.secSel.substr(0, 1))) {
@@ -60,12 +82,16 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 				cancelCustomArr[delayRef][o.func][o.actPos][o.intID] && cancelCustomArr[delayRef][o.func][o.actPos][o.intID][o.loopRef]
 			) {
 			_removeCancel(delayRef, o.func, o.actPos, o.intID, o.loopRef);
+			 _nextFunc(o);
 			return;
 		}
 	}
 
 	// Is this a non-delayed action, if so, we can skip the cancel check.
-	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) return;
+	if (o.delayed && cancelIDArr[delayRef] && cancelIDArr[delayRef][o.func]) {
+		_nextFunc(o);
+		return;
+	}
 
 	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
 
@@ -122,8 +148,16 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (!cssVariableChange && ['LoadConfig', 'LoadScript', 'LoadStyle', 'Ajax', 'AjaxPreGet', 'AjaxFormSubmit', 'AjaxFormPreview', 'LoadAsAjax'].indexOf(o.func) === -1) {
+	if (!cssVariableChange && !o.isAsync) {
 		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 	}
-};
+
+	// Restart the sync queue if await was used.
+	if (!o.isAsync && _isSyncQueueSet(o._subEvCo)) {
+		_syncRestart(o, o._subEvCo);
+		return;
+	}
+
+ 	_nextFunc(o);
+ };

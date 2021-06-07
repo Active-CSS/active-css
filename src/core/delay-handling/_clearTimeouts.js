@@ -6,4 +6,6 @@ const _clearTimeouts = delayID => {
 	// part of the W3C spec, but it is *implied, just about* in the spec that they share the same pool, so it should be ok.
 	clearTimeout(delayID);
 	clearInterval(delayID);
+	_syncEmpty(delaySync[delayID]);
+	delete delaySync[delayID];
 };

@@ -31,10 +31,8 @@ const _wrapUpStart = (o) => {
 
 		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
 		if (inlineIDArr.length > 0) _runInlineLoaded();
-
 		// Iterate items on this page and do any draw events.
-		_runInnerEvent(null, '*', 'draw', document, true);
-
+		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
@@ -76,7 +74,7 @@ const _wrapUpStart = (o) => {
 				}
 			}
 			_handleEvents({ obj: 'body', evType: 'afterLoadConfig', eve: o.e });
-			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadConfig', eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		}
 	}
 };

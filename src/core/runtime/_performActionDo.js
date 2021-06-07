@@ -25,26 +25,35 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	// Store the original copies of the action values before we start looping secSels.
 	let actValsLen, actVals = newActVal.split('_ACSSComma'), comm, activeID;
 	actValsLen = actVals.length;
-	let pars = { loopI: loopI, actVals: actVals, actValsLen: actValsLen };
+	let pars = { loopI, actVals, actValsLen };
+
 	if (typeof o.secSel == 'string' && !['~', '|'].includes(o.secSel.substr(0, 1))) {
 		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
 			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
-		let els = _prepSelector(o.secSel, o.obj, o.doc);
 
+		let els = _prepSelector(o.secSel, o.obj, o.doc);
+		let elsTotal = els.length;
+		let co = 0;
+
+		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
 			// Loop over each target selector object and handle all the action commands for each one.
+			co++;
 			checkThere = true;
-			let oCopy = Object.assign({}, o);
+			let oCopy = _clone(o);
+			oCopy._elsTotal = elsTotal;
+			oCopy._elsCo = co;
 			_actionValLoop(oCopy, pars, obj);
 		});
 
 		if (!checkThere) {
 			if (o.ranAction === true) {
 				// Element is no longer there - run anyway, as the target selector was only just removed.
-				_actionValLoop(o, pars, {}, true);	// run but element not there anymore, if it ever was.
+				let oCopy = _clone(o);
+				_actionValLoop(oCopy, pars, {}, true);	// run but element not there anymore, if it ever was.
 			} else {
 				// Element was never there in this run of target selector action commands.
 				return false;
@@ -52,14 +61,14 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 
 	} else {
-		let oCopy = Object.assign({}, o);
+		let oCopy = _clone(o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
 		if (typeof oCopy.secSel == 'object') {
-			_actionValLoop(o, pars, oCopy.secSel);
+			_actionValLoop(oCopy, pars, oCopy.secSel);
 		} else {
 			// Is this a custom event selector? If so, don't bother trying to get the object. Trust the developer doesn't need it.
 			if (runButElNotThere || ['~', '|'].includes(oCopy.secSel.substr(0, 1))) {
-				_actionValLoop(o, pars, {}, runButElNotThere);
+				_actionValLoop(oCopy, pars, {}, runButElNotThere);
 			}
 		}
 /* 	Feedback commented out for the moment - this will be part of a later extension upgrade.
@@ -69,5 +78,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
+	if (typeof imSt[o._imStCo] !== 'undefined' && imSt[o._imStCo]._acssImmediateStop) return;
 	return true;
 };
