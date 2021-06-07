@@ -9,7 +9,7 @@ _a.LoadAsAjax = o => {
 			o.res = _escapeInline(o.res, 'script');
 			o.res = _escapeInline(o.res, 'style type="text/acss"');
 			_setHTMLVars({res: o.res});
-			_handleEvents({ obj: o.obj, evType: 'afterLoadAsAjax', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo });
+			_handleEvents({ obj: o.obj, evType: 'afterLoadAsAjax', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		}
 	}
 

@@ -1,0 +1,22 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAwaitAjax\" data-desc=\"Core - await option for ajax action commands\" class=\"coreTest\">{|checkAwaitAjaxHTML}</div>";
+}
+
+@component checkAwaitAjaxHTML private {
+	&:componentOpen {
+		div {
+			ajax: "/base/core-test/tests/resource-files/ajax-test-1.txt" JSON await;
+			render: "
+				<h2 id="checkAwaitAjaxTestTitle">{checkAjaxTitle}</h2>
+				<p id="checkAwaitAjaxTestAddress">{checkAjaxAddress}</p>
+			";
+		}
+		func: checkAwaitAjax;
+	}
+	html {
+		<div></div>
+	}
+}
+
+#checkAwaitAjax:test {
+}

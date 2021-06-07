@@ -1,0 +1,18 @@
+#content:draw {
+	render-before-end: "<div id=\"checkAwait\" data-desc=\"Core - await option for delayed action commands\" class=\"coreTest\">{|checkAwaitHTML}</div>";
+}
+
+@component checkAwaitHTML privateEvents {
+	&:componentOpen {
+		div {
+			add-class: .addClassAwait after 1s await;
+		}
+		func: checkAwait;
+	}
+	html {
+		<div id="checkAwaitDiv"></div>
+	}
+}
+
+#checkAwait:test {
+}

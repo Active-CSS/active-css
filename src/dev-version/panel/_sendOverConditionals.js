@@ -1,3 +1,3 @@
 ActiveCSS._sendOverConditionals = () => {
-	return JSON.stringify(Object.assign({}, conditionals));
+	return JSON.stringify(conditionals);
 };

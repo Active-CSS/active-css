@@ -1,4 +1,4 @@
 ActiveCSS._sendOverConfig = () => {
-	let str = JSON.stringify(Object.assign({}, config));
+	let str = JSON.stringify(config);
 	return str;
 };

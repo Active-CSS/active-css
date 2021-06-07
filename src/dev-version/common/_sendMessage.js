@@ -3,7 +3,7 @@ const _sendMessage = (obj, typ, where, orderNum='') => {
 	let str;
 	if (typeof obj == 'object') {
 		// Need to copy the object otherwise we end up overwrite the event object below, which we don't want.
-		let newObj = Object.assign({}, obj);
+		let newObj = _clone(obj);
 		if (newObj.e) newObj.e = '';	// We get an invocation error on trying to send a cloned event. Don't send it to the extensions. We could send a smaller version if and when it is needed...
 		if (newObj.doc) newObj.doc = '';				// Causes circular reference error.
 		if (newObj.compDoc) newObj.compDoc = '';		// Just to be safe - we don't need it.

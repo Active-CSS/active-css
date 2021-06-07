@@ -1,12 +1,17 @@
 const _ajaxCallbackErr = (str, resp, o) => {
 	o.error = true;
 	o.errorCode = resp || '';
-	/* Handle error code event */
+
+	// Wipe any existing action commands after await, if await was used.
+	_syncEmpty(o._subEvCo);
+
+	// Handle error code event.
 	let generalEvent = 'afterAjax' + ((o.preGet) ? 'PreGet' : '') + ((o.formSubmit) ? 'Form' + (o.formPreview ? 'Preview' : o.formSubmit ? 'Submit' : '') : '');
-	let commonObj = { obj: o.obj, evType: generalEvent + o.errorCode, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo, _taEvCo: o._taEvCo };
+	let commonObj = { obj: o.obj, evType: generalEvent + o.errorCode, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo };
 	if (o.errorCode) _handleEvents(commonObj);
 	commonObj.evType = generalEvent + 'Error';
-	/* Handle general error event */
+
+	// Handle general error event.
 	_handleEvents(commonObj);
 	if (!o.preGet) {
 		if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {

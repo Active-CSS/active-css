@@ -139,7 +139,7 @@ const _handleEvents = evObj => {
 		obj = (origObj) ? origObj : obj;
 	}
 
-	let sel, chilsObj;
+	let sel;
 
 	selectorListLen = selectorList.length;
 	let actionName, ifrSplit, ifrObj, conds = [], cond, condSplit, passCond;
@@ -163,9 +163,11 @@ const _handleEvents = evObj => {
 			}
 		}
 	}
-	clauseCo = 0;
 
-	eventLoop: {
+	clauseCo = 0;
+	subEventCounter++;
+
+	eventsLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
 			let primSel = selectorList[sel].primSel;
 			let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
@@ -179,38 +181,42 @@ const _handleEvents = evObj => {
 						// This conditional passed earlier - we can run it.
 						passCond = clauseArr[clauseCo];
 					}
-					chilsObj = config[primSel][evType][clause];
-					if (chilsObj !== false) {
-						// Secondary selector loops go here.
-						let secSelLoops, loopObj;
-						for (secSelLoops in chilsObj) {
-							loopObj = {
-								primSel,
-								chilsObj,
-								originalLoops: secSelLoops,
-								secSelLoops,
-								obj,
-								compDoc,
-								evType,
-								varScope: topVarScope,
-								evScope,
-								evObj,
-								otherObj,
-								origO,
-								passCond,
-								sel,
-								component,
-								selectorList,
-								eve,
-								_maEvCo,
-								runButElNotThere
-							};
-							_performSecSel(loopObj);
-							if (typeof maEv[_maEvCo] !== 'undefined' && maEv[_maEvCo]._acssStopImmedEvProp) {
-								break eventLoop;
-							}
-						}
-					}
+
+					// Now that we know what event to run, run the event. This is a specific event declaration under a certain circumstance,
+					// with conditionals set or not set for this specific event.
+					// The code for this has been kept separate, as this flow can be stopped and restarted with the await syntax.
+					// All target selectors run one after the other, hence the separation for this is above the running of
+					// an individual target selector. Variables can be dynamically used in target selector declarations, so that evaluation must also happen
+					// with due regard to the await flow.
+					// "await" effectively affects only one specific event, hence the function is called "_performEvent" and not "_performEvents".
+					// When resuming an event after an await or pause - it comes back in via a call to _performEvent with the object below and a
+					// "resumption" object which contains the location in the event loop to resume from. The whole loop is needed to maintain a duplicate
+					// of that which was paused.
+					let loopObj = {
+						primSel,
+						chilsObj: config[primSel][evType][clause],
+						obj,
+						compDoc,
+						evType,
+						varScope: topVarScope,
+						evScope,
+						evObj,
+						otherObj,
+						origO,
+						passCond,
+//						sel,
+						component,
+//						selectorList,
+						eve,
+						_maEvCo,
+						_subEvCo: 'i' + subEventCounter,
+						runButElNotThere
+					};
+					// Now add a copy of this original loop construct, within itself, for use by await & pause for resuming an identical loop.
+					let loopObjCopy = _clone(loopObj);
+					loopObj.origLoopObj = loopObjCopy;
+
+					if (_performEvent(loopObj) === false) break eventsLoop;
 				}
 			}
 		}

@@ -7,6 +7,7 @@ const _removeCancel = (delayRef, func, actPos, intID, loopRef) => {
 			delete labelData[delData.lab];
 		}
 		delete delayArr[delayRef][func][actPos][intID][loopRef];
+		delete delaySync[tid];
 	}
 	if (['~', '|'].includes(delayRef.substr(0, 1))) {
 		if (cancelCustomArr[delayRef] && cancelCustomArr[delayRef][func] && cancelCustomArr[delayRef][func][actPos] && cancelCustomArr[delayRef][func][actPos][intID]) {

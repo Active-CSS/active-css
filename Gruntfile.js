@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.5.2',
-			fileVersion: '2-5-2',
+			realVersion: '2.6.0',
+			fileVersion: '2-6-0',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -22,6 +22,7 @@
 						'src/core/delay-handling/*.js',
 						'src/core/runtime/*.js',
 						'src/core/startup/*.js',
+						'src/core/await-handling/*.js',
 						'src/core/var-handling/*.js',
 						'src/dev-version/common/*.js',
 						'src/dev-version/elements/*.js',
@@ -45,6 +46,7 @@
 						'src/core/delay-handling/*.js',
 						'src/core/runtime/*.js',
 						'src/core/startup/*.js',
+						'src/core/await-handling/*.js',
 						'src/core/var-handling/*.js',
 						'src/utils/cookies/*.js',
 						'src/utils/dom-basic/*.js',
@@ -128,7 +130,7 @@
 /*
 				babel: {
 					options: {
-						ie8: true,
+//						ie8: true,
 						keep_classnames: true,
 						safari10: true
 					},

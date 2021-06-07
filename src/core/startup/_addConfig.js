@@ -19,5 +19,8 @@ const _addConfig = (str, o) => {
 	// If this is last file, run the config generator.
 	if (!initInlineLoading && concatConfigCo >= concatConfigLen) {
 		_readSiteMap(o);
+
+		// Restart the sync queue if await was used.
+		_syncRestart(o, o._subEvCo);
 	}
 };

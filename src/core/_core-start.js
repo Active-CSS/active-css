@@ -7,12 +7,22 @@
 	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
 	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
-	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an £60 Optiplex 780 from 2006 and it's fast enough. [Rob]
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an £60 Optiplex 780 from 2006 and it's fast enough.
 */
 
 (function (global, document) {
 	'use strict';
-	const CHILDRENREGEX = /\{\$CHILDREN\}/g,
+	const ASYNCCOMMANDS = [
+			'Ajax',
+			'AjaxFormPreview',
+			'AjaxFormSubmit',
+			'AjaxPreGet',
+			'LoadAsAjax',
+			'LoadConfig',
+			'LoadScript',
+			'LoadStyle'
+		],
+		CHILDRENREGEX = /\{\$CHILDREN\}/g,
 		// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 		// Don't forget that double backslashes are needed with quoted regexes.
 		// Second line: word not followed by another name type character. 3rd line: word and opening parenthesis.
@@ -32,6 +42,7 @@
 			'"': '_ACSS_later_double_quote'
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -43,6 +54,7 @@
 		REGEXCHARS = /[\\^$.*+?\/()[\]{}|]/g,
 		SELFREGEX = /\{\$SELF\}/g,
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -109,6 +121,7 @@
 		debuggerness = false,
 		debugMode = '',
 		delayArr = [],
+		delaySync = {},
 		devtoolsInit = [],
 		doesPassive = false,
 		elementObserver,
@@ -121,6 +134,8 @@
 		hashEvents = [],
 		hashEventTrigger = false,
 		idMap = [],
+		immediateStopCounter = -1,
+		imSt = [],
 		initInlineLoading = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
@@ -164,9 +179,12 @@
 		shadowDoms = {},
 		strictCompPrivEvs = [],
 		strictPrivVarScopes = [],
+		subEventCounter = -1,
 		supportsShadow = true,
+		syncQueue = [],
 		taEv = [],
 		targetEventCounter = -1,
+		targetCounter = -1,
 		userSetupStarted = false,
 		varMap = [],
 		varStyleMap = [],
