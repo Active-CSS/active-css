@@ -2001,60 +2001,6 @@ const _actionValLoopDo = (oCopy, pars, obj, runButElNotThere, counter) => {
 	_handleFunc(oCopy2, null, runButElNotThere);
 };
 
-/*
-const _actionValLoop = (oCopy, pars, obj, runButElNotThere) => {
-	let i, { loopI, actVals, actValsLen } = pars;
-
-	for (i = 0; i < actValsLen; i++) {
-		// Loop over the comma-delimited actions.
-		oCopy.actVal = actVals[i].trim();	// Put the original back.
-		oCopy.actPos = i;	// i or label (not yet built).
-		oCopy.secSelObj = obj;
-		_handleFunc(oCopy, null, runButElNotThere);
-	}
-};
-*/
-
-	// Start loop - call function with array and position 0 and max position.
-
-	// in function take line.
-	// Does it not contain pause?
-	// If not, just run function, then call this function again with the next pos.
-
-	// If it does contain pause, run a settimeout of that length, and then call this function again to get the next line.
-
-// Nice idea, but this won't work in loops, will it?
-// Need to do the same thing, but higher up where we started doing this today in _performEvent.
-// All the for loops need to stop being for loops and become iterators.
-// Start from the top and work down.
-// Get these all working, without the need for timeouts, then add in the timeouts.
-// Hopefully everything should magically work.
-
-
-/*
-const _actionValLoop = (oCopy, pars, obj, runButElNotThere) => {
-	let i, { loopI, actVals, actValsLen } = pars;
-
-	for (i = 0; i < actValsLen; i++) {
-		// Loop over the comma-delimited actions.
-		oCopy.actVal = actVals[i].trim();	// Put the original back.
-		oCopy.actPos = i;	// i or label (not yet built).
-		oCopy.secSelObj = obj;
-
-		// Handle await/pause.
-		if (o.func == 'Pause') {
-			// If "every" is being used, show an error and skip as it isn't allowed on this command.
-			if (o.actVal.indexOf('every') !== -1 || o.actVal.indexOf('after') !== -1 || o.actVal.indexOf('await') !== -1) {
-				console.log('Active CSS error: delay options ("after", "every", "await") are not allowed in the ' + o.actName + ' command, skipping.');
-				return;
-			}
-		}
-
-		_handleFunc(oCopy, null, runButElNotThere);
-	}
-};
-*/
-
 const _addInlinePriorToRender = (str) => {
 	// Unescape all single opening curlies for inline Active CSS and JavaScript prior to insertion into the DOM.
 	str = str.replace(/_ACSS_later_brace_start/g, '{');
@@ -2618,42 +2564,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (o.loopRef != '0') {
 		o.actVal = _replaceLoopingVars(o.actVal, o.loopVars);
 	}
-
-/*	doesn't work as expected
-span:draw {
-	var: test ['bob', 'dave', 'trevor'];
-	@each item in test {
-		render-before-end: "{item}<br>";
-		pause: 1s;
-	}
-}
-
-
-span:draw {
-	var: test2 ['hi', 'goodbye'], test ['bob', 'dave', 'trevor'];
-	@each item2 in test2 {
-		@each item in test {
-			render-before-end: "{item2} {item}<br>";
-			pause: 1s;
-		}
-	}
-}
-
-*/
-
-/* works
-span:draw {
-	pause: 1s;	
-	background-color: #{$RANDHEX6};
-	pause: 1s;	
-	border-radius: 50%;
-	pause: 1s;	
-	background-color: #{$RANDHEX6};
-	pause: 1s;	
-	border-radius: 0%;
-	trigger: draw;
-}
-*/
 
 	// Delayed / interval events need to happen at this level.
 	if (o.isTimed) {
@@ -3277,23 +3187,10 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
-
-
-
-
-
-
-// here's a foreach that has slipped the net.
-
-
-
-
-
-
-
-
 		let elsTotal = els.length;
 		let co = 0;
+
+		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
 			// Loop over each target selector object and handle all the action commands for each one.
 			co++;
@@ -3333,12 +3230,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
-	if (typeof imSt[o._imStCo] !== 'undefined' && imSt[o._imStCo]._acssImmediateStop) {
-
-console.log('_performActionDo, 2, immediate stop');
-
-		return;
-	}
+	if (typeof imSt[o._imStCo] !== 'undefined' && imSt[o._imStCo]._acssImmediateStop) return;
 	return true;
 };
 
@@ -3412,14 +3304,10 @@ const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inherite
 
 const _performTarget = (outerTargetObj, targCounter) => {
 	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopVars, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj } = outerTargetObj;
-//secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, targCounter
 
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop) {
-
-console.log('_performTarget, immediate stop');
-
 		return;
 	}
 
@@ -3525,7 +3413,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	// Loop target selectors in sequence.
 	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp) {
-//		break secSelLoop;
 		return;
 	}
 	if (targetSelector == 'conds') return;	// skip the conditions.
@@ -3545,7 +3432,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			otherObj,
 			origO,
 			passCond,
-//			sel,
 			component,
 			primSel,
 			eve,
@@ -5778,7 +5664,6 @@ const _immediateStop = o => {
 };
 
 const _isSyncQueueSet = (val) => {
-//	return Array.isArray(syncQueue[val]);
 	return !!syncQueue[val];
 };
 
@@ -5847,14 +5732,6 @@ const _syncEmpty = val => {
 
 const _syncRestart = (o, resumeID) => {
 	if (_isSyncQueueSet(resumeID)) {
-		// Do not restart the queue if there are multiple target selectors until we have reached the last one. Then we will cover them all.
-//		if (o._elsCo < o._elsTotal) {
-
-//console.log('_syncRestart, do not start queue o._elsCo:', o._elsCo, 'o._elsTotal:', o._elsTotal, 'syncQueue[o._subEvCo]:', syncQueue[o._subEvCo]);
-
-//			_immediateStop(o);
-//			return;
-//		}
 		let loopObjCopy = _clone(o.origLoopObj);
 		let thisQueue = _clone(syncQueue[o._subEvCo]);
 		loopObjCopy.origLoopObj = loopObjCopy;
