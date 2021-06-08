@@ -17,7 +17,7 @@ const _startMainListen = () => {
 	// Create the routing node. We need a real but invisible DOM route so we can trigger a valid click for SPAing.
 	let templ = document.createElement('template');
 	templ.id = 'data-acss-route';
-	templ.insertAdjacentHTML('beforeend', '<div>');		// We do this here so we don't have to check for a child before removing it - it'll be faster in the nav.
+	templ.insertAdjacentHTML('beforeend', '<acss-router>');		// We do this here so we don't have to check for a child before removing it - it'll be faster in the nav.
 	document.body.appendChild(templ);
 
 	if (!document.parentNode) {

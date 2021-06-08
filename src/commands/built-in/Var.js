@@ -110,11 +110,11 @@ _a.Var = o => {
 	// Set the variable in the correct scope.
 	if (isWindowVar) {
 		// Window scope.
-//		console.log('_a.Var, set in window scope ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('_a.Var, set in window scope ' + scopedVar + ' = ', expr, 'o:', o);		// handy - don't remove
 		_set(window, scopedVar, expr);
 	} else {
 		// Active CSS component/document scopes.
-//		console.log('_a.Var, set ' + scopedVar + ' = ', expr);		// handy - don't remove
+//		console.log('_a.Var, set ' + scopedVar + ' = ', expr, 'o:', o);		// handy - don't remove
 		_set(scopedProxy, scopedVar, expr);
 		_allowResolve(scopedVar);
 	}
