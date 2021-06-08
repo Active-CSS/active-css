@@ -45,7 +45,7 @@ For best results, start building a website with no plugins or JavaScript and see
 
 Active CSS works on modern browsers that are [ES6-compliant](http://kangax.github.io/compat-table/es6/).
 
-Active CSS should work fine on desktop Firefox, Chrome, Opera, Safari and the latest Edge; iOs Safari and Chrome, Android Chrome and Firefox. IE support is not planned. There is basic support for the original Edge in the main production core, but the shadow DOM and shadow web component features in Active CSS won't work (being a native implementation). Just avoid using the shadow DOM if you want to support the old Edge.
+Active CSS should work fine on desktop Firefox, Vivaldi, Opera, Safari, Chrome and the latest Edge; iOs Safari and Chrome, Android Chrome and Firefox. IE support is not planned. There is basic support for the original Edge in the main production core, but the shadow DOM and shadow web component features in Active CSS won't work (being a native implementation). Just avoid using the shadow DOM if you want to support the old Edge.
 
 ## Installation
 
