@@ -4229,7 +4229,6 @@ const _handleLoop = (loopObj) => {
 	let { currentLoop, varScope } = loopObj;
 
 	// Which type of loop is it?
-	// This is here for when we start adding different types of loops. For now we don't need the check.
 	let command = _getLoopCommand(currentLoop);
 	let scopePrefix = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 
@@ -4258,10 +4257,9 @@ const _handleEach = (loopObj, scopePrefix) => {
 	let { currentLoop, varScope } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 
-	// eg. @each name in person
-	// eg. @each name, age in person
+	// eg. @each name in {person}
+	// eg. @each name, age in {person}
 	// etc.
-	// It limits variables to the scope we are in.
 	let inPos = currentLoop.indexOf(' in ');
 	let leftVar = currentLoop.substr(6, inPos - 6);
 	let leftVars;
@@ -4271,15 +4269,8 @@ const _handleEach = (loopObj, scopePrefix) => {
 	}
 
 	let rightVar = currentLoop.substr(inPos + 4);
-	// Note that we don't use the real value of the list object in the *replacement* value - it evaluates in the scope dynamically, so we don't attach the scope.
 
 	let rightVarVal = _evalDetachedExpr(rightVar, varScope);
-
-console.log('_handleEach, rightVar:', rightVar, 'rightVarVal:', rightVarVal);
-
-//	let scoped = _getScopedVar(rightVar, varScope);
-//	rightVarReal = scoped.name;
-//	rightVarVal = scoped.val;
 
 	if (!rightVarVal) {
 		console.log('Active CSS error: Error in evaluating' + rightVar + ' in @each - skipping loop.');
@@ -4336,7 +4327,7 @@ const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 		itemsObj.counter = counter;
 		_handleEachArrayInner(rightVarVal, itemsObj, 0);
 
-		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;	// This will expand to include nested loop references and still needs work as this references multiple items.
+		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;
 	}
 
 	_runSecSelOrAction(loopObj2);
@@ -4396,7 +4387,7 @@ const _handleStep = (loopObj, scopePrefix) => {
 	// eg. @step n from 1 to 10 by 0.5
 	// eg. @step n from numVar to numVar2 by numVar3
 	// etc.
-	// It limits variables to the scope we are in. Works up to 5 decimal places. Not recommended for use with more than several thousand iterations.
+	// It works with up to 5 decimal places. Not recommended for use with more than several thousand iterations for performance reasons.
 
 	// Get the positions of the "from", "to" and "by" parts of the string.
 	let statement = currentLoop;
