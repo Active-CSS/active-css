@@ -43,7 +43,7 @@
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm,
-		LOOPCOMMANDS = ['@each', '@step'],
+		LOOPCOMMANDS = ['@each', '@for '],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -4221,7 +4221,7 @@ const _checkRunLoop = (outerTargetObj, chils, eachCommand, pointer, loopWhat) =>
 
 const _getLoopCommand = str => {
 	let wot = str.substr(0, 5);
-	return (LOOPCOMMANDS.indexOf(wot) !== -1) ? wot : false;
+	return (LOOPCOMMANDS.indexOf(wot) !== -1) ? wot.trim() : false;
 };
 
 
@@ -4237,8 +4237,8 @@ const _handleLoop = (loopObj) => {
 			_handleEach(loopObj, scopePrefix);
 			break;
 
-		case '@step':
-			_handleStep(loopObj, scopePrefix);
+		case '@for':
+			_handleFor(loopObj, scopePrefix);
 			break;
 	}
 };
@@ -4375,86 +4375,86 @@ const _handleEachObj = (items, itemsObj, counter) => {
 	}
 };
 
-const _handleStep = (loopObj, scopePrefix) => {
+const _handleFor = (loopObj, scopePrefix) => {
 	let { currentLoop, varScope } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 
-	// eg. @step n from 1 to 10 (defaults to increment of 1)
-	// eg. @step n from 1 to 10 by 2
-	// eg. @step n from 10 to 1 by -1
-	// eg. @step n from 10 to -10 by -1
-	// eg. @step n from -10 to 0 by 1
-	// eg. @step n from 1 to 10 by 0.5
-	// eg. @step n from numVar to numVar2 by numVar3
+	// eg. @for n = 1 to 10 (defaults to increment of 1)
+	// eg. @for n = 1 to 10 step 2
+	// eg. @for n = 10 to 1 step -1
+	// eg. @for n = 10 to -10 step -1
+	// eg. @for n = -10 to 0 step 1
+	// eg. @for n = 1 to 10 step 0.5
+	// eg. @for n = {numVar} to {numVar2} step {numVar3}
 	// etc.
 	// It works with up to 5 decimal places. Not recommended for use with more than several thousand iterations for performance reasons.
 
-	// Get the positions of the "from", "to" and "by" parts of the string.
+	// Get the positions of the "from", "to" and "step" parts of the string.
 	let statement = currentLoop;
 	let notToZero = false;
 	if (statement.indexOf(' not-to-zero') !== -1) {
 		notToZero = true;
 		statement = statement.replace('not-to-zero', '');
 	}
-	let fromPos = statement.indexOf(' from ');
+	let fromPos = statement.indexOf('=');
 	let toPos = statement.indexOf(' to ');
-	let byPos = statement.indexOf(' by ');
+	let stepPos = statement.indexOf(' step ');
 
 	if (fromPos === -1 || toPos === -1) {
-		console.log('Active CSS error: "from" and "to" must be used in the @step statement, "' + statement + '"');
+		console.log('Active CSS error: "=" and "to" must be used in the @for statement, "' + statement + '"');
 		return;
 	}
 
 	// Extract each part of the string that we need to run the statement and assign to appropriate variables.
-	let counterVar = statement.substr(6, fromPos - 6).trim();
-	let fromVar = statement.substr(fromPos + 6, toPos - fromPos - 6);
-	let toVar, byVar;
+	let counterVar = statement.substr(5, fromPos - 5).trim();
+	let fromVar = statement.substr(fromPos + 1, toPos - fromPos - 1);
+	let toVar, stepVar;
 
-	if (byPos === -1) {
+	if (stepPos === -1) {
 		toVar = statement.substr(toPos + 4);
-		byVar = '1';	// Defaults to 1 when it is not used in the statement.
+		stepVar = '1';	// Defaults to 1 when it is not used in the statement.
 	} else {
-		toVar = statement.substr(toPos + 4, byPos - toPos - 4);
-		byVar = statement.substr(byPos + 4);
+		toVar = statement.substr(toPos + 4, stepPos - toPos - 4);
+		stepVar = statement.substr(stepPos + 6);
 	}
 
 	// Convert these reference strings to a number for use in the loop.
-	let byVal = _loopVarToNumber(byVar, varScope);
+	let stepVal = _loopVarToNumber(stepVar, varScope);
 	let fromVal = _loopVarToNumber(fromVar, varScope);
 	let toVal = _loopVarToNumber(toVar, varScope);
 
-	let byValDP = _countPlaces(byVal);	// The number of byVal decimal places used - needed to solve JavaScript "quirk" when using basic decimal arithmetic.
+	let stepValDP = _countPlaces(stepVal);	// The number of stepVal decimal places used - needed to solve JavaScript "quirk" when using basic decimal arithmetic.
 
-	// Handle any errors from the conversion. We must have numbers, and the "by" value must not equal zero.
-	if ([ fromVal, toVal, byVal ].indexOf(false) !== -1) {
-		console.log('Active CSS error: Could not establish valid values from @step statement, "' + statement + '" (look for "false").', 'From:', fromVal, 'To:', toVal, 'By:', byVal);
+	// Handle any errors from the conversion. We must have numbers, and the "step" value must not equal zero.
+	if ([ fromVal, toVal, stepVal ].indexOf(false) !== -1) {
+		console.log('Active CSS error: Could not establish valid values from @for statement, "' + statement + '" (look for "false").', 'From:', fromVal, 'To:', toVal, 'Step:', stepVal);
 		return;
-	} else if (byValDP > 5) {
-		console.log('Active CSS error: @step statement can only handle up to 5 decimal places, "' + statement + '"');
+	} else if (stepValDP > 5) {
+		console.log('Active CSS error: @for statement can only handle up to 5 decimal places, "' + statement + '"');
 		return;
 	}
 
-	// If either "by" is set to zero, not-to-zero is set and "to" is zero, or there is a negative progression with no negative "by" value, skip loop.
-	if (byVal == 0 || notToZero && toVal == 0 || fromVal > toVal && byVal > 0) return;
+	// If either "step" is set to zero, not-to-zero is set and "to" is zero, or there is a negative progression with no negative "step" value, skip loop.
+	if (stepVal == 0 || notToZero && toVal == 0 || fromVal > toVal && stepVal > 0) return;
 
-	// console.log('_handleStep, counterVar:', counterVar, 'fromVal:', fromVal, 'toVal:', toVal, 'byVal:', byVal);	// Handy - leave this here.
+	// console.log('_handleFor, counterVar:', counterVar, 'fromVal:', fromVal, 'toVal:', toVal, 'stepVal:', stepVal);	// Handy - leave this here.
 
-	// Now that the loop is set up, pass over the necessary variables into the recursive step function.
+	// Now that the loop is set up, pass over the necessary variables into the recursive for function.
 	let itemsObj = {
 		loopObj,
 		existingLoopRef,
 		counterVar,
 		toVal,
-		byVal,
-		byValDP,
+		stepVal,
+		stepValDP,
 		scopePrefix
 	};
 	
-	_handleStepItem(itemsObj, fromVal);
+	_handleForItem(itemsObj, fromVal);
 };
 
-const _handleStepItem = (itemsObj, counterVal) => {
-	let { loopObj, counterVar, toVal, byVal, byValDP, scopePrefix } = itemsObj, loopObj2, newRef, objValVar;
+const _handleForItem = (itemsObj, counterVal) => {
+	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2, newRef, objValVar;
 
 	if (typeof imSt[loopObj._imStCo] !== 'undefined' && imSt[loopObj._imStCo]._acssImmediateStop) return;
 
@@ -4466,17 +4466,17 @@ const _handleStepItem = (itemsObj, counterVal) => {
 
 	_runSecSelOrAction(loopObj2);
 
-	// Increment the counter value by the iteration (by) value. Need to do a bit of jiggery pokery to handle JavaScript weird decimal arithmetic skills.
-	if (byValDP == 0) {
-		counterVal += byVal;
+	// Increment the counter value by the iteration (step) value. Need to do a bit of jiggery pokery to handle JavaScript weird decimal arithmetic skills.
+	if (stepValDP == 0) {
+		counterVal += stepVal;
 	} else {
-		let byValDPTimes10 = Math.pow(10, byValDP) || 1;
-		counterVal = (Math.round(counterVal * byValDPTimes10) + Math.round(byVal * byValDPTimes10)) / byValDPTimes10;
+		let stepValDPTimes10 = Math.pow(10, stepValDP) || 1;
+		counterVal = (Math.round(counterVal * stepValDPTimes10) + Math.round(stepVal * stepValDPTimes10)) / stepValDPTimes10;
 	}
 
-	// Run this function again if we are still in the loop, bearing in mind that the "by" stepping value can be positive or negative.
-	if (byVal > 0 && counterVal <= toVal || byVal < 0 && counterVal >= toVal) {
-		_handleStepItem(itemsObj, counterVal);
+	// Run this function again if we are still in the loop, bearing in mind that the "step" stepping value can be positive or negative.
+	if (stepVal > 0 && counterVal <= toVal || stepVal < 0 && counterVal >= toVal) {
+		_handleForItem(itemsObj, counterVal);
 	}
 };
 

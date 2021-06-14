@@ -10,8 +10,8 @@ const _handleLoop = (loopObj) => {
 			_handleEach(loopObj, scopePrefix);
 			break;
 
-		case '@step':
-			_handleStep(loopObj, scopePrefix);
+		case '@for':
+			_handleFor(loopObj, scopePrefix);
 			break;
 	}
 };
