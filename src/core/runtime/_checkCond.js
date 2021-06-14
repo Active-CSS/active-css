@@ -19,8 +19,6 @@ const _checkCond = condObj => {
 	);
 	aV = _resolveVars(strObj.str, strObj.ref);
 
-	aV = (otherEl && otherEl.loopRef != '0') ? _replaceLoopingVars(aV, otherEl.loopVars) : aV;
-
 	condVals = aV.replace(/_ACSSEscComma/g, ',').split('_ACSSComma');
 	condValsLen = condVals.length;
 

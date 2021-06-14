@@ -43,6 +43,7 @@
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		LOOPCOMMANDS = ['@each', '@step'],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,

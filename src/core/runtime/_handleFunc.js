@@ -28,11 +28,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		delayRef = _getActiveID(o.secSelObj);
 	}
 
-	// Replace any looping variable in the action value at this point, above any delay actions.
-	if (o.loopRef != '0') {
-		o.actVal = _replaceLoopingVars(o.actVal, o.loopVars);
-	}
-
 	// Delayed / interval events need to happen at this level.
 	if (o.isTimed) {
 		let o2 = _clone(o), delLoop = ['after', 'every'], aftEv;

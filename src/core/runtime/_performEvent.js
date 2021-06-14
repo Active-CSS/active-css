@@ -13,7 +13,7 @@ const _performEvent = (loopObj) => {
 
 		for (secSelLoops in loopObjClone.chilsObj) {
 			let loopObjTarg = _clone(loopObjClone);
-			loopObjTarg.originalLoops = secSelLoops;
+			loopObjTarg.currentLoop = secSelLoops;
 			loopObjTarg.secSelLoops = secSelLoops;
 			loopObjTarg._imStCo = immediateStopCounter;
 			_performSecSel(loopObjTarg);

@@ -23,8 +23,6 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 			let ret = components[c].data.trim();
 			found = true;
 			ret = ActiveCSS._sortOutFlowEscapeChars(ret);
-			// Handle any looping variable replacement in the component.
-			ret = (o.loopRef != '0') ? _replaceLoopingVars(ret, o.loopVars) : ret;
 			if (components[c].shadow || components[c].scoped || customElComp) {
 				// This is supposed to be added to its container after the container has rendered. We shouldn't add it now.
 				// Add it to memory and attach after the container has rendered. Return a placeholder for this component.

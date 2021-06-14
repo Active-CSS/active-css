@@ -1,5 +1,5 @@
 const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
-	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, loopVars, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
 
 	let targetSelector, targs, doc, passTargSel, meMap = [ '&', 'self', 'this' ], activeTrackObj = '', n;
 
@@ -11,39 +11,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		return;
 	}
 	if (targetSelector == 'conds') return;	// skip the conditions.
-	if (targetSelector.indexOf('@each') !== -1) {
-		let outerFill = [];
-		outerFill.push(secSels[secSelCounter][targetSelector]);
-		let innerLoopObj = {
-			chilsObj: outerFill,
-			originalLoops: targetSelector,
-			secSelLoops: '0',
-			obj,
-			compDoc,
-			evType,
-			varScope,
-			evScope,
-			evObj,
-			otherObj,
-			origO,
-			passCond,
-			component,
-			primSel,
-			eve,
-			inheritedScope,
-			_maEvCo,
-			_subEvCo,
-			_imStCo,
-			_taEvCo: targetEventCounter,
-			loopVars,
-			loopRef,
-			runButElNotThere,
-			origLoopObj
-		};
-		_handleLoop(innerLoopObj);
 
-		return;
-	}
+	if (_checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter)) return;
 
 	// Does the compDoc still exist? If not, if there is different scoped event root use that. Needed for privateEvents inheritance after component removal.
 	if (inheritedScope && !compDoc.isConnected) {
@@ -63,8 +32,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	}
 
 	// passTargSel is the string of the target selector that now goes through some changes.
-	if (loopRef != '0') passTargSel = _replaceLoopingVars(passTargSel, loopVars);
-
 	passTargSel = ActiveCSS._sortOutFlowEscapeChars(passTargSel);
 	let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
 		{
@@ -132,7 +99,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		_subEvCo,
 		_imStCo,
 		_taEvCo: targetEventCounter,
-		loopVars,
 		loopRef,
 		runButElNotThere,
 		passTargSel,
