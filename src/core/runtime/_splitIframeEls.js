@@ -37,7 +37,7 @@ const _splitIframeEls = (sel, o) => {
 					// Reference to an iframe host.
 					doc = window.parent.document;
 				} else {
-					console.log('Active CSS error. Reference to a parent element that doesn\'t exist.');
+					_err('Reference to a parent element that doesn\'t exist.', o);
 				}
 			} else {
 				relatedObj = doc.querySelector(ref);
@@ -45,7 +45,7 @@ const _splitIframeEls = (sel, o) => {
 					doc = relatedObj.contentWindow.document;
 					iframeID = ref;
 				} else if (!relatedObj) {
-					console.log('ref ' + ref + ' is unknown.');
+					_err('Reference ' + ref + ' is unknown', o);
 					return false;
 				}
 			}

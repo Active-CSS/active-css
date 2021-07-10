@@ -1,4 +1,6 @@
 const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
+	let { _imStCo } = o;
+
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
 	// Split action by comma.
@@ -28,16 +30,17 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	let pars = { loopI, actVals, actValsLen };
 
 	if (typeof o.secSel == 'string' && !['~', '|'].includes(o.secSel.substr(0, 1))) {
-		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
+		// Loop objects in secSel and perform the action on each one. This is used for the "parallel" event flow option on target selectors.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
-			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
+			_err(o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		let elsTotal = els.length;
 		let co = 0;
 
+		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
 			// Loop over each target selector object and handle all the action commands for each one.
@@ -46,6 +49,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 			let oCopy = _clone(o);
 			oCopy._elsTotal = elsTotal;
 			oCopy._elsCo = co;
+
 			_actionValLoop(oCopy, pars, obj);
 		});
 
@@ -59,7 +63,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				return false;
 			}
 		}
-
 	} else {
 		let oCopy = _clone(o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -78,6 +81,11 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
-	if (typeof imSt[o._imStCo] !== 'undefined' && imSt[o._imStCo]._acssImmediateStop) return;
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
+		return;
+	}
 	return true;
 };

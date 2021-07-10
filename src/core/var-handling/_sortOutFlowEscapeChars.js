@@ -11,7 +11,7 @@ ActiveCSS._sortOutFlowEscapeChars = str => {
 		'_ACSS_later_brace_end': '}',
 		'_ACSS_later_semi_colon': ';',
 		'_ACSS_later_colon': ':',
-		'_ACSS_later_double_quote': '"',
+		'_ACSS_later_double_quote': '"'
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };

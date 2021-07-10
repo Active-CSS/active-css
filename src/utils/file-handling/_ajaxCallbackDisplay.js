@@ -1,4 +1,22 @@
-const _ajaxCallbackDisplay = (o) => {
+/**
+ * Handles display after XHR request.
+ *
+ * Called by:
+ *	_resolveAjaxVars()
+ *	_ajaxCallback()
+ *
+ * Side-effects:
+ *	Adjusts internally global ajaxResLocations variable to store URL if caching or pre-getting.
+ *	Adjusts internally global preGetting variable to remove preGet state of URL.
+ *	Runs the afterAjaxPreGet event if appropriate.
+ *	Calls _ajaxDisplay which handles success or failure.
+ *
+ * @private
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallbackDisplay = (o) => {
 	if (!o.error && (o.cache || o.preGet)) {
 		// Store it for later. May need it in the afterAjaxPreGet event if it is run.
 		ajaxResLocations[o.finalURL] = o.res;

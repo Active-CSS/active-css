@@ -7,12 +7,24 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
 
 	// Loop target selectors in sequence.
-	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp) {
+	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
 		return;
 	}
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
-	if (_checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter)) return;
+	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
+	if (resultOfLoopCheck.atIf) {
+		return;
+	}
+
+	let flowTargetSelector = targetSelector, parallelFlow;
+	if (flowTargetSelector.endsWith(' parallel')) {
+		parallelFlow = true;
+		flowTargetSelector = flowTargetSelector.slice(0, -9).trim();
+	}
 
 	// Does the compDoc still exist? If not, if there is different scoped event root use that. Needed for privateEvents inheritance after component removal.
 	if (inheritedScope && !compDoc.isConnected) {
@@ -20,12 +32,12 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	}
 
 	// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
-	if (evType == 'disconnectedCallback' && meMap.includes(targetSelector)) {
+	if (evType == 'disconnectedCallback' && meMap.includes(flowTargetSelector)) {
 		// The element won't be there. Just run the event anyway.
 		doc = compDoc;
-		passTargSel = targetSelector;
+		passTargSel = flowTargetSelector;
 	} else {
-		targs = _splitIframeEls(targetSelector, { obj, component, primSel, origO, compDoc });
+		targs = _splitIframeEls(flowTargetSelector, { obj, component, primSel, origO, compDoc });
 		if (!targs) return;	// invalid target.
 		doc = targs[0];
 		passTargSel = targs[1];
@@ -103,13 +115,36 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		runButElNotThere,
 		passTargSel,
 		activeTrackObj,
-		targetSelector,
+		flowTargetSelector,
 		doc,
 		chilsObj,
-		origLoopObj
+		origLoopObj,
 	};
 
-	_performTarget(outerTargetObj, 0);
+	if (!parallelFlow && typeof passTargSel == 'string' && !['~', '|'].includes(passTargSel.substr(0, 1))) {
+		// This is used for the default "vertical" event flow. (The other option is "parallel" and is setup in _performActionDo().)
+		let els = _prepSelector(passTargSel, obj, doc);
+		let elsTotal = els.length;
+		let co = 0, secSelObj;
+
+		// Default target selector event flow. Parallel event flow is handled in _performActionDo().
+		// Loop this action command over each of the target selectors before going onto the next action command.
+		els.forEach(secSelObj => {
+			// Loop over each target selector object and handle all the action commands for each one.
+			co++;
+			let cloneOuterTargetObj = outerTargetObj;
+			cloneOuterTargetObj.passTargSel = secSelObj;
+			cloneOuterTargetObj._elsTotal = elsTotal;
+			cloneOuterTargetObj._elsCo = co;
+
+			_performTarget(outerTargetObj, 0);
+			_resetExitTarget(_imStCo);
+		});
+
+	} else {
+		_performTarget(outerTargetObj, 0);
+		_resetExitTarget(_imStCo);
+	}
 
 	outerTargCounter++;
 	if (secSels[secSelCounter][outerTargCounter]) {

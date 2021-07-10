@@ -1,16 +1,28 @@
-/*	From MDN.
-Set-Cookie: <cookie-name>=<cookie-value> 
-Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
-Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
-Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
-Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
-Set-Cookie: <cookie-name>=<cookie-value>; Secure
-Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
-*/
-
+/**
+ * Action command to set a cookie
+ *
+ * Called by:
+ *	_handleFunc()
+ *
+ * Side-effects:
+ *	Sets the string value into a cookie
+ *
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ *
+ * Notes from MDN (this can change when the browser evolves):
+ *	Set-Cookie: <cookie-name>=<cookie-value> 
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Secure
+ *	Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
+ */
 _a.SetCookie = o => {
 	// Example syntax (double-quotes are optional everywhere for this command):
 	// set-cookie: name("name") value("value") expires("date") maxAge("non-zero-digit") domain("domain") path("path") secure httponly sameSite("strict/lax/none");
@@ -45,7 +57,7 @@ _a.SetCookie = o => {
 	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
 	if (maxAge) {
 		let numTest = new RegExp('^\\d+$');
-		if (!numTest.test(maxAge)) console.log('Active CSS error: set-cookie maxAge is not a number.');
+		if (!numTest.test(maxAge)) _warn('set-cookie maxAge is not a number', o);
 	}
 
 	// Domain.

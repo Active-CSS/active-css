@@ -1,7 +1,8 @@
 const _handleEachObj = (items, itemsObj, counter) => {
 	let { loopObj, leftVar, leftVars, rightVar, scopePrefix } = itemsObj, objValVar, loopObj2, newRef;
+	let _imStCo = loopObj._imStCo;
 
-	if (typeof imSt[loopObj._imStCo] !== 'undefined' && imSt[loopObj._imStCo]._acssImmediateStop) return;
+	if (_checkBreakLoop(_imStCo)) return;
 
 	let key = items[counter][0];
 	let val = items[counter][1];
@@ -32,5 +33,7 @@ const _handleEachObj = (items, itemsObj, counter) => {
 	counter++;
 	if (items[counter]) {
 		_handleEachObj(items, itemsObj, counter);
+	} else {
+		_resetContinue(_imStCo);
 	}
 };

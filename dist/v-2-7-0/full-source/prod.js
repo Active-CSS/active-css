@@ -33,6 +33,7 @@
 			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 			')', 'g'),
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
 			'{': '_ACSS_later_brace_start',
@@ -42,8 +43,8 @@
 			'"': '_ACSS_later_double_quote'
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
-		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)/gm,
-		LOOPCOMMANDS = ['@each', '@for '],
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		LOOPCOMMANDS = ['@each', '@for', '@if', '@else', '@while'],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -54,8 +55,8 @@
 		RANDNUMS = '0123456789',
 		REGEXCHARS = /[\\^$.*+?\/()[\]{}|]/g,
 		SELFREGEX = /\{\$SELF\}/g,
-		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
-		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
+		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -87,6 +88,8 @@
 	var coreVersionExtension = '2-0-0',
 		// Active CSS action commands.
 		_a = {},
+		_break = {},
+		_continue = {},
 		// Active CSS conditionals.
 		_c = {},
 		activeIDTrack = 0,
@@ -129,6 +132,7 @@
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
+		exitTarget = {},
 		flyCommands = [],
 		flyConds = [],
 		hashEventAjaxDelay = false,
@@ -224,7 +228,7 @@ _a.AjaxFormSubmit = o => {
 		o.url = el.action;
 		_ajaxDo(o);
 	} else {
-		console.log('Active CSS error: Form not found.', o.secSelObj);
+		_err('Form not found', o);
 	}
 };
 
@@ -241,6 +245,15 @@ _a.Alert = o => {
 _a.Blur = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	document.activeElement.blur();
+};
+
+_a.Break = o => {
+	let breakPar = o.actVal.trim();
+	if (/\d+/.test(breakPar)) {
+		_break['i' + o._imStCo] = breakPar.trim();
+	} else {
+		_err('Invalid break parameter', o);
+	}
 };
 
 _a.CancelTimer = o => {
@@ -394,19 +407,31 @@ _a.ConsoleLog = o => {
 	if (o.actVal == 'target') {
 		wot = o;
 	} else if (o.actVal == 'variables') {
-		wot = scopedProxy;
+		wot = scopedOrig;
 	} else if (o.actVal == 'conditionals') {
 		wot = conditionals;
 	} else if (o.actVal == 'config') {
 		wot = config;
 	} else if (o.actVal == 'components') {
 		wot = components;
+	} else if (o.actVal == 'trace') {
+		console.trace();
+		return;
 	} else {
 		wot = o.actVal._ACSSRepQuo();
 		console.log(wot);
 		return;
 	}
 	console.log(o.actVal._ACSSCapitalize() + ':', wot);
+};
+
+_a.Continue = o => {
+	let continuePar = o.actVal.trim();
+	if (/\d+/.test(continuePar)) {
+		_continue['i' + o._imStCo] = continuePar.trim();
+	} else {
+		_err('Invalid continue parameter: "' + o.actVal + '"', o);
+	}
 };
 
 _a.CopyToClipboard = o => {
@@ -619,6 +644,17 @@ _a.Eval = o => {
 	eval(evalContent);		// jshint ignore:line
 };
 
+_a.Exit = o => {
+	// Exit out of all current loops and prevent further target running and bubbling.
+	_immediateStop(o);
+};
+
+_a.ExitTarget = o => _exitTarget(o);
+
+const _exitTarget = o => {
+	exitTarget['i' + o._imStCo] = true;
+};
+
 _a.FocusOff = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	_a.Blur(o);
@@ -784,7 +820,7 @@ _a.Func = o => {
 	let spl = o.actVal.split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {
-		console.log(func + ' is not a function.');
+		_err(func + ' is not a function.', o);
 	} else {
 		// Iterate parameters loop. Convert true and false values to actual booleans. Put into the pars array and send to function.
 		let par;
@@ -1295,19 +1331,31 @@ _a.SetClass = o => {
 	_setClassObj(o.secSelObj, str);
 };
 
-/*	From MDN.
-Set-Cookie: <cookie-name>=<cookie-value> 
-Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
-Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
-Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
-Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
-Set-Cookie: <cookie-name>=<cookie-value>; Secure
-Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
-Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
-*/
-
+/**
+ * Action command to set a cookie
+ *
+ * Called by:
+ *	_handleFunc()
+ *
+ * Side-effects:
+ *	Sets the string value into a cookie
+ *
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ *
+ * Notes from MDN (this can change when the browser evolves):
+ *	Set-Cookie: <cookie-name>=<cookie-value> 
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Path=<path-value>
+ *	Set-Cookie: <cookie-name>=<cookie-value>; Secure
+ *	Set-Cookie: <cookie-name>=<cookie-value>; HttpOnly
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Strict
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=Lax
+ *	Set-Cookie: <cookie-name>=<cookie-value>; SameSite=None
+ */
 _a.SetCookie = o => {
 	// Example syntax (double-quotes are optional everywhere for this command):
 	// set-cookie: name("name") value("value") expires("date") maxAge("non-zero-digit") domain("domain") path("path") secure httponly sameSite("strict/lax/none");
@@ -1342,7 +1390,7 @@ _a.SetCookie = o => {
 	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
 	if (maxAge) {
 		let numTest = new RegExp('^\\d+$');
-		if (!numTest.test(maxAge)) console.log('Active CSS error: set-cookie maxAge is not a number.');
+		if (!numTest.test(maxAge)) _warn('set-cookie maxAge is not a number', o);
 	}
 
 	// Domain.
@@ -1477,7 +1525,7 @@ _a.TriggerReal = o => {
 		o.secSelObj.addEventListener(o.actVal, function(e) {}, {capture: true, once: true});	// once = automatically removed after running.
 		o.secSelObj[o.actVal]();
 	} catch(err) {
-		console.log('Active CSS error: Only DOM events support trigger-real.');
+		_err('Only DOM events support trigger-real', o);
 	}
 };
 
@@ -1687,7 +1735,7 @@ ActiveCSS.triggerReal = (obj, ev, varScope, compDoc, component) => {
 	if (obj) {
 		_a.TriggerReal({ secSelObj: obj, actVal: ev, varScope: varScope, compDoc: compDoc, component: component });
 	} else {
-		console.log('No object found in document to triggerReal.');
+		_err('No object found in document to triggerReal', o);
 	}
 };
 
@@ -1738,8 +1786,7 @@ _c.IfFunc = o => {
 		try {
 			return window[o.actVal](o);
 		} catch(r) {
-			console.log('Active CSS: Function ' + o.actVal + ' does not exist.');
-			return false;
+			_err('Function ' + o.actVal + ' does not exist', o);
 		}
 	}
 };
@@ -1881,7 +1928,7 @@ const _delaySplit = (str, typ, varScope) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
-	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)))(?=(?:[^"]|"[^"]*")*)', 'gm');
+	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)))(?=(?:[^"]|"[^"]*")*)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
@@ -1896,7 +1943,7 @@ const _delaySplit = (str, typ, varScope) => {
 	});
 	// "after" and "every" share the same label. I can't think of a scenario where they would need to have their own label, but this functionality may need to be
 	// added to later on. Maybe not.
-	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w_]+)(?=(?:[^"]|"[^"]*")*)$/gm, function(_, wot) {
+	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=(?:[^"]|"[^"]*")*)$/gm, function(_, wot) {
 		// Label should be wot.
 		theLabel = wot.split(' ')[1];
 		return (typ == 'every') ? '' : wot;
@@ -1981,7 +2028,7 @@ const _run = (str, varScope, o) => {
 	try {
 		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars);		// jshint ignore:line
 	} catch (err) {
-		console.log('Function syntax error (' + err + '): ' + funky);
+		_err('Function syntax error (' + err + '): ' + funky, o);
 	}
 };
 
@@ -2020,12 +2067,12 @@ const _addInlinePriorToRender = (str) => {
 };
 
 const _checkCond = condObj => {
-	let { actName, rules, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState } = condObj;
+	let { commandName, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState } = condObj;
 	let condVals, condValsLen, n;
 
 	let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
 		{
-			evType: thisAction,
+			evType,
 			str: aV,
 			obj: el,
 			varScope
@@ -2045,20 +2092,19 @@ const _checkCond = condObj => {
 
 	for (n = 0; n < condValsLen; n++) {
 		let cObj = {
-			'func': func,
-			'actName': actName,
-			'secSel': 'conditional',
-			'secSelObj': el,
-			'actVal': condVals[n].trim(),
-			'primSel': sel,
-			'rules': rules,
-			'obj': el,
-			'e': eve,
-			'doc': doc,
-			'ajaxObj': otherEl,
-			'component': component,
-			'compDoc': compDoc,
-			'varScope': varScope
+			func,
+			actName: commandName,
+			secSel: 'conditional',
+			secSelObj: el,
+			actVal: condVals[n].trim(),
+			primSel: sel,
+			obj: el,
+			e: eve,
+			doc,
+			ajaxObj,
+			component,
+			compDoc,
+			varScope
 		};
 		if (_c[func](cObj, scopedProxy, privVarScopes, flyConds, _run) !== actionBoolState) {
 			return false;	// Barf out immediately if it fails a condition.
@@ -2239,7 +2285,7 @@ const _handleEvents = evObj => {
 									selectorList.push({ primSel, componentRefs });
 						    	}
 						    } catch(err) {
-						        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 							}
 						} else {
 							if (obj == testSel) {
@@ -2291,7 +2337,7 @@ const _handleEvents = evObj => {
 							selectorList.push({ primSel, componentRefs });
 				    	}
 				    } catch(err) {
-				        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+				        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 					}
 				} else {
 					if (obj == testSel) {
@@ -2324,7 +2370,19 @@ const _handleEvents = evObj => {
 			if (onlyCheck) return true;	// Just checking something is there. Now we have established this, go back.
 			for (clause in config[primSel][evType]) {
 				clauseCo++;
-				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topVarScope, component, eve, compDoc)) {
+				let condObj = {
+					el: obj,
+					sel,
+					clause,
+					evType,
+					ajaxObj: otherObj,
+					doc: thisDoc,
+					varScope: topVarScope,
+					component,
+					eve,
+					compDoc
+				};
+				if (clause != '0' && _passesConditional(condObj)) {
 					// This condition passed. Remember it for the next bit.
 					clauseArr[clauseCo] = clause;
 				}
@@ -2501,6 +2559,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		);
 		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 	}
+
+	o.actVal = o.actVal.replace(/_ACSS_later_escbrace_start/gm, '{');
+	o.actVal = o.actVal.replace(/_ACSS_later_escbrace_end/gm, '}');
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
@@ -2686,7 +2747,7 @@ const _handleVarsInJS = function(str, varScope) {
 	*/
 	let mapObj = {}, mapObj2 = {};
 	let found = false;
-	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, \$]+)[\s]*\;/gi, function(_, varList) {
+	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w\, \$]+)[\s]*\;/gi, function(_, varList) {
 		// We should have one or more variables in a comma delimited list. Split it up.
 		let listArr = varList.split(','), thisVar, varObj;
 		// Remove dupes from the list by using the Set command.
@@ -2721,7 +2782,7 @@ const _handleVarsInJS = function(str, varScope) {
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// Remove any /scopedProxy.*./ anywhere in single or double quotes catering for escaped quotes, this whole function could be optimised.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$]+\./g, '');
+			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w\$]+\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");
@@ -2896,20 +2957,21 @@ ActiveCSS._nodeMutations = function(mutations) {
 	});
 };
 
-const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScope, component, eve, compDoc) => {
+const _passesConditional = (condObj) => {
+	let { el, sel, clause, evType, ajaxObj, doc, varScope, component, eve, compDoc } = condObj;
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
 
 	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
 
-	condList = condList.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
+	clause = clause.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
 		return _.replace(/ /g, '_ACSSspace').replace(/,/g, '_ACSSEscComma');
 	});
 
-	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
+	let cond, conds = clause.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 
-	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
+	let elC = (evType == 'clickoutside' && ajaxObj) ? ajaxObj : el;	// use click target if clickoutside.
 	let actionBoolState = false;
 
 	for (cond of conds) {
@@ -2930,15 +2992,24 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 			}
 
 			func = func._ACSSConvFunc();
-			if (typeof _c[func] === 'function') {
+			if (_isCond(func)) {
 				// Comma delimit for multiple checks in the same function.
 				let aV = cond.slice(parenthesisPos + 1, -1).trim().replace(/"[^"]*"|(\,)/g, function(m, c) {
 					// Split conditionals by comma.
 				    if (!c) return m;
 				    return '_ACSSComma';
 				});
-
-				if (!_checkCond({ actName: commandName, rules: cond, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+					{
+						str: aV,
+						func: 'Var',
+						obj: el,
+						secSelObj: el,
+						varScope: varScope
+					}
+				);
+				aV = _resolveVars(strObj.str, strObj.ref);
+				if (!_checkCond({ commandName, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 					return false;
 				}
 			}
@@ -2948,7 +3019,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 			cond = '|' + component + '|' + cond;
 			if (conditionals[cond] === undefined) {
 				let condErr = cond.substr(component.length + 2);
-				console.log('Active CSS error: Conditional ' + condErr + ' not found in config for component ' + component);
+				_err('Conditional ' + condErr + ' not found in config for component ' + component);
 			}
 		}
 		rules = conditionals[cond];
@@ -2965,7 +3036,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					func = obj.name;
 				}
 				func = func._ACSSConvFunc();
-				if (typeof _c[func] === 'function') {
+				if (_isCond(func)) {
 					// Call the conditional function is as close a way as possible to regular functions.
 
 					// Comma delimit for multiple checks on the same statement.
@@ -2975,14 +3046,14 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					if (!_checkCond({ actName: obj.name, rules, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+					if (!_checkCond({ commandName: obj.name, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 						return false;
 					}
 				}
 			}
 		} else {
 			// Check if this is a direct reference to a conditional command.
-			console.log('Active CSS error: Conditional ' + cond + ' not found in config for document scope.');
+			_err('Conditional ' + cond + ' not found in config for document scope.');
 		}
 	}
 	// Gotten through all the conditions - event actions are ok to run.
@@ -3001,6 +3072,8 @@ const _performAction = (o, runButElNotThere=false) => {
 };
 
 const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
+	let { _imStCo } = o;
+
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
 	// Split action by comma.
@@ -3030,24 +3103,29 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	let pars = { loopI, actVals, actValsLen };
 
 	if (typeof o.secSel == 'string' && !['~', '|'].includes(o.secSel.substr(0, 1))) {
-		// Loop objects in secSel and perform the action on each one. This enables us to keep the size of the functions down.
+		// Loop objects in secSel and perform the action on each one. This is used for the "parallel" event flow option on target selectors.
 		let checkThere = false, activeID;
 		if (o.secSel == '#') {
-			console.log('Active CSS error: ' + o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
+			_err(o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
 
 		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		let elsTotal = els.length;
 		let co = 0;
 
+		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
+			// Check if this element passes any relevant @if statements before continuing.
+//			if (!_ifTargCheck(obj, o.ifObj)) return;
+
 			// Loop over each target selector object and handle all the action commands for each one.
 			co++;
 			checkThere = true;
 			let oCopy = _clone(o);
 			oCopy._elsTotal = elsTotal;
 			oCopy._elsCo = co;
+
 			_actionValLoop(oCopy, pars, obj);
 		});
 
@@ -3061,7 +3139,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 				return false;
 			}
 		}
-
 	} else {
 		let oCopy = _clone(o);
 		// Send the secSel to the function, unless it's a custom selector, in which case we don't.
@@ -3080,7 +3157,13 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		}
 */
 	}
-	if (typeof imSt[o._imStCo] !== 'undefined' && imSt[o._imStCo]._acssImmediateStop) return;
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+//			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
 	return true;
 };
 
@@ -3095,13 +3178,17 @@ const _performEvent = (loopObj) => {
 		// Set property so we can immediate halt after an action for this event.
 		// Used in the pause/await functionality to quit after a pause.
 		immediateStopCounter++;
-		imSt[immediateStopCounter] = { };
+		let thisStopCounter = immediateStopCounter;
+		imSt[thisStopCounter] = { };
+		// Set loop counter. This is used to manage continue and break. It is set to 0 before any loops get processed, increments for each nested loop
+		// and decrements when back in its outer loop.
+		let loopCo = 0;
 
 		for (secSelLoops in loopObjClone.chilsObj) {
 			let loopObjTarg = _clone(loopObjClone);
-			loopObjTarg.currentLoop = secSelLoops;
+			loopObjTarg.fullStatement = secSelLoops;
 			loopObjTarg.secSelLoops = secSelLoops;
-			loopObjTarg._imStCo = immediateStopCounter;
+			loopObjTarg._imStCo = thisStopCounter;
 			_performSecSel(loopObjTarg);
 			// Note that stopImmedEvProp only works when there are no await or pause commands in any action commands in here.
 			if (typeof maEv[loopObjTarg._maEvCo] !== 'undefined' && maEv[loopObjTarg._maEvCo]._acssStopImmedEvProp) {
@@ -3109,11 +3196,15 @@ const _performEvent = (loopObj) => {
 				return false;
 			}
 		}
+		delete imSt[thisStopCounter];
+		delete _break['i' + thisStopCounter];
+		_resetContinue(thisStopCounter);
+		_resetExitTarget(thisStopCounter);
 	}
 };
 
 const _performSecSel = (loopObj) => {
-	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere} = loopObj;
+	let {chilsObj, secSelLoops, varScope, evObj } = loopObj;
 	let compDoc = loopObj.compDoc || document;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 
@@ -3152,11 +3243,14 @@ const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inherite
 };
 
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
 			typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo) ||
 			outerTargetObj.allowMoreActions === false	// This variable gets set to true when an valid selector is found and allows the continuing of running action commands.
 		) {
 		return;
@@ -3166,7 +3260,11 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	let targVal = targ[m].value;
 	let targName = targ[m].name;
 
-	if (!_checkRunLoop(outerTargetObj, targVal, targName, m, 'action')) {
+	let resultOfLoopCheck = _checkRunLoop(outerTargetObj, targVal, targName, m, 'action');
+	if (!resultOfLoopCheck.atIf) {
+		// Wipe previousIfRes, as this is no longer looking for an "@else if" or "@else".
+		delete outerTargetObj.previousIfRes;
+
 		// Generate the object that performs the magic in the functions.
 		tmpSecondaryFunc = targName._ACSSConvFunc();
 
@@ -3208,7 +3306,8 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			evDeclObj: chilsObj,
 			ranAction: outerTargetObj.allowMoreActions,
 			runPerm: runButElNotThere,
-			origLoopObj
+			origLoopObj,
+			ifObj
 		};
 
 		outerTargetObj.allowMoreActions = _performAction(act, runButElNotThere);
@@ -3229,12 +3328,24 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
 
 	// Loop target selectors in sequence.
-	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp) {
+	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
 		return;
 	}
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
-	if (_checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter)) return;
+	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
+	if (resultOfLoopCheck.atIf) {
+		return;
+	}
+
+	let flowTargetSelector = targetSelector, parallelFlow;
+	if (flowTargetSelector.endsWith(' parallel')) {
+		parallelFlow = true;
+		flowTargetSelector = flowTargetSelector.slice(0, -9).trim();
+	}
 
 	// Does the compDoc still exist? If not, if there is different scoped event root use that. Needed for privateEvents inheritance after component removal.
 	if (inheritedScope && !compDoc.isConnected) {
@@ -3242,12 +3353,12 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	}
 
 	// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
-	if (evType == 'disconnectedCallback' && meMap.includes(targetSelector)) {
+	if (evType == 'disconnectedCallback' && meMap.includes(flowTargetSelector)) {
 		// The element won't be there. Just run the event anyway.
 		doc = compDoc;
-		passTargSel = targetSelector;
+		passTargSel = flowTargetSelector;
 	} else {
-		targs = _splitIframeEls(targetSelector, { obj, component, primSel, origO, compDoc });
+		targs = _splitIframeEls(flowTargetSelector, { obj, component, primSel, origO, compDoc });
 		if (!targs) return;	// invalid target.
 		doc = targs[0];
 		passTargSel = targs[1];
@@ -3325,13 +3436,36 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		runButElNotThere,
 		passTargSel,
 		activeTrackObj,
-		targetSelector,
+		flowTargetSelector,
 		doc,
 		chilsObj,
-		origLoopObj
+		origLoopObj,
 	};
 
-	_performTarget(outerTargetObj, 0);
+	if (!parallelFlow && typeof passTargSel == 'string' && !['~', '|'].includes(passTargSel.substr(0, 1))) {
+		// This is used for the default "vertical" event flow. (The other option is "parallel" and is setup in _performActionDo().)
+		let els = _prepSelector(passTargSel, obj, doc);
+		let elsTotal = els.length;
+		let co = 0, secSelObj;
+
+		// Default target selector event flow. Parallel event flow is handled in _performActionDo().
+		// Loop this action command over each of the target selectors before going onto the next action command.
+		els.forEach(secSelObj => {
+			// Loop over each target selector object and handle all the action commands for each one.
+			co++;
+			let cloneOuterTargetObj = outerTargetObj;
+			cloneOuterTargetObj.passTargSel = secSelObj;
+			cloneOuterTargetObj._elsTotal = elsTotal;
+			cloneOuterTargetObj._elsCo = co;
+
+			_performTarget(outerTargetObj, 0);
+			_resetExitTarget(_imStCo);
+		});
+
+	} else {
+		_performTarget(outerTargetObj, 0);
+		_resetExitTarget(_imStCo);
+	}
 
 	outerTargCounter++;
 	if (secSels[secSelCounter][outerTargCounter]) {
@@ -3586,7 +3720,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		try {
 			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
 		} catch(err) {
-			console.log('Active CSS error in attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err);
+			_err('Error attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err, o);
 		}
 	} else {
 		shadow = shadowParent;
@@ -3863,7 +3997,7 @@ const _renderRefElements = (str, htmlStr, refType) => {
 };
 
 const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
-	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:_]+)\}/gi, function(_, c) {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:]+)\}/gi, function(_, c) {
 		let doc, noVars, escaped, unEscaped;
 		let noVarsPos = c.indexOf(':NOVARS');
 		if (noVarsPos !== -1) {
@@ -4108,7 +4242,7 @@ const _splitIframeEls = (sel, o) => {
 					// Reference to an iframe host.
 					doc = window.parent.document;
 				} else {
-					console.log('Active CSS error. Reference to a parent element that doesn\'t exist.');
+					_err('Reference to a parent element that doesn\'t exist.', o);
 				}
 			} else {
 				relatedObj = doc.querySelector(ref);
@@ -4116,7 +4250,7 @@ const _splitIframeEls = (sel, o) => {
 					doc = relatedObj.contentWindow.document;
 					iframeID = ref;
 				} else if (!relatedObj) {
-					console.log('ref ' + ref + ' is unknown.');
+					_err('Reference ' + ref + ' is unknown', o);
 					return false;
 				}
 			}
@@ -4195,9 +4329,26 @@ const _trigHashState = (e) => {
 	}
 };
 
-const _checkRunLoop = (outerTargetObj, chils, eachCommand, pointer, loopWhat) => {
-	if (!chils) return;
-	if (_getLoopCommand(eachCommand) !== false) {
+const _checkBreakLoop = (_imStCo, innerType) => {
+	let breakOutOfContinue = (innerType == 'inner') ? false : true;
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break', true) ||
+			_decrBreakContinue(_imStCo, 'continue', breakOutOfContinue) ||
+			_checkExitTarget(_imStCo)
+		) {
+		return true;
+	}
+	return false;
+};
+
+const _checkExitTarget = _imStCo => {
+	return (typeof exitTarget['i' + _imStCo] !== 'undefined' && exitTarget['i' + _imStCo] === true);
+};
+
+const _checkRunLoop = (outerTargetObj, chils, statement, pointer, loopWhat) => {
+	if (!chils) return { atIf: false };
+	let atIfDetails = _getLoopCommand(statement);
+	if (atIfDetails !== false) {
 		let outerTargetObjClone = _clone(outerTargetObj);
 		let chilsClone = _clone(chils);
 		let innerLoopObj = {
@@ -4206,7 +4357,8 @@ const _checkRunLoop = (outerTargetObj, chils, eachCommand, pointer, loopWhat) =>
 		let outerFill = [];
 		outerFill.push(chilsClone);
 		innerLoopObj.chilsObj = outerFill;
-		innerLoopObj.currentLoop = eachCommand;
+		innerLoopObj.fullStatement = statement;
+		innerLoopObj.atIfDetails = atIfDetails;
 		innerLoopObj.loopWhat = loopWhat;
 		if (loopWhat == 'action') {
 			innerLoopObj.targPointer = pointer;
@@ -4215,32 +4367,94 @@ const _checkRunLoop = (outerTargetObj, chils, eachCommand, pointer, loopWhat) =>
 			innerLoopObj._taEvCo = pointer;
 		}
 		_handleLoop(innerLoopObj);
-		return true;
+		if (innerLoopObj.ifRes && innerLoopObj.ifRes.res === true) outerTargetObj.previousIfRes = innerLoopObj.ifRes;
+		return { atIf: true };
+	} else {
+		delete outerTargetObj.previousIfRes;
 	}
+	return { atIf: false };
+};
+
+const _decrBreakContinue = (_imStCo, typ, decrement=false) => {
+	// Break/Continue: returns false if nothing to break, true if there is a current thing to break out of.
+	// Both handlings break out of the action command flow until it rehits the loop iteration.
+	// The main difference is that for continue the loop continues if the continue number reaches zero, whereas for break it breaks out of the loop at zero.
+	// This function sets up the handlings. The handlings themselves happen at various points in the event flow.
+	// Variable clean-up occurs in _performEvent().
+	let pointer = 'i' + _imStCo;
+	let checkVar = (typ == 'break') ? _break[pointer] : _continue[pointer];
+	if (!checkVar || checkVar == 0) return false;
+	if (decrement) {
+		if (typ == 'break') {
+			_break[pointer]--;
+		} else {
+			// Only return true if we need to break out of this continue and go to the next outer loop;
+			_continue[pointer]--;
+			if (_continue[pointer] < 1) return false;
+		}
+	}
+	return true;
 };
 
 const _getLoopCommand = str => {
-	let wot = str.substr(0, 5);
-	return (LOOPCOMMANDS.indexOf(wot) !== -1) ? wot.trim() : false;
+	let elseIfCheck = str.substr(0, 9).trim();
+	if (elseIfCheck == '@else if') {
+		return { name: '@else if', type: 'notloop' };
+	} else {
+		let pos = str.indexOf(' ');
+		let wot = (pos !== -1) ? str.substr(0, pos) : str;
+		if (wot && LOOPCOMMANDS.indexOf(wot) !== -1) {
+			return { name: wot.trim(), type: ((wot == '@each' || wot == '@for') ? 'loop' : 'notloop') };
+		} else {
+			return false;
+		}
+	}
 };
 
 
 const _handleLoop = (loopObj) => {
-	let { currentLoop, varScope } = loopObj;
+	let { fullStatement, varScope, atIfDetails, _imStCo } = loopObj;
 
-	// Which type of loop is it?
-	let command = _getLoopCommand(currentLoop);
+	// Sort out the scope here as it doesn't need doing multiple times from inside the loop (if it is a loop).
 	let scopePrefix = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 
-	switch (command) {
-		case '@each':
-			_handleEach(loopObj, scopePrefix);
-			break;
+	let statement = atIfDetails.name; 
 
-		case '@for':
-			_handleFor(loopObj, scopePrefix);
-			break;
+	if (statement) {
+		switch (statement) {
+			case '@else':
+			case '@else if':
+				// If we've already run a successful if statement, then don't run any more.
+				if (loopObj.previousIfRes && loopObj.previousIfRes.res === true) return;		// jshint ignore:line
+				// If it gets this far, continue with checking and running the if clause.
+
+			case '@if':
+				loopObj.ifRes = _handleIf(loopObj, statement);
+				break;
+
+			case '@each':
+				_resetContinue(_imStCo);
+				_handleEach(loopObj, scopePrefix);
+				break;
+
+			case '@for':
+				_resetContinue(_imStCo);
+				_handleFor(loopObj, scopePrefix);
+				break;
+
+			case '@while':
+				_handleWhile(loopObj);
+				break;
+		}
 	}
+};
+
+const _resetContinue = _imStCo => {
+	delete _continue['i' + _imStCo];
+};
+
+const _resetExitTarget = _imStCo => {
+	delete exitTarget['i' + _imStCo];
 };
 
 const _runSecSelOrAction = obj => {
@@ -4250,30 +4464,32 @@ const _runSecSelOrAction = obj => {
 		_performTarget(objCopy, 0);
 	} else {
 		_performSecSel(obj);
+		_resetExitTarget(obj._imStCo);
 	}
 };
 
 const _handleEach = (loopObj, scopePrefix) => {
-	let { currentLoop, varScope } = loopObj;
+	let { fullStatement, varScope } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 
 	// eg. @each name in {person}
 	// eg. @each name, age in {person}
 	// etc.
-	let inPos = currentLoop.indexOf(' in ');
-	let leftVar = currentLoop.substr(6, inPos - 6);
+	let inPos = fullStatement.indexOf(' in ');
+	let leftVar = fullStatement.substr(6, inPos - 6);
 	let leftVars;
 	if (leftVar.indexOf(',') !== -1) {
 		// There is more than one left-hand assignment.
 		leftVars = leftVar.split(',');
 	}
 
-	let rightVar = currentLoop.substr(inPos + 4);
+	let rightVar = fullStatement.substr(inPos + 4);
 
-	let rightVarVal = _evalDetachedExpr(rightVar, varScope);
+	let prepExpr = _prepareDetachedExpr(rightVar, varScope);
+	let rightVarVal = _evalDetachedExpr(prepExpr, varScope);
 
 	if (!rightVarVal) {
-		console.log('Active CSS error: Error in evaluating' + rightVar + ' in @each - skipping loop.');
+		_warn('Error in evaluating' + rightVar + ' in @each - skipping loop.');
 		return;
 	}
 
@@ -4296,7 +4512,10 @@ const _handleEach = (loopObj, scopePrefix) => {
 };
 
 const _handleEachArrayInner = (rightVarVal, itemsObj, counter2) => {
-	let { leftVars, scopePrefix, counter } = itemsObj;
+	let { loopObj, leftVars, scopePrefix, counter } = itemsObj;
+	let _imStCo = loopObj._imStCo;
+
+	if (_checkBreakLoop(_imStCo, 'inner')) return;
 
 	let scopedVar = scopePrefix + leftVars[counter2].trim();
 	_set(scopedProxy, scopedVar, rightVarVal[counter][counter2]);
@@ -4309,23 +4528,24 @@ const _handleEachArrayInner = (rightVarVal, itemsObj, counter2) => {
 
 const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 	let { loopObj, leftVar, leftVars, rightVar, scopePrefix } = itemsObj, loopObj2, newRef;
+	let _imStCo = loopObj._imStCo;
 
-	if (typeof imSt[loopObj._imStCo] !== 'undefined' && imSt[loopObj._imStCo]._acssImmediateStop) return;
+	if (_checkBreakLoop(_imStCo)) return;
 
 	// Get the rightVar for real and loop over it.
 	// Make a copy of loopObj. We're going to want original copies every time we substitute in what we want.
 	loopObj2 = _clone(loopObj);
 
 	if (!leftVars) {
-		// Single level array.
-		let scopedVar = scopePrefix + leftVar;
+		// Single level array, or a two-dimensional array with only one left-hand variable.
+ 		let scopedVar = scopePrefix + leftVar;
 		_set(scopedProxy, scopedVar, rightVarVal[counter]);
 
 		loopObj2.loopRef = itemsObj.existingLoopRef + leftVar + '_' + counter;
 	} else {
 		// Two dimensional array.
 		itemsObj.counter = counter;
-		_handleEachArrayInner(rightVarVal, itemsObj, 0);
+		_handleEachArrayInner(rightVarVal, itemsObj, 0, leftVars);
 
 		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;
 	}
@@ -4335,13 +4555,16 @@ const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 	counter++;
 	if (rightVarVal[counter]) {
 		_handleEachArrayOuter(rightVarVal, itemsObj, counter);
+	} else {
+		_resetContinue(_imStCo);
 	}
 };
 
 const _handleEachObj = (items, itemsObj, counter) => {
 	let { loopObj, leftVar, leftVars, rightVar, scopePrefix } = itemsObj, objValVar, loopObj2, newRef;
+	let _imStCo = loopObj._imStCo;
 
-	if (typeof imSt[loopObj._imStCo] !== 'undefined' && imSt[loopObj._imStCo]._acssImmediateStop) return;
+	if (_checkBreakLoop(_imStCo)) return;
 
 	let key = items[counter][0];
 	let val = items[counter][1];
@@ -4372,11 +4595,13 @@ const _handleEachObj = (items, itemsObj, counter) => {
 	counter++;
 	if (items[counter]) {
 		_handleEachObj(items, itemsObj, counter);
+	} else {
+		_resetContinue(_imStCo);
 	}
 };
 
 const _handleFor = (loopObj, scopePrefix) => {
-	let { currentLoop, varScope } = loopObj;
+	let { fullStatement, varScope } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 
 	// eg. @for n from 1 to 10 (defaults to increment of 1)
@@ -4390,14 +4615,13 @@ const _handleFor = (loopObj, scopePrefix) => {
 	// It works with up to 5 decimal places. Not recommended for use with more than several thousand iterations for performance reasons.
 
 	// Get the positions of the "from", "to" and "step" parts of the string.
-	let statement = currentLoop;
+	let statement = fullStatement;
 	let fromPos = statement.indexOf(' from ');
 	let toPos = statement.indexOf(' to ');
 	let stepPos = statement.indexOf(' step ');
 
 	if (fromPos === -1 || toPos === -1) {
-		console.log('Active CSS error: "from" and "to" must be used in the @for statement, "' + statement + '"');
-		return;
+		_err('"from" and "to" must be used in the @for statement, "' + statement + '"');
 	}
 
 	// Extract each part of the string that we need to run the statement and assign to appropriate variables.
@@ -4422,17 +4646,13 @@ const _handleFor = (loopObj, scopePrefix) => {
 
 	// Handle any errors from the conversion. We must have numbers, and the "step" value must not equal zero.
 	if ([ fromVal, toVal, stepVal ].indexOf(false) !== -1) {
-		console.log('Active CSS error: Could not establish valid values from @for statement, "' + statement + '" (look for "false").', 'From:', fromVal, 'To:', toVal, 'Step:', stepVal);
-		return;
+		_err('Could not establish valid values from @for statement, "' + statement + '"', null, 'From:', fromVal, 'To:', toVal, 'Step:', stepVal);
 	} else if (stepValDP > 5) {
-		console.log('Active CSS error: @for statement can only handle up to 5 decimal places, "' + statement + '"');
-		return;
+		_err('@for statement can only handle up to 5 decimal places, "' + statement + '"');
 	}
 
 	// If either "step" is set to zero, or there is a negative progression with no negative "step" value, skip loop.
 	if (stepVal == 0 || fromVal > toVal && stepVal > 0) return;
-
-	// console.log('_handleFor, counterVar:', counterVar, 'fromVal:', fromVal, 'toVal:', toVal, 'stepVal:', stepVal);	// Handy - leave this here.
 
 	// Now that the loop is set up, pass over the necessary variables into the recursive for function.
 	let itemsObj = {
@@ -4450,8 +4670,11 @@ const _handleFor = (loopObj, scopePrefix) => {
 
 const _handleForItem = (itemsObj, counterVal) => {
 	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2, newRef, objValVar;
+	let _imStCo = loopObj._imStCo;
 
-	if (typeof imSt[loopObj._imStCo] !== 'undefined' && imSt[loopObj._imStCo]._acssImmediateStop) return;
+	if (_checkBreakLoop(_imStCo)) {
+		return;
+	}
 
 	loopObj2 = _clone(loopObj);
 
@@ -4472,6 +4695,8 @@ const _handleForItem = (itemsObj, counterVal) => {
 	// Run this function again if we are still in the loop, bearing in mind that the "step" stepping value can be positive or negative.
 	if (stepVal > 0 && counterVal <= toVal || stepVal < 0 && counterVal >= toVal) {
 		_handleForItem(itemsObj, counterVal);
+	} else {
+		_resetContinue(_imStCo);
 	}
 };
 
@@ -4485,10 +4710,333 @@ const _loopVarToNumber = (str, varScope) => {
 	if (newVal !== false) return newVal;	// If it's a number by this point, then no further checks are necessary and we return the number.
 
 	// Handle as an expression, potentially containing scoped variables.
-	let expr = _evalDetachedExpr(str, varScope);
+	let prepExpr = _prepareDetachedExpr(rightVar, varScope);
+	let expr = _evalDetachedExpr(prepExpr, varScope);
 
 	// Return the number or false if that value doesn't equate to a number.
 	return _getNumber(expr);
+};
+
+const _checkAtIfOk = oObj => {
+	let ifRes = _handleLoop(oObj);
+	// Returns true if it isn't an @if statement, or the boolean result of the @if statement.
+	return (typeof ifRes === 'object') ? (ifRes.command == '@if' && ifRes.res) : true;
+};
+
+const _handleIf = (loopObj, ifType) => {
+	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj } = loopObj;
+	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
+	let targetObj;
+
+	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
+	// etc.
+
+	// First, remove @if clause.
+	let statement = fullStatement;
+	statement = statement.substr(ifType.length).trim();
+
+	// Do any variable substituting, etc. before parsing string to get ready for evaluation.
+//	let prepExpr = _prepareDetachedExpr(statement, varScope);
+
+	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
+	let parsedStatement;
+	if (ifType == '@else') {
+		// If it is even getting into here, the evaluation is set true and the rest is handled in the same way as @if and @else if.
+		parsedStatement = 'true';
+	} else {
+		// The evaluation of "@if" and "@else if" is handled in the same way.
+		parsedStatement = _replaceConditionalsExpr(statement);
+	}
+	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
+
+	if (parsedStatement !== false) {
+
+		let thisIfObj = {
+			evType,
+			varScope,
+			otherObj,
+			sel: primSel,
+			eve,
+			doc,
+			component,
+			compDoc,
+		};
+
+		if (loopWhat != 'action' || typeof passTargSel == 'string') {
+			// This is surrounding a target selector, so the reference object is the event receiver object.
+			thisIfObj.obj = obj;
+		} else if (typeof passTargSel == 'object') {
+			thisIfObj.obj = passTargSel;
+		}
+
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+		if (res) {
+			// This is ok - run the inner contents.
+			_runSecSelOrAction(loopObj);
+		}
+
+		return { ifType, res };
+	}
+	return false;
+};
+
+const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
+	// This function replaces ACSS conditionals dynamically (that have no "if-"), gets the return value as a string (ie. "true" or "false" and puts it
+	// into the expression string for later evaluation.
+
+	// Count parentheses. It's not possible to do matching parentheses with regex and account for all the possible combinations of the insides
+	// that are not quoted. It needs to work with css selectors which are not quoted.
+	// We could split by colon after escaping the colon preceding the pseudo-selectors and even inline conditionals.
+	// Like @if func(sadasd):func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) {
+	// That gives us an AND clause. But doesn't give us a way to have an OR, or a way to have complex () around AND and OR clauses.
+	// Like @if (func(sadasd) && func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) || func(sdfsdf)) && func(sdf) {
+	// But it's easier just to split by (, then check for balanced parentheses once the function declaration has started.
+
+	// First of all, as we're going to split by "(" and count ")", escape all "(" and ")" inside quotes and any single quotes that currently exist.
+	let newStr = _escInQuo(str, '(', '__ACSSOpenP');
+	newStr = _escInQuo(newStr, ')', '__ACSSClosP');
+	newStr = _escInQuo(newStr, '\'', '__ACSSSingQ');
+	// We're also going to escape any backslashes, so we avoid weirdness once we put commands in between quotes.
+	newStr = _escInQuo(newStr, '\\', '__ACSSBSlash');
+
+	// Error if the conditional has unbalanced parentheses.
+	let countOp = newStr.split('(');
+	if (countOp.length != newStr.split(')').length || countOp.length == 0) {
+		_err('Opening/closing parentheses are unbalanced in @if statement, "' + str + '"', o);
+	}
+
+	// Split by (function name)?\(. We need to do something to the function name to run it properly.
+	// We do it like this so we don't have to get into parsing complex logic with AND and ORs.
+	// We convert the ACSS syntax into using the actual conditional JavaScript functions instead and evaluate it as a whole after that.
+	let arr = newStr.split(/([\![\s]*]?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-]*\()/gim);
+
+	/*
+	Example for parsing and the resultant regex split:
+		@if (var(cheese) && (has-class(sdfs(sdsdf .sdfsdf)) || var-true())) || var()
+		""
+		"("
+		""
+		"var("
+		"cheese) && "
+		"("
+		""
+		"has-class("
+		""
+		"sdfs("
+		"sdsdf .sdfsdf)) || "
+		"var-true("
+		"))) || "
+		"var("
+		")"
+	*/
+
+	let funcJustStarted = false;
+	let funcInProgress = false;
+	let openInnerBrackets = 0;
+	let outsideBrackets = 0;
+	let erred = false;
+	let condName = '';
+
+	let newArr = arr.map(item => {
+		if (item == '') return '';
+		if (item == '(') {
+			if (funcInProgress) {
+				openInnerBrackets++;
+			} else {
+				outsideBrackets++;
+			}
+		} else if (!funcJustStarted && !funcInProgress) {
+			// Possibly the start of a function in here. This is the only place a function name could be. It would have it's trailing "(".
+			// The developer doesn't need to use the 'if' when writing in an if statement, but check it's existence out of courtesy so it isn't used twice.
+			let start = 0;
+			if (item.startsWith('!')) {
+				start = 1;
+			} else if (item.startsWith('not-')) {
+				start = 4;
+			}
+			condName = item.slice(start, -1).trim();
+			if (!condName.startsWith('if-')) condName = 'if-' + condName;
+
+			// Test function. If it isn't present as stored conditional, built-in or custom, evaluate the original string.
+			let func = condName._ACSSConvFunc();
+			if (!_isCond(func)) return item;
+
+			// Ok so far, start to reformat the conditional for JS parsing.
+			funcJustStarted = true;
+			if (start != 0) condName = '!' + condName;
+			item = '_runAtIfConds(';
+
+		} else {
+			if (!funcInProgress) {
+				funcInProgress = true;
+				// Reached the start of the content of the function. Replace the function with data we need to call the conditional when evaluating.
+				item = '\'' + condName + '\', ifObj, \'' + item;
+			}
+
+			// It could contain closing parentheses.
+			// Count the number of closing parentheses.
+			let numClosingBrackets = item.split(')').length - 1;
+			let closingBracketCountDown = numClosingBrackets;
+			if (numClosingBrackets > 0) {
+				let bracketPos = item.indexOf(')');
+				while (bracketPos !== -1 && openInnerBrackets > 0) {
+					openInnerBrackets--;
+					bracketPos = item.indexOf(')', bracketPos + 1);
+					closingBracketCountDown--;
+				}
+				if (openInnerBrackets <= 0) {
+					funcJustStarted = false;
+					funcInProgress = false;
+					item = item.substr(0, bracketPos) + '\'' + item.substr(bracketPos);
+					// Adjust counters to account for any trailing closing parentheses.
+					let bracketsLeft = numClosingBrackets - closingBracketCountDown;
+					if (bracketsLeft > 0) {
+						bracketPos = item.indexOf(')', bracketPos + 1);
+						outsideBrackets--;
+						while (bracketPos !== -1 && outsideBrackets > 0) {
+							outsideBrackets--;
+							bracketPos = item.indexOf(')', bracketPos + 1);
+						}
+					}
+				}
+			} else {
+				openInnerBrackets++;
+			}
+
+		}
+		return item;
+	});
+
+	// Don't run anything if there has been an error.
+	if (erred) return false;
+
+	// Rejoin the array to form the final string and unescape the inner parentheses ready for evaluation.
+	let arrStr = newArr.join('');
+	arrStr = arrStr.replace(/__ACSSOpenP/g, '(');
+	arrStr = arrStr.replace(/__ACSSClosP/g, ')');
+	// The backslashes and quotes get substituted back into place in the conditional function runner itself during evaluation.
+	// Doing it this way is better for performance as it avoids having to get into complex string manipulation - there's no point.
+
+	return arrStr;
+};
+
+const _runAtIfConds = (condName, ifObj, str) => {
+	// This is run during @if statement evaluation.
+	// ifObj is set in _handleIf and passed in at the point of evaluation.
+	// condFunc and str are set up in _replaceConditionalsExpr during string preparation before evaluation.
+	let { evType, obj, varScope, otherObj, sel, eve, doc, component, compDoc } = ifObj;
+
+	// Set up the conditional contents (the "action command") by unescaping what was escaped earlier.
+	let condVal = str.replace(/__ACSSSingQ/g, '\'');
+	condVal = str.replace(/__ACSSBSlash/g, '\\');
+
+	let clause = condName + '(' + condVal + ')';
+
+	// Use _passesConditional to be able to use comma-delimited conditionals and custom conditionals - don't call _checkCond directly as it won't
+	// cater for everything.
+
+	// Run the conditional clause and return the result for use in the overall evaluation in _handleIf().
+	let condObj = {
+		el: obj,
+		sel,
+		clause,
+		evType,
+		ajaxObj: otherObj,
+		doc,
+		varScope,
+		component,
+		eve,
+		compDoc
+	};
+
+	return _passesConditional(condObj);
+};
+
+const _runIf = (parsedStatement, originalStatement, ifObj) => {
+	// Substitute any variables dynamically so they have the correct values at the point of evaluation and not earlier.
+	let { obj, otherObj, varScope } = ifObj;
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str: parsedStatement,
+			func: 'Var',
+			obj,
+			varScope
+		}
+	);
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			varScope
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: otherObj,
+			varScope
+		},
+		strObj.ref
+	);
+	// Output the variables for real from the map.
+	let readyStatement = _resolveVars(strObj.str, strObj.ref);
+	
+	let res;
+	try {
+		res = Function('scopedProxy, ifObj, _runAtIfConds', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds);		// jshint ignore:line
+	} catch (err) {
+		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
+		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
+	}
+
+	return res;
+};
+
+const _handleWhile = (loopObj) => {
+	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc } = loopObj;
+
+	if (_checkBreakLoop(_imStCo)) return;
+
+	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
+	// etc.
+
+	// First, remove @if clause.
+	let statement = fullStatement;
+	statement = statement.substr(7).trim();
+
+	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
+	let parsedStatement = _replaceConditionalsExpr(statement);
+	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
+
+	if (parsedStatement !== false) {
+		let thisIfObj = {
+			evType,
+			varScope,
+			otherObj,
+			sel: primSel,
+			eve,
+			doc,
+			component,
+			compDoc
+		};
+
+		if (loopWhat != 'action' || typeof passTargSel == 'string') {
+			// This is surrounding a target selector, so the reference object is the event receiver object.
+			thisIfObj.obj = obj;
+		} else if (typeof passTargSel == 'object') {
+			thisIfObj.obj = passTargSel;
+		}
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+		if (res) {
+			// This is ok - run the inner contents.
+			let loopObj2 = _clone(loopObj);
+			_runSecSelOrAction(loopObj2);
+			_handleWhile(loopObj2);
+		}
+	}
+
 };
 
 const _addACSSStyleTag = (acssTag) => {
@@ -4536,6 +5084,7 @@ const _addConfigError = (str, o) => {
 
 const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentName, ev) => {
 	let secsels, secselsLength, secsel, i, thisAct, secSelCounter = -1;
+
 	if (_getLoopCommand(nam) !== false) {
 		if (configObj[secSelCounter] === undefined) {
 			configObj[secSelCounter] = [nam.replace(/acss_int_loop_comm/g, ',')];
@@ -4723,7 +5272,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
 			// If the count goes above the total number of open curlies, we know we have a syntax error of an unclosed curly bracket.
-			console.log('Syntax error in config - possibly an incomplete set of curly brackets.');
+			_err('Syntax error in config - possibly an incomplete set of curly brackets.');
 			return false;
 		}
 		if (match[PARSEDEBUG]) {
@@ -4837,6 +5386,7 @@ const _iterateConditionals = (conditions, rules, sel) => {
 const _iteratePageList = (pages, removeState=false) => {
 	// This is a cumulative action to what is there already, if anything, or a removal action.
 	if (!('content' in document.createElement('template'))) {
+		// Leave this as regular console.log, as this probably wouldn't handle correctly in the error handling anyway.
 		console.log('Browser does not support html5. Cannot instantiate page navigation.');
 		return;
 	}
@@ -5062,7 +5612,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						// The first item in the array will always be the main selector, and the last will always be the event.
 						// The middle can be a mixture of conditions.
 						if (!evSplit[1]) {	// This has no split selector entry and is an error.
-							console.log('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
+							_warn('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
 							continue;
 						}
 						if (evSplit[0] == '') {
@@ -5224,9 +5774,10 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	let systemInitConfig = '';
-	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
+	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
 		let sel, ev;
 		if (inlineActiveID) {
@@ -5256,6 +5807,32 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		}
 		return '_ACSS_subst_equal_brace_start' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '_ACSS_subst_equal_brace_end';
 	});
+
+	// Handle continue; and break; so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
+	// Put these into a general non-colon command array.
+	str = str.replace(/("(.*?)")/g, function(_, innards) {
+		innards = innards.replace(/continue\;/g, '_ACSS_continue');
+		innards = innards.replace(/break\;/g, '_ACSS_break');
+		innards = innards.replace(/exit\;/g, '_ACSS_exit');
+		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		return innards;
+	});
+	str = str.replace(/('(.*?)')/g, function(_, innards) {
+		innards = innards.replace(/continue\;/g, '_ACSS_continue');
+		innards = innards.replace(/break\;/g, '_ACSS_break');
+		innards = innards.replace(/exit\;/g, '_ACSS_exit');
+		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		return innards;
+	});
+	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
+	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+	str = str.replace(/_ACSS_continue/g, 'continue;');
+	str = str.replace(/_ACSS_break/g, 'break;');
+	str = str.replace(/_ACSS_exit/g, 'exit;');
+	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
+
 	// Handle any inline Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
 	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
@@ -5263,40 +5840,44 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\' \.\[\]]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\" \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_brace_start_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_hash_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\. \$\[\]]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\. \$\[\]\(\)]+)\}/gi, function(_, innards) {
+		if (innards.trim() == '') return '{}';
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
 	// First, replace all escaped curlies with something else.
-	str = str.replace(/\\{/g, '_ACSS_brace_start');
-	str = str.replace(/\\}/g, '_ACSS_brace_end');
+	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
+	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
+
 	// Now we can match the component accurately. The regex below should match all components.
-	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
+	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
 		// Replace existing escaped quote placeholder with literally escaped quotes.
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
@@ -5306,6 +5887,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
 		return startBit + '{component: "' + innards + '";}';
 	});
+
 	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
 	str = str.replace(/\t+/g, ' ');
 	// Unconvert spaces in component html back to tabs so that HTML can render as per HTML rules.
@@ -5343,7 +5925,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Now run the actual parser now that we have sane content.
 	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
 	if (!Object.keys(str).length) {
-		console.log('Active CSS: Either your config is empty or there is a structural syntax error. str:', str);
+		_err('Either your config is empty or there is a structural syntax error. str:' + str);
 	}
 	return str;
 };
@@ -5718,6 +6300,7 @@ ActiveCSS.init = (config) => {
 
 const _immediateStop = o => {
 	// Stop event flow here. Used in pause/await functionality for breaking out of commands at the start of the timeout.
+	// It also performs everything that is needed for the command "exit;" to work, as it effectively stops further all event flow actions.
 	if (typeof imSt[o._imStCo] !== 'undefined') imSt[o._imStCo]._acssImmediateStop = true;
 	_stopImmediateEventPropagation(o);	// Also calls _stopEventPropagation().
 };
@@ -5739,7 +6322,7 @@ const _pause = (o, tim) => {
 
 const _pauseHandler = (o) => {
 	if (o.actVal.indexOf('every') !== -1 || o.actVal.indexOf('after') !== -1 || o.actVal.indexOf('await') !== -1) {
-		console.log('Active CSS error: delay options ("after", "every", "await") are not allowed in the ' + o.actName + ' command, skipping.');
+		_warn('Delay options ("after", "every", "await") are not allowed in the ' + o.actName + ' command, skipping', o);
 		_nextFunc(o);
 		return;
 	} else {
@@ -5878,7 +6461,7 @@ const _getBaseVar = str => {
 	}
 };
 
-const _getScopedVar = (nam, scope) => {
+const _getScopedVar = (nam, scope=false) => {
 	// Accepts any variable type, scoped or not. Returns an object containing full scope name (fullName), name (name) and value (val).
 	// If variable is already scoped, it assumes that inheritance has already been sorted out.
 	let fullName, scopeName, val, pathName, scopingDone, winVar = false;
@@ -5892,7 +6475,7 @@ const _getScopedVar = (nam, scope) => {
 	} else if (fullyScoped) {
 		fullName = nam;
 		scopeName = nam.substr(nam.indexOf('.') + 1);
-		scopeName = _resolveInnerBracketVars(scopeName, scope);
+		if (scope) scopeName = _resolveInnerBracketVars(scopeName, scope);
 		if (fullName.substr(0, 1) == 'w') {
 			val = _get(window, scopeName);
 			winVar = true;
@@ -6688,7 +7271,7 @@ const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	 * a scoped prefix added. At the end it will return the formatted string. It will only add the "scopedProxy." prefix if the word exists in the string.
 	 * If a variable is in quotes, it substitutes the value itself into the return string.
 	*/
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)?)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\$\.\[\]\'\"]+)?)\}/gim, function(_, wot) {
 		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';
 		if (wot == 'true' || wot == 'false') return wot;
 		let scoped = _getScopedVar(wot, varScope);
@@ -6871,7 +7454,7 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 		// Now handle real component insertion.
 		// See create-element code for why this is used: "_acss-host_' + tag + '_"
 		// "jshint" thinks this function in a loop may cause semantic confusion. It doesn't in practical terms, and we need it, hence we need the ignore line.
-		str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-_]+)\}/gi, function(_, c) {	// jshint ignore:line
+		str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-]+)\}/gi, function(_, c) {	// jshint ignore:line
 			// Note: if the item is empty or if it references an empty component, we always finally return '';
 			let customElComp = false;
 			if (c.substr(0, 11) == '_acss-host_') {
@@ -6926,7 +7509,7 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 		});
 		if (!found) break;
 	}
-	if (co == 50) console.log('Active CSS recursion detected during component rendering. Skipped after 50 attempts.\nFile: ' + o.file + ', line: ' + o.line);
+	if (co == 50) _err('Recursion detected during component rendering. Exited after 50 attempts', o);
 	return str;
 };
 
@@ -7055,7 +7638,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
 			if (wot.startsWith('$')) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
@@ -7077,12 +7660,13 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					let hostCID = _getActiveID(shadHost).replace('d-', '');
 					realWot = hostCID + 'HOST' + wot;	// Store the host active ID so we know that it needs updating inside a shadow DOM host.
 				} else {
-					console.log('Non component attribution substitution is not yet supported.');
+					_warn('Non component attribution substitution is not yet supported', o);
 					return _;
 				}
 			} else {
 				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
+
 				// Return the wot if it's a window variable.
 				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef, func);
 				res = scoped.val;
@@ -7123,7 +7707,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 	if (str == 'true' || str == 'false' || str == 'null') return str;		// See isNaN MDN for interesting rules.
 
 	let res, origWot, firstVar;
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
 		if (wot.startsWith('$')) return '{' + wot + '}';
 		origWot = wot;
 		let scoped = _getScopedVar(wot, varScope);
@@ -7146,7 +7730,7 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\[\]\.\$]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
 		switch (innards) {
 			case '$STRING':
 				if (o && o.res) {
@@ -7297,23 +7881,27 @@ const _resolveInheritanceBubble = (scope, varName) => {
 };
 
 const _resolveInnerBracketVars = (str, scope) => {
-	// Takes a scoped variable string and replaces the variables within brackets.
+	// Takes a scoped variable string and replaces the fully variables within brackets.
 	// Used in the var command so it can work with _set in the correct scope.
+	// Eg. str could complex like: gameState[scopedProxy.main.winner[scopedProxy.main.cheese[1]][0][0].desc]
+	// This can either be from a left-hand assignment or a right-hand reference. We just want to translate the fully scoped variables into a result
+	// for getting and setting purposes.
 	let newStr = str;
 
 	if (str.indexOf('[') !== -1) {
-		newStr = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.]+)\]/g, function(_, innerVariable) {
+		newStr = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.]+)/g, function(_, innerVariable) {
 			// Is this a scoped variable?
-			if (_resolvable(innerVariable)) return '[' + innerVariable + ']';	// Do not resolve variable or content found that has not already been defined.
+			if (DIGITREGEX.test(innerVariable) || _resolvable(innerVariable)) return '[' + innerVariable;	// Do not resolve variable or content found that has not already been defined.
 			let res;
 			let scoped = _getScopedVar(innerVariable, scope);
-			if (typeof scoped.val === 'string') {
-				// Return the value in quotes.
-				res = '"' + scoped.val + '"';
-			} else if (typeof scoped.val === 'number') {
-				// Return the value as it is.
-				res = scoped.val;
-			} else if (typeof scoped.val !== 'undefined') {
+//			if (typeof scoped.val === 'string') {
+//				// Return the value in quotes.
+//				res = '"' + scoped.val + '"';
+//			} else if (typeof scoped.val === 'number') {
+//				// Return the value as it is.
+//				res = scoped.val;
+//			} else if (typeof scoped.val !== 'undefined') {
+			if (typeof scoped.val !== 'undefined') {
 				// Return the fully scoped name.
 				res = scoped.fullName;
 			} else {
@@ -7321,11 +7909,95 @@ const _resolveInnerBracketVars = (str, scope) => {
 				res = innerVariable;
 			}
 
-			return '[' + res + ']';
+			return '[' + res;
 		});
 	}
 
+	// Now evaluate the inner brackets so that we return a result for each inner variable. This is cleaner than leaving these to get evaluated as they are,
+	// as they won't evaluate easily. Strange but true.
+
+	// Grab all the innards of all the outer square brackets. This will give us enough to evaluate.
+	// Use _replaceConditionalsExpr as a model to handle the balanced brackets. In theory it should be simpler than that function.
+	// Then for each full match, evaluate and insert the result into newStr for returning.
+	newStr = _resolveInnerBracketVarsDo(newStr);
+
 	return newStr;
+};
+
+const _resolveInnerBracketVarsDo = str => {
+	if (str.indexOf('scopedProxy.') === -1) return str;
+	if (str.startsWith('scopedProxy.')) {
+		throw 'ACSS internal error: _resolveInnerBracketVarsDo var should not start with "scopedProxy.". Please report error in GitHub issues.';
+	}
+	let escStr = _escInQuo(str, 'scopedProxy\\.', '__ACSSScopedP');
+	if (escStr.indexOf('scopedProxy.') === -1) return str;
+	escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
+	escStr = _escInQuo(escStr, ']', '__ACSSClSq');
+
+	let newStr = recursInnerScoped(escStr);
+
+	newStr = newStr.replace(/__ACSSScopedP/g, 'scopedProxy.');
+	newStr = newStr.replace(/__ACSSOpSq/g, '[');
+	newStr = newStr.replace(/__ACSSClSq/g, ']');
+
+	return newStr;
+};
+
+const recursInnerScoped = str => {
+	// Get a full inner-scoped value, with a further inner-scoped value and return the valuated result in string form.
+	// If it finds an inner-scoped value, it calls this function again until there is no further inner scoped variable.
+	let sc = 'scopedProxy.';
+	let startPos = str.indexOf(sc, 1);
+	let newBeginning = str.substr(0, startPos);
+
+	let rest = str.substr(startPos);
+	let restStartPos = rest.indexOf(sc, 1);
+
+	if (restStartPos !== -1) {		// Note, we don't want to check for a fully scoped variable at the beginning of the string, as we know that.
+		// There is a further scoped variable to evaluate.
+		rest = recursInnerScoped(rest);
+	}
+
+	// From here we have the potential for fully evaluating a scopedVariable. There are no inner scoped variable present.
+	// There may be extra closing square brackets that we don't need in the "rest" variable.
+	// The result should either be a string or a number (I think anyway - can you even have boolean indexes? Probably - anyway, that won't be supported doing it like this).
+	// Eg. scopedProxy.main.cheese[0][0]].desc][0].blah]] needs to extract "scopedProxy.main.cheese[0][0]"
+	// Eg. scopedProxy.main.winner['hi'].desc] needs to extract "scopedProxy.main.winner['hi'].desc"
+	// Eg. scopedProxy.main.cheese] needs to extract "scopedProxy.main.cheese"
+	// Eg. scopedProxy.main.cheese[0][1]] needs to extract "scopedProxy.main.cheese[0][1]"
+	// Extract everything up to the first unbalanced closing bracket to get the variable to evaluate and have the rest as the remainder.
+
+	// Split by closing bracket. As we loop through, when we don't get an opening bracket in the array item then we know we've got it all.
+	let closArr = rest.split(/\]/gm);
+	let closArrLen = closArr.length;
+	let variable = '', finished = false;
+	let remainder = '';
+	for (let i = 0; i < closArrLen; i++) {
+		let checkStr = closArr[i];
+		if (finished) {
+			remainder += ']' + checkStr;
+		} else {
+			variable += checkStr;
+			if (!/\[/.test(checkStr)) {
+				finished = true;
+			} else {
+				variable += ']';
+			}
+		}
+	}
+	// Evaluate variable - will be quick as it's fully scoped already.
+	let scoped = _getScopedVar(variable), res;
+	if (typeof scoped.val === 'string') {
+		// Return the value in quotes.
+		res = '"' + scoped.val + '"';
+	} else if (typeof scoped.val === 'number') {
+		// Return the value as it is.
+		res = scoped.val;
+	} else {
+		throw 'Active CSS error: Could not evaluate ' + variable;
+	}
+
+	return newBeginning + res + remainder;
 };
 
 const _resolveVars = (str, varReplacementRef, func='') => {
@@ -7407,7 +8079,7 @@ ActiveCSS._sortOutFlowEscapeChars = str => {
 		'_ACSS_later_brace_end': '}',
 		'_ACSS_later_semi_colon': ';',
 		'_ACSS_later_colon': ':',
-		'_ACSS_later_double_quote': '"',
+		'_ACSS_later_double_quote': '"'
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
@@ -7642,36 +8314,62 @@ const _varUpdateDomDo = (change, dataObj) => {
 	}
 };
 
-/* Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework */
+/**
+ * Checks if a cookie exists.
+ * (Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework)
+ *
+ * Called by:
+ *	IfCookieEquals()
+ *	IfCookieExists()
+ *
+ * Side-effects:
+ *	None
+ *
+ * @private
+ * @param {String} nam: The name of the cookie to check existence of.
+ *
+ * @returns {Boolean} Returns if the cookie exists or not.
+ */
 const _cookieExists = nam => {
     if (!nam || /^(?:expires|max\-age|path|domain|secure)$/i.test(nam)) { return false; }
    	return (new RegExp("(?:^|;\\s*)" + encodeURIComponent(nam).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
 };
 
-/* Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework */
+/**
+ * Gets the cookie value.
+ * (Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework)
+ *
+ * Called by:
+ *	IfCookieEquals
+ *
+ * Side-effects:
+ *	None
+ *
+ * @private
+ * @param {String} nam The name of the cookie to check existence of.
+ *
+ * @returns {Null} when the cookie doesn't exist.
+ * @returns {String} Returns the value of the cookie or null.
+ */
 const _getCookie = nam => {
 	if (!nam) return null;
 	return decodeURIComponent(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(nam).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
 };
 
-/* Cookie framework incorporated into core from: https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie/Simple_document.cookie_framework */
-const _setCookie = (nam, sValue, vEnd, sPath, sDomain, bSecure, bSameSite, bHttpOnly) => {
-	if (!nam || /^(?:expires|max\-age|path|domain|secure)$/i.test(nam)) { return false; }
-	var sExpires = '';
-	if (vEnd) {
-		switch (vEnd.constructor) {
-			case Number:
-				sExpires = vEnd === Infinity ? '; expires=Fri, 31 Dec 9999 23:59:59 GMT' : '; max-age=' + vEnd;
-				break;
-			case String:
-				sExpires = '; expires=' + vEnd;
-				break;
-		}
-	}
-	document.cookie = encodeURIComponent(nam) + '=' + encodeURIComponent(sValue) + sExpires + (sDomain ? '; domain=' + sDomain : '') + (sPath ? '; path=' + sPath : '') + (bSecure ? '; Secure' : '') + (bSameSite ? '; samesite=' + bSameSite : '' + (bHttpOnly ? '; HttpOnly' : ''));
-	return true;
-};
-
+/**
+ * Sets up the action flow object with an internal .avRaw property that contains the URL before the "?".
+ *
+ * Called by:
+ *	_a.LoadConfig()
+ *
+ * Side-effects:
+ *	Adjusts action flow object (adds an internally used .avRaw property)
+ *
+ * @private
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
 const _addActValRaw = o => {
 	// (AV is a reference to o.actVal)
 	// Remove everything before the "?" in the file URL so we can store it for checking later.
@@ -7682,7 +8380,29 @@ const _addActValRaw = o => {
 	}
 };
 
-const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, varArr) => {
+/**
+ * Performs an XHR request with callbacks and error handlings.
+ *
+ * Called by:
+ *	_ajaxDo()
+ *	_getFile()
+ *
+ * Side-effects:
+ *	Performs an XHR request with callbacks and consoles errors.
+ *	Increments/decrements the internally global preGetMid variable.
+ *
+ * @private
+ * @param {String} getMethod: The method, GET, POST, etc.
+ * @param {String} fileType: The response type, "html", "txt", "json" or something else which will use "application/x-www-form-urlencoded".
+ * @param {String} filepath: The full URL.
+ * @param {String} pars: The string of parameters to send as POST vars separated by "&".
+ * @param {Function} callback: The success callback function.
+ * @param {Function} errcallback: The error callback function.
+ * @param {Object} o: Action flow object (optional).
+ *
+ * @returns nothing
+ */
+ const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, o) => {
 	preGetMid++;
 	var r = new XMLHttpRequest();
 	r.open(getMethod, filepath, true);
@@ -7704,24 +8424,24 @@ const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, varAr
 			// Handle application level error.
 			preGetMid--;
 			if (errcallback) {
-				errcallback(r.responseText, r.status, varArr);
+				errcallback(r.responseText, r.status, o);
 			} else {
-				console.log('Tried to get file: ' + filepath + ', but failed with error code: ' + r.status);
+				_err('Tried to get file: ' + filepath + ', but failed with error code: ' + r.status, o);
 			}
 			return;
 		}
 		preGetMid--;
 		if (callback !== null) {
-			callback(r.responseText, varArr);
+			callback(r.responseText, o);
 		}
 	};
 	r.onerror = () => {
 		// Handle network level error.
 		preGetMid--;
 		if (errcallback) {
-			errcallback('Network error', 0, varArr);
+			errcallback('Network error', 0, o);
 		} else {
-			console.log('Tried to get file: ' + filepath + ', but failed due to a network error.');
+			_err('Tried to get file: ' + filepath + ', but failed due to a network error.');
 		}
 	};
 	if (getMethod == 'POST' && pars !== null) {
@@ -7731,7 +8451,26 @@ const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, varAr
 	}
 };
 
-const _ajaxCallback = (str, o) => {
+/**
+ * The callback function after an XHR request returning 200 ok.
+ *
+ * Called by:
+ *	_ajaxDo()
+ *
+ * Side-effects:
+ *	Calls a function to resolve ajax response variables
+ *	Calls a function to setup HTML variables for the core
+ *	Calls the XHR error callback function if the JSON response cannot be parsed
+ *	Calls the callback display function on success
+ *	Adjusts the action flow object by changing the .res property
+ *
+ * @private
+ * @param {String} str: The response string
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallback = (str, o) => {
 	// Convert to a str if it be JSON.
 	if (typeof str === 'string' && str.trim() !== '') {
 		try {
@@ -7753,7 +8492,25 @@ const _ajaxCallback = (str, o) => {
 	}
 };
 
-const _ajaxCallbackDisplay = (o) => {
+/**
+ * Handles display after XHR request.
+ *
+ * Called by:
+ *	_resolveAjaxVars()
+ *	_ajaxCallback()
+ *
+ * Side-effects:
+ *	Adjusts internally global ajaxResLocations variable to store URL if caching or pre-getting.
+ *	Adjusts internally global preGetting variable to remove preGet state of URL.
+ *	Runs the afterAjaxPreGet event if appropriate.
+ *	Calls _ajaxDisplay which handles success or failure.
+ *
+ * @private
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallbackDisplay = (o) => {
 	if (!o.error && (o.cache || o.preGet)) {
 		// Store it for later. May need it in the afterAjaxPreGet event if it is run.
 		ajaxResLocations[o.finalURL] = o.res;
@@ -7770,7 +8527,28 @@ const _ajaxCallbackDisplay = (o) => {
 	}
 };
 
-const _ajaxCallbackErr = (str, resp, o) => {
+/**
+ * Handles error after XHR request.
+ *
+ * Called by:
+ *	_ajaxCallback()
+ *
+ * Side-effects:
+ *	Adjusts properties in action flow object.
+ *	Empties asynchronous reference store (for resumption after await or pausing).
+ *	Runs specific afterAjax... error event.
+ *	Runs general afterAjax...Error event.
+ *	Send debug data to the extension.
+ *	Adjusts internally global preGetting variable to remove preGet state of URL.
+ *
+ * @private
+ * @param {String} str: Unused in this function, but it needs to exist as the first parameter for browser XHR error callback.
+ * @param {String} resp: The XHR response code (404, etc.)
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallbackErr = (str, resp, o) => {
 	o.error = true;
 	o.errorCode = resp || '';
 
@@ -7797,7 +8575,25 @@ const _ajaxCallbackErr = (str, resp, o) => {
 	}
 };
 
-const _ajaxDisplay = o => {
+/**
+ * Handles what happens after the successful XHR request callback.
+ *
+ * Called by:
+ *	_ajaxCallbackDisplay()
+ *
+ * Side-effects:
+ *	Adjusts document.location.hash if appropriate
+ *	Runs the appropriate afterAjax event
+ *	Restarts the sync queue after an await or pause
+ *	Triggers any hash event redrawing
+ *	Resets the internally global hashEventAjaxDelay variables which detected if a hash event needed to be run or not
+ *
+ * @private
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxDisplay = o => {
 	let ev = 'afterAjax' + ((o.formSubmit) ? 'Form' + (o.formPreview ? 'Preview' : o.formSubmit ? 'Submit' : '') : '');
 	_handleEvents({ obj: o.obj, evType: ev, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 	if (o.hash !== '') {
@@ -8049,8 +8845,7 @@ const _convertToMS = (tim, errMess) => {
 	if (tim == 'stack') return 0;
 	var match = /^(\d+)(ms|s)?$/i.exec(tim);
 	if (!match) {
-		console.log(errMess);
-		return false;
+		_err(errMess);
 	}
 	var n = parseFloat(match[1]);
 	var type = (match[2] || 'ms').toLowerCase();
@@ -8092,6 +8887,38 @@ const _eachRemoveClass = (inClass, classToRemove, doc) => {
 		if (!obj) return; // element is no longer there.
 		ActiveCSS._removeClassObj(obj, classToRemove);
 	});
+};
+
+const _err = (str, o, ...args) => {	// jshint ignore:line
+	// Throw involved error messages when using the development edition, otherwise for security reasons throw a more vague error which can be debugged by
+	// using the development edition. If converting for the browser, this would get a special command like "debug-show-messages: true;" or something like
+	// that. It is unnecessary to require that for the JavaScript version of the core, as we differentiate between development and production versions.
+	if (DEVCORE) {
+		_errDisplayLine('Active CSS breaking error', str, [ 'color: red' ], o, args);	// jshint ignore:line
+		throw 'error, internal stack trace -->';
+	} else {
+		throw 'ACSS error: ' + str;
+	}
+};
+
+const _errDisplayLine = (pref, message, errStyle, o, argsIn) => {	// jshint ignore:line
+	if (o) {
+		message = pref + ', ' + message + ' --> "' + o.actName + ': ' + o.actVal + ';"';
+		message += (o.file.startsWith('_inline_')) ? '    (inline ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
+		console.log('%c' + message, errStyle);
+		if (argsIn.length > 0) {
+			let newArgs = ['More info:', ...argsIn];
+			let args = Array.prototype.slice.call(newArgs);
+			console.log.apply(console, args);
+		}
+		console.log('Target:', o);
+		console.log('Config:', config);
+		console.log('Variables:', scopedOrig);
+		if (conditionals.length > 0) console.log('Conditionals:', conditionals);
+		if (components.length > 0) console.log('Components:', components);
+	} else {
+		console.log('%c' + pref + ', ' + message, errStyle);
+	}
 };
 
 const _escapeInnerQuotes = str => {
@@ -8197,7 +9024,7 @@ com[__ACSScom]__ACSScom'
 		// Syntax error - unbalanced expression.
 		newStr = _escCommaBrackClean(newStr, mapObj2);
 		newStr = newStr.replace(/__ACSS_int_com/g, ',');
-		console.log('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr + ', in config: ' + o.file + ', line: ' + o.line);
+		_err('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr, o);
 		return newStr;
 	} else {
 		// Remove the last comma
@@ -8238,22 +9065,24 @@ const _escForRegex = str => {
 	return str.replace(REGEXCHARS, '\\$&');
 };
 
+const _escInQuo = (str, chrRaw, chrRepl) => {
+	let chrReg = _escForRegex(chrRaw);
+	let replReg = new RegExp(chrReg, 'g');
+	str = str.replace(/"(.+?)"/g, function(_, innards) {
+		innards = '"' + innards.replace(replReg, chrRepl) + '"';
+		return innards;
+	});
+	return str;
+};
+
 const _escNoVars = str => {
 	return (typeof str === 'string') ? str.replace(/\{/gim, '__ACSSnoVarsOpCurly').replace(/\}/gim, '__ACSSnoVarsClCurly') : str;
 };
 
-const _evalDetachedExpr = (str, varScope) => {
-	// Evaluate as a detached expression - assuming there is no "o" object.
-	let strObj = _handleVars([ 'rand', 'expr' ], { str, varScope });
-	let valStr = _resolveVars(strObj.str, strObj.ref);
-	valStr = _resolveInnerBracketVars(valStr, varScope);
-	valStr = _prefixScopedVars(valStr, varScope);
-
-	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
-	let valToExpr = '{=' + valStr + '=}';
-
+const _evalDetachedExpr = (valToExpr, varScope) => {
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
-	return _replaceJSExpression(valToExpr, true, false, varScope, -1);	// realVal=true, quoteIfString=false, varReplacementRef=-1
+	const expr = '{=' + valToExpr + '=}';
+	return _replaceJSExpression(expr, true, false, varScope, -1);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 };
 
 const _fullscreenDetails = () => {
@@ -8301,6 +9130,22 @@ const _getAttrOrProp = (el, attr, getProp, ind=null, func='') => {
 	return '';
 };
 
+/**
+ * Takes in a full URL or string and returns everything up to the "?" if it exists
+ *
+ * Called by:
+ *	_a.LoadScript()
+ *	ActiveCSS.init()
+ *	_addActValRaw()
+ *
+ * Side-effects:
+ *	None
+ *
+ * @private
+ * @param {String} str: String containing full URL.
+ *
+ * @returns the string before the "?" or the original string if there is no "?"
+ */
 const _getBaseURL = str => {
 	let pos = str.indexOf('?');
 	return (pos !== -1) ? str.substr(0, str.indexOf('?')) : str;
@@ -8618,6 +9463,8 @@ const _isACSSStyleTag = (nod) => {
 	return (nod.tagName == 'STYLE' && nod.hasAttribute('type') && nod.getAttribute('type') == 'text/acss');
 };
 
+const _isCond = cond => typeof _c[cond] === 'function';
+
 const _isConnected = obj => {
 	return (obj.isConnected || obj === self || obj === document.body);
 };
@@ -8680,6 +9527,17 @@ const _placeCaretAtEnd = el => {
 		el.blur();
 	}
 	el.focus();
+};
+
+const _prepareDetachedExpr = (str, varScope) => {
+	// Evaluate as a detached expression - assuming there is no "o" object.
+	let strObj = _handleVars([ 'rand', 'expr' ], { str, varScope });
+	let valStr = _resolveVars(strObj.str, strObj.ref);
+	valStr = _resolveInnerBracketVars(valStr, varScope);
+	valStr = _prefixScopedVars(valStr, varScope);
+
+	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed.
+	return valStr;
 };
 
 const _random = (len, str=false, hex=false) => {
@@ -8957,6 +9815,12 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 		_setUnderPage();
 	}
 	_setDocTitle(titl);
+};
+
+const _warn = (str, o, ...args) => {
+	if (DEVCORE) {
+		_errDisplayLine('Active CSS error warning', str, [ 'color: green' ], o, args);	// jshint ignore:line
+	}
 };
 
 /**
@@ -9490,11 +10354,7 @@ String.prototype._ACSSRepQuo = function() {
 };
 
 String.prototype._ACSSSpaceQuoIn = function() {
-	let str = this.replace(/"(.+?)"/g, function(_, innards) {
-		innards = '"' + innards.replace(/ /g, '_ACSS_space') + '"';
-		return innards;
-	});
-	return str;
+	return _escInQuo(this, ' ', '_ACSS_space');
 };
 
 String.prototype._ACSSSpaceQuoOut = function() {

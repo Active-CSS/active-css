@@ -2,7 +2,7 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\[\]\.\$]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
 		switch (innards) {
 			case '$STRING':
 				if (o && o.res) {

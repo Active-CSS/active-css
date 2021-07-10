@@ -1,6 +1,6 @@
 const _pauseHandler = (o) => {
 	if (o.actVal.indexOf('every') !== -1 || o.actVal.indexOf('after') !== -1 || o.actVal.indexOf('await') !== -1) {
-		console.log('Active CSS error: delay options ("after", "every", "await") are not allowed in the ' + o.actName + ' command, skipping.');
+		_warn('Delay options ("after", "every", "await") are not allowed in the ' + o.actName + ' command, skipping', o);
 		_nextFunc(o);
 		return;
 	} else {

@@ -5,5 +5,6 @@ const _runSecSelOrAction = obj => {
 		_performTarget(objCopy, 0);
 	} else {
 		_performSecSel(obj);
+		_resetExitTarget(obj._imStCo);
 	}
 };

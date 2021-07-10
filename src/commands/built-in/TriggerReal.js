@@ -9,6 +9,6 @@ _a.TriggerReal = o => {
 		o.secSelObj.addEventListener(o.actVal, function(e) {}, {capture: true, once: true});	// once = automatically removed after running.
 		o.secSelObj[o.actVal]();
 	} catch(err) {
-		console.log('Active CSS error: Only DOM events support trigger-real.');
+		_err('Only DOM events support trigger-real', o);
 	}
 };

@@ -1,9 +1,12 @@
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
 			typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo) ||
 			outerTargetObj.allowMoreActions === false	// This variable gets set to true when an valid selector is found and allows the continuing of running action commands.
 		) {
 		return;
@@ -13,7 +16,11 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	let targVal = targ[m].value;
 	let targName = targ[m].name;
 
-	if (!_checkRunLoop(outerTargetObj, targVal, targName, m, 'action')) {
+	let resultOfLoopCheck = _checkRunLoop(outerTargetObj, targVal, targName, m, 'action');
+	if (!resultOfLoopCheck.atIf) {
+		// Wipe previousIfRes, as this is no longer looking for an "@else if" or "@else".
+		delete outerTargetObj.previousIfRes;
+
 		// Generate the object that performs the magic in the functions.
 		tmpSecondaryFunc = targName._ACSSConvFunc();
 
@@ -55,7 +62,8 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			evDeclObj: chilsObj,
 			ranAction: outerTargetObj.allowMoreActions,
 			runPerm: runButElNotThere,
-			origLoopObj
+			origLoopObj,
+			ifObj
 		};
 
 		outerTargetObj.allowMoreActions = _performAction(act, runButElNotThere);

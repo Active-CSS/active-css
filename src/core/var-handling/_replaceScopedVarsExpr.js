@@ -3,7 +3,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 	if (str == 'true' || str == 'false' || str == 'null') return str;		// See isNaN MDN for interesting rules.
 
 	let res, origWot, firstVar;
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w_\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
 		if (wot.startsWith('$')) return '{' + wot + '}';
 		origWot = wot;
 		let scoped = _getScopedVar(wot, varScope);

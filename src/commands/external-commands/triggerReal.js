@@ -5,6 +5,6 @@ ActiveCSS.triggerReal = (obj, ev, varScope, compDoc, component) => {
 	if (obj) {
 		_a.TriggerReal({ secSelObj: obj, actVal: ev, varScope: varScope, compDoc: compDoc, component: component });
 	} else {
-		console.log('No object found in document to triggerReal.');
+		_err('No object found in document to triggerReal', o);
 	}
 };

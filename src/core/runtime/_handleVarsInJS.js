@@ -14,7 +14,7 @@ const _handleVarsInJS = function(str, varScope) {
 	*/
 	let mapObj = {}, mapObj2 = {};
 	let found = false;
-	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w_\, \$]+)[\s]*\;/gi, function(_, varList) {
+	str = str.replace(/[\s]*vars[\s]*([\u00BF-\u1FFF\u2C00-\uD7FF\w\, \$]+)[\s]*\;/gi, function(_, varList) {
 		// We should have one or more variables in a comma delimited list. Split it up.
 		let listArr = varList.split(','), thisVar, varObj;
 		// Remove dupes from the list by using the Set command.
@@ -49,7 +49,7 @@ const _handleVarsInJS = function(str, varScope) {
 		// Remove any substituted vars prefixes in quotes, as the user won't want to see those in their internal form.
 		// Remove any /scopedProxy.*./ anywhere in single or double quotes catering for escaped quotes, this whole function could be optimised.
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
-			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w_\$]+\./g, '');
+			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w\$]+\./g, '');
 		});
 		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");

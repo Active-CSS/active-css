@@ -1,4 +1,23 @@
-const _ajaxCallback = (str, o) => {
+/**
+ * The callback function after an XHR request returning 200 ok.
+ *
+ * Called by:
+ *	_ajaxDo()
+ *
+ * Side-effects:
+ *	Calls a function to resolve ajax response variables
+ *	Calls a function to setup HTML variables for the core
+ *	Calls the XHR error callback function if the JSON response cannot be parsed
+ *	Calls the callback display function on success
+ *	Adjusts the action flow object by changing the .res property
+ *
+ * @private
+ * @param {String} str: The response string
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallback = (str, o) => {
 	// Convert to a str if it be JSON.
 	if (typeof str === 'string' && str.trim() !== '') {
 		try {

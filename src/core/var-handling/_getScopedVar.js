@@ -1,4 +1,4 @@
-const _getScopedVar = (nam, scope) => {
+const _getScopedVar = (nam, scope=false) => {
 	// Accepts any variable type, scoped or not. Returns an object containing full scope name (fullName), name (name) and value (val).
 	// If variable is already scoped, it assumes that inheritance has already been sorted out.
 	let fullName, scopeName, val, pathName, scopingDone, winVar = false;
@@ -12,7 +12,7 @@ const _getScopedVar = (nam, scope) => {
 	} else if (fullyScoped) {
 		fullName = nam;
 		scopeName = nam.substr(nam.indexOf('.') + 1);
-		scopeName = _resolveInnerBracketVars(scopeName, scope);
+		if (scope) scopeName = _resolveInnerBracketVars(scopeName, scope);
 		if (fullName.substr(0, 1) == 'w') {
 			val = _get(window, scopeName);
 			winVar = true;

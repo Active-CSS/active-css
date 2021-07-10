@@ -11,7 +11,7 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 		// Now handle real component insertion.
 		// See create-element code for why this is used: "_acss-host_' + tag + '_"
 		// "jshint" thinks this function in a loop may cause semantic confusion. It doesn't in practical terms, and we need it, hence we need the ignore line.
-		str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-_]+)\}/gi, function(_, c) {	// jshint ignore:line
+		str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-]+)\}/gi, function(_, c) {	// jshint ignore:line
 			// Note: if the item is empty or if it references an empty component, we always finally return '';
 			let customElComp = false;
 			if (c.substr(0, 11) == '_acss-host_') {
@@ -66,6 +66,6 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 		});
 		if (!found) break;
 	}
-	if (co == 50) console.log('Active CSS recursion detected during component rendering. Skipped after 50 attempts.\nFile: ' + o.file + ', line: ' + o.line);
+	if (co == 50) _err('Recursion detected during component rendering. Exited after 50 attempts', o);
 	return str;
 };
