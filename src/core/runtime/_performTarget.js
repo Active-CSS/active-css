@@ -25,15 +25,13 @@ const _performTarget = (outerTargetObj, targCounter) => {
 		tmpSecondaryFunc = targName._ACSSConvFunc();
 
 		actionValue = targVal;
-		// Note: this can be optionally optimised by putting all the rules into the secondary selecor
-		// rather than a whole array each time. Micro-optimising, but for a large project it is a good idea.
 
 		act = {
 			event: evType,
 			func: tmpSecondaryFunc,
 			actName: targName,
 			secSel: passTargSel,
-			origSecSel: targetSelector,	// Used for debugging only.
+			origSecSel: targetSelector,
 			actVal: actionValue,
 			origActVal: actionValue,
 			primSel,

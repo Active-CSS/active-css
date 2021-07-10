@@ -1252,7 +1252,7 @@ _a.ScrollIntoView = o => {
 
 _a.ScrollX = o => {
 	if (!_isConnected(o.secSelObj)) return false;
-	if (o.secSel == 'body') {
+	if (o.origSecSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'left') {
 			window.scrollTo({ left: 0 });
@@ -1275,7 +1275,7 @@ _a.ScrollX = o => {
 
 _a.ScrollY = o => {
 	if (!_isConnected(o.secSelObj)) return false;
-	if (o.secSel == 'body') {
+	if (o.origSecSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'top') {
 			window.scrollTo({ top: 0 });
@@ -1503,7 +1503,7 @@ _a.Trigger = o => {
 		// Is this a draw event? If so, we also want to run all draw events for elements within.
 		if (o.actVal == 'draw') {
 			_runInnerEvent(o, o.secSelObj, 'draw');
-		} else if (o.secSel == 'body' || o.secSel == 'window') {
+		} else if (o.origSecSel == 'body' || o.origSecSel == 'window') {
 			// Run any events on the body, followed by the window.
 			_handleEvents({ obj: 'body', evType: oClone.actVal, origO: oClone, compDoc: document });
 			let windowClone = _clone(o);
@@ -3265,15 +3265,13 @@ const _performTarget = (outerTargetObj, targCounter) => {
 		tmpSecondaryFunc = targName._ACSSConvFunc();
 
 		actionValue = targVal;
-		// Note: this can be optionally optimised by putting all the rules into the secondary selecor
-		// rather than a whole array each time. Micro-optimising, but for a large project it is a good idea.
 
 		act = {
 			event: evType,
 			func: tmpSecondaryFunc,
 			actName: targName,
 			secSel: passTargSel,
-			origSecSel: targetSelector,	// Used for debugging only.
+			origSecSel: targetSelector,
 			actVal: actionValue,
 			origActVal: actionValue,
 			primSel,
@@ -3411,6 +3409,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	let outerTargetObj = {
 		targ: secSels[secSelCounter][targetSelector],
+		targetSelector,
 		obj,
 		compDoc,
 		evType,
@@ -8047,9 +8046,9 @@ const _restoreStorage = () => {
 };
 
 const _setCSSVariable = o => {
-	if (o.secSel == ':root') {
+	if (o.origSecSel == ':root') {
 		o.secSelObj.documentElement.style.setProperty(o.func, o.actVal);
-	} else if (o.secSel == ':host') {
+	} else if (o.origSecSel == ':host') {
 		o.secSelObj.host.style.setProperty(o.func, o.actVal);
 	} else {
 		o.secSelObj.style.setProperty(o.func, o.actVal);

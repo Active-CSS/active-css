@@ -12,7 +12,7 @@ _a.Trigger = o => {
 		// Is this a draw event? If so, we also want to run all draw events for elements within.
 		if (o.actVal == 'draw') {
 			_runInnerEvent(o, o.secSelObj, 'draw');
-		} else if (o.secSel == 'body' || o.secSel == 'window') {
+		} else if (o.origSecSel == 'body' || o.origSecSel == 'window') {
 			// Run any events on the body, followed by the window.
 			_handleEvents({ obj: 'body', evType: oClone.actVal, origO: oClone, compDoc: document });
 			let windowClone = _clone(o);

@@ -94,6 +94,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	let outerTargetObj = {
 		targ: secSels[secSelCounter][targetSelector],
+		targetSelector,
 		obj,
 		compDoc,
 		evType,
