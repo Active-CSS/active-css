@@ -3116,9 +3116,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
-			// Check if this element passes any relevant @if statements before continuing.
-//			if (!_ifTargCheck(obj, o.ifObj)) return;
-
 			// Loop over each target selector object and handle all the action commands for each one.
 			co++;
 			checkThere = true;
@@ -3160,7 +3157,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
 			_decrBreakContinue(_imStCo, 'break') ||
 			_decrBreakContinue(_imStCo, 'continue')
-//			_checkExitTarget(_imStCo)
 		) {
 		return;
 	}
@@ -4997,46 +4993,52 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 const _handleWhile = (loopObj) => {
 	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc } = loopObj;
 
-	if (_checkBreakLoop(_imStCo)) return;
+	while (true) {
+		// Done as a while to avoid getting into a memory leak.
+		if (_checkBreakLoop(_imStCo)) break;
 
-	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
-	// etc.
+		// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
+		// etc.
 
-	// First, remove @if clause.
-	let statement = fullStatement;
-	statement = statement.substr(7).trim();
+		// First, remove @if clause.
+		let statement = fullStatement;
+		statement = statement.substr(7).trim();
 
-	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
-	let parsedStatement = _replaceConditionalsExpr(statement);
-	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
+		// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
+		let parsedStatement = _replaceConditionalsExpr(statement);
+		// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
 
-	if (parsedStatement !== false) {
-		let thisIfObj = {
-			evType,
-			varScope,
-			otherObj,
-			sel: primSel,
-			eve,
-			doc,
-			component,
-			compDoc
-		};
+		if (parsedStatement !== false) {
+			let thisIfObj = {
+				evType,
+				varScope,
+				otherObj,
+				sel: primSel,
+				eve,
+				doc,
+				component,
+				compDoc
+			};
 
-		if (loopWhat != 'action' || typeof passTargSel == 'string') {
-			// This is surrounding a target selector, so the reference object is the event receiver object.
-			thisIfObj.obj = obj;
-		} else if (typeof passTargSel == 'object') {
-			thisIfObj.obj = passTargSel;
-		}
-		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
-		if (res) {
-			// This is ok - run the inner contents.
-			let loopObj2 = _clone(loopObj);
-			_runSecSelOrAction(loopObj2);
-			_handleWhile(loopObj2);
+			if (loopWhat != 'action' || typeof passTargSel == 'string') {
+				// This is surrounding a target selector, so the reference object is the event receiver object.
+				thisIfObj.obj = obj;
+			} else if (typeof passTargSel == 'object') {
+				thisIfObj.obj = passTargSel;
+			}
+			let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+			if (res) {
+				// This is ok - run the inner contents.
+				let loopObj2 = _clone(loopObj);
+				_runSecSelOrAction(loopObj2);
+				loopObj = loopObj2;
+				// Clean up - this is proven to stop memory leak.
+				loopObj2 = null;
+			} else {
+				break;
+			}
 		}
 	}
-
 };
 
 const _addACSSStyleTag = (acssTag) => {
@@ -7894,6 +7896,7 @@ const _resolveInnerBracketVars = (str, scope) => {
 			if (DIGITREGEX.test(innerVariable) || _resolvable(innerVariable)) return '[' + innerVariable;	// Do not resolve variable or content found that has not already been defined.
 			let res;
 			let scoped = _getScopedVar(innerVariable, scope);
+			// Leave this commented out for the moment - not convinced this is sorted out until tests have been written.
 //			if (typeof scoped.val === 'string') {
 //				// Return the value in quotes.
 //				res = '"' + scoped.val + '"';
