@@ -7,6 +7,6 @@
  * @returns {Array} Returns the cast property path array.
 */
 const _castPath = (value, object) => {
-	if (isArray(value)) return value;
+	if (_isArray(value)) return value;
 	return _isKey(value, object) ? [value] : _stringToPath(_toString(value));
 };

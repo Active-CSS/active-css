@@ -8,7 +8,7 @@
 */
 
 const _isKey = (value, object) => {
-	if (isArray(value)) return false;
+	if (_isArray(value)) return false;
 	var type = typeof value;
 //	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) return true;	// don't need symbol support in acss.
 	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null) return true;

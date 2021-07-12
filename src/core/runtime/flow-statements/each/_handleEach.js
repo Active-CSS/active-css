@@ -33,10 +33,10 @@ const _handleEach = (loopObj, scopePrefix) => {
 		scopePrefix
 	};
 
-	if (isArray(rightVarVal)) {
+	if (_isArray(rightVarVal)) {
 		_handleEachArrayOuter(rightVarVal, itemsObj, 0);
 	} else {
 		let items = Object.entries(rightVarVal);
-		_handleEachObj(items, itemsObj, 0);
+		if (items.length > 0) _handleEachObj(items, itemsObj, 0);
 	}
 };

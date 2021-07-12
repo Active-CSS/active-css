@@ -68,7 +68,7 @@
 		MAX_SAFE_INTEGER = 9007199254740991,
 		reIsUint = /^(?:0|[1-9]\d*)$/,
 		reEscapeChar = /\\(\\)?/g,
-		isArray = Array.isArray,
+		_isArray = Array.isArray,
 		objectProto = Object.prototype,
 		defineProperty = (function() {
 			try {
@@ -1864,7 +1864,7 @@ _c.IfVar = o => {
 
 	if (typeof compareVal !== 'boolean') {
 		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				if (compareVal == '') {
 					// Nothing to compare, return whether this value to check is a populated array.
 					return (varValue.length > 0) ? true : false;
@@ -1877,7 +1877,7 @@ _c.IfVar = o => {
 				compareVal = Number(compareVal._ACSSRepQuo());
 			}
 		} else {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				try {
 					// Convert compare var to an array.
 					compareVal = JSON.stringify(JSON.parse(compareVal));
@@ -4498,11 +4498,11 @@ const _handleEach = (loopObj, scopePrefix) => {
 		scopePrefix
 	};
 
-	if (isArray(rightVarVal)) {
+	if (_isArray(rightVarVal)) {
 		_handleEachArrayOuter(rightVarVal, itemsObj, 0);
 	} else {
 		let items = Object.entries(rightVarVal);
-		_handleEachObj(items, itemsObj, 0);
+		if (items.length > 0) _handleEachObj(items, itemsObj, 0);
 	}
 };
 
@@ -5353,7 +5353,7 @@ const _isFromFile = (fileToRemove, configPart) => {
 	} else {
 		for (i = 0; i < configPartLen; i++) {
 			item = configPart[i];
-			if (isArray(item)) {
+			if (_isArray(item)) {
 				if (_isFromFile(fileToRemove, item)) {
 					return true;
 				}
@@ -7928,19 +7928,20 @@ const _resolveInnerBracketVars = (str, scope) => {
 
 const _resolveInnerBracketVarsDo = str => {
 	if (str.indexOf('scopedProxy.') === -1) return str;
-	if (str.startsWith('scopedProxy.')) {
-		throw 'ACSS internal error: _resolveInnerBracketVarsDo var should not start with "scopedProxy.". Please report error in GitHub issues.';
+	let newStr = str;
+	if (newStr.startsWith('scopedProxy.')) {
+		newStr = '__ACSSStartSPr' + newStr.substr(11);
 	}
-	let escStr = _escInQuo(str, 'scopedProxy\\.', '__ACSSScopedP');
-	if (escStr.indexOf('scopedProxy.') === -1) return str;
-	escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
-	escStr = _escInQuo(escStr, ']', '__ACSSClSq');
-
-	let newStr = recursInnerScoped(escStr);
-
+	let escStr = _escInQuo(newStr, 'scopedProxy\\.', '__ACSSScopedP');
+	if (escStr.indexOf('scopedProxy.', 1) !== -1) {
+		escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
+		escStr = _escInQuo(escStr, ']', '__ACSSClSq');
+		newStr = recursInnerScoped(escStr);
+		newStr = newStr.replace(/__ACSSOpSq/g, '[');
+		newStr = newStr.replace(/__ACSSClSq/g, ']');
+	}
 	newStr = newStr.replace(/__ACSSScopedP/g, 'scopedProxy.');
-	newStr = newStr.replace(/__ACSSOpSq/g, '[');
-	newStr = newStr.replace(/__ACSSClSq/g, ']');
+	newStr = newStr.replace(/__ACSSStartSPr/g, 'scopedProxy');
 
 	return newStr;
 };
@@ -10183,7 +10184,7 @@ const _mimicReset = e => {
 
 const _optDef = (arr, srch, opt, def) => {
 	// This is a case insensitive comparison.
-	if (!isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
+	if (!_isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
 	srch = srch.toLowerCase();
 	let res = arr.findIndex(item => srch === item.toLowerCase());
 	return (res !== -1) ? opt : def;	// return def if not present.
@@ -10622,7 +10623,7 @@ const _baseSet = (object, path, value, customizer) => {
 const _baseToString = value => {
 	// Exit early for strings to avoid a performance hit in some environments.
 	if (typeof value == 'string') return value;
-	if (isArray(value)) return _arrayMap(value, _baseToString) + '';	// Recursively convert values (susceptible to call stack limits).
+	if (_isArray(value)) return _arrayMap(value, _baseToString) + '';	// Recursively convert values (susceptible to call stack limits).
 //	if (isSymbol(value)) return symbolToString ? symbolToString.call(value) : '';	// don't need symbol support in acss.
 	var result = (value + '');
 	return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
@@ -10651,7 +10652,7 @@ const _baseUnset = (object, path) => {
  * @returns {Array} Returns the cast property path array.
 */
 const _castPath = (value, object) => {
-	if (isArray(value)) return value;
+	if (_isArray(value)) return value;
 	return _isKey(value, object) ? [value] : _stringToPath(_toString(value));
 };
 
@@ -10773,7 +10774,7 @@ const _isIndex = (value, length) => {
 */
 
 const _isKey = (value, object) => {
-	if (isArray(value)) return false;
+	if (_isArray(value)) return false;
 	var type = typeof value;
 //	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) return true;	// don't need symbol support in acss.
 	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null) return true;

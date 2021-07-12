@@ -1,18 +1,19 @@
 const _resolveInnerBracketVarsDo = str => {
 	if (str.indexOf('scopedProxy.') === -1) return str;
-	if (str.startsWith('scopedProxy.')) {
-		throw 'ACSS internal error: _resolveInnerBracketVarsDo var should not start with "scopedProxy.". Please report error in GitHub issues.';
+	let newStr = str;
+	if (newStr.startsWith('scopedProxy.')) {
+		newStr = '__ACSSStartSPr' + newStr.substr(11);
 	}
-	let escStr = _escInQuo(str, 'scopedProxy\\.', '__ACSSScopedP');
-	if (escStr.indexOf('scopedProxy.') === -1) return str;
-	escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
-	escStr = _escInQuo(escStr, ']', '__ACSSClSq');
-
-	let newStr = recursInnerScoped(escStr);
-
+	let escStr = _escInQuo(newStr, 'scopedProxy\\.', '__ACSSScopedP');
+	if (escStr.indexOf('scopedProxy.', 1) !== -1) {
+		escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
+		escStr = _escInQuo(escStr, ']', '__ACSSClSq');
+		newStr = recursInnerScoped(escStr);
+		newStr = newStr.replace(/__ACSSOpSq/g, '[');
+		newStr = newStr.replace(/__ACSSClSq/g, ']');
+	}
 	newStr = newStr.replace(/__ACSSScopedP/g, 'scopedProxy.');
-	newStr = newStr.replace(/__ACSSOpSq/g, '[');
-	newStr = newStr.replace(/__ACSSClSq/g, ']');
+	newStr = newStr.replace(/__ACSSStartSPr/g, 'scopedProxy');
 
 	return newStr;
 };

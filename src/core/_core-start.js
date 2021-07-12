@@ -68,7 +68,7 @@
 		MAX_SAFE_INTEGER = 9007199254740991,
 		reIsUint = /^(?:0|[1-9]\d*)$/,
 		reEscapeChar = /\\(\\)?/g,
-		isArray = Array.isArray,
+		_isArray = Array.isArray,
 		objectProto = Object.prototype,
 		defineProperty = (function() {
 			try {
