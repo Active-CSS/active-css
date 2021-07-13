@@ -34,7 +34,7 @@ const _handleEach = (loopObj, scopePrefix) => {
 	};
 
 	if (_isArray(rightVarVal)) {
-		_handleEachArrayOuter(rightVarVal, itemsObj, 0);
+		if (rightVarVal.length > 0) _handleEachArrayOuter(rightVarVal, itemsObj, 0);
 	} else {
 		let items = Object.entries(rightVarVal);
 		if (items.length > 0) _handleEachObj(items, itemsObj, 0);

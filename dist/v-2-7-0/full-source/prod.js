@@ -4499,7 +4499,7 @@ const _handleEach = (loopObj, scopePrefix) => {
 	};
 
 	if (_isArray(rightVarVal)) {
-		_handleEachArrayOuter(rightVarVal, itemsObj, 0);
+		if (rightVarVal.length > 0) _handleEachArrayOuter(rightVarVal, itemsObj, 0);
 	} else {
 		let items = Object.entries(rightVarVal);
 		if (items.length > 0) _handleEachObj(items, itemsObj, 0);
@@ -4510,7 +4510,7 @@ const _handleEachArrayInner = (rightVarVal, itemsObj, counter2) => {
 	let { loopObj, leftVars, scopePrefix, counter } = itemsObj;
 	let _imStCo = loopObj._imStCo;
 
-	if (_checkBreakLoop(_imStCo, 'inner')) return;
+	if (!itemsObj.leftVars[counter2] || _checkBreakLoop(_imStCo, 'inner')) return;
 
 	let scopedVar = scopePrefix + leftVars[counter2].trim();
 	_set(scopedProxy, scopedVar, rightVarVal[counter][counter2]);
@@ -4541,7 +4541,6 @@ const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 		// Two dimensional array.
 		itemsObj.counter = counter;
 		_handleEachArrayInner(rightVarVal, itemsObj, 0, leftVars);
-
 		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;
 	}
 
