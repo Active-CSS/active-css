@@ -29,7 +29,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					return _;
 				}
 			} else {
-				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
 
 				// Return the wot if it's a window variable.
@@ -56,7 +55,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					_addScopedAttr(realWot, o, originalStr, walker, varScope);
+					// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
+					_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
 				}
 				// Send the regular scoped variable back.
 				return _preReplaceVar(res, varReplacementRef);

@@ -8,9 +8,10 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	let fragment, fragRoot, treeWalker, owner, txt, cid, thisHost, actualHost, el, attrs, attr;
 	// Convert string into DOM tree. Walk DOM and set up active IDs, search for vars to replace, etc. Then convert back to string. Hopefully this will be quick.
 	// Handle inner text first.
-	if (str.indexOf('{{') !== -1 && !fromUpdate && str.indexOf('</') !== -1) {
+	if (!fromUpdate && func.startsWith('Render') && str.indexOf('{{') !== -1 && str.indexOf('</') !== -1) {
+		let newStr = str._ACSSRepQuo();
 		fragRoot = document.createElement('template');
-		fragRoot.innerHTML = str;
+		fragRoot.innerHTML = newStr;
 
 		// First label any custom elements that do not have inner components, as these need to act as hosts, so we need to pass this host when replacing attributes.
 		treeWalker = document.createTreeWalker(
