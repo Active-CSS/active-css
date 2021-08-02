@@ -855,14 +855,17 @@ _a.IframeReload = o => {
 
 _a.LoadAsAjax = o => {
 	let el = document.querySelector(o.actVal);
+	if (!el.isConnected) return;
 	if (!el) {
 		let pageContents = '<p>Active CSS Error: could not find template (' + o.actVal + ').</p>';
 	} else {
 		if (typeof o.secSelObj == 'object') {
 			// This is an object that was passed.
 			o.res = el.innerHTML;
-			o.res = _escapeInline(o.res, 'script');
-			o.res = _escapeInline(o.res, 'style type="text/acss"');
+			if (o.res != '') {
+				o.res = _escapeInline(o.res, 'script');
+				o.res = _escapeInline(o.res, 'style type="text/acss"');
+			}
 			_setHTMLVars({res: o.res});
 			_handleEvents({ obj: o.obj, evType: 'afterLoadAsAjax', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		}
@@ -1670,6 +1673,7 @@ _a.Var = o => {
 	} else {
 		// Active CSS component/document scopes.
 //		console.log('_a.Var, set ' + scopedVar + ' = ', expr, 'o:', o);		// handy - don't remove
+//		console.log('_a.Var, set ' + scopedVar + ' = ', expr);
 		_set(scopedProxy, scopedVar, expr);
 		_allowResolve(scopedVar);
 	}
@@ -2975,7 +2979,8 @@ const _passesConditional = (condObj) => {
 	let actionBoolState = false;
 
 	for (cond of conds) {
-		cond = cond.replace(/_ACSSspace/g, ' ');
+		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
+		
 
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos !== -1) {
@@ -3681,7 +3686,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			shadowParent: shadowParent
 		}
 	);
-	strObj = _handleVars([ 'strings' ],
+	strObj = _handleVars([ 'strings', 'html' ],
 		{
 			str: strObj.str,
 			varScope: varScopeToPassIn,
@@ -4030,7 +4035,9 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			if (noVars) res = _escNoVars(res);
 			if (escaped) res = _safeTags(res);
 			if (unEscaped) res = _unSafeTags(res);
-			return _preReplaceVar(res, varReplacementRef);
+			let newRes = _preReplaceVar(res, varReplacementRef);
+
+			return newRes;
 		}
 		// Return it as it is if the element is not there.
 		return '{#' + c + '}';
@@ -4704,7 +4711,7 @@ const _loopVarToNumber = (str, varScope) => {
 	if (newVal !== false) return newVal;	// If it's a number by this point, then no further checks are necessary and we return the number.
 
 	// Handle as an expression, potentially containing scoped variables.
-	let prepExpr = _prepareDetachedExpr(rightVar, varScope);
+	let prepExpr = _prepareDetachedExpr(str, varScope);
 	let expr = _evalDetachedExpr(prepExpr, varScope);
 
 	// Return the number or false if that value doesn't equate to a number.
@@ -4853,6 +4860,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 
 			// Test function. If it isn't present as stored conditional, built-in or custom, evaluate the original string.
 			let func = condName._ACSSConvFunc();
+
 			if (!_isCond(func)) return item;
 
 			// Ok so far, start to reformat the conditional for JS parsing.
@@ -4921,8 +4929,8 @@ const _runAtIfConds = (condName, ifObj, str) => {
 	let { evType, obj, varScope, otherObj, sel, eve, doc, component, compDoc } = ifObj;
 
 	// Set up the conditional contents (the "action command") by unescaping what was escaped earlier.
-	let condVal = str.replace(/__ACSSSingQ/g, '\'');
-	condVal = str.replace(/__ACSSBSlash/g, '\\');
+	// The last two are needed for the comparison of strings without breaking the conditional parser.
+	let condVal = str.replace(/__ACSSSingQ/g, '\'').replace(/__ACSSBSlash/g, '\\').replace(/"/g, '__ACSSDBQuote').replace(/ /g, '_ACSSspace');
 
 	let clause = condName + '(' + condVal + ')';
 
@@ -4976,6 +4984,9 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	);
 	// Output the variables for real from the map.
 	let readyStatement = _resolveVars(strObj.str, strObj.ref);
+
+	// Finally, remove any line breaks, otherwise things will barf when evaluated.
+	readyStatement = readyStatement.replace(/\r|\n/gm, '');
 	
 	let res;
 	try {
@@ -5272,7 +5283,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
 			// If the count goes above the total number of open curlies, we know we have a syntax error of an unclosed curly bracket.
-			_err('Syntax error in config - possibly an incomplete set of curly brackets.');
+			_err('Syntax error in config - possibly an incomplete set of curly brackets or a missing end semi-colon.');
 			return false;
 		}
 		if (match[PARSEDEBUG]) {
@@ -5925,7 +5936,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Now run the actual parser now that we have sane content.
 	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
 	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error. str:' + str);
+		_err('Either your config is empty or there is a structural syntax error.');
 	}
 	return str;
 };
@@ -6253,7 +6264,7 @@ const _wrapUpStart = (o) => {
 ActiveCSS.init = (config) => {
 	config = config || {};
 	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
-	let inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
+	let inlineConfigTags = document.querySelectorAll('*:not(template) style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,
@@ -7554,7 +7565,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 	return (realVal) ? res : sel;
 };
 
-const _replaceRand = (str) => {
+const _replaceRand = str => {
 	if (str.indexOf('{$RAND') !== -1) {
 		str = str.replace(/\{\$RAND((HEX)?(STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isHex, isStr, num, hyph, endNum) {
 			if (num) num = parseInt(num);

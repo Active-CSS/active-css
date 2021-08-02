@@ -77,6 +77,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 
 			// Test function. If it isn't present as stored conditional, built-in or custom, evaluate the original string.
 			let func = condName._ACSSConvFunc();
+
 			if (!_isCond(func)) return item;
 
 			// Ok so far, start to reformat the conditional for JS parsing.

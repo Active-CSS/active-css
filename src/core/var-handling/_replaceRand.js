@@ -1,4 +1,4 @@
-const _replaceRand = (str) => {
+const _replaceRand = str => {
 	if (str.indexOf('{$RAND') !== -1) {
 		str = str.replace(/\{\$RAND((HEX)?(STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isHex, isStr, num, hyph, endNum) {
 			if (num) num = parseInt(num);

@@ -28,6 +28,9 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	);
 	// Output the variables for real from the map.
 	let readyStatement = _resolveVars(strObj.str, strObj.ref);
+
+	// Finally, remove any line breaks, otherwise things will barf when evaluated.
+	readyStatement = readyStatement.replace(/\r|\n/gm, '');
 	
 	let res;
 	try {

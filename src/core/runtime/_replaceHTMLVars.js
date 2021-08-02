@@ -37,7 +37,9 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			if (noVars) res = _escNoVars(res);
 			if (escaped) res = _safeTags(res);
 			if (unEscaped) res = _unSafeTags(res);
-			return _preReplaceVar(res, varReplacementRef);
+			let newRes = _preReplaceVar(res, varReplacementRef);
+
+			return newRes;
 		}
 		// Return it as it is if the element is not there.
 		return '{#' + c + '}';
