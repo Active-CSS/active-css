@@ -18,7 +18,7 @@ const _prefixScopedVarsDo = (str, varScope, quoted) => {
 	 * a scoped prefix added. At the end it will return the formatted string. It will only add the "scopedProxy." prefix if the word exists in the string.
 	 * If a variable is in quotes, it substitutes the value itself into the return string.
 	*/
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\$][\u00BF-\u1FFF\u2C00-\uD7FF\w_\$\.\[\]\'\"]+)\}/gim, function(_, wot) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\$\.\[\]\'\"]+)?)\}/gim, function(_, wot) {
 		if (wot.match(/^[\d]+$/)) return '{' + wot + '}';
 		if (wot == 'true' || wot == 'false') return wot;
 		let scoped = _getScopedVar(wot, varScope);

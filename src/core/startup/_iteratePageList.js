@@ -1,6 +1,7 @@
 const _iteratePageList = (pages, removeState=false) => {
 	// This is a cumulative action to what is there already, if anything, or a removal action.
 	if (!('content' in document.createElement('template'))) {
+		// Leave this as regular console.log, as this probably wouldn't handle correctly in the error handling anyway.
 		console.log('Browser does not support html5. Cannot instantiate page navigation.');
 		return;
 	}

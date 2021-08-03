@@ -7,7 +7,7 @@ _a.Func = o => {
 	let spl = o.actVal.split(' ');
 	let func = spl.splice(0, 1);
 	if (typeof window[func] !== 'function') {
-		console.log(func + ' is not a function.');
+		_err(func + ' is not a function.', o);
 	} else {
 		// Iterate parameters loop. Convert true and false values to actual booleans. Put into the pars array and send to function.
 		let par;

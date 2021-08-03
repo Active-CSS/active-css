@@ -71,7 +71,7 @@ const _handleEvents = evObj => {
 									selectorList.push({ primSel, componentRefs });
 						    	}
 						    } catch(err) {
-						        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 							}
 						} else {
 							if (obj == testSel) {
@@ -123,7 +123,7 @@ const _handleEvents = evObj => {
 							selectorList.push({ primSel, componentRefs });
 				    	}
 				    } catch(err) {
-				        console.log('Active CSS warning: ' + testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
+				        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 					}
 				} else {
 					if (obj == testSel) {
@@ -156,7 +156,19 @@ const _handleEvents = evObj => {
 			if (onlyCheck) return true;	// Just checking something is there. Now we have established this, go back.
 			for (clause in config[primSel][evType]) {
 				clauseCo++;
-				if (clause != '0' && _passesConditional(obj, sel, clause, evType, otherObj, thisDoc, topVarScope, component, eve, compDoc)) {
+				let condObj = {
+					el: obj,
+					sel,
+					clause,
+					evType,
+					ajaxObj: otherObj,
+					doc: thisDoc,
+					varScope: topVarScope,
+					component,
+					eve,
+					compDoc
+				};
+				if (clause != '0' && _passesConditional(condObj)) {
 					// This condition passed. Remember it for the next bit.
 					clauseArr[clauseCo] = clause;
 				}

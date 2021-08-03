@@ -1,4 +1,25 @@
-const _ajaxCallbackErr = (str, resp, o) => {
+/**
+ * Handles error after XHR request.
+ *
+ * Called by:
+ *	_ajaxCallback()
+ *
+ * Side-effects:
+ *	Adjusts properties in action flow object.
+ *	Empties asynchronous reference store (for resumption after await or pausing).
+ *	Runs specific afterAjax... error event.
+ *	Runs general afterAjax...Error event.
+ *	Send debug data to the extension.
+ *	Adjusts internally global preGetting variable to remove preGet state of URL.
+ *
+ * @private
+ * @param {String} str: Unused in this function, but it needs to exist as the first parameter for browser XHR error callback.
+ * @param {String} resp: The XHR response code (404, etc.)
+ * @param {Object} o: Action flow object
+ *
+ * @returns nothing
+ */
+ const _ajaxCallbackErr = (str, resp, o) => {
 	o.error = true;
 	o.errorCode = resp || '';
 

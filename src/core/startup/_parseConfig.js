@@ -18,9 +18,10 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/[\r\n]+/g, '');
 	// Replace escaped quotes with something else for now, as they are going to complicate things.
 	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
+
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	let systemInitConfig = '';
-	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
+	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
 		let sel, ev;
 		if (inlineActiveID) {
@@ -50,6 +51,32 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		}
 		return '_ACSS_subst_equal_brace_start' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '_ACSS_subst_equal_brace_end';
 	});
+
+	// Handle continue; and break; so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
+	// Put these into a general non-colon command array.
+	str = str.replace(/("(.*?)")/g, function(_, innards) {
+		innards = innards.replace(/continue\;/g, '_ACSS_continue');
+		innards = innards.replace(/break\;/g, '_ACSS_break');
+		innards = innards.replace(/exit\;/g, '_ACSS_exit');
+		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		return innards;
+	});
+	str = str.replace(/('(.*?)')/g, function(_, innards) {
+		innards = innards.replace(/continue\;/g, '_ACSS_continue');
+		innards = innards.replace(/break\;/g, '_ACSS_break');
+		innards = innards.replace(/exit\;/g, '_ACSS_exit');
+		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		return innards;
+	});
+	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
+	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+	str = str.replace(/_ACSS_continue/g, 'continue;');
+	str = str.replace(/_ACSS_break/g, 'break;');
+	str = str.replace(/_ACSS_exit/g, 'exit;');
+	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
+
 	// Handle any inline Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
 	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
@@ -57,40 +84,44 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\' \.\[\]]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\" \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
+	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_brace_start_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_hash_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w_\-\'\. \$\[\]]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\. \$\[\]\(\)]+)\}/gi, function(_, innards) {
+		if (innards.trim() == '') return '{}';
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
 	// First, replace all escaped curlies with something else.
-	str = str.replace(/\\{/g, '_ACSS_brace_start');
-	str = str.replace(/\\}/g, '_ACSS_brace_end');
+	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
+	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
+
 	// Now we can match the component accurately. The regex below should match all components.
-	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w_\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
+	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
 		// Replace existing escaped quote placeholder with literally escaped quotes.
 		innards = innards.replace(/_ACSS_escaped_quote/g, '\\"');
 		// Now escape all the quotes - we want them all escaped, and they wouldn't have been picked up before.
@@ -100,6 +131,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
 		return startBit + '{component: "' + innards + '";}';
 	});
+
 	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
 	str = str.replace(/\t+/g, ' ');
 	// Unconvert spaces in component html back to tabs so that HTML can render as per HTML rules.
@@ -137,7 +169,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Now run the actual parser now that we have sane content.
 	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
 	if (!Object.keys(str).length) {
-		console.log('Active CSS: Either your config is empty or there is a structural syntax error. str:', str);
+		_err('Either your config is empty or there is a structural syntax error. str:' + str);
 	}
 	return str;
 };

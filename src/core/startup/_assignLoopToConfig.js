@@ -1,6 +1,7 @@
 const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentName, ev) => {
 	let secsels, secselsLength, secsel, i, thisAct, secSelCounter = -1;
-	if (['@each'].indexOf(nam.substr(0, 5)) !== -1) {
+
+	if (_getLoopCommand(nam) !== false) {
 		if (configObj[secSelCounter] === undefined) {
 			configObj[secSelCounter] = [nam.replace(/acss_int_loop_comm/g, ',')];
 		}

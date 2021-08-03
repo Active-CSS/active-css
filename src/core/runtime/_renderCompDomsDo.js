@@ -131,7 +131,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		try {
 			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
 		} catch(err) {
-			console.log('Active CSS error in attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err);
+			_err('Error attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err, o);
 		}
 	} else {
 		shadow = shadowParent;

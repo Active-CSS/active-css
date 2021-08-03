@@ -1,5 +1,5 @@
 const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
-	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:_]+)\}/gi, function(_, c) {
+	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:]+)\}/gi, function(_, c) {
 		let doc, noVars, escaped, unEscaped;
 		let noVarsPos = c.indexOf(':NOVARS');
 		if (noVarsPos !== -1) {

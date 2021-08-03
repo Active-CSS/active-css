@@ -61,7 +61,7 @@ com[__ACSScom]__ACSScom'
 		// Syntax error - unbalanced expression.
 		newStr = _escCommaBrackClean(newStr, mapObj2);
 		newStr = newStr.replace(/__ACSS_int_com/g, ',');
-		console.log('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr + ', in config: ' + o.file + ', line: ' + o.line);
+		_err('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr, o);
 		return newStr;
 	} else {
 		// Remove the last comma

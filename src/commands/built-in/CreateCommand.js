@@ -34,7 +34,6 @@ _a.CreateCommand = o => {
 		'selectorRef = o.secSel,' +					// The target selector reference string.
 		'compDoc = o.compDoc,' +				// The document of the shadow DOM, if applicable.
 		'component = o.component,' +				// The name of the component, if applicable.
-		'_loopVars = o.loopVars,' +					// Internal reference for looping variables.
 		'_loopRef = o.loopRef;';					// Internal reference for looping variable reference.
 
 	// Now put in a routine to dynamically work out the variable scopes for the vars command. This is run dynamically, so we need to effective remove the vars command

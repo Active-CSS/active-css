@@ -1,17 +1,18 @@
-const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScope, component, eve, compDoc) => {
+const _passesConditional = (condObj) => {
+	let { el, sel, clause, evType, ajaxObj, doc, varScope, component, eve, compDoc } = condObj;
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
 
 	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
 
-	condList = condList.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
+	clause = clause.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
 		return _.replace(/ /g, '_ACSSspace').replace(/,/g, '_ACSSEscComma');
 	});
 
-	let cond, conds = condList.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
+	let cond, conds = clause.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 
-	let elC = (thisAction == 'clickoutside' && otherEl) ? otherEl : el;	// use click target if clickoutside.
+	let elC = (evType == 'clickoutside' && ajaxObj) ? ajaxObj : el;	// use click target if clickoutside.
 	let actionBoolState = false;
 
 	for (cond of conds) {
@@ -32,15 +33,24 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 			}
 
 			func = func._ACSSConvFunc();
-			if (typeof _c[func] === 'function') {
+			if (_isCond(func)) {
 				// Comma delimit for multiple checks in the same function.
 				let aV = cond.slice(parenthesisPos + 1, -1).trim().replace(/"[^"]*"|(\,)/g, function(m, c) {
 					// Split conditionals by comma.
 				    if (!c) return m;
 				    return '_ACSSComma';
 				});
-
-				if (!_checkCond({ actName: commandName, rules: cond, thisAction, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+					{
+						str: aV,
+						func: 'Var',
+						obj: el,
+						secSelObj: el,
+						varScope: varScope
+					}
+				);
+				aV = _resolveVars(strObj.str, strObj.ref);
+				if (!_checkCond({ commandName, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 					return false;
 				}
 			}
@@ -50,7 +60,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 			cond = '|' + component + '|' + cond;
 			if (conditionals[cond] === undefined) {
 				let condErr = cond.substr(component.length + 2);
-				console.log('Active CSS error: Conditional ' + condErr + ' not found in config for component ' + component);
+				_err('Conditional ' + condErr + ' not found in config for component ' + component);
 			}
 		}
 		rules = conditionals[cond];
@@ -67,7 +77,7 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					func = obj.name;
 				}
 				func = func._ACSSConvFunc();
-				if (typeof _c[func] === 'function') {
+				if (_isCond(func)) {
 					// Call the conditional function is as close a way as possible to regular functions.
 
 					// Comma delimit for multiple checks on the same statement.
@@ -77,14 +87,14 @@ const _passesConditional = (el, sel, condList, thisAction, otherEl, doc, varScop
 					    return '_ACSSComma';
 					});
 
-					if (!_checkCond({ actName: obj.name, rules, aV, el, varScope, otherEl, func, sel, cond, eve, doc, component, compDoc, actionBoolState })) {
+					if (!_checkCond({ commandName: obj.name, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 						return false;
 					}
 				}
 			}
 		} else {
 			// Check if this is a direct reference to a conditional command.
-			console.log('Active CSS error: Conditional ' + cond + ' not found in config for document scope.');
+			_err('Conditional ' + cond + ' not found in config for document scope.');
 		}
 	}
 	// Gotten through all the conditions - event actions are ok to run.

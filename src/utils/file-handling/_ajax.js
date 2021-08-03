@@ -1,4 +1,26 @@
-const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, varArr) => {
+/**
+ * Performs an XHR request with callbacks and error handlings.
+ *
+ * Called by:
+ *	_ajaxDo()
+ *	_getFile()
+ *
+ * Side-effects:
+ *	Performs an XHR request with callbacks and consoles errors.
+ *	Increments/decrements the internally global preGetMid variable.
+ *
+ * @private
+ * @param {String} getMethod: The method, GET, POST, etc.
+ * @param {String} fileType: The response type, "html", "txt", "json" or something else which will use "application/x-www-form-urlencoded".
+ * @param {String} filepath: The full URL.
+ * @param {String} pars: The string of parameters to send as POST vars separated by "&".
+ * @param {Function} callback: The success callback function.
+ * @param {Function} errcallback: The error callback function.
+ * @param {Object} o: Action flow object (optional).
+ *
+ * @returns nothing
+ */
+ const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, o) => {
 	preGetMid++;
 	var r = new XMLHttpRequest();
 	r.open(getMethod, filepath, true);
@@ -20,24 +42,24 @@ const _ajax = (getMethod, fileType, filepath, pars, callback, errcallback, varAr
 			// Handle application level error.
 			preGetMid--;
 			if (errcallback) {
-				errcallback(r.responseText, r.status, varArr);
+				errcallback(r.responseText, r.status, o);
 			} else {
-				console.log('Tried to get file: ' + filepath + ', but failed with error code: ' + r.status);
+				_err('Tried to get file: ' + filepath + ', but failed with error code: ' + r.status, o);
 			}
 			return;
 		}
 		preGetMid--;
 		if (callback !== null) {
-			callback(r.responseText, varArr);
+			callback(r.responseText, o);
 		}
 	};
 	r.onerror = () => {
 		// Handle network level error.
 		preGetMid--;
 		if (errcallback) {
-			errcallback('Network error', 0, varArr);
+			errcallback('Network error', 0, o);
 		} else {
-			console.log('Tried to get file: ' + filepath + ', but failed due to a network error.');
+			_err('Tried to get file: ' + filepath + ', but failed due to a network error.');
 		}
 	};
 	if (getMethod == 'POST' && pars !== null) {

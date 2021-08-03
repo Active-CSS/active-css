@@ -8,8 +8,7 @@ _c.IfFunc = o => {
 		try {
 			return window[o.actVal](o);
 		} catch(r) {
-			console.log('Active CSS: Function ' + o.actVal + ' does not exist.');
-			return false;
+			_err('Function ' + o.actVal + ' does not exist', o);
 		}
 	}
 };

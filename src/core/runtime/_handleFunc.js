@@ -28,11 +28,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		delayRef = _getActiveID(o.secSelObj);
 	}
 
-	// Replace any looping variable in the action value at this point, above any delay actions.
-	if (o.loopRef != '0') {
-		o.actVal = _replaceLoopingVars(o.actVal, o.loopVars);
-	}
-
 	// Delayed / interval events need to happen at this level.
 	if (o.isTimed) {
 		let o2 = _clone(o), delLoop = ['after', 'every'], aftEv;
@@ -111,6 +106,9 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		);
 		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 	}
+
+	o.actVal = o.actVal.replace(/_ACSS_later_escbrace_start/gm, '{');
+	o.actVal = o.actVal.replace(/_ACSS_later_escbrace_end/gm, '}');
 
 	// Show debug action before the function has occured. If we don't do this, the commands can go out of sequence in the Panel and it stops making sense.
 	if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {

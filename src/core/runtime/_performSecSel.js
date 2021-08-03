@@ -1,6 +1,5 @@
 const _performSecSel = (loopObj) => {
-//	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, loopVars, _maEvCo, _subEvCo, runButElNotThere} = loopObj;
-	let {chilsObj, secSelLoops, obj, evType, varScope, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, loopVars, _maEvCo, _subEvCo, _imStCo, runButElNotThere} = loopObj;
+	let {chilsObj, secSelLoops, varScope, evObj } = loopObj;
 	let compDoc = loopObj.compDoc || document;
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 

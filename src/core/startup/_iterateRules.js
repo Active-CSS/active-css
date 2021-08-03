@@ -5,8 +5,8 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 		nam = rules[key2].name;
 		val = rules[key2].value;
 		if (!nam) return;
-		// Look for and handle any @each loop around potentially multiple secondary selectors.
-		if (['@each'].indexOf(nam.substr(0, 5)) !== -1) {
+		// Look for and handle any loop around potentially multiple secondary selectors.
+		if (_getLoopCommand(nam) !== false) {
 			// Recurse and set up each loop.
 			secSelCounter++;
 			compConfig[secSelCounter] = [];

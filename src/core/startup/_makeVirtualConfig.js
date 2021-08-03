@@ -130,7 +130,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						// The first item in the array will always be the main selector, and the last will always be the event.
 						// The middle can be a mixture of conditions.
 						if (!evSplit[1]) {	// This has no split selector entry and is an error.
-							console.log('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
+							_warn('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
 							continue;
 						}
 						if (evSplit[0] == '') {
