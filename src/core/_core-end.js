@@ -1,6 +1,8 @@
 
 	const DEVCORE = (typeof _drawHighlight !== 'undefined') ? true : false;
-	if (DEVCORE) console.log('Running Active CSS development edition.');
+	if (DEVCORE) {
+		console.log('Running Active CSS development edition' + (inIframe ? ' in iframe' : ''));
+	}
 
 	// Is there inline Active CSS? If so, initiate the core.
 	document.addEventListener('DOMContentLoaded', function(e) {

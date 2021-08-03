@@ -97,7 +97,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			shadowParent: shadowParent
 		}
 	);
-	strObj = _handleVars([ 'strings' ],
+	strObj = _handleVars([ 'strings', 'html' ],
 		{
 			str: strObj.str,
 			varScope: varScopeToPassIn,

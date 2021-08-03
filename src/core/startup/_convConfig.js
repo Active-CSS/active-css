@@ -7,7 +7,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
 			// If the count goes above the total number of open curlies, we know we have a syntax error of an unclosed curly bracket.
-			_err('Syntax error in config - possibly an incomplete set of curly brackets.');
+			_err('Syntax error in config - possibly an incomplete set of curly brackets or a missing end semi-colon.');
 			return false;
 		}
 		if (match[PARSEDEBUG]) {

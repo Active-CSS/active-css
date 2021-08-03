@@ -1,6 +1,6 @@
 _a.ScrollY = o => {
 	if (!_isConnected(o.secSelObj)) return false;
-	if (o.secSel == 'body') {
+	if (o.origSecSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'top') {
 			window.scrollTo({ top: 0 });

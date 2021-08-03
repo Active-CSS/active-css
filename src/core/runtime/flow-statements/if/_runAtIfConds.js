@@ -5,8 +5,8 @@ const _runAtIfConds = (condName, ifObj, str) => {
 	let { evType, obj, varScope, otherObj, sel, eve, doc, component, compDoc } = ifObj;
 
 	// Set up the conditional contents (the "action command") by unescaping what was escaped earlier.
-	let condVal = str.replace(/__ACSSSingQ/g, '\'');
-	condVal = str.replace(/__ACSSBSlash/g, '\\');
+	// The last two are needed for the comparison of strings without breaking the conditional parser.
+	let condVal = str.replace(/__ACSSSingQ/g, '\'').replace(/__ACSSBSlash/g, '\\').replace(/"/g, '__ACSSDBQuote').replace(/ /g, '_ACSSspace');
 
 	let clause = condName + '(' + condVal + ')';
 

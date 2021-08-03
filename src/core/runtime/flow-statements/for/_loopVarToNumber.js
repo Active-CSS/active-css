@@ -8,7 +8,7 @@ const _loopVarToNumber = (str, varScope) => {
 	if (newVal !== false) return newVal;	// If it's a number by this point, then no further checks are necessary and we return the number.
 
 	// Handle as an expression, potentially containing scoped variables.
-	let prepExpr = _prepareDetachedExpr(rightVar, varScope);
+	let prepExpr = _prepareDetachedExpr(str, varScope);
 	let expr = _evalDetachedExpr(prepExpr, varScope);
 
 	// Return the number or false if that value doesn't equate to a number.

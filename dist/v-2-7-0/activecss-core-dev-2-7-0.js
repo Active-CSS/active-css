@@ -68,7 +68,7 @@
 		MAX_SAFE_INTEGER = 9007199254740991,
 		reIsUint = /^(?:0|[1-9]\d*)$/,
 		reEscapeChar = /\\(\\)?/g,
-		isArray = Array.isArray,
+		_isArray = Array.isArray,
 		objectProto = Object.prototype,
 		defineProperty = (function() {
 			try {
@@ -855,14 +855,17 @@ _a.IframeReload = o => {
 
 _a.LoadAsAjax = o => {
 	let el = document.querySelector(o.actVal);
+	if (!el.isConnected) return;
 	if (!el) {
 		let pageContents = '<p>Active CSS Error: could not find template (' + o.actVal + ').</p>';
 	} else {
 		if (typeof o.secSelObj == 'object') {
 			// This is an object that was passed.
 			o.res = el.innerHTML;
-			o.res = _escapeInline(o.res, 'script');
-			o.res = _escapeInline(o.res, 'style type="text/acss"');
+			if (o.res != '') {
+				o.res = _escapeInline(o.res, 'script');
+				o.res = _escapeInline(o.res, 'style type="text/acss"');
+			}
 			_setHTMLVars({res: o.res});
 			_handleEvents({ obj: o.obj, evType: 'afterLoadAsAjax', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		}
@@ -1252,7 +1255,7 @@ _a.ScrollIntoView = o => {
 
 _a.ScrollX = o => {
 	if (!_isConnected(o.secSelObj)) return false;
-	if (o.secSel == 'body') {
+	if (o.origSecSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'left') {
 			window.scrollTo({ left: 0 });
@@ -1275,7 +1278,7 @@ _a.ScrollX = o => {
 
 _a.ScrollY = o => {
 	if (!_isConnected(o.secSelObj)) return false;
-	if (o.secSel == 'body') {
+	if (o.origSecSel == 'body') {
 		// All of these have been tested.
 		if (o.actVal == 'top') {
 			window.scrollTo({ top: 0 });
@@ -1503,7 +1506,7 @@ _a.Trigger = o => {
 		// Is this a draw event? If so, we also want to run all draw events for elements within.
 		if (o.actVal == 'draw') {
 			_runInnerEvent(o, o.secSelObj, 'draw');
-		} else if (o.secSel == 'body' || o.secSel == 'window') {
+		} else if (o.origSecSel == 'body' || o.origSecSel == 'window') {
 			// Run any events on the body, followed by the window.
 			_handleEvents({ obj: 'body', evType: oClone.actVal, origO: oClone, compDoc: document });
 			let windowClone = _clone(o);
@@ -1670,6 +1673,7 @@ _a.Var = o => {
 	} else {
 		// Active CSS component/document scopes.
 //		console.log('_a.Var, set ' + scopedVar + ' = ', expr, 'o:', o);		// handy - don't remove
+//		console.log('_a.Var, set ' + scopedVar + ' = ', expr);
 		_set(scopedProxy, scopedVar, expr);
 		_allowResolve(scopedVar);
 	}
@@ -1864,7 +1868,7 @@ _c.IfVar = o => {
 
 	if (typeof compareVal !== 'boolean') {
 		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				if (compareVal == '') {
 					// Nothing to compare, return whether this value to check is a populated array.
 					return (varValue.length > 0) ? true : false;
@@ -1877,7 +1881,7 @@ _c.IfVar = o => {
 				compareVal = Number(compareVal._ACSSRepQuo());
 			}
 		} else {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				try {
 					// Convert compare var to an array.
 					compareVal = JSON.stringify(JSON.parse(compareVal));
@@ -2975,7 +2979,8 @@ const _passesConditional = (condObj) => {
 	let actionBoolState = false;
 
 	for (cond of conds) {
-		cond = cond.replace(/_ACSSspace/g, ' ');
+		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
+		
 
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos !== -1) {
@@ -3116,9 +3121,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
 		els.forEach((obj) => {
-			// Check if this element passes any relevant @if statements before continuing.
-//			if (!_ifTargCheck(obj, o.ifObj)) return;
-
 			// Loop over each target selector object and handle all the action commands for each one.
 			co++;
 			checkThere = true;
@@ -3160,7 +3162,6 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
 			_decrBreakContinue(_imStCo, 'break') ||
 			_decrBreakContinue(_imStCo, 'continue')
-//			_checkExitTarget(_imStCo)
 		) {
 		return;
 	}
@@ -3269,15 +3270,13 @@ const _performTarget = (outerTargetObj, targCounter) => {
 		tmpSecondaryFunc = targName._ACSSConvFunc();
 
 		actionValue = targVal;
-		// Note: this can be optionally optimised by putting all the rules into the secondary selecor
-		// rather than a whole array each time. Micro-optimising, but for a large project it is a good idea.
 
 		act = {
 			event: evType,
 			func: tmpSecondaryFunc,
 			actName: targName,
 			secSel: passTargSel,
-			origSecSel: targetSelector,	// Used for debugging only.
+			origSecSel: targetSelector,
 			actVal: actionValue,
 			origActVal: actionValue,
 			primSel,
@@ -3415,6 +3414,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	let outerTargetObj = {
 		targ: secSels[secSelCounter][targetSelector],
+		targetSelector,
 		obj,
 		compDoc,
 		evType,
@@ -3686,7 +3686,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			shadowParent: shadowParent
 		}
 	);
-	strObj = _handleVars([ 'strings' ],
+	strObj = _handleVars([ 'strings', 'html' ],
 		{
 			str: strObj.str,
 			varScope: varScopeToPassIn,
@@ -4035,7 +4035,9 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			if (noVars) res = _escNoVars(res);
 			if (escaped) res = _safeTags(res);
 			if (unEscaped) res = _unSafeTags(res);
-			return _preReplaceVar(res, varReplacementRef);
+			let newRes = _preReplaceVar(res, varReplacementRef);
+
+			return newRes;
 		}
 		// Return it as it is if the element is not there.
 		return '{#' + c + '}';
@@ -4503,11 +4505,11 @@ const _handleEach = (loopObj, scopePrefix) => {
 		scopePrefix
 	};
 
-	if (isArray(rightVarVal)) {
-		_handleEachArrayOuter(rightVarVal, itemsObj, 0);
+	if (_isArray(rightVarVal)) {
+		if (rightVarVal.length > 0) _handleEachArrayOuter(rightVarVal, itemsObj, 0);
 	} else {
 		let items = Object.entries(rightVarVal);
-		_handleEachObj(items, itemsObj, 0);
+		if (items.length > 0) _handleEachObj(items, itemsObj, 0);
 	}
 };
 
@@ -4515,7 +4517,7 @@ const _handleEachArrayInner = (rightVarVal, itemsObj, counter2) => {
 	let { loopObj, leftVars, scopePrefix, counter } = itemsObj;
 	let _imStCo = loopObj._imStCo;
 
-	if (_checkBreakLoop(_imStCo, 'inner')) return;
+	if (!itemsObj.leftVars[counter2] || _checkBreakLoop(_imStCo, 'inner')) return;
 
 	let scopedVar = scopePrefix + leftVars[counter2].trim();
 	_set(scopedProxy, scopedVar, rightVarVal[counter][counter2]);
@@ -4546,7 +4548,6 @@ const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 		// Two dimensional array.
 		itemsObj.counter = counter;
 		_handleEachArrayInner(rightVarVal, itemsObj, 0, leftVars);
-
 		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;
 	}
 
@@ -4710,7 +4711,7 @@ const _loopVarToNumber = (str, varScope) => {
 	if (newVal !== false) return newVal;	// If it's a number by this point, then no further checks are necessary and we return the number.
 
 	// Handle as an expression, potentially containing scoped variables.
-	let prepExpr = _prepareDetachedExpr(rightVar, varScope);
+	let prepExpr = _prepareDetachedExpr(str, varScope);
 	let expr = _evalDetachedExpr(prepExpr, varScope);
 
 	// Return the number or false if that value doesn't equate to a number.
@@ -4859,6 +4860,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 
 			// Test function. If it isn't present as stored conditional, built-in or custom, evaluate the original string.
 			let func = condName._ACSSConvFunc();
+
 			if (!_isCond(func)) return item;
 
 			// Ok so far, start to reformat the conditional for JS parsing.
@@ -4927,8 +4929,8 @@ const _runAtIfConds = (condName, ifObj, str) => {
 	let { evType, obj, varScope, otherObj, sel, eve, doc, component, compDoc } = ifObj;
 
 	// Set up the conditional contents (the "action command") by unescaping what was escaped earlier.
-	let condVal = str.replace(/__ACSSSingQ/g, '\'');
-	condVal = str.replace(/__ACSSBSlash/g, '\\');
+	// The last two are needed for the comparison of strings without breaking the conditional parser.
+	let condVal = str.replace(/__ACSSSingQ/g, '\'').replace(/__ACSSBSlash/g, '\\').replace(/"/g, '__ACSSDBQuote').replace(/ /g, '_ACSSspace');
 
 	let clause = condName + '(' + condVal + ')';
 
@@ -4982,6 +4984,9 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	);
 	// Output the variables for real from the map.
 	let readyStatement = _resolveVars(strObj.str, strObj.ref);
+
+	// Finally, remove any line breaks, otherwise things will barf when evaluated.
+	readyStatement = readyStatement.replace(/\r|\n/gm, '');
 	
 	let res;
 	try {
@@ -4997,46 +5002,52 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 const _handleWhile = (loopObj) => {
 	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc } = loopObj;
 
-	if (_checkBreakLoop(_imStCo)) return;
+	while (true) {
+		// Done as a while to avoid getting into a memory leak.
+		if (_checkBreakLoop(_imStCo)) break;
 
-	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
-	// etc.
+		// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
+		// etc.
 
-	// First, remove @if clause.
-	let statement = fullStatement;
-	statement = statement.substr(7).trim();
+		// First, remove @if clause.
+		let statement = fullStatement;
+		statement = statement.substr(7).trim();
 
-	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
-	let parsedStatement = _replaceConditionalsExpr(statement);
-	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
+		// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
+		let parsedStatement = _replaceConditionalsExpr(statement);
+		// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
 
-	if (parsedStatement !== false) {
-		let thisIfObj = {
-			evType,
-			varScope,
-			otherObj,
-			sel: primSel,
-			eve,
-			doc,
-			component,
-			compDoc
-		};
+		if (parsedStatement !== false) {
+			let thisIfObj = {
+				evType,
+				varScope,
+				otherObj,
+				sel: primSel,
+				eve,
+				doc,
+				component,
+				compDoc
+			};
 
-		if (loopWhat != 'action' || typeof passTargSel == 'string') {
-			// This is surrounding a target selector, so the reference object is the event receiver object.
-			thisIfObj.obj = obj;
-		} else if (typeof passTargSel == 'object') {
-			thisIfObj.obj = passTargSel;
-		}
-		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
-		if (res) {
-			// This is ok - run the inner contents.
-			let loopObj2 = _clone(loopObj);
-			_runSecSelOrAction(loopObj2);
-			_handleWhile(loopObj2);
+			if (loopWhat != 'action' || typeof passTargSel == 'string') {
+				// This is surrounding a target selector, so the reference object is the event receiver object.
+				thisIfObj.obj = obj;
+			} else if (typeof passTargSel == 'object') {
+				thisIfObj.obj = passTargSel;
+			}
+			let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+			if (res) {
+				// This is ok - run the inner contents.
+				let loopObj2 = _clone(loopObj);
+				_runSecSelOrAction(loopObj2);
+				loopObj = loopObj2;
+				// Clean up - this is proven to stop memory leak.
+				loopObj2 = null;
+			} else {
+				break;
+			}
 		}
 	}
-
 };
 
 const _addACSSStyleTag = (acssTag) => {
@@ -5272,7 +5283,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 		if (co > totOpenCurlies) {
 			// Infinite loop checker.
 			// If the count goes above the total number of open curlies, we know we have a syntax error of an unclosed curly bracket.
-			_err('Syntax error in config - possibly an incomplete set of curly brackets.');
+			_err('Syntax error in config - possibly an incomplete set of curly brackets or a missing end semi-colon.');
 			return false;
 		}
 		if (match[PARSEDEBUG]) {
@@ -5352,7 +5363,7 @@ const _isFromFile = (fileToRemove, configPart) => {
 	} else {
 		for (i = 0; i < configPartLen; i++) {
 			item = configPart[i];
-			if (isArray(item)) {
+			if (_isArray(item)) {
 				if (_isFromFile(fileToRemove, item)) {
 					return true;
 				}
@@ -5925,7 +5936,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Now run the actual parser now that we have sane content.
 	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
 	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error. str:' + str);
+		_err('Either your config is empty or there is a structural syntax error.');
 	}
 	return str;
 };
@@ -6253,7 +6264,7 @@ const _wrapUpStart = (o) => {
 ActiveCSS.init = (config) => {
 	config = config || {};
 	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
-	let inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
+	let inlineConfigTags = document.querySelectorAll('*:not(template) style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,
@@ -7554,10 +7565,12 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 	return (realVal) ? res : sel;
 };
 
-const _replaceRand = (str) => {
+const _replaceRand = str => {
 	if (str.indexOf('{$RAND') !== -1) {
 		str = str.replace(/\{\$RAND((HEX)?(STR)?([\d]+)?(\-)?([\d]+)?)?\}/gm, function(_, __, isHex, isStr, num, hyph, endNum) {
-			return hyph ? Math.floor(Math.random() * (endNum - num + 1) + num) : _random( ((num) ? num : 8) , (isStr ? true : false) , (isHex ? true : false) );
+			if (num) num = parseInt(num);
+			if (endNum) endNum = parseInt(endNum);
+			return hyph ? (Math.floor(Math.random() * (endNum - num + 1)) + num) : _random( ((num) ? num : 8) , (isStr ? true : false) , (isHex ? true : false) );
 		});
 	}
 	return str;
@@ -7573,9 +7586,10 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 	let fragment, fragRoot, treeWalker, owner, txt, cid, thisHost, actualHost, el, attrs, attr;
 	// Convert string into DOM tree. Walk DOM and set up active IDs, search for vars to replace, etc. Then convert back to string. Hopefully this will be quick.
 	// Handle inner text first.
-	if (str.indexOf('{{') !== -1 && !fromUpdate && str.indexOf('</') !== -1) {
+	if (!fromUpdate && func.startsWith('Render') && str.indexOf('{{') !== -1 && str.indexOf('</') !== -1) {
+		let newStr = str._ACSSRepQuo();
 		fragRoot = document.createElement('template');
-		fragRoot.innerHTML = str;
+		fragRoot.innerHTML = newStr;
 
 		// First label any custom elements that do not have inner components, as these need to act as hosts, so we need to pass this host when replacing attributes.
 		treeWalker = document.createTreeWalker(
@@ -7664,7 +7678,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					return _;
 				}
 			} else {
-				// Convert to dot format to make things simpler in the core - it is faster to update if there is only one type of var to look for.
 				let scoped = _getScopedVar(wot, varScope);
 
 				// Return the wot if it's a window variable.
@@ -7691,7 +7704,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					_addScopedAttr(realWot, o, originalStr, walker, varScope);
+					// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
+					_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
 				}
 				// Send the regular scoped variable back.
 				return _preReplaceVar(res, varReplacementRef);
@@ -7894,6 +7908,7 @@ const _resolveInnerBracketVars = (str, scope) => {
 			if (DIGITREGEX.test(innerVariable) || _resolvable(innerVariable)) return '[' + innerVariable;	// Do not resolve variable or content found that has not already been defined.
 			let res;
 			let scoped = _getScopedVar(innerVariable, scope);
+			// Leave this commented out for the moment - not convinced this is sorted out until tests have been written.
 //			if (typeof scoped.val === 'string') {
 //				// Return the value in quotes.
 //				res = '"' + scoped.val + '"';
@@ -7926,19 +7941,20 @@ const _resolveInnerBracketVars = (str, scope) => {
 
 const _resolveInnerBracketVarsDo = str => {
 	if (str.indexOf('scopedProxy.') === -1) return str;
-	if (str.startsWith('scopedProxy.')) {
-		throw 'ACSS internal error: _resolveInnerBracketVarsDo var should not start with "scopedProxy.". Please report error in GitHub issues.';
+	let newStr = str;
+	if (newStr.startsWith('scopedProxy.')) {
+		newStr = '__ACSSStartSPr' + newStr.substr(11);
 	}
-	let escStr = _escInQuo(str, 'scopedProxy\\.', '__ACSSScopedP');
-	if (escStr.indexOf('scopedProxy.') === -1) return str;
-	escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
-	escStr = _escInQuo(escStr, ']', '__ACSSClSq');
-
-	let newStr = recursInnerScoped(escStr);
-
+	let escStr = _escInQuo(newStr, 'scopedProxy\\.', '__ACSSScopedP');
+	if (escStr.indexOf('scopedProxy.', 1) !== -1) {
+		escStr = _escInQuo(escStr, '[', '__ACSSOpSq');
+		escStr = _escInQuo(escStr, ']', '__ACSSClSq');
+		newStr = recursInnerScoped(escStr);
+		newStr = newStr.replace(/__ACSSOpSq/g, '[');
+		newStr = newStr.replace(/__ACSSClSq/g, ']');
+	}
 	newStr = newStr.replace(/__ACSSScopedP/g, 'scopedProxy.');
-	newStr = newStr.replace(/__ACSSOpSq/g, '[');
-	newStr = newStr.replace(/__ACSSClSq/g, ']');
+	newStr = newStr.replace(/__ACSSStartSPr/g, 'scopedProxy');
 
 	return newStr;
 };
@@ -8044,9 +8060,9 @@ const _restoreStorage = () => {
 };
 
 const _setCSSVariable = o => {
-	if (o.secSel == ':root') {
+	if (o.origSecSel == ':root') {
 		o.secSelObj.documentElement.style.setProperty(o.func, o.actVal);
-	} else if (o.secSel == ':host') {
+	} else if (o.origSecSel == ':host') {
 		o.secSelObj.host.style.setProperty(o.func, o.actVal);
 	} else {
 		o.secSelObj.style.setProperty(o.func, o.actVal);
@@ -10181,7 +10197,7 @@ const _mimicReset = e => {
 
 const _optDef = (arr, srch, opt, def) => {
 	// This is a case insensitive comparison.
-	if (!isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
+	if (!_isArray(arr)) arr = arr.split(' ');	// For speed send in an array that is already split, but this also accepts a string for a one-off use.
 	srch = srch.toLowerCase();
 	let res = arr.findIndex(item => srch === item.toLowerCase());
 	return (res !== -1) ? opt : def;	// return def if not present.
@@ -10620,7 +10636,7 @@ const _baseSet = (object, path, value, customizer) => {
 const _baseToString = value => {
 	// Exit early for strings to avoid a performance hit in some environments.
 	if (typeof value == 'string') return value;
-	if (isArray(value)) return _arrayMap(value, _baseToString) + '';	// Recursively convert values (susceptible to call stack limits).
+	if (_isArray(value)) return _arrayMap(value, _baseToString) + '';	// Recursively convert values (susceptible to call stack limits).
 //	if (isSymbol(value)) return symbolToString ? symbolToString.call(value) : '';	// don't need symbol support in acss.
 	var result = (value + '');
 	return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
@@ -10649,7 +10665,7 @@ const _baseUnset = (object, path) => {
  * @returns {Array} Returns the cast property path array.
 */
 const _castPath = (value, object) => {
-	if (isArray(value)) return value;
+	if (_isArray(value)) return value;
 	return _isKey(value, object) ? [value] : _stringToPath(_toString(value));
 };
 
@@ -10771,7 +10787,7 @@ const _isIndex = (value, length) => {
 */
 
 const _isKey = (value, object) => {
-	if (isArray(value)) return false;
+	if (_isArray(value)) return false;
 	var type = typeof value;
 //	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) return true;	// don't need symbol support in acss.
 	if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null) return true;
@@ -11063,7 +11079,9 @@ if (window.NodeList && !NodeList.prototype.forEach) {
 
 
 	const DEVCORE = (typeof _drawHighlight !== 'undefined') ? true : false;
-	if (DEVCORE) console.log('Running Active CSS development edition.');
+	if (DEVCORE) {
+		console.log('Running Active CSS development edition' + (inIframe ? ' in iframe' : ''));
+	}
 
 	// Is there inline Active CSS? If so, initiate the core.
 	document.addEventListener('DOMContentLoaded', function(e) {

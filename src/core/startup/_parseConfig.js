@@ -169,7 +169,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Now run the actual parser now that we have sane content.
 	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
 	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error. str:' + str);
+		_err('Either your config is empty or there is a structural syntax error.');
 	}
 	return str;
 };

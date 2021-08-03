@@ -18,7 +18,6 @@ const _handleEachArrayOuter = (rightVarVal, itemsObj, counter) => {
 		// Two dimensional array.
 		itemsObj.counter = counter;
 		_handleEachArrayInner(rightVarVal, itemsObj, 0, leftVars);
-
 		loopObj2.loopRef = itemsObj.existingLoopRef + leftVars[0] + '_' + counter;
 	}
 

@@ -1,7 +1,7 @@
 ActiveCSS.init = (config) => {
 	config = config || {};
 	passiveEvents = (config.passiveEvents === undefined) ? true : config.passiveEvents;
-	let inlineConfigTags = document.querySelectorAll('style[type="text/acss"]');
+	let inlineConfigTags = document.querySelectorAll('*:not(template) style[type="text/acss"]');
 	if (autoStartInit) {
 		if (inlineConfigTags) {
 			// This only runs if there is no user config later in the page within the same call stack. If the Active CSS initialization is timed out until later on,

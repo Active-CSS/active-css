@@ -16,7 +16,7 @@ _c.IfVar = o => {
 
 	if (typeof compareVal !== 'boolean') {
 		if (typeof compareVal == 'string' && compareVal.indexOf('"') === -1) {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				if (compareVal == '') {
 					// Nothing to compare, return whether this value to check is a populated array.
 					return (varValue.length > 0) ? true : false;
@@ -29,7 +29,7 @@ _c.IfVar = o => {
 				compareVal = Number(compareVal._ACSSRepQuo());
 			}
 		} else {
-			if (Array.isArray(varValue)) {
+			if (_isArray(varValue)) {
 				try {
 					// Convert compare var to an array.
 					compareVal = JSON.stringify(JSON.parse(compareVal));

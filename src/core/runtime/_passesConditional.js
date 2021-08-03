@@ -16,7 +16,8 @@ const _passesConditional = (condObj) => {
 	let actionBoolState = false;
 
 	for (cond of conds) {
-		cond = cond.replace(/_ACSSspace/g, ' ');
+		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
+		
 
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos !== -1) {
