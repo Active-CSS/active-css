@@ -1673,7 +1673,6 @@ _a.Var = o => {
 	} else {
 		// Active CSS component/document scopes.
 //		console.log('_a.Var, set ' + scopedVar + ' = ', expr, 'o:', o);		// handy - don't remove
-//		console.log('_a.Var, set ' + scopedVar + ' = ', expr);
 		_set(scopedProxy, scopedVar, expr);
 		_allowResolve(scopedVar);
 	}
