@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.7.0',
-			fileVersion: '2-7-0',
+			realVersion: '2.8.0',
+			fileVersion: '2-8-0',
 
 			pkg: grunt.file.readJSON('package.json'),
 
@@ -21,7 +21,7 @@
 						'src/conditionals/*.js',
 						'src/core/delay-handling/*.js',
 						'src/core/runtime/**/*.js',
-						'src/core/startup/*.js',
+						'src/core/startup/**/*.js',
 						'src/core/await-handling/*.js',
 						'src/core/var-handling/*.js',
 						'src/dev-version/common/*.js',
@@ -45,7 +45,7 @@
 						'src/conditionals/*.js',
 						'src/core/delay-handling/*.js',
 						'src/core/runtime/**/*.js',
-						'src/core/startup/*.js',
+						'src/core/startup/**/*.js',
 						'src/core/await-handling/*.js',
 						'src/core/var-handling/*.js',
 						'src/utils/cookies/*.js',

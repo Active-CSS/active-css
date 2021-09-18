@@ -20,7 +20,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 	// Error if the conditional has unbalanced parentheses.
 	let countOp = newStr.split('(');
 	if (countOp.length != newStr.split(')').length || countOp.length == 0) {
-		_err('Opening/closing parentheses are unbalanced in @if statement, "' + str + '"', o);
+		_err('Opening/closing parentheses are unbalanced in @if statement, ' + str, o);
 	}
 
 	// Split by (function name)?\(. We need to do something to the function name to run it properly.

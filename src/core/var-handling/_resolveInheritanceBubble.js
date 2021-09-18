@@ -5,7 +5,7 @@ const _resolveInheritanceBubble = (scope, varName) => {
 	// Is this a "strictlyPrivateVars" or "private" (deprecated) scope? If so, we go no higher also.
 	// Get component details by scope. We need to check if this a strictlyPrivateVars component or in the main document scope.
 	let hostObj = strictPrivVarScopes[scope];
-	if (typeof hostObj === 'undefined' || hostObj) {
+	if (hostObj === undefined || hostObj) {
 		// We don't go any higher. And we know the value is undefined already so we return false.
 		return false;
 	}
@@ -18,7 +18,7 @@ const _resolveInheritanceBubble = (scope, varName) => {
 	// If there, return it immediately.
 	let val = _get(scopedProxy.__getTarget, parentScope + '.' + varName);
 
-	if (typeof val !== 'undefined') return { name: parentScope + '.' + varName, val };
+	if (val !== undefined) return { name: parentScope + '.' + varName, val };
 
 	// Call this function again with the parent scope until we get false or a name/value object.
 	let actualScopeObj = _resolveInheritanceBubble(parentScope, varName);

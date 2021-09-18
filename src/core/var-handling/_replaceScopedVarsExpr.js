@@ -10,7 +10,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 		// Return the wot if it's a window variable.
 		if (scoped.winVar === true) return '{' + wot + '}';
 		res = scoped.val;
-		if (typeof res !== 'undefined') {
+		if (res !== undefined) {
 			// Variable definitely exists in some form.
 			return res;
 		} else {

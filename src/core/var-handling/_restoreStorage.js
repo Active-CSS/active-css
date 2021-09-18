@@ -1,6 +1,6 @@
 const _restoreStorage = () => {
 	let sessionStore = window.sessionStorage.getItem('_acssSession');
-	if (typeof sessionStore !== 'undefined') {
+	if (sessionStore !== undefined) {
 		scopedOrig.session = JSON.parse(sessionStore);
 		// Loop immediate items under session and set as session vars for the core to use.
 		let key;
@@ -10,7 +10,7 @@ const _restoreStorage = () => {
 		}		
 	}
 	let localStore = window.localStorage.getItem('_acssLocal');
-	if (typeof localStore !== 'undefined') {
+	if (localStore !== undefined) {
 		scopedOrig.local = JSON.parse(localStore);
 		let key;
 		for (key in scopedOrig.local) {

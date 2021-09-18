@@ -1,13 +1,13 @@
-const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, removeState=false, fileToRemove='') => {
+const _makeVirtualConfig = (subConfig='', statement='', componentName=null, removeState=false, fileToRemove='') => {
 	// Loop through the config, splitting up multi selectors and giving them their own entry. Put this into the config.
 	// There is also now an option to remove a set of config settings declared in parsedConfig by setting the removeState par to true.
-	var pConfig = (subConfig !== '') ? subConfig : parsedConfig;
-	var str, strLength, i, strTrimmed, strTrimCheck, isComponent;
-	var selectorName, evSplit, ev, sel, isConditional;
+	let pConfig = (subConfig !== '') ? subConfig : parsedConfig;
+	let str, strLength, i, strTrimmed, strTrimCheck, isComponent, innerContent, selectorName, evSplit, ev, sel, isConditional;
 	let inlineActiveID = fileToRemove.substr(8);
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
+		innerContent = pConfig[key].value;
 		isConditional = false;
 		// Split by comma, but not any that are in parentheses, as those are in selector functions.
 		str = selectorName.split(/,(?![^\(\[]*[\]\)])/);
@@ -31,7 +31,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 					}
 					if (!removeState) {
 						conditionals[condName] = (conditionals[condName] === undefined) ? [] : conditionals[condName];
-						conditionals = _iterateConditionals(conditionals, pConfig[key].value, condName);
+						conditionals = _iterateConditionals(conditionals, innerContent, condName);
 					} else {
 						delete conditionals[condName];	// Safe removal. There is no length property on the conditionals object.
 					}
@@ -41,7 +41,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 				case '@':
 					if (strTrimmed == '@pages') {
 						// This is a page list declaration. Append it to any others previously found.
-						_iteratePageList(pConfig[key].value, removeState);
+						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
 						let compName = strTrimmed.split(' ')[1].trim();
@@ -78,7 +78,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							}
 						}
 						// Recurse and set up componentness.
-						_makeVirtualConfig(pConfig[key].value, '', compName, removeState, fileToRemove);
+						_makeVirtualConfig(innerContent, '', compName, removeState, fileToRemove);
 						if (!removeState) {
 							// Handle no html content.
 							if (components[compName].data === undefined) {
@@ -93,16 +93,25 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						}
 						compName = '';
 					} else {
-						if (!removeState) {
-							// This is a media query. Set it up and call the config routine again so the internal media query name can be attached to the events.
-							mqlName = _setupMediaQueryHandler(strTrimmed.slice(7).trim());
-							// Recurse and set up a conditional node.
-							_makeVirtualConfig(pConfig[key].value, mqlName, null, removeState, fileToRemove);
-							// Reset the media query name, otherwise this will get attached to all the remaining events.
+						// Check if the at-rule starts with @media or @support.
+						let isMedia = (strTrimmed.substr(0, 7) == '@media ');
+						let isSupport = (strTrimmed.substr(0, 9) == '@support ');
+						if (isMedia || isSupport) {
+							if (!removeState) {
+								// This is a media query type of statement. Set it up and call the config routine again so the internal media query name can be attached to the events.
+								statement = _setupMediaQueryHandler(strTrimmed);
+								// Recurse and set up a conditional node.
+								if (statement !== false) _makeVirtualConfig(innerContent, statement, null, removeState, fileToRemove);
+								// Reset the media query name, otherwise this will get attached to all the remaining events.
+							} else {
+								// For the moment, media queries do not get deleted.
+							}
+							statement = '';
 						} else {
-							// For the moment, media queries do not get deleted.
+							// This looks like a regular CSS at-rule.
+							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							continue;
 						}
-						mqlName = '';
 					}
 					break;
 
@@ -111,11 +120,11 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						if (!removeState) {
 							if (componentName) {
 								// This is component html.
-								components[componentName].data = pConfig[key].value[0].value.slice(1, -1);	// remove outer quotes;
+								components[componentName].data = innerContent[0].value.slice(1, -1);	// remove outer quotes;
 								components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');
-								components[componentName].file = pConfig[key].value[0].file;
-								components[componentName].line = pConfig[key].value[0].line;
-								components[componentName].intID = pConfig[key].value[0].intID;
+								components[componentName].file = innerContent[0].file;
+								components[componentName].line = innerContent[0].line;
+								components[componentName].intID = innerContent[0].intID;
 							}
 						} else {
 							if (componentName) delete components[componentName];
@@ -129,8 +138,14 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 
 						// The first item in the array will always be the main selector, and the last will always be the event.
 						// The middle can be a mixture of conditions.
-						if (!evSplit[1]) {	// This has no split selector entry and is an error.
-							_warn('"' + selectorName + '" ' + strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
+						if (!evSplit[1]) {	// This has no split selector entry and could be a CSS command.
+							// Is it contained inside a component declaration? If so, it's an error.
+							if (componentName) {
+								_warn(strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
+							} else {
+								// This looks like a regular CSS command.
+								cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							}
 							continue;
 						}
 						if (evSplit[0] == '') {
@@ -149,8 +164,15 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						ev = evSplit.pop();	// Get the event (get the last clause and remove from array)
 						ev = ev.trim();
 
+						// Check that the event isn't a regular CSS command.
+						if (ev.match(COLONSELS) && ev !== 'focus') {
+							// This looks like a regular CSS command.
+							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							continue;
+						}
+
 						let predefs = [], conds = [];
-						if (evSplit) {	// Only run this if there is anything left in the clause array.
+						if (evSplit.length > 0) {	// Only run this if there is anything left in the clause array.
 							// Loop the remaining selectors, pop out each one and assign to the correct place in the config.
 							// Ie. either after the selector for DOM queries, or as part of the conditional array that gets
 							// attached to the event.
@@ -164,8 +186,8 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 							}
 						}
 						// Does this need a media query conditional adding?
-						if (mqlName !== '') {
-							conds.push(mqlName);
+						if (statement !== '') {
+							conds.push(statement);
 						}
 						if (predefs.length > 0) {
 							sel += ':' + predefs.join(':');	// Put the valid DOM selector clauses back.
@@ -208,7 +230,7 @@ const _makeVirtualConfig = (subConfig='', mqlName='', componentName=null, remove
 						}
 
 						if (!removeState) {
-							config[sel][ev][conditionName].push(_iterateRules([], pConfig[key].value, sel, ev, conditionName, componentName));
+							config[sel][ev][conditionName].push(_iterateRules([], innerContent, sel, ev, conditionName, componentName));
 						} else if (config[sel] !== undefined) {
 							// Find and remove items from config based on file value.
 							let i, len = config[sel][ev][conditionName].length;

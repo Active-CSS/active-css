@@ -19,8 +19,8 @@ const _resolveInnerBracketVars = (str, scope) => {
 //			} else if (typeof scoped.val === 'number') {
 //				// Return the value as it is.
 //				res = scoped.val;
-//			} else if (typeof scoped.val !== 'undefined') {
-			if (typeof scoped.val !== 'undefined') {
+//			} else if (scoped.val !== undefined) {
+			if (scoped.val !== undefined) {
 				// Return the fully scoped name.
 				res = scoped.fullName;
 			} else {

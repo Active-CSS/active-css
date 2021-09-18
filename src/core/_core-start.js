@@ -33,6 +33,7 @@
 			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 			')', 'g'),
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -44,7 +45,6 @@
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=(?:[^"]|"[^"]*")*)/gm,
-		LOOPCOMMANDS = ['@each', '@for', '@if', '@else', '@while'],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -55,10 +55,16 @@
 		RANDNUMS = '0123456789',
 		REGEXCHARS = /[\\^$.*+?\/()[\]{}|]/g,
 		SELFREGEX = /\{\$SELF\}/g,
+		WRAPSTATEMENTS = [ '@media', '@support' ],
+		INNERSTATEMENTS = [ '@each', '@else', '@for', '@if', '@while' ],
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
+		TABLEREGEX = /^\s*<t(r|d|body)/m,
 		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
-	const RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
+	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
+		RANDCHARS = RANDHEX + 'GHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
 	// Lodash vars for _get & _set. These are all vars in the original source.
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
@@ -132,6 +138,7 @@
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
+		extractedCSS = {},		// CSS extraction temporary placeholder. Resets before each new CSS extraction. Style tags only generated after parsing of all files and tags has completed.
 		exitTarget = {},
 		flyCommands = [],
 		flyConds = [],
