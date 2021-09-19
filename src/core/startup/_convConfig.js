@@ -21,7 +21,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			newNode = _convConfig(cssString, totOpenCurlies, co, inlineActiveID);
 			if (newNode === false) return false;	// There's been a syntax error.
 			name = _sortOutEscapeChars(name);
-			if (inlineActiveID) name = name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
+			if (inlineActiveID) name = name.replace(/embedded\:loaded/g, '~_embedded_' + inlineActiveID + ':loaded');
 			obj = {
 				name,
 				value: newNode,

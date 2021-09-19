@@ -25,7 +25,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
 		let sel, ev;
 		if (inlineActiveID) {
-			sel = '~_inlineTag_' + inlineActiveID;
+			sel = '~_embedded_' + inlineActiveID;
 			ev = 'loaded';
 		} else {
 			sel = '~_acssSystem';
@@ -77,7 +77,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/_ACSS_exit/g, 'exit;');
 	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
 
-	// Handle any inline Active CSS style tags and convert to regular style tags.
+	// Handle any embedded Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
 	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {

@@ -156,7 +156,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						}
 
 						if (removeState) {
-							if (sel == '~_inlineTag_' + inlineActiveID) {
+							if (sel == '~_embedded_' + inlineActiveID) {
 								delete config[sel];
 								continue;
 							}

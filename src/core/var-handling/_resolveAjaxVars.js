@@ -13,7 +13,7 @@ const _resolveAjaxVars = o => {
 			return;
 		}
 	} else if (typeORes === 'string') {
-		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
+		// Escape any embedded Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
 		_setHTMLVars(o);

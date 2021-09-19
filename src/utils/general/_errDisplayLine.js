@@ -7,7 +7,7 @@ const _errDisplayLine = (pref, message, errStyle, o, argsIn) => {	// jshint igno
 	message = '%c' + pref + ', ' + message;
 	if (o) {
 		message += ' --> "' + o.actName + ': ' + o.actVal + ';"';
-		message += (o.file.startsWith('_inline_')) ? '    (inline ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
+		message += (o.file.startsWith('_inline_')) ? '    (embedded ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
 	}
 	console.log(message, errStyle);
 	if (args) console.log.apply(console, args);

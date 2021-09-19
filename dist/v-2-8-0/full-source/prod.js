@@ -2182,7 +2182,7 @@ const _deleteScopeVars = varScope => {
 };
 
 const _escapeInline = (str, start) => {
-	// Escape all single opening curlies so that the parser will not substitute any variables into the inline Active CSS or JS.
+	// Escape all single opening curlies so that the parser will not substitute any variables into the embedded Active CSS or JS.
 	// This runs immediately on an ajax return string for use by {$STRING} and the result is stored, so it is only ever run once for speed.
 	// This gets unescaped prior to insertion into the DOM.
 	let end = start.split(' ')[0];
@@ -2684,7 +2684,7 @@ const _handleSpaPop = (e, init) => {
 		let hashSplitLen = hashSplit.length;
 		for (n = 0; n < hashSplitLen; n++) {
 			if (hashSplit[n] == '') continue;
-			// Store the hash for when the page has loaded. It could be an inline reference so we can only get the event once the page has loaded.
+			// Store the hash for when the page has loaded. It could be an embedded reference so we can only get the event once the page has loaded.
 			hashEvents.push(hashSplit[n]);
 			hashEventTrigger = true;
 		}
@@ -2891,7 +2891,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 				if (DEVCORE) {
 					mutation.addedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
-						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 							_regenConfig(nod, 'addDevTools');
 						} else {
@@ -2903,13 +2903,13 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}
 			}
 		} else if (mutation.type == 'characterData') {
-			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
+			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
 			let el = mutation.target;
 			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
 				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
 				setTimeout(function() {
-					// This is an inline Active CSS tag. Replace it so it triggers off the config changes.
+					// This is an embedded Active CSS tag. Replace it so it triggers off the config changes.
 					let parEl = el.parentElement;
 					let newTag = '<style type="text/acss">' + parEl.innerText + '</style>';
 					// Remove from the config first. If we remove the element after we've changed the content we get the scenario of the removal happening
@@ -4841,7 +4841,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 
 	// Count parentheses. It's not possible to do matching parentheses with regex and account for all the possible combinations of the insides
 	// that are not quoted. It needs to work with css selectors which are not quoted.
-	// We could split by colon after escaping the colon preceding the pseudo-selectors and even inline conditionals.
+	// We could split by colon after escaping the colon preceding the pseudo-selectors and even embedded conditionals.
 	// Like @if func(sadasd):func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) {
 	// That gives us an AND clause. But doesn't give us a way to have an OR, or a way to have complex () around AND and OR clauses.
 	// Like @if (func(sadasd) && func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) || func(sdfsdf)) && func(sdf) {
@@ -5131,9 +5131,9 @@ const _addConfig = (str, o) => {
 	parsedConfig = Object.assign(tmpParse, parsedConfig, configItems);
 
 	// Set up CSS placeholder variable for extracting out any CSS that may be found in the ACSS.
-	// o.inlineActiveID will be populated if inline and o.file will contain that, otherwise o.inlineActiveID will be empty.
-	// If not inline, all the CSS can be appended to the same stylesheet as it can't be unloaded once added after ACSS initialisation or load-config.
-	// If CSS needs to be removed, the developer would place it in an inline CSS or ACSS style tag and not through initial config load or via load-config.
+	// o.inlineActiveID will be populated if embedded and o.file will contain that, otherwise o.inlineActiveID will be empty.
+	// If not embedded, all the CSS can be appended to the same stylesheet as it can't be unloaded once added after ACSS initialisation or load-config.
+	// If CSS needs to be removed, the developer would place it in an embedded CSS or ACSS style tag and not through initial config load or via load-config.
 	cssExtractInit(o.file);
 
 	// If this is last file, run the config generator.
@@ -5357,7 +5357,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			newNode = _convConfig(cssString, totOpenCurlies, co, inlineActiveID);
 			if (newNode === false) return false;	// There's been a syntax error.
 			name = _sortOutEscapeChars(name);
-			if (inlineActiveID) name = name.replace(/inlineTag\:loaded/g, '~_inlineTag_' + inlineActiveID + ':loaded');
+			if (inlineActiveID) name = name.replace(/embedded\:loaded/g, '~_embedded_' + inlineActiveID + ':loaded');
 			obj = {
 				name,
 				value: newNode,
@@ -5396,7 +5396,7 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 };
 
 const _getInline = (inlineConfigTags) => {
-	// Initial inline style type="text/acss" detection prior to any user config.
+	// Initial embedded style type="text/acss" detection prior to any user config.
 	inlineConfigTags.forEach(acssTag => {
 		_addACSSStyleTag(acssTag);	// This function as well as adding the config returns the applicable Active ID for use in running the loaded event.
 	});
@@ -5718,7 +5718,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						}
 
 						if (removeState) {
-							if (sel == '~_inlineTag_' + inlineActiveID) {
+							if (sel == '~_embedded_' + inlineActiveID) {
 								delete config[sel];
 								continue;
 							}
@@ -5883,7 +5883,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
 		let sel, ev;
 		if (inlineActiveID) {
-			sel = '~_inlineTag_' + inlineActiveID;
+			sel = '~_embedded_' + inlineActiveID;
 			ev = 'loaded';
 		} else {
 			sel = '~_acssSystem';
@@ -5935,7 +5935,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/_ACSS_exit/g, 'exit;');
 	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
 
-	// Handle any inline Active CSS style tags and convert to regular style tags.
+	// Handle any embedded Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
 	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
@@ -6102,7 +6102,7 @@ const _regenConfig = (styleTag, opt) => {
 
 const _runInlineLoaded = () => {
 	inlineIDArr.forEach(activeID => {
-		_handleEvents({ obj: '~_inlineTag_' + activeID, evType: 'loaded' });
+		_handleEvents({ obj: '~_embedded_' + activeID, evType: 'loaded' });
 	});
 	inlineIDArr = [];
 };
@@ -6322,7 +6322,7 @@ const _wrapUpStart = (o) => {
 
 		_handleEvents({ obj: 'body', evType: 'init' });
 
-		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
+		// Now run the loaded events for each embedded Active CSS tag on the page. They were added all at once for speed.
 		if (inlineIDArr.length > 0) _runInlineLoaded();
 		// Iterate items on this page and do any draw events.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
@@ -6344,7 +6344,7 @@ const _wrapUpStart = (o) => {
 			}, 1000);
 		}
 	} else {
-		// Now run the loaded events for each inline Active CSS tag on the page.
+		// Now run the loaded events for each embedded Active CSS tag on the page.
 		if (inlineIDArr.length > 0) {
 			_runInlineLoaded();
 		}
@@ -6471,7 +6471,7 @@ const cssExtractGetRef = (fileRef) => {
 	// Return the extracted CSS stylesheet reference. This will be placed into the data-css-ref attribute when the stylesheet gets inserted onto the page.
 	// It's done like this and not via any other internal method is so that the CSS can be tweaked using DevTools.
 	// If fileRef.startsWith('_inline_'):
-		// This is a CSS extraction from an inline ACSS style tag. One stylesheet is generated per tag so it can be removed if necessary.
+		// This is a CSS extraction from an embedded ACSS style tag. One stylesheet is generated per tag so it can be removed if necessary.
 		// It will look like '_acss_css_inline_nnn' (where "nnn" is a number).
 	// otherwise:
 		// This is a CSS extraction from loaded config. Loaded config CSS gets accumulatively appended to a single stylesheet in the order it is loaded.
@@ -6493,7 +6493,7 @@ const cssExtractInit = (fileRef) => {
 };
 
 const cssExtractRemoveTag = tagRef => {
-	// This is only used for removing CSS extracted from inline ACSS style tags.
+	// This is only used for removing CSS extracted from embedded ACSS style tags.
 	let cssTag = document.querySelector('style[data-from-acss="' + tagRef + '"]');
 	if (cssTag) cssTag.parentNode.removeChild(cssTag);
 };
@@ -6520,7 +6520,7 @@ ActiveCSS.init = (config) => {
 			return;
 		}
 		lazyConfig = config.lazyConfig || '';
-		config.configLocation = config.configLocation || console.log('No inline or Active CSS config file setup - see installation docs.');
+		config.configLocation = config.configLocation || console.log('No embedded or Active CSS config file setup - see installation docs.');
 		if (config.debugMode) {
 			debugMode = config.debugMode;
 			if (document.parentNode) {
@@ -7580,7 +7580,7 @@ const _removeVarPlaceholders = obj => {
 
 
 	/**
-	* Handle style tags (but not inline Active CSS).
+	* Handle style tags (but not embedded Active CSS).
 	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).
@@ -8036,7 +8036,7 @@ const _resolveAjaxVars = o => {
 			return;
 		}
 	} else if (typeORes === 'string') {
-		// Escape any inline Active CSS or JavaScript so it doesn't get variable substitution run inside these.
+		// Escape any embedded Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
 		_setHTMLVars(o);
@@ -9174,7 +9174,7 @@ const _errDisplayLine = (pref, message, errStyle, o, argsIn) => {	// jshint igno
 	message = '%c' + pref + ', ' + message;
 	if (o) {
 		message += ' --> "' + o.actName + ': ' + o.actVal + ';"';
-		message += (o.file.startsWith('_inline_')) ? '    (inline ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
+		message += (o.file.startsWith('_inline_')) ? '    (embedded ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
 	}
 	console.log(message, errStyle);
 	if (args) console.log.apply(console, args);
@@ -10654,11 +10654,11 @@ if (window.NodeList && !NodeList.prototype.forEach) {
 		console.log('Running Active CSS development edition' + (inIframe ? ' in iframe' : ''));
 	}
 
-	// Is there inline Active CSS? If so, initiate the core.
+	// Is there embedded Active CSS? If so, initiate the core.
 	document.addEventListener('DOMContentLoaded', function(e) {
 		setTimeout(function() {
 			// User setup should have started by this point. If not, initialise Active CSS anyway.
-			// If there is a user setup initialized, then inline acss is handled there and not here.
+			// If there is a user setup initialized, then embedded acss is handled there and not here.
 			// This is so that _readSiteMap happens at the end of config accumulation and we can fire all the initalization events at once.
 			if (!userSetupStarted) {
 				autoStartInit = true;
