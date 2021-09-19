@@ -5114,17 +5114,28 @@ const _addACSSStyleTag = (acssTag) => {
 
 const _addConfig = (str, o) => {
 	// Concatenate the config files before processing.
-	// Before we add the config, we want to add line numbers for debug.
-	let configLineArr = str.match(/^.*((\r\n|\n|\r)|$)/gm);
-	let newStr = '';
-	for (let n = 0; n < configLineArr.length; n++) {
-		newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
+	// On empty config, throw a warning.
+	let configItems;
+	if (str.trim() == '') {
+		if (o.file.startsWith('_inline_id-')) {
+			console.log('There is an empty embedded ACSS style tag on the page. Skipping.');
+		} else {
+			console.log('There is a config file trying to load with no config present. Skipping. File: ' + o.file);
+		}
+		configItems = {};
+	} else {
+		// Before we add the config, we want to add line numbers for debug.
+		let configLineArr = str.match(/^.*((\r\n|\n|\r)|$)/gm);
+		let newStr = '';
+		for (let n = 0; n < configLineArr.length; n++) {
+			newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
+		}
+		str = newStr;
+
+		configItems = _parseConfig(str, o.inlineActiveID);
 	}
-	str = newStr;
+
 	concatConfigCo++;
-
-	let configItems = _parseConfig(str, o.inlineActiveID);
-
 	configBox.push({ file: o.file, styles: configItems });
 
 	let tmpParse = {};
@@ -5870,6 +5881,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 //	str = str.replace(INQUOTES, function(_, innards) {
 //		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
 //	});
+
 	str = str.replace(COMMENTS, '');
 //	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
@@ -6025,11 +6037,12 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	let totOpenCurlies = str.split('{').length;
 
 	// Now run the actual parser now that we have sane content.
-	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
-	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error.');
+	let obj = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
+	if (!Object.keys(obj).length) {
+		_err('There is a structural syntax error at initial parsing stage. Config that failed to parse: ' + str);
 	}
-	return str;
+
+	return obj;
 };
 
 const _readSiteMap = (o) => {

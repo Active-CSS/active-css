@@ -12,6 +12,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 //	str = str.replace(INQUOTES, function(_, innards) {
 //		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
 //	});
+
 	str = str.replace(COMMENTS, '');
 //	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
@@ -167,9 +168,10 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	let totOpenCurlies = str.split('{').length;
 
 	// Now run the actual parser now that we have sane content.
-	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
-	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error.');
+	let obj = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
+	if (!Object.keys(obj).length) {
+		_err('There is a structural syntax error at initial parsing stage. Config that failed to parse: ' + str);
 	}
-	return str;
+
+	return obj;
 };

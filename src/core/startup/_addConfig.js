@@ -1,16 +1,27 @@
 const _addConfig = (str, o) => {
 	// Concatenate the config files before processing.
-	// Before we add the config, we want to add line numbers for debug.
-	let configLineArr = str.match(/^.*((\r\n|\n|\r)|$)/gm);
-	let newStr = '';
-	for (let n = 0; n < configLineArr.length; n++) {
-		newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
+	// On empty config, throw a warning.
+	let configItems;
+	if (str.trim() == '') {
+		if (o.file.startsWith('_inline_id-')) {
+			console.log('There is an empty embedded ACSS style tag on the page. Skipping.');
+		} else {
+			console.log('There is a config file trying to load with no config present. Skipping. File: ' + o.file);
+		}
+		configItems = {};
+	} else {
+		// Before we add the config, we want to add line numbers for debug.
+		let configLineArr = str.match(/^.*((\r\n|\n|\r)|$)/gm);
+		let newStr = '';
+		for (let n = 0; n < configLineArr.length; n++) {
+			newStr += '*debugfile:' + o.file + ':' + (n + 1) + '*' + configLineArr[n];
+		}
+		str = newStr;
+
+		configItems = _parseConfig(str, o.inlineActiveID);
 	}
-	str = newStr;
+
 	concatConfigCo++;
-
-	let configItems = _parseConfig(str, o.inlineActiveID);
-
 	configBox.push({ file: o.file, styles: configItems });
 
 	let tmpParse = {};
