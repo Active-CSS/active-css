@@ -39,7 +39,7 @@ const _removeVarPlaceholders = obj => {
 
 
 	/**
-	* Handle style tags (but not inline Active CSS).
+	* Handle style tags (but not embedded Active CSS).
 	* Any variables not found will be searched for in higher scopes and referenced by that scope if found, unless component is marked as strictlyPrivateVars.
 	*/
 	// We'll be storing reactive variable references to the style tag (varStyleMap) + the reference to the original contents of the style tag (varInStyleMap).

@@ -25,7 +25,7 @@ const _getPageFromList = hrf => {
 			// Replace any variables mentioned in the attrs string from @pages.
 			let targetAttrs = wild.attrs, mapArrLen = mapArr.length, varMatch, i;
 			for (i = 0; i < mapArrLen; i++) {
-				if (typeof pageWildReg[i] === 'undefined') {
+				if (pageWildReg[i] === undefined) {
 					// For speed, only create the var match regex when it is needed. We don't know how many we might need, but no point it twice.
 					pageWildReg[i] = new RegExp('\\{\\$' + (i + 1) + '\\}', 'g');
 				}

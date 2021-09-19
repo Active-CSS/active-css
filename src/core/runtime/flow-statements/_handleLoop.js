@@ -10,12 +10,24 @@ const _handleLoop = (loopObj) => {
 		switch (statement) {
 			case '@else':
 			case '@else if':
-				// If we've already run a successful if statement, then don't run any more.
+				// If we've already run a successful if type statement, then don't run any more.
 				if (loopObj.previousIfRes && loopObj.previousIfRes.res === true) return;		// jshint ignore:line
 				// If it gets this far, continue with checking and running the if clause.
 
 			case '@if':
 				loopObj.ifRes = _handleIf(loopObj, statement);
+				break;
+
+			case '@else media':
+			case '@else support':
+				// If we've already run a successful if type statement, then don't run any more.
+				if (loopObj.previousIfRes && loopObj.previousIfRes.res === true) return;		// jshint ignore:line
+				// If it gets this far, continue with checking and running the if clause.
+
+			case '@media':
+			case '@support':
+				// Media and support work like an @if statement, ie. they can work with @else if and @else. So treat like an @if after evaluation.
+				loopObj.ifRes = _handleCSSAtStatement(loopObj, statement);
 				break;
 
 			case '@each':

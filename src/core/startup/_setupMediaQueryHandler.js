@@ -11,12 +11,19 @@ const _setupMediaQueryHandler = str => {
 	// in css, media queries only relate to the window they are defined in. We could do a cross-iframe push of data up and down for info purposes, but don't
 	// worry about that for the moment - sounds well dodgy.
 
-	str = str.trim();
+	let statementObj = str.startsWith('@media ') ? { type: 'media', len: 7 } : str.startsWith('@support ') ? { type: 'support', len: 9 } : false;
+	if (!statementObj) {
+		_warn(str + ' statement not recognised as an ACSS conditional');
+		return false;
+	}
+
+	str = str.slice(statementObj.len).trim();
+
 	let medQName = mediaQueriesOrig[str];
-	if (typeof medQName !== 'undefined') {
-		if (typeof conditionals[medQName] === 'undefined') {
+	if (medQName !== undefined) {
+		if (conditionals[medQName] === undefined) {
 			conditionals[medQName] = [];
-			conditionals[medQName].push({ 'name': 'mql-true', 'value': medQName });
+			conditionals[medQName].push({ name: 'mql-true', value: medQName, query: str, type: statementObj.type });
 		}
 		return medQName;	// Return the name of the already existing media query.
 	}
@@ -30,19 +37,27 @@ const _setupMediaQueryHandler = str => {
 	mediaQueriesOrig[str] = mqlName;
 	// Set up the conditional statement in the config.
 	conditionals[mqlName] = [];
-	conditionals[mqlName].push({ 'name': 'mql-true', 'value': mqlName });
-	// Set up the variable which stores the event listener and state of the resulting media query.
-	let ev = window.matchMedia(str);
-	let matches = ev.matches;
+	conditionals[mqlName].push({ name: 'mql-true', value: mqlName, query: str, type: statementObj.type });
 	mediaQueries.push(mqlName);
-	mediaQueries[mqlName] = { 'ev': ev, 'val': matches };
-	// Set initial value.
-	// Set up the event listener and function.
-	mediaQueries[mqlName].ev.addListener(function(e) {
-		// When the media query state changes, set the internal pointer to true or false.
-		let mqlName = mediaQueriesOrig[e.media];
-		mediaQueries[mqlName].val = e.matches;
-	});
+	mediaQueries[mqlName] = {};
+
+	let res;
+	if (statementObj.type == 'media') {
+		// Set up the variable which stores the event listener and state of the resulting query.
+		let ev = window.matchMedia(str);
+		res = ev.matches;
+		// Set up the event listener and function for @media, as the result can dynamically change.
+		ev.addListener(function(e) {
+			// When the media query state changes, set the internal pointer to true or false.
+			let mqlName = mediaQueriesOrig[e.media];
+			mediaQueries[mqlName].val = e.matches;
+		});
+	} else {
+		// Handle @support. If it gets this far, then it will only be @support here. It doesn't need an event listener outside the event selector.
+		res = _checkSupport(str);
+	}
+	mediaQueries[mqlName].val = res;
+
 	// Return the name of the media query reference to place into the primary selector.
 	return mqlName;
 };

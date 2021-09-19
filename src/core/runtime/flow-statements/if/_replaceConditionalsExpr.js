@@ -4,7 +4,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 
 	// Count parentheses. It's not possible to do matching parentheses with regex and account for all the possible combinations of the insides
 	// that are not quoted. It needs to work with css selectors which are not quoted.
-	// We could split by colon after escaping the colon preceding the pseudo-selectors and even inline conditionals.
+	// We could split by colon after escaping the colon preceding the pseudo-selectors and even embedded conditionals.
 	// Like @if func(sadasd):func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) {
 	// That gives us an AND clause. But doesn't give us a way to have an OR, or a way to have complex () around AND and OR clauses.
 	// Like @if (func(sadasd) && func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) || func(sdfsdf)) && func(sdf) {
@@ -20,7 +20,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 	// Error if the conditional has unbalanced parentheses.
 	let countOp = newStr.split('(');
 	if (countOp.length != newStr.split(')').length || countOp.length == 0) {
-		_err('Opening/closing parentheses are unbalanced in @if statement, "' + str + '"', o);
+		_err('Opening/closing parentheses are unbalanced in @if statement, ' + str, o);
 	}
 
 	// Split by (function name)?\(. We need to do something to the function name to run it properly.

@@ -28,7 +28,7 @@ const _resolveInheritance = scopedVar => {
 	// Is this already in the current scope? If so, we don't go any higher - return the original scope reference.
 	let val = _get(scopedProxy.__getTarget, scopedVar);
 	let origValObj = { 'name': scopedVar, 'val': val };
-	if (typeof val !== 'undefined') return origValObj;
+	if (val !== undefined) return origValObj;
 
 	// Get the current scope so it is a separate item when bubbling up components.
 	let i = scopedVar.indexOf('.');

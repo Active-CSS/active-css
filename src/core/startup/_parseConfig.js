@@ -12,6 +12,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 //	str = str.replace(INQUOTES, function(_, innards) {
 //		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
 //	});
+
 	str = str.replace(COMMENTS, '');
 //	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
@@ -25,7 +26,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
 		let sel, ev;
 		if (inlineActiveID) {
-			sel = '~_inlineTag_' + inlineActiveID;
+			sel = '~_embedded_' + inlineActiveID;
 			ev = 'loaded';
 		} else {
 			sel = '~_acssSystem';
@@ -77,7 +78,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/_ACSS_exit/g, 'exit;');
 	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
 
-	// Handle any inline Active CSS style tags and convert to regular style tags.
+	// Handle any embedded Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
 	// Escape all style tag innards. This could contain anything, including JS and other html tags. Straight style tags are allowed in file-based config.
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
@@ -167,9 +168,10 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	let totOpenCurlies = str.split('{').length;
 
 	// Now run the actual parser now that we have sane content.
-	str = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
-	if (!Object.keys(str).length) {
-		_err('Either your config is empty or there is a structural syntax error.');
+	let obj = _convConfig(str, totOpenCurlies, 0, inlineActiveID);
+	if (!Object.keys(obj).length) {
+		_err('There is a structural syntax error at initial parsing stage. Config that failed to parse: ' + str);
 	}
-	return str;
+
+	return obj;
 };

@@ -16,6 +16,9 @@ const _readSiteMap = (o) => {
 	// Reset the parsed config array so it is ready for new config to be added later.
 	parsedConfig = {};
 
+	// Create any CSS style tags that have been extracted out from the loaded ACSS config. This handles both loaded and embedded config.
+	cssExtractAddTags();
+
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
 	let evSet;

@@ -79,7 +79,7 @@ ActiveCSS._varUpdateDom = (changes) => {
 				// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
 				let varPath = _varFixArr(innerChange.path);
 				dataObj = _get(scopedData, varPath);
-				if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+				if (dataObj === undefined) continue;		// No point doing anything yet - it's not been rendered.
 
 				innerChange.val = (!innerChange.val) ? '' : innerChange.val;
 				_varUpdateDomDo({
@@ -92,7 +92,7 @@ ActiveCSS._varUpdateDom = (changes) => {
 			// Convert for cases of array changes coming in as "main.theCol.a val.a 1" which is no good.
 			let varPath = _varFixArr(change.currentPath);
 			dataObj = _get(scopedData, varPath);
-			if (typeof dataObj === 'undefined') continue;		// No point doing anything yet - it's not been rendered.
+			if (dataObj === undefined) continue;		// No point doing anything yet - it's not been rendered.
 
 			// Convert the currentPath for placeholders.
 			change.currentPath = _varChangeToDots(change.currentPath);

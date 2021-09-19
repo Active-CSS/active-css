@@ -20,7 +20,7 @@ ActiveCSS.init = (config) => {
 			return;
 		}
 		lazyConfig = config.lazyConfig || '';
-		config.configLocation = config.configLocation || console.log('No inline or Active CSS config file setup - see installation docs.');
+		config.configLocation = config.configLocation || console.log('No embedded or Active CSS config file setup - see installation docs.');
 		if (config.debugMode) {
 			debugMode = config.debugMode;
 			if (document.parentNode) {

@@ -56,8 +56,7 @@ _a.SetCookie = o => {
 	// Max-Age.
 	maxAge = _getParVal(aV, 'maxAge')._ACSSRepQuo();
 	if (maxAge) {
-		let numTest = new RegExp('^\\d+$');
-		if (!numTest.test(maxAge)) _warn('set-cookie maxAge is not a number', o);
+		if (!DIGITREGEX.test(maxAge)) _warn('set-cookie maxAge is not a number', o);
 	}
 
 	// Domain.

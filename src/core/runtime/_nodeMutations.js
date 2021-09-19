@@ -6,7 +6,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 				if (DEVCORE) {
 					mutation.addedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
-						// Handle the addition of inline Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
+						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 							_regenConfig(nod, 'addDevTools');
 						} else {
@@ -18,13 +18,13 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}
 			}
 		} else if (mutation.type == 'characterData') {
-			// Detect change to inline Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
+			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
 			let el = mutation.target;
 			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
 				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
 				setTimeout(function() {
-					// This is an inline Active CSS tag. Replace it so it triggers off the config changes.
+					// This is an embedded Active CSS tag. Replace it so it triggers off the config changes.
 					let parEl = el.parentElement;
 					let newTag = '<style type="text/acss">' + parEl.innerText + '</style>';
 					// Remove from the config first. If we remove the element after we've changed the content we get the scenario of the removal happening

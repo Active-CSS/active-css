@@ -29,7 +29,7 @@ const _wrapUpStart = (o) => {
 
 		_handleEvents({ obj: 'body', evType: 'init' });
 
-		// Now run the loaded events for each inline Active CSS tag on the page. They were added all at once for speed.
+		// Now run the loaded events for each embedded Active CSS tag on the page. They were added all at once for speed.
 		if (inlineIDArr.length > 0) _runInlineLoaded();
 		// Iterate items on this page and do any draw events.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
@@ -51,7 +51,7 @@ const _wrapUpStart = (o) => {
 			}, 1000);
 		}
 	} else {
-		// Now run the loaded events for each inline Active CSS tag on the page.
+		// Now run the loaded events for each embedded Active CSS tag on the page.
 		if (inlineIDArr.length > 0) {
 			_runInlineLoaded();
 		}

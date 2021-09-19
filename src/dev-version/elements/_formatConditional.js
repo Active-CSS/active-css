@@ -8,7 +8,7 @@ ActiveCSS._formatConditional = sel => {
 	for (i = 1; i < condLen; i++) {		// Start from the second one. A conditional should never be in the first item - that would be an error.
 		if (arr[i].trim() === '') continue;
 		str += ':';
-		str += (conditionals[arr[i]]) ? '<span class="active-event-cond-inline">' + arr[i] + '</span>' : arr[i];
+		str += (conditionals[arr[i]]) ? '<span class="active-event-cond-embedded">' + arr[i] + '</span>' : arr[i];
 	}
 	return str;
 };

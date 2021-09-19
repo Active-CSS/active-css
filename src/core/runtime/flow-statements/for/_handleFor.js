@@ -19,7 +19,7 @@ const _handleFor = (loopObj, scopePrefix) => {
 	let stepPos = statement.indexOf(' step ');
 
 	if (fromPos === -1 || toPos === -1) {
-		_err('"from" and "to" must be used in the @for statement, "' + statement + '"');
+		_err('"from" and "to" must be used in the @for statement, ' + statement);
 	}
 
 	// Extract each part of the string that we need to run the statement and assign to appropriate variables.
@@ -44,9 +44,9 @@ const _handleFor = (loopObj, scopePrefix) => {
 
 	// Handle any errors from the conversion. We must have numbers, and the "step" value must not equal zero.
 	if ([ fromVal, toVal, stepVal ].indexOf(false) !== -1) {
-		_err('Could not establish valid values from @for statement, "' + statement + '"', null, 'From:', fromVal, 'To:', toVal, 'Step:', stepVal);
+		_err('Could not establish valid values from @for statement, ' + statement, null, 'From:', fromVal, 'To:', toVal, 'Step:', stepVal);
 	} else if (stepValDP > 5) {
-		_err('@for statement can only handle up to 5 decimal places, "' + statement + '"');
+		_err('@for statement can only handle up to 5 decimal places, ' + statement);
 	}
 
 	// If either "step" is set to zero, or there is a negative progression with no negative "step" value, skip loop.
