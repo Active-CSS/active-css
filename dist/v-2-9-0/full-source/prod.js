@@ -678,6 +678,25 @@ const _exitTarget = o => {
 	exitTarget['i' + o._imStCo] = true;
 };
 
+_a.FadeIn = o => _fade(o);
+//	el, speed, displayInitial='initial'
+//	_fade(el, speed, undefined, undefined, displayInitial);
+
+_a.FadeOut = o => _fade(o);
+//	el, speed
+//	_fade(el, speed, 'fadeOut', undefined, displayInitial);
+
+_a.FadeTo = o => _fade(o);
+//	el, speed, opac, displayInitial='initial'
+//	if (typeof el !== 'object') el = _getObj(el);
+//	var existingOpac = el.style.opacity;
+//	if (existingOpac > opac) {
+//		_fade(el, speed, 'fadeOut', opac, displayInitial);
+//	} else if (existingOpac < opac) {
+//		_fade(el, speed, undefined, opac, displayInitial);
+//	}
+
+
 _a.FocusOff = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	_a.Blur(o);
@@ -9378,6 +9397,190 @@ const _evalDetachedExpr = (valToExpr, varScope) => {
 	return _replaceJSExpression(expr, true, false, varScope, -1);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 };
 
+const _fade = o => {
+	/***
+	 * Work out which function called this and then call the generic function which can be kept separate to this to help split up actual functionality.
+	 *
+	 * fade-in *el* *duration* *displayValue*
+	 * fade-out *el* *duration* [no-display-none]
+	 * fade-to *el* *duration* *toOpacity* *displayValue*
+	 *
+	 * duration = (number)(ms or s).
+	 * toOpacity = (number).
+	 * displayValue = optional - last value if it isn't duration or opacity - don't need to qualify it further so we keep forward compatibility.
+	 * no-display-none = optional - don't set the display none at the end of the fade-out.
+	 * wait-display-none = optional - don't set the display none at the end of the fade-out until the duration has completed.
+	 * el = the remainder.
+	 * An easy and performant way to do this is to split o.actVal by space and work it from the back to the beginning.
+	 * Last thing is to call the _fadeDo with the appropriate options.
+	 *
+	 * fade-in = _fadeDo(el, duration, o.func, undefined, "initial" or displayValue);
+	 * fade-out = _fadeDo(el, duration, o.func);
+	 * fade-to = it depends which way it is fading - see code below.
+	**/
+
+	let actValArr = o.actVal.split(' ');
+	let actValArrLen = actValArr.length, i;
+	let sel, duration, toOpacity, displayValue, noDisplayNone, waitDisplayNone, selArr;
+	// Working backwards through the space-delimited array of the command.
+	for (i = actValArrLen - 1; i > -1; i--) {
+	    if (!toOpacity && _isPositiveFloat(actValArr[i])) {
+		    // This is a number, which indicates it should be toOpacity.
+		    if (actValArr[i] < 0 || actValArr[i] > 1) _err('Invalid fading opacity number:', o, actValArr[i]);
+		    toOpacity = actValArr[i];
+	    } else if (!duration && _isPositive(actValArr[i][0])) {
+		    // This starts with a number so this should be the duration parameter. Display values don't start with a number.
+		    duration = _convertToMS(actValArr[i], 'Invalid fading delay: ' + actValArr[i]);
+		} else if (o.func == 'FadeOut' && actValArr[i] == 'no-display-none') {
+			noDisplayNone = true;
+		} else if (o.func == 'FadeOut' && actValArr[i] == 'wait-display-none') {
+			waitDisplayNone = true;
+		} else if (!displayValue && i == actValArrLen - 1) {
+			// This is the last in the array (the first hit in the loop) and if it gets this far on the first iteration then it's a display value.
+			displayValue = actValArr[i];
+	    } else {
+	    	// We can break out at this point - removing the previous items found so we can join up the rest of the array to form the selector.
+	    	// it will work if the syntax is correct or it will break if the syntax is wrong.
+	    	actValArr.splice(i + 1);
+			// Join up what's left as this should be the selector.
+			sel = actValArr.join(' ').trim();
+			if (!sel) _err('Invalid fading selector:', o, sel);
+	    	break;
+	    }
+	}
+
+	// Set the display value if it isn't set. This won't be used for fade-out, which always ends up with a display of "none".
+	if (!displayValue && o.func != 'FadeOut') displayValue = 'initial';
+
+	let el = _getSel(o, sel, true);
+	let func;
+	if (el !== false) {
+		// Me, self or this.
+		func = _fadeGetFunc(el, o.func, toOpacity);
+
+//console.log('_fade, single, sel:', sel, 'duration:', duration, 'toOpacity:', toOpacity, 'displayValue:', displayValue, 'func:', func, 'noDisplayNone:', noDisplayNone, 'waitDisplayNone:', waitDisplayNone);
+
+		if (func) _fadeDo(el, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+	} else {
+		// Regular selector.
+		let targArr = _splitIframeEls(sel, o);
+		if (!targArr) return false;	// invalid target.
+		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
+			func = _fadeGetFunc(obj, o.func, toOpacity);
+
+//console.log('_fade, multiple, sel:', sel, 'duration:', duration, 'toOpacity:', toOpacity, 'displayValue:', displayValue, 'func:', func, 'noDisplayNone:', noDisplayNone, 'waitDisplayNone:', waitDisplayNone);
+
+			if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+		});
+	}
+};
+
+const _fadeGetFunc = (el, funcIn, toOpacity) => {
+	let funcOut = funcIn;
+	let existingOpac;
+	let computedStylesEl = window.getComputedStyle(el);
+	if (!el.style.opacity) {
+		el.style.opacity = computedStylesEl.opacity;
+		existingOpac = el.style.opacity;
+	}
+	if (computedStylesEl.display == 'none') {
+		el.style.opacity = 0;
+	}
+	if (funcIn == 'FadeTo') {
+		let existingOpac = el.style.opacity;
+		if (existingOpac > toOpacity) {
+			funcOut = 'FadeOut';
+		} else if (existingOpac == toOpacity) {
+			return;
+		}
+	}
+	return funcOut;
+};
+
+const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone) => {
+	// This isn't complete, it will break if fadein and fadeout are run at the same time.
+
+//This is bust - it doesn't fade by duration - it fades according to opacity set at 1 or 0 and nothing in between.
+
+
+	// If this function starts getting overly complicated then split out FadeOut functionality and put into a separate function.
+	// It doesn't need that level of engineering currently though as it's still maintainable and keeps the general animation all together in one place.
+	var last = +new Date();
+	var Tracker = last;
+	el._acssMidFade = Tracker;
+	let computedStylesEl = window.getComputedStyle(el);
+	let elStartingOpac;
+//	if (computedStylesEl.display == 'none') {
+//		elStartingOpac = 0;
+//		el.style.opacity = 0;
+//	} else {
+		elStartingOpac = el.style.opacity;
+		// Get the current computed opacity and put it into the element itself so the fading acts from the opacity it is right now.
+//		if (!elStartingOpac) {
+
+//console.log('_fade, start opacity:', el.style.opacity, 'computedStylesEl.opacity:', computedStylesEl.opacity);
+
+//			el.style.opacity = computedStylesEl.opacity;
+//			elStartingOpac = computedStylesEl.opacity;
+
+//console.log('_fade, opacity is now:', el.style.opacity);
+//		}
+//	}
+
+//console.log('_fade, opacity:', el.style.opacity);
+
+	if (func == 'FadeOut' && waitDisplayNone && el.style.opacity == 0) {
+
+//console.log('_fade, getting here, opacity:', el.style.opacity);
+
+	}
+	toOpac = (toOpac) ? toOpac : (func == 'FadeOut') ? 0 : 1;
+
+	// Adjust the duration which now needs to be based on the fraction rather than 1 or 0 as we're using the time technique below.
+	// The end result is the same as using a purely duration based technique.
+	if (elStartingOpac != toOpac) {
+		// Get the current difference between the opacities as a positive number.
+		let difference = elStartingOpac > toOpac ? elStartingOpac - toOpac : toOpac - elStartingOpac;
+		// Adjust the duration according to the time distance that will be travelled.
+		duration = (1 / difference) * duration;
+	}
+
+//console.log('_fade, duration is now:', duration, 'elStartingOpac:', elStartingOpac, 'toOpac:', toOpac);
+
+	if (func != 'FadeOut') {
+		if (el.style.display == 'none') {
+			el.style.opacity = 0;
+		}
+		el.style.display = displayValue;
+	}
+
+	var tick = () => {
+		if (!el || !_isConnected(el)) return;	// skip out if the element is no longer on the page.
+		if (el._acssMidFade != Tracker) {
+
+//console.log('stopping fade function');
+
+			return;
+		}
+		var amount = (new Date() - last) / duration;
+		el.style.opacity = (func == 'FadeOut') ? +el.style.opacity - amount : +el.style.opacity + amount;
+		last = +new Date();
+		if (func == 'FadeOut' && +el.style.opacity > toOpac || func != 'FadeOut' && +el.style.opacity < toOpac) {
+			requestAnimationFrame(tick);
+		} else {
+			if (func == 'FadeOut' && toOpac == 0) {
+				if (!noDisplayNone) el.style.display = 'none';
+				el.style.opacity = 0;
+			} else {
+				el.style.opacity = toOpac;
+			}
+			delete el._acssMidFade;
+		}
+	};
+
+	tick(true);
+};
+
 const _fullscreenDetails = () => {
 	let arr;
 	if ('MSGesture' in window) {
@@ -9676,6 +9879,9 @@ const _getSel = (o, sel, priorToGrabAll) => {
 			let rootNode = _getRootNode(o.secSelObj);
 			return (rootNode._acssScoped) ? rootNode : rootNode.host;
 		default:
+			// Set priorToGrabAll to return true to handle result sets in the calling function.
+			// See _a.Remove for an example of handling a result set - it depends on the context, so the action is done in there.
+			// If this happens a lot, use a callback function and pass in arguments - it's not worth the complexity this brings right now though.
 			// Grab the element or the first in the group specified.
 			return (priorToGrabAll !== true) ? _getObj(sel, o) : false;
 	}
@@ -9765,6 +9971,14 @@ const _isConnected = obj => {
 const _isInlineLoaded = nod => {
 	let fullFile = '_inline_' + _getActiveID(nod);
 	return configBox.find(item => item.file === fullFile);
+};
+
+const _isPositive = str => {
+	return /^[\d]+$/.test(str);
+};
+
+const _isPositiveFloat = str => {
+	return /^[\d\.]+$/.test(str);
 };
 
 const _isTextField = el => {
