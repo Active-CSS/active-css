@@ -135,6 +135,7 @@
 		devtoolsInit = [],
 		doesPassive = false,
 		elementObserver,
+		elObserveTrack = [],
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
@@ -679,23 +680,10 @@ const _exitTarget = o => {
 };
 
 _a.FadeIn = o => _fade(o);
-//	el, speed, displayInitial='initial'
-//	_fade(el, speed, undefined, undefined, displayInitial);
 
 _a.FadeOut = o => _fade(o);
-//	el, speed
-//	_fade(el, speed, 'fadeOut', undefined, displayInitial);
 
 _a.FadeTo = o => _fade(o);
-//	el, speed, opac, displayInitial='initial'
-//	if (typeof el !== 'object') el = _getObj(el);
-//	var existingOpac = el.style.opacity;
-//	if (existingOpac > opac) {
-//		_fade(el, speed, 'fadeOut', opac, displayInitial);
-//	} else if (existingOpac < opac) {
-//		_fade(el, speed, undefined, opac, displayInitial);
-//	}
-
 
 _a.FocusOff = o => {
 	if (!_isConnected(o.secSelObj)) return false;
@@ -2190,6 +2178,7 @@ const _deleteIDVars = activeID => {
 	delete clickOutsideSels[activeID];
 	delete idMap[activeID];
 	delete varInStyleMap[activeID];
+	delete elObserveTrack[activeID];
 };
 
 const _deleteScopeVars = varScope => {
@@ -2261,20 +2250,26 @@ const _handleEvents = evObj => {
 	let topVarScope = evObj.varScope;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
-	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
+	if (evType === undefined) return false;
+	if (typeof obj !== 'string') {
+		if (!obj) return false;
+		if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
+	}
+	if (!selectors[evType]) return;		// No selectors set for this event.
 
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
-	let i, testSel, debugNot = '', compSelCheckPos;
-	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
+	let i, testSel, debugNot = '', compSelCheckPos, useForObserveID;
 
 	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
 	let componentRefs = { compDoc, topVarScope, evScope, component, strictPrivateEvs: strictCompPrivEvs[evScope], privateEvs: compPrivEvs[evScope] };
 	let initialComponentRefs = componentRefs;
 
 	let runGlobalScopeEvents = true;
-	if (component && !(typeof obj !== 'string' && evType == 'draw' && customTags.indexOf(obj.tagName) !== -1)) {
+	useForObserveID = (typeof obj === 'string') ? obj.substr(1) : _getActiveID(obj);
+
+	if (component && !(typeof obj !== 'string' && (evType == 'draw' || evType == 'observe') && customTags.indexOf(obj.tagName) !== -1)) {
 		// Split for speed. It could be split into document/shadow areas to make even faster, at the times of adding config.
 		// Don't bother optimizing by trying to remember the selectors per event the first time so they can be reused later on. Been down that route already.
 		// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
@@ -2325,6 +2320,9 @@ const _handleEvents = evObj => {
 						    try {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
+						    	} else {
+									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
+									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}
 						    } catch(err) {
 						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
@@ -2377,7 +2375,11 @@ const _handleEvents = evObj => {
 				    try {
 						if (obj.matches(testSel)) {
 							selectorList.push({ primSel, componentRefs });
-				    	}
+				    	} else {
+							_setUpForObserve(useForObserveID, 'i' + primSel, 0);
+							elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
+						}
+
 				    } catch(err) {
 				        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 					}
@@ -2396,6 +2398,7 @@ const _handleEvents = evObj => {
 	}
 
 	let sel;
+	if (!useForObserveID) useForObserveID = obj;
 
 	selectorListLen = selectorList.length;
 	let actionName, ifrSplit, ifrObj, conds = [], cond, condSplit, passCond;
@@ -2424,10 +2427,19 @@ const _handleEvents = evObj => {
 					eve,
 					compDoc
 				};
-				if (clause != '0' && _passesConditional(condObj)) {
-					// This condition passed. Remember it for the next bit.
-					clauseArr[clauseCo] = clause;
+				let condRes = true;
+				if (clause != '0') condRes = _passesConditional(condObj);
+
+				if (evType == 'observe') {
+					// Handle observed elements that have ACSS conditionals.
+					// Dont run custom selectors that don't have ACSS conditionals as these will just run all the time.
+					if (clause == '0' && typeof obj === 'string' && primSel.substr(0, 1) == '~') {
+						_err('Cannot run an observe event on a custom selector that has no conditional: ' + primSel + ':observe');
+					}
+					_setUpForObserve(useForObserveID, 'i' + primSel, clause);
+					if (!condRes) elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 				}
+				if (condRes) clauseArr[clauseCo] = clause;	// This condition passed. Remember it for the next bit.
 			}
 		}
 	}
@@ -2441,6 +2453,7 @@ const _handleEvents = evObj => {
 			let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
 			component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
 			if (config[primSel] && config[primSel][evType]) {
+				let useForObservePrim = 'i' + primSel;
 				for (clause in config[primSel][evType]) {
 					clauseCo++;
 					passCond = '';
@@ -2448,6 +2461,11 @@ const _handleEvents = evObj => {
 						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
 						// This conditional passed earlier - we can run it.
 						passCond = clauseArr[clauseCo];
+					}
+					if (evType == 'observe') {
+						if (elObserveTrack[useForObserveID][useForObservePrim][clause].ran === true) continue;	// already been run.
+						elObserveTrack[useForObserveID][useForObservePrim][clause].ran = true;
+						// This will subsequently get changed to false if the same condition on the same element fails.
 					}
 
 					// Now that we know what event to run, run the event. This is a specific event declaration under a certain circumstance,
@@ -2654,6 +2672,32 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
  	_nextFunc(o);
  };
+
+const _handleObserveEvents = (justCustomSelectors=false) => {
+	// Handle cross-element observing on all observe events.
+	let evType = 'observe', i, primSel, compSelCheckPos, testSel;
+	if (!selectors[evType]) return;
+
+	// Loop observe events.
+	let selectorListLen = selectors[evType].length;
+	for (i = 0; i < selectorListLen; i++) {
+		primSel = selectors[evType][i];
+		compSelCheckPos = primSel.indexOf(':');
+		testSel = primSel.substr(compSelCheckPos + 1);
+		if (testSel.substr(0, 1) === '~') {
+			// Just check the conditionals on this custom selector.
+			_handleEvents({ obj: testSel, evType: 'observe' });
+			
+		} else if (!justCustomSelectors) {
+			let elsToCheck = document.querySelectorAll(primSel);
+			if (!elsToCheck) return;
+			// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
+			elsToCheck.forEach(function (obj) {
+				_handleEvents({ obj, evType: 'observe' });
+			});
+		}
+	}
+};
 
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
@@ -2920,7 +2964,10 @@ const _nextFunc = o => {
 
 // This has been set up to only run when Active CSS setup has fully loaded and completed.
 ActiveCSS._nodeMutations = function(mutations) {
+	_handleObserveEvents();
+
 	mutations.forEach(mutation => {
+		// Handle any observe events on the node itself.
 		if (mutation.type == 'childList') {
 			if (mutation.addedNodes) {
 				if (DEVCORE) {
@@ -2995,7 +3042,6 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}, 0);
 			});
 		}
-
 	});
 };
 
@@ -4127,6 +4173,12 @@ const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
 		_handleEvents({ obj: o.secSelObj, evType: ev, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 		_runInnerEvent(o, '*:not(template *)', ev, o.secSelObj);
 	}
+};
+
+const _setUpForObserve = (useForObserveID, useForObservePrim, condClause) => {
+	if (elObserveTrack[useForObserveID] === undefined) elObserveTrack[useForObserveID] = [];
+	if (elObserveTrack[useForObserveID][useForObservePrim] === undefined) elObserveTrack[useForObserveID][useForObservePrim] = {};
+	if (elObserveTrack[useForObserveID][useForObservePrim][condClause] === undefined) elObserveTrack[useForObserveID][useForObservePrim][condClause] = {};
 };
 
 const _setUpNavAttrs = (el) => {
@@ -6358,6 +6410,7 @@ const _wrapUpStart = (o) => {
 		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
 		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
 		elementObserver.observe(document.body, {
+			attributes: true,
 			characterData: true,
 			childList: true,
 			subtree: true
@@ -6372,8 +6425,18 @@ const _wrapUpStart = (o) => {
 
 		// Now run the loaded events for each embedded Active CSS tag on the page. They were added all at once for speed.
 		if (inlineIDArr.length > 0) _runInlineLoaded();
-		// Iterate items on this page and do any draw events.
+
+		// Iterate items on this page and do any draw events. Note this needs to be here, because the page has already been drawn and so the draw event
+		// in the mutation section will never get run.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
+
+		// Iterate items on this page and do any observe events. Note this needs to be here, because the page has already been drawn and so the observe
+		// event in the mutation section would otherwise not get run.
+		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
+
+		// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
+		_handleObserveEvents(true);
+
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {
@@ -10134,9 +10197,6 @@ const _fade = o => {
 	if (el !== false) {
 		// Me, self or this.
 		func = _fadeGetFunc(el, o.func, toOpacity);
-
-//console.log('_fade, single, sel:', sel, 'duration:', duration, 'toOpacity:', toOpacity, 'displayValue:', displayValue, 'func:', func, 'noDisplayNone:', noDisplayNone, 'waitDisplayNone:', waitDisplayNone);
-
 		if (func) _fadeDo(el, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
 	} else {
 		// Regular selector.
@@ -10144,9 +10204,6 @@ const _fade = o => {
 		if (!targArr) return false;	// invalid target.
 		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
 			func = _fadeGetFunc(obj, o.func, toOpacity);
-
-//console.log('_fade, multiple, sel:', sel, 'duration:', duration, 'toOpacity:', toOpacity, 'displayValue:', displayValue, 'func:', func, 'noDisplayNone:', noDisplayNone, 'waitDisplayNone:', waitDisplayNone);
-
 			if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
 		});
 	}
@@ -10175,42 +10232,13 @@ const _fadeGetFunc = (el, funcIn, toOpacity) => {
 };
 
 const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone) => {
-	// This isn't complete, it will break if fadein and fadeout are run at the same time.
-
-//This is bust - it doesn't fade by duration - it fades according to opacity set at 1 or 0 and nothing in between.
-
-
 	// If this function starts getting overly complicated then split out FadeOut functionality and put into a separate function.
 	// It doesn't need that level of engineering currently though as it's still maintainable and keeps the general animation all together in one place.
 	var last = +new Date();
 	var Tracker = last;
 	el._acssMidFade = Tracker;
 	let computedStylesEl = window.getComputedStyle(el);
-	let elStartingOpac;
-//	if (computedStylesEl.display == 'none') {
-//		elStartingOpac = 0;
-//		el.style.opacity = 0;
-//	} else {
-		elStartingOpac = el.style.opacity;
-		// Get the current computed opacity and put it into the element itself so the fading acts from the opacity it is right now.
-//		if (!elStartingOpac) {
-
-//console.log('_fade, start opacity:', el.style.opacity, 'computedStylesEl.opacity:', computedStylesEl.opacity);
-
-//			el.style.opacity = computedStylesEl.opacity;
-//			elStartingOpac = computedStylesEl.opacity;
-
-//console.log('_fade, opacity is now:', el.style.opacity);
-//		}
-//	}
-
-//console.log('_fade, opacity:', el.style.opacity);
-
-	if (func == 'FadeOut' && waitDisplayNone && el.style.opacity == 0) {
-
-//console.log('_fade, getting here, opacity:', el.style.opacity);
-
-	}
+	let elStartingOpac = el.style.opacity;
 	toOpac = (toOpac) ? toOpac : (func == 'FadeOut') ? 0 : 1;
 
 	// Adjust the duration which now needs to be based on the fraction rather than 1 or 0 as we're using the time technique below.
@@ -10222,8 +10250,6 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 		duration = (1 / difference) * duration;
 	}
 
-//console.log('_fade, duration is now:', duration, 'elStartingOpac:', elStartingOpac, 'toOpac:', toOpac);
-
 	if (func != 'FadeOut') {
 		if (el.style.display == 'none') {
 			el.style.opacity = 0;
@@ -10232,13 +10258,8 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 	}
 
 	var tick = () => {
-		if (!el || !_isConnected(el)) return;	// skip out if the element is no longer on the page.
-		if (el._acssMidFade != Tracker) {
-
-//console.log('stopping fade function');
-
-			return;
-		}
+		// Skip out if the element is no longer on the page or if this fading event should be halted.
+		if (!el || !_isConnected(el) || el._acssMidFade != Tracker) return;
 		var amount = (new Date() - last) / duration;
 		el.style.opacity = (func == 'FadeOut') ? +el.style.opacity - amount : +el.style.opacity + amount;
 		last = +new Date();
@@ -10522,7 +10543,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (['draw', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
+		if (['draw', 'observe', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;

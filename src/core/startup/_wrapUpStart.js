@@ -17,6 +17,7 @@ const _wrapUpStart = (o) => {
 		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
 		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
 		elementObserver.observe(document.body, {
+			attributes: true,
 			characterData: true,
 			childList: true,
 			subtree: true
@@ -31,8 +32,18 @@ const _wrapUpStart = (o) => {
 
 		// Now run the loaded events for each embedded Active CSS tag on the page. They were added all at once for speed.
 		if (inlineIDArr.length > 0) _runInlineLoaded();
-		// Iterate items on this page and do any draw events.
+
+		// Iterate items on this page and do any draw events. Note this needs to be here, because the page has already been drawn and so the draw event
+		// in the mutation section will never get run.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
+
+		// Iterate items on this page and do any observe events. Note this needs to be here, because the page has already been drawn and so the observe
+		// event in the mutation section would otherwise not get run.
+		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
+
+		// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
+		_handleObserveEvents(true);
+
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {

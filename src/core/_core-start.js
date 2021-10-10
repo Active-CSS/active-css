@@ -135,6 +135,7 @@
 		devtoolsInit = [],
 		doesPassive = false,
 		elementObserver,
+		elObserveTrack = [],
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},

@@ -1,6 +1,9 @@
 // This has been set up to only run when Active CSS setup has fully loaded and completed.
 ActiveCSS._nodeMutations = function(mutations) {
+	_handleObserveEvents();
+
 	mutations.forEach(mutation => {
+		// Handle any observe events on the node itself.
 		if (mutation.type == 'childList') {
 			if (mutation.addedNodes) {
 				if (DEVCORE) {
@@ -75,6 +78,5 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}, 0);
 			});
 		}
-
 	});
 };
