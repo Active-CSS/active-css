@@ -68,6 +68,10 @@ ActiveCSS._theEventFunction = e => {
 			break;
 
 		default:
+			if (ev == 'change') {
+				// Simulate a mutation and go straight to the observe event handler.
+				_handleObserveEvents();
+			}
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
 };

@@ -15,6 +15,7 @@ const _selCompare = (o, opt) => {
 	} 
 	let el;
 	el = _getSel(o, spl);
+
 	let widthHeightEl = false;
 	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;

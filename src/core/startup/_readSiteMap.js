@@ -21,6 +21,7 @@ const _readSiteMap = (o) => {
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
+	window.addEventListener('input', _handleObserveEvents);
 	let evSet;
 	for (evSet of preSetupEvents) {
 		_setupEvent(evSet.ev, evSet.sel);

@@ -2673,13 +2673,14 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
  	_nextFunc(o);
  };
 
-const _handleObserveEvents = (justCustomSelectors=false) => {
+const _handleObserveEvents = (justCustomSelectors) => {
 	// Handle cross-element observing on all observe events.
 	let evType = 'observe', i, primSel, compSelCheckPos, testSel;
 	if (!selectors[evType]) return;
 
 	// Loop observe events.
 	let selectorListLen = selectors[evType].length;
+
 	for (i = 0; i < selectorListLen; i++) {
 		primSel = selectors[evType][i];
 		compSelCheckPos = primSel.indexOf(':');
@@ -2688,7 +2689,7 @@ const _handleObserveEvents = (justCustomSelectors=false) => {
 			// Just check the conditionals on this custom selector.
 			_handleEvents({ obj: testSel, evType: 'observe' });
 			
-		} else if (!justCustomSelectors) {
+		} else if (justCustomSelectors !== true) {	// justCustomSelectors can either be empty or the event object.
 			let elsToCheck = document.querySelectorAll(primSel);
 			if (!elsToCheck) return;
 			// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
@@ -3886,6 +3887,8 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// It would be nice if there was a way to get the truly real target on any click, regardless of whether or not it is in a shadow DOM. But thankfully there is
 		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
+		// Set up a separate change event for triggering an observe event on the native change event.
+		shadow.addEventListener('input', _handleObserveEvents);
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {
 			    if (/^on/.test(key)) {
@@ -5412,6 +5415,10 @@ ActiveCSS._theEventFunction = e => {
 			break;
 
 		default:
+			if (ev == 'change') {
+				// Simulate a mutation and go straight to the observe event handler.
+				_handleObserveEvents();
+			}
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
 };
@@ -6155,6 +6162,7 @@ const _readSiteMap = (o) => {
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
+	window.addEventListener('input', _handleObserveEvents);
 	let evSet;
 	for (evSet of preSetupEvents) {
 		_setupEvent(evSet.ev, evSet.sel);
@@ -10817,6 +10825,7 @@ const _selCompare = (o, opt) => {
 	} 
 	let el;
 	el = _getSel(o, spl);
+
 	let widthHeightEl = false;
 	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
