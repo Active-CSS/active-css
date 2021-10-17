@@ -190,6 +190,7 @@
 		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
+		shadowObservers = {},
 		strictCompPrivEvs = [],
 		strictPrivVarScopes = [],
 		subEventCounter = -1,

@@ -130,6 +130,13 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		try {
 			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
+			shadowObservers[evScope] = new MutationObserver(ActiveCSS._shadowNodeMutations);
+			shadowObservers[evScope].observe(shadow, {
+				attributes: true,
+				characterData: true,
+				childList: true,
+				subtree: true
+			});
 		} catch(err) {
 			_err('Error attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err, o);
 		}
@@ -198,6 +205,16 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
 			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
+
+		if (isShadow) {
+			// Iterate elements in this shadow DOM component and do any observe events.
+			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
+			// event in the mutation section would otherwise not get run.
+			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
+
+			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
+			_handleObserveEvents(null, shadow, true);
+		}
 	}, 0);
 
 	if (isShadow) {
@@ -214,7 +231,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
 		// Set up a separate change event for triggering an observe event on the native change event.
-		shadow.addEventListener('input', _handleObserveEvents);
+		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {
 			    if (/^on/.test(key)) {

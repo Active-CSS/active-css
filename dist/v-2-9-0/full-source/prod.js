@@ -190,6 +190,7 @@
 		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
+		shadowObservers = {},
 		strictCompPrivEvs = [],
 		strictPrivVarScopes = [],
 		subEventCounter = -1,
@@ -650,12 +651,16 @@ _a.CreateElement = o => {
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
+				// Handle shadow DOM observe event. Ie. Tell the inner DOM elements that something has changed outside. We only do this when there has
+				// been a change with the host attributes so we keep the isolation aspect of each shadow DOM. This way, the inner component can set
+				// an observe event on the host, which is outside of the actual shadow DOM.
+				'if (this.shadowRoot) _handleObserveEvents(null, this.shadowRoot);' +
 			'}';
 	}
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails', '"use strict";' + createTagJS)(_handleEvents, _componentDetails);	// jshint ignore:line
+	Function('_handleEvents, _componentDetails, _handleObserveEvents', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents);	// jshint ignore:line
 };
 
 _a.DocumentTitle = o => {
@@ -2197,6 +2202,8 @@ const _deleteScopeVars = varScope => {
 	delete privVarScopes[varScope];
 	delete strictCompPrivEvs[varScope];
 	delete strictPrivVarScopes[varScope];
+	if (shadowObservers[varScope]) shadowObservers[varScope].disconnect();
+	delete shadowObservers[varScope];
 	for (i in varMap) {
 		if (i.startsWith(scopePref)) {
 			delete varMap[i];
@@ -2296,22 +2303,7 @@ const _handleEvents = evObj => {
 				testSel = primSel.substr(compSelCheckPos + 1);
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				if (afterEv && origObj) {
-					testSel = ActiveCSS._sortOutFlowEscapeChars(testSel);
-					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-						{
-							str: testSel,
-							obj: origObj
-						}
-					);
-					strObj = _handleVars([ 'strings', 'scoped' ],
-						{
-							str: strObj.str,
-						},
-						strObj.ref
-					);
-					testSel = _resolveVars(strObj.str, strObj.ref);
-				}
+				if (afterEv && origObj) testSel = _replaceEventVars(testSel, origObj);
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
 						selectorList.push({ primSel, componentRefs });
@@ -2351,24 +2343,7 @@ const _handleEvents = evObj => {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-			if (afterEv && origObj) {
-				testSel = ActiveCSS._sortOutFlowEscapeChars(primSel);
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-					{
-						str: testSel,
-						obj: origObj
-					}
-				);
-				strObj = _handleVars([ 'strings', 'scoped' ],
-					{
-						str: strObj.str,
-					},
-					strObj.ref
-				);
-				testSel = _resolveVars(strObj.str, strObj.ref);
-			} else {
-				testSel = primSel;
-			}
+			testSel = (afterEv && origObj) ? _replaceEventVars(primSel, origObj) : primSel;
 
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
@@ -2673,32 +2648,34 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
  	_nextFunc(o);
  };
 
-const _handleObserveEvents = (justCustomSelectors) => {
-	// Handle cross-element observing on all observe events.
-	let evType = 'observe', i, primSel, compSelCheckPos, testSel;
+const _handleObserveEvents = (mutations, dom=document, justCustomSelectors=false) => {
+	// Handle cross-element observing for all observe events.
+	let evType = 'observe', i, primSel, compSelCheckPos, testSel, compDetails;
 	if (!selectors[evType]) return;
 
 	// Loop observe events.
 	let selectorListLen = selectors[evType].length;
-
 	for (i = 0; i < selectorListLen; i++) {
 		primSel = selectors[evType][i];
 		compSelCheckPos = primSel.indexOf(':');
 		testSel = primSel.substr(compSelCheckPos + 1);
-		if (testSel.substr(0, 1) === '~') {
-			// Just check the conditionals on this custom selector.
-			_handleEvents({ obj: testSel, evType: 'observe' });
-			
-		} else if (justCustomSelectors !== true) {	// justCustomSelectors can either be empty or the event object.
-			let elsToCheck = document.querySelectorAll(primSel);
-			if (!elsToCheck) return;
-			// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
-			elsToCheck.forEach(function (obj) {
-				_handleEvents({ obj, evType: 'observe' });
+		if (testSel.substr(0, 1) == '~') {
+			// This is a custom selector.
+			_handleEvents({ obj: testSel, evType });
+		} else if (!justCustomSelectors) {
+			let compDetails;
+			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
+			dom.querySelectorAll(sel).forEach(obj => {		// jshint ignore:line
+				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
+				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
+				compDetails = _componentDetails(obj);
+				_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
 			});
 		}
 	}
 };
+
+const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(null, shadowDOM);
 
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
@@ -2964,8 +2941,8 @@ const _nextFunc = o => {
 };
 
 // This has been set up to only run when Active CSS setup has fully loaded and completed.
-ActiveCSS._nodeMutations = function(mutations) {
-	_handleObserveEvents();
+ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideShadowDOM=false) {
+	_handleObserveEvents(mutations, dom);
 
 	mutations.forEach(mutation => {
 		// Handle any observe events on the node itself.
@@ -2977,7 +2954,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 							_regenConfig(nod, 'addDevTools');
-						} else {
+						} else if (!insideShadowDOM) {		// cannot have ACSS style tags inside shadow DOM elements currently.
 							nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
 								if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
 							});
@@ -2985,7 +2962,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 					});
 				}
 			}
-		} else if (mutation.type == 'characterData') {
+		} else if (mutation.type == 'characterData' && !insideShadowDOM) {
 			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
 			let el = mutation.target;
@@ -3804,6 +3781,13 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		try {
 			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
+			shadowObservers[evScope] = new MutationObserver(ActiveCSS._shadowNodeMutations);
+			shadowObservers[evScope].observe(shadow, {
+				attributes: true,
+				characterData: true,
+				childList: true,
+				subtree: true
+			});
 		} catch(err) {
 			_err('Error attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err, o);
 		}
@@ -3872,6 +3856,16 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
 			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
+
+		if (isShadow) {
+			// Iterate elements in this shadow DOM component and do any observe events.
+			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
+			// event in the mutation section would otherwise not get run.
+			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
+
+			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
+			_handleObserveEvents(null, shadow, true);
+		}
 	}, 0);
 
 	if (isShadow) {
@@ -3888,7 +3882,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
 		// Set up a separate change event for triggering an observe event on the native change event.
-		shadow.addEventListener('input', _handleObserveEvents);
+		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {
 			    if (/^on/.test(key)) {
@@ -4083,6 +4077,23 @@ const _renderRefElements = (str, htmlStr, refType) => {
 	return str;
 };
 
+const _replaceEventVars = (sel, obj) => {
+	let str = ActiveCSS._sortOutFlowEscapeChars(sel);
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+		{
+			str,
+			obj
+		}
+	);
+	strObj = _handleVars([ 'strings', 'scoped' ],
+		{
+			str: strObj.str,
+		},
+		strObj.ref
+	);
+	return _resolveVars(strObj.str, strObj.ref);
+};
+
 const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\-\:]+)\}/gi, function(_, c) {
 		let doc, noVars, escaped, unEscaped;
@@ -4195,6 +4206,8 @@ const _setUpNavAttrs = (el) => {
 		}
 	}
 };
+
+ActiveCSS._shadowNodeMutations = mutations => ActiveCSS._nodeMutations(mutations, null, mutations[0].target.getRootNode(), true);	// true = insideShadowDOM
 
 const _sortOutDynamicIframes = str => {
 	// We want only outer iframes, and we want the inner contents that could contain iframes placed into a placeholder.
@@ -6415,7 +6428,7 @@ const _wrapUpStart = (o) => {
 		// Set up any custom action commands or conditionals. These can be run everywhere - they are not isolated to components.
 		_handleEvents({ obj: '~_acssSystem', evType: 'init' });
 
-		// DOM cleanup observer. Note that this also picks up shadow DOM elements. Initialise it before any config events.
+		// DOM cleanup observer. Initialise it before any config events.
 		elementObserver = new MutationObserver(ActiveCSS._nodeMutations);
 		elementObserver.observe(document.body, {
 			attributes: true,
@@ -6438,12 +6451,13 @@ const _wrapUpStart = (o) => {
 		// in the mutation section will never get run.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
 
-		// Iterate items on this page and do any observe events. Note this needs to be here, because the page has already been drawn and so the observe
+		// Iterate document items on this page and do any observe events.
+		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
 		// event in the mutation section would otherwise not get run.
 		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
 
-		// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
-		_handleObserveEvents(true);
+		// Iterate document level custom selectors that use the observe event and run any of those that pass the conditionals.
+		_handleObserveEvents(null, document, true);
 
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 

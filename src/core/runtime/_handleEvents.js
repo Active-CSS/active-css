@@ -51,22 +51,7 @@ const _handleEvents = evObj => {
 				testSel = primSel.substr(compSelCheckPos + 1);
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				if (afterEv && origObj) {
-					testSel = ActiveCSS._sortOutFlowEscapeChars(testSel);
-					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-						{
-							str: testSel,
-							obj: origObj
-						}
-					);
-					strObj = _handleVars([ 'strings', 'scoped' ],
-						{
-							str: strObj.str,
-						},
-						strObj.ref
-					);
-					testSel = _resolveVars(strObj.str, strObj.ref);
-				}
+				if (afterEv && origObj) testSel = _replaceEventVars(testSel, origObj);
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
 						selectorList.push({ primSel, componentRefs });
@@ -106,24 +91,7 @@ const _handleEvents = evObj => {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-			if (afterEv && origObj) {
-				testSel = ActiveCSS._sortOutFlowEscapeChars(primSel);
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-					{
-						str: testSel,
-						obj: origObj
-					}
-				);
-				strObj = _handleVars([ 'strings', 'scoped' ],
-					{
-						str: strObj.str,
-					},
-					strObj.ref
-				);
-				testSel = _resolveVars(strObj.str, strObj.ref);
-			} else {
-				testSel = primSel;
-			}
+			testSel = (afterEv && origObj) ? _replaceEventVars(primSel, origObj) : primSel;
 
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
