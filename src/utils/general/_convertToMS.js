@@ -1,6 +1,6 @@
 const _convertToMS = (tim, errMess) => {
-	if (tim == 'stack') return 0;
-	var match = /^(\d+)(ms|s)?$/i.exec(tim);
+	if (tim == 'stack' || tim == '0') return 0;
+	var match = /^(\d+)(s|ms)?$/i.exec(tim);
 	if (!match) {
 		_err(errMess);
 	}

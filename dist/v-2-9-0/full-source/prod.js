@@ -60,7 +60,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
+		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms)?)(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -1963,7 +1963,7 @@ const _delaySplit = (str, typ, varScope) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
-	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)))(?=(?:[^"]|"[^"]*")*)', 'gm');
+	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=(?:[^"]|"[^"]*")*)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
@@ -9239,8 +9239,8 @@ const _composedPath = (e) => {
 };
 
 const _convertToMS = (tim, errMess) => {
-	if (tim == 'stack') return 0;
-	var match = /^(\d+)(ms|s)?$/i.exec(tim);
+	if (tim == 'stack' || tim == '0') return 0;
+	var match = /^(\d+)(s|ms)?$/i.exec(tim);
 	if (!match) {
 		_err(errMess);
 	}
