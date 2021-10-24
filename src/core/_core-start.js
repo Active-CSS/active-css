@@ -35,7 +35,14 @@
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		CONDDEFAULTS = {
-			'if-empty': 'self'
+			'if-empty': 'self',
+			'if-completely-visible': 'self',
+			'if-display': 'self',
+			'if-exists': 'self',
+			'if-focus-first': 'self',
+			'if-focus-last': 'self',
+			'if-form-changed': 'self',
+			'if-visible': 'self'
 		},
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
