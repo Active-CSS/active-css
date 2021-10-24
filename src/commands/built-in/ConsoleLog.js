@@ -23,11 +23,13 @@ _a.ConsoleLog = o => {
 	// If it gets this far, send comma-delimited results to console.log().
 	// Do necessary escaping before splitting by comma.
 
-console.log('_a.ConsoleLog, o.actVal:', o.actVal);
+//console.log('_a.ConsoleLog, o.actVal:', o.actVal);
 
 	let escapedCommas = _escCommaBrack(o.actVal, o);
 
-console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
+//console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
+
+	console.log(escapedCommas);
 
 //	let wot = o.actVal._ACSSRepQuo();
 //	// Split by comma.

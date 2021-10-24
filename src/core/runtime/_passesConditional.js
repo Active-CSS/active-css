@@ -13,13 +13,22 @@ const _passesConditional = (condObj) => {
 	let cond, conds = clause.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 
 	let elC = (evType == 'clickoutside' && ajaxObj) ? ajaxObj : el;	// use click target if clickoutside.
-	let actionBoolState = false;
+	let actionBoolState = true;
 
 	for (cond of conds) {
 		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
-		
 
 		let parenthesisPos = cond.indexOf('(');
+		if (parenthesisPos === -1) {
+			// Is this a built-in conditional? If so, check it has defaults. If so, run it with defaults.
+			// We can just check the object containing the defaults to ascertain this.
+			let res = CONDDEFAULTS[cond] || CONDDEFAULTS[cond.replace(/not\-/, '')] || false;
+			if (res) {
+				// It can have defaults, set up parenthesisPos for later.
+				parenthesisPos = cond.length;
+				cond = cond + '(' + res + ')';
+			}
+		}
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.
 			let commandName = cond.substr(0, parenthesisPos);

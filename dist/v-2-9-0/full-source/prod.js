@@ -34,6 +34,9 @@
 			')', 'g'),
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
+		CONDDEFAULTS = {
+			'if-empty': 'self'
+		},
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -60,7 +63,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms)?)(?=(?:[^"]|"[^"]*")*$)/gm,
+		TIMEDREGEX = /(after|every) (0|stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -436,11 +439,13 @@ _a.ConsoleLog = o => {
 	// If it gets this far, send comma-delimited results to console.log().
 	// Do necessary escaping before splitting by comma.
 
-console.log('_a.ConsoleLog, o.actVal:', o.actVal);
+//console.log('_a.ConsoleLog, o.actVal:', o.actVal);
 
 	let escapedCommas = _escCommaBrack(o.actVal, o);
 
-console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
+//console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
+
+	console.log(escapedCommas);
 
 //	let wot = o.actVal._ACSSRepQuo();
 //	// Split by comma.
@@ -1963,7 +1968,7 @@ const _delaySplit = (str, typ, varScope) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
-	regex = new RegExp('(' + typ + ' (stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=(?:[^"]|"[^"]*")*)', 'gm');
+	regex = new RegExp('(' + typ + ' (0|stack|([\\{]?[\\@]?[\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)))(?=(?:[^"]|"[^"]*")*)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			// Remove any curlies. The variable if there will be evaluated as it is, in _replaceJSExpression. Only one variable is supported.
@@ -3038,13 +3043,22 @@ const _passesConditional = (condObj) => {
 	let cond, conds = clause.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 
 	let elC = (evType == 'clickoutside' && ajaxObj) ? ajaxObj : el;	// use click target if clickoutside.
-	let actionBoolState = false;
+	let actionBoolState = true;
 
 	for (cond of conds) {
 		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
-		
 
 		let parenthesisPos = cond.indexOf('(');
+		if (parenthesisPos === -1) {
+			// Is this a built-in conditional? If so, check it has defaults. If so, run it with defaults.
+			// We can just check the object containing the defaults to ascertain this.
+			let res = CONDDEFAULTS[cond] || CONDDEFAULTS[cond.replace(/not\-/, '')] || false;
+			if (res) {
+				// It can have defaults, set up parenthesisPos for later.
+				parenthesisPos = cond.length;
+				cond = cond + '(' + res + ')';
+			}
+		}
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.
 			let commandName = cond.substr(0, parenthesisPos);
@@ -9241,9 +9255,7 @@ const _composedPath = (e) => {
 const _convertToMS = (tim, errMess) => {
 	if (tim == 'stack' || tim == '0') return 0;
 	var match = /^(\d+)(s|ms)?$/i.exec(tim);
-	if (!match) {
-		_err(errMess);
-	}
+	if (!match) _err(errMess);
 	var n = parseFloat(match[1]);
 	var type = (match[2] || 'ms').toLowerCase();
 	return (type == 's') ? n * 1000 : n;
