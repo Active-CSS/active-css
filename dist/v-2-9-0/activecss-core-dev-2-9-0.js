@@ -34,16 +34,24 @@
 			')', 'g'),
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
-		CONDDEFAULTS = {
-			'if-empty': 'self',
-			'if-completely-visible': 'self',
-			'if-display': 'self',
-			'if-exists': 'self',
-			'if-focus-first': 'self',
-			'if-focus-last': 'self',
-			'if-form-changed': 'self',
-			'if-visible': 'self'
-		},
+		CONDDEFSELF = [
+			'if-empty',
+			'if-completely-visible',
+			'if-display',
+			'if-exists',
+			'if-focus-first',
+			'if-focus-last',
+			'if-form-changed',
+			'if-inner-html',
+			'if-inner-text',
+			'if-max-height',
+			'if-max-length',
+			'if-max-width',
+			'if-min-height',
+			'if-min-length',
+			'if-min-width',
+			'if-visible'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -1842,18 +1850,18 @@ _c.IfFunc = o => {
 
 _c.IfHasClass = o => {
 	let arr = _actValSelItem(o);
-	return (arr[0] && ActiveCSS._hasClassObj(arr[0], arr[1].substr(1)));		// Used by extensions.
+	return (arr[0] && ActiveCSS._hasClassObj(arr[0], arr[1].substr(1)));		// "ActiveCSS." indicates that it is used by extensions.
 };
 
-_c.IfInnerHtml = o => { return (_selCompare(o, 'iH')); };	// Used in core unit testing.
+_c.IfInnerHtml = o => _selCompare(o, 'iH');	// Used in core unit testing.
 
-_c.IfInnerText = o => { return (_selCompare(o, 'iT')); };
+_c.IfInnerText = o => _selCompare(o, 'iT');
 
-_c.IfMaxHeight = o => { return (_selCompare(o, 'maH')); };
+_c.IfMaxHeight = o => _selCompare(o, 'maH');
 
-_c.IfMaxLength = o => { return (_selCompare(o, 'maL')); };
+_c.IfMaxLength = o => _selCompare(o, 'maL');
 
-_c.IfMaxWidth = o => { return (_selCompare(o, 'maW')); };
+_c.IfMaxWidth = o => _selCompare(o, 'maW');
 
 _c.IfMediaMaxWidth = o => {
 	return _checkMedia('all and (max-width: ' + o.actVal + ')');
@@ -1863,11 +1871,11 @@ _c.IfMediaMinWidth = o => {
 	return _checkMedia('all and (min-width: ' + o.actVal + ')');
 };
 
-_c.IfMinHeight = o => { return (_selCompare(o, 'miH')); };
+_c.IfMinHeight = o => _selCompare(o, 'miH');
 
-_c.IfMinLength = o => { return (_selCompare(o, 'miL')); };
+_c.IfMinLength = o => _selCompare(o, 'miL');
 
-_c.IfMinWidth = o => { return (_selCompare(o, 'miW')); };
+_c.IfMinWidth = o => _selCompare(o, 'miW');
 
 _c.IfScrolltopGreater = o => {
 	if (o.obj == 'body') {
@@ -3040,7 +3048,7 @@ const _passesConditional = (condObj) => {
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
 
-	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
+	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
 
 	clause = clause.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
@@ -3057,13 +3065,12 @@ const _passesConditional = (condObj) => {
 
 		let parenthesisPos = cond.indexOf('(');
 		if (parenthesisPos === -1) {
-			// Is this a built-in conditional? If so, check it has defaults. If so, run it with defaults.
-			// We can just check the object containing the defaults to ascertain this.
-			let res = CONDDEFAULTS[cond] || CONDDEFAULTS[cond.replace(/not\-/, '')] || false;
-			if (res) {
+			// Is this a built-in conditional? If so, check it has self as a default. If so, run it with self.
+			// We can just check the CONDDEFSELF array to ascertain this.
+			if (_condDefSelf(cond)) {
 				// It can have defaults, set up parenthesisPos for later.
 				parenthesisPos = cond.length;
-				cond = cond + '(' + res + ')';
+				cond = cond + '(self)';
 			}
 		}
 		if (parenthesisPos !== -1) {
@@ -9936,6 +9943,8 @@ const _composedPath = (e) => {
 	}
 };
 
+const _condDefSelf = cond => CONDDEFSELF.indexOf(cond.replace(/not\-/, '')) !== -1;
+
 const _convertToMS = (tim, errMess) => {
 	if (tim == 'stack' || tim == '0') return 0;
 	var match = /^(\d+)(s|ms)?$/i.exec(tim);
@@ -10853,6 +10862,8 @@ const _selCompare = (o, opt) => {
 	} else {
 		// There are two parameters with this conditional.
 		spl = actVal.split(' ');
+		// If there isn't two parameters and it's allowed for the built-in conditional, add a "self" as the default.
+		if (spl.length == 1 && _condDefSelf(o.actName)) spl.unshift('self');
 		compareVal = spl.pop()._ACSSSpaceQuoOut()._ACSSRepQuo();
 		spl = spl.join(' ');
 	} 

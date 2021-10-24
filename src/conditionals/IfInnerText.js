@@ -1,1 +1,1 @@
-_c.IfInnerText = o => { return (_selCompare(o, 'iT')); };
+_c.IfInnerText = o => _selCompare(o, 'iT');

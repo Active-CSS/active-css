@@ -10,6 +10,8 @@ const _selCompare = (o, opt) => {
 	} else {
 		// There are two parameters with this conditional.
 		spl = actVal.split(' ');
+		// If there isn't two parameters and it's allowed for the built-in conditional, add a "self" as the default.
+		if (spl.length == 1 && _condDefSelf(o.actName)) spl.unshift('self');
 		compareVal = spl.pop()._ACSSSpaceQuoOut()._ACSSRepQuo();
 		spl = spl.join(' ');
 	} 

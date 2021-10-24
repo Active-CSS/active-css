@@ -1,1 +1,1 @@
-_c.IfMinWidth = o => { return (_selCompare(o, 'miW')); };
+_c.IfMinWidth = o => _selCompare(o, 'miW');

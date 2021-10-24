@@ -1,1 +1,1 @@
-_c.IfMinHeight = o => { return (_selCompare(o, 'miH')); };
+_c.IfMinHeight = o => _selCompare(o, 'miH');
