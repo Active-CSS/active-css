@@ -86,5 +86,11 @@ const _selCompare = (o, opt) => {
 		case 'iH':
 			// _cIfInnerHTML
 			return (el && compareVal == el.innerHTML);
+		case 'iV':
+			// _cIfValue
+			return (el && compareVal == el.value);
+		case 'iC':
+			// _cIfChecked
+			return (el && el.checked);
 	}
 };

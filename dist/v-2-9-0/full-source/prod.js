@@ -36,6 +36,7 @@
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		CONDDEFSELF = [
 			'if-empty',
+			'if-checked',
 			'if-completely-visible',
 			'if-display',
 			'if-exists',
@@ -50,6 +51,7 @@
 			'if-min-height',
 			'if-min-length',
 			'if-min-width',
+			'if-value',
 			'if-visible'
 		],
 		DIGITREGEX = /^\d+$/,
@@ -1796,6 +1798,8 @@ ActiveCSS.triggerReal = (obj, ev, varScope, compDoc, component) => {
 	}
 };
 
+_c.IfChecked = o => _selCompare(o, 'iC');
+
 _c.IfCompletelyVisible = o => { return ActiveCSS._ifVisible(o, true); };	// Used by extensions.
 
 _c.IfCookieEquals = o =>  {
@@ -1898,6 +1902,8 @@ _c.IfSelection = o => {
   o.actVal = o.actVal._ACSSRepQuo().trim();
   return (selObj.toString() == o.actVal);
 };
+
+_c.IfValue = o => _selCompare(o, 'iV');
 
 _c.IfVar = o => {
 	// This caters for scoped variable and also window variable comparison. If the variable isn't in the scope, it takes the window variable if it is there.
@@ -2685,12 +2691,23 @@ const _handleObserveEvents = (mutations, dom=document, justCustomSelectors=false
 		} else if (!justCustomSelectors) {
 			let compDetails;
 			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
-			dom.querySelectorAll(sel).forEach(obj => {		// jshint ignore:line
-				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
-				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
-				compDetails = _componentDetails(obj);
-				_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
-			});
+			// Does this element exist?
+			let els = dom.querySelectorAll(sel);
+			if (!els) {
+				// Run the observe event anyway after checking that the conditionals pass, but as we don't know whether this is in a shadow DOM or not,
+				// or a specific component, we need to loop the components that match the selector and approach it that way.
+
+				// Not sure this is going to work.
+//console.log('_handleObserveEvents, );
+
+			} else {
+				els.forEach(obj => {		// jshint ignore:line
+					// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
+					// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
+					compDetails = _componentDetails(obj);
+					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+				});
+			}
 		}
 	}
 };
@@ -10261,6 +10278,12 @@ const _selCompare = (o, opt) => {
 		case 'iH':
 			// _cIfInnerHTML
 			return (el && compareVal == el.innerHTML);
+		case 'iV':
+			// _cIfValue
+			return (el && compareVal == el.value);
+		case 'iC':
+			// _cIfChecked
+			return (el && el.checked);
 	}
 };
 

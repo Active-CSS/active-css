@@ -36,6 +36,7 @@
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		CONDDEFSELF = [
 			'if-empty',
+			'if-checked',
 			'if-completely-visible',
 			'if-display',
 			'if-exists',
@@ -50,6 +51,7 @@
 			'if-min-height',
 			'if-min-length',
 			'if-min-width',
+			'if-value',
 			'if-visible'
 		],
 		DIGITREGEX = /^\d+$/,
