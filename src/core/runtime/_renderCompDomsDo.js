@@ -230,8 +230,6 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// It would be nice if there was a way to get the truly real target on any click, regardless of whether or not it is in a shadow DOM. But thankfully there is
 		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
-		// Set up a separate change event for triggering an observe event on the native change event.
-		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {
 			    if (/^on/.test(key)) {
@@ -245,5 +243,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				_attachListener(shadow, thisEv, false, true);
 			}
 		}
+		// Set up a separate change event for triggering an observe event on the native input event and for otherwise undetectable property changes.
+		// Apologies in advance if this looks like a hack. If anyone has any better ideas to cover these scenarios, let me know.
+		shadow.addEventListener('input', _handleShadowSpecialEvents);
+		shadow.addEventListener('click', () => { setTimeout(_handleShadowSpecialEvents, 0); });
 	}
 };

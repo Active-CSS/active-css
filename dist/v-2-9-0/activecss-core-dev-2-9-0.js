@@ -1492,6 +1492,7 @@ _a.SetCookie = o => {
 _a.SetProperty = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	_a.SetAttribute(o);
+	_handleObserveEvents(null, o.doc);
 };
 
 _a.StopEventPropagation = o => _stopEventPropagation(o);
@@ -2691,23 +2692,12 @@ const _handleObserveEvents = (mutations, dom=document, justCustomSelectors=false
 		} else if (!justCustomSelectors) {
 			let compDetails;
 			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
-			// Does this element exist?
-			let els = dom.querySelectorAll(sel);
-			if (!els) {
-				// Run the observe event anyway after checking that the conditionals pass, but as we don't know whether this is in a shadow DOM or not,
-				// or a specific component, we need to loop the components that match the selector and approach it that way.
-
-				// Not sure this is going to work.
-//console.log('_handleObserveEvents, );
-
-			} else {
-				els.forEach(obj => {		// jshint ignore:line
-					// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
-					// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
-					compDetails = _componentDetails(obj);
-					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
-				});
-			}
+			dom.querySelectorAll(sel).forEach(obj => {		// jshint ignore:line
+				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
+				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
+				compDetails = _componentDetails(obj);
+				_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+			});
 		}
 	}
 };
@@ -3926,8 +3916,6 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 		// It would be nice if there was a way to get the truly real target on any click, regardless of whether or not it is in a shadow DOM. But thankfully there is
 		// e.composedPath(), otherwise we'd be royally buggered.
 		let thisEv;
-		// Set up a separate change event for triggering an observe event on the native change event.
-		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		if (allEvents.length == 0) {
 			Object.keys(window).forEach(key => {
 			    if (/^on/.test(key)) {
@@ -3941,6 +3929,10 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				_attachListener(shadow, thisEv, false, true);
 			}
 		}
+		// Set up a separate change event for triggering an observe event on the native input event and for otherwise undetectable property changes.
+		// Apologies in advance if this looks like a hack. If anyone has any better ideas to cover these scenarios, let me know.
+		shadow.addEventListener('input', _handleShadowSpecialEvents);
+		shadow.addEventListener('click', () => { setTimeout(_handleShadowSpecialEvents, 0); });
 	}
 };
 
@@ -6220,7 +6212,6 @@ const _readSiteMap = (o) => {
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
-	window.addEventListener('input', _handleObserveEvents);
 	let evSet;
 	for (evSet of preSetupEvents) {
 		_setupEvent(evSet.ev, evSet.sel);
@@ -6231,6 +6222,11 @@ const _readSiteMap = (o) => {
 	}
 	// Clean up. If we run load-config, we'll run this function again and only attempt to add the new events loaded.
 	preSetupEvents = [];
+
+	// Set up a separate change event for triggering an observe event on the native input event and for otherwise undetectable property changes.
+	// Apologies in advance if this looks like a hack. If anyone has any better ideas to cover these scenarios, let me know.
+	window.addEventListener('input', _handleObserveEvents);
+	window.addEventListener('click', () => { setTimeout(_handleObserveEvents, 0); });
 
 	if (!setupEnded) {
 		_startMainListen();
