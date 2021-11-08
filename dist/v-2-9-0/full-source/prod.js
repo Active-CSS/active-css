@@ -7,7 +7,7 @@
 	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
 	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
-	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an �60 Optiplex 780 from 2006 and it's fast enough.
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is a cheap Optiplex 780 from 2006 and it's fast enough.
 */
 
 (function (global, document) {
@@ -10947,9 +10947,9 @@ String.prototype._ACSSRepAllQuo = function() {
 };
 
 String.prototype._ACSSRepQuo = function() {
-	var html = this.replace(/\\"/g, '_ACSS*�%_');
+	var html = this.replace(/\\"/g, '_ACSS*%%_');
 	html = html.replace(/(^")|("$)/g, '');
-	html = html.replace(/_ACSS\*�%_/g, '"');
+	html = html.replace(/_ACSS\*%%_/g, '"');
 	return html;
 };
 
