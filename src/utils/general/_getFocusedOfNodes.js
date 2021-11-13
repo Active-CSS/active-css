@@ -3,7 +3,7 @@ const _getFocusedOfNodes = (sel, o, startingFrom='') => {
 	let targArr, nodes, obj, i = -1, useI = -1, checkNode;
 	targArr = _splitIframeEls(sel, o);
 	if (!targArr) return false;	// invalid target.
-	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : targArr[0].activeElement;
+	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : (targArr[0].activeElement) ? targArr[0].activeElement : (targArr[0].ownerDocument) ? targArr[0].ownerDocument.activeElement : false;
 	if (!checkNode) return -1;
 	nodes = targArr[0].querySelectorAll(targArr[1]) || null;
 	for (obj of nodes) {

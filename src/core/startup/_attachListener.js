@@ -25,7 +25,7 @@ const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 ActiveCSS._theEventFunction = e => {
 	let ev = e.type;
 	let component = e.target._acssComponent;
-	let compDoc = (e.target instanceof ShadowRoot) ? e.target : null;
+	let compDoc = (e.target instanceof ShadowRoot) ? e.target : undefined;
 	let varScope = e.target._acssVarScope;
 	if (!setupEnded) return;	// Wait for the config to fully load before any events start.
 	let fsDet = _fullscreenDetails();
@@ -70,7 +70,7 @@ ActiveCSS._theEventFunction = e => {
 		default:
 			if (ev == 'change') {
 				// Simulate a mutation and go straight to the observe event handler.
-				_handleObserveEvents();
+				_handleObserveEvents(null, compDoc);
 			}
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
