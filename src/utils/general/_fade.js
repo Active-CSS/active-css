@@ -3,14 +3,14 @@ const _fade = o => {
 	 * Work out which function called this and then call the generic function which can be kept separate to this to help split up actual functionality.
 	 *
 	 * fade-in *el* *duration* *displayValue*
-	 * fade-out *el* *duration* [no-display-none]
+	 * fade-out *el* *duration* [no-hide]
 	 * fade-to *el* *duration* *toOpacity* *displayValue*
 	 *
 	 * duration = (number)(ms or s).
 	 * toOpacity = (number).
 	 * displayValue = optional - last value if it isn't duration or opacity - don't need to qualify it further so we keep forward compatibility.
-	 * no-display-none = optional - don't set the display none at the end of the fade-out.
-	 * wait-display-none = optional - don't set the display none at the end of the fade-out until the duration has completed.
+	 * no-hide = optional - do not set the display none at the end of the fade-out.
+	 * complete-then-hide = optional - do not set the display none at the end of the fade-out until the duration has completed for all in selection.
 	 * el = the remainder.
 	 * An easy and performant way to do this is to split o.actVal by space and work it from the back to the beginning.
 	 * Last thing is to call the _fadeDo with the appropriate options.
@@ -32,9 +32,9 @@ const _fade = o => {
 	    } else if (!duration && _isPositive(actValArr[i][0])) {
 		    // This starts with a number so this should be the duration parameter. Display values don't start with a number.
 		    duration = _convertToMS(actValArr[i], 'Invalid fading delay: ' + actValArr[i]);
-		} else if (o.func == 'FadeOut' && actValArr[i] == 'no-display-none') {
+		} else if (o.func == 'FadeOut' && actValArr[i] == 'no-hide') {
 			noDisplayNone = true;
-		} else if (o.func == 'FadeOut' && actValArr[i] == 'wait-display-none') {
+		} else if (o.func == 'FadeOut' && actValArr[i] == 'complete-then-hide') {
 			waitDisplayNone = true;
 		} else if (!displayValue && i == actValArrLen - 1) {
 			// This is the last in the array (the first hit in the loop) and if it gets this far on the first iteration then it's a display value.
@@ -97,6 +97,7 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 	// It doesn't need that level of engineering currently though as it's still maintainable and keeps the general animation all together in one place.
 	var last = +new Date();
 	var Tracker = last;
+	var StartingLast = last;
 	el._acssMidFade = Tracker;
 	let computedStylesEl = window.getComputedStyle(el);
 	let elStartingOpac = el.style.opacity;
@@ -118,14 +119,16 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 		el.style.display = displayValue;
 	}
 
-	var tick = () => {
+	var tick = (timeStamp, noChange=false) => {
 		// Skip out if the element is no longer on the page or if this fading event should be halted.
 		if (!el || !_isConnected(el) || el._acssMidFade != Tracker) return;
 		var amount = (new Date() - last) / duration;
-		el.style.opacity = (func == 'FadeOut') ? +el.style.opacity - amount : +el.style.opacity + amount;
+		if (noChange !== true) el.style.opacity = (func == 'FadeOut') ? +el.style.opacity - amount : +el.style.opacity + amount;
 		last = +new Date();
 		if (func == 'FadeOut' && +el.style.opacity > toOpac || func != 'FadeOut' && +el.style.opacity < toOpac) {
 			requestAnimationFrame(tick);
+		} else if (waitDisplayNone && last - StartingLast < duration) {
+			requestAnimationFrame(() => tick(undefined, true));
 		} else {
 			if (func == 'FadeOut' && toOpac == 0) {
 				if (!noDisplayNone) el.style.display = 'none';
@@ -137,5 +140,5 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 		}
 	};
 
-	tick(true);
+	tick();
 };
