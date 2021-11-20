@@ -8112,7 +8112,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if (wot.startsWith('$')) return '{' + wot + '}';
+			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -8181,7 +8181,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 
 	let res, origWot, firstVar;
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
-		if (wot.startsWith('$')) return '{' + wot + '}';
+		if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 		origWot = wot;
 		let scoped = _getScopedVar(wot, varScope);
 		// Return the wot if it's a window variable.
