@@ -2,7 +2,7 @@ const _selCompare = (o, opt) => {
 	// Takes two parameters. First a selector, and secondly something else to compare.
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl, compareVal;
-	if (opt == 'eM') {
+	if (opt == 'eM' || opt == 'eMT') {
 		// There can be only one (parameter).
 		if (!actVal) return true;	// No point going further - this could be a variable substitution that equates to empty.
 		if (actVal && actVal == '__object') return false;	// No point going further - this is not empty - it is an array or a variable object.
@@ -61,6 +61,7 @@ const _selCompare = (o, opt) => {
 	}
 	switch (opt) {
 		case 'eM':
+		case 'eMT':
 		case 'maL':
 		case 'miL':
 			// _c.IfEmpty, _c.IfMaxLength, _c.IfMinLength
@@ -73,7 +74,8 @@ const _selCompare = (o, opt) => {
 			}
 			switch (opt) {
 				case 'eM':
-					return (!firstVal || firstVal === '');
+				case 'eMT':
+					return (!firstVal || (opt == 'eMT') ? firstVal.trim() === '' : firstVal === '');
 				case 'maL':
 					return (firstVal.length <= compareVal);
 				case 'miL':
