@@ -184,6 +184,7 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
+		observeEventsFalse = {},
 		observeEventsQueue = {},
 		observeEventsMid = {},
 		pageList = [],

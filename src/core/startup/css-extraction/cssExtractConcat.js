@@ -1,6 +1,6 @@
-const cssExtractConcat = cssObj => {
+const _cssExtractConcat = cssObj => {
 	let { file, statement, selector, commands } = cssObj;
-	let tagRef = cssExtractGetRef(file);
+	let tagRef = _cssExtractGetRef(file);
 
 	// If this tag existed but doesn't any more then it shouldn't be re-added - it's a tag that's been removed pending fully clean-up.
 	if (extractedCSS[tagRef] === undefined) return;

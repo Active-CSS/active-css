@@ -31,7 +31,7 @@ const _addConfig = (str, o) => {
 	// o.inlineActiveID will be populated if embedded and o.file will contain that, otherwise o.inlineActiveID will be empty.
 	// If not embedded, all the CSS can be appended to the same stylesheet as it can't be unloaded once added after ACSS initialisation or load-config.
 	// If CSS needs to be removed, the developer would place it in an embedded CSS or ACSS style tag and not through initial config load or via load-config.
-	cssExtractInit(o.file);
+	_cssExtractInit(o.file);
 
 	// If this is last file, run the config generator.
 	if (!initInlineLoading && concatConfigCo >= concatConfigLen) {

@@ -4,6 +4,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 	let pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	let str, strLength, i, strTrimmed, strTrimCheck, isComponent, innerContent, selectorName, evSplit, ev, sel, isConditional;
 	let inlineActiveID = fileToRemove.substr(8);
+	let observeElseSel = null;	// Back reference @else statements on observe. Store the ref for observe, then when the @else is found, store this elsewhere than the config with that reference.
+	let checkNextElseForObserve = false;
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
@@ -14,8 +16,15 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 		strLength = str.length;
 		for (i = 0; i < strLength; i++) {
 			strTrimmed = str[i].trim();
+			if (checkNextElseForObserve && observeElseSel && strTrimmed == '@else') {
+				checkNextElseForObserve = false;
+				// Handle like a regular event, but give it a special event reference so that ACSS can call on a false result from the observe check.
+				strTrimmed = observeElseSel + ':elseObserve';
+			}
+			checkNextElseForObserve = false;
+			observeElseSel = null;
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
-			isComponent = (strTrimmed.substr(0, 11) == '@component ');
+			isComponent = strTrimmed.startsWith('@component ');
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
 			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
 			let noQuestionMark;
@@ -94,8 +103,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						compName = '';
 					} else {
 						// Check if the at-rule starts with @media or @support.
-						let isMedia = (strTrimmed.substr(0, 7) == '@media ');
-						let isSupport = (strTrimmed.substr(0, 9) == '@support ');
+						let isMedia = strTrimmed.startsWith('@media ');
+						let isSupport = strTrimmed.startsWith('@support ');
 						if (isMedia || isSupport) {
 							if (!removeState) {
 								// This is a media query type of statement. Set it up and call the config routine again so the internal media query name can be attached to the events.
@@ -109,7 +118,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							statement = '';
 						} else {
 							// This looks like a regular CSS at-rule.
-							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							continue;
 						}
 					}
@@ -144,7 +153,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								_warn(strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
 							} else {
 								// This looks like a regular CSS command.
-								cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+								_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							}
 							continue;
 						}
@@ -167,8 +176,13 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						// Check that the event isn't a regular CSS command.
 						if (ev.match(COLONSELS) && ev !== 'focus') {
 							// This looks like a regular CSS command.
-							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							continue;
+						}
+
+						if (ev == 'observe') {
+							observeElseSel = sel;
+							checkNextElseForObserve = true;
 						}
 
 						let predefs = [], conds = [];

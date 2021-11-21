@@ -184,6 +184,7 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
+		observeEventsFalse = {},
 		observeEventsQueue = {},
 		observeEventsMid = {},
 		pageList = [],
@@ -2352,9 +2353,9 @@ const _handleEvents = evObj => {
 						    try {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
-						    	} else {
+						    	} else if (evType == 'observe') {
 									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
+									_handleFalseObserve(useForObserveID, primSel, 0, evObj);
 						    	}
 						    } catch(err) {
 						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
@@ -2390,9 +2391,9 @@ const _handleEvents = evObj => {
 				    try {
 						if (obj.matches(testSel)) {
 							selectorList.push({ primSel, componentRefs });
-				    	} else {
+				    	} else if (evType == 'observe') {
 							_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-							elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
+							_handleFalseObserve(useForObserveID, primSel, 0, evObj);
 						}
 
 				    } catch(err) {
@@ -2452,7 +2453,9 @@ const _handleEvents = evObj => {
 						_err('Cannot run an observe event on a custom selector that has no conditional: ' + primSel + ':observe');
 					}
 					_setUpForObserve(useForObserveID, 'i' + primSel, clause);
-					if (!condRes) elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
+					if (!condRes) {
+						_handleFalseObserve(useForObserveID, primSel, clause, evObj);
+					}
 				}
 				if (condRes) clauseArr[clauseCo] = clause;	// This condition passed. Remember it for the next bit.
 			}
@@ -2524,6 +2527,15 @@ const _handleEvents = evObj => {
 	}
 
 	return true;
+};
+
+const _handleFalseObserve = (useForObserveID, primSel, clause, evObj) => {
+	if (elObserveTrack[useForObserveID]['i' + primSel][clause].ran !== false) {
+		let evObjClone = _clone(evObj);
+		evObjClone.evType = 'elseObserve';
+		_handleEvents(evObjClone);
+	}
+	elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 };
 
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
@@ -5335,7 +5347,7 @@ const _addConfig = (str, o) => {
 	// o.inlineActiveID will be populated if embedded and o.file will contain that, otherwise o.inlineActiveID will be empty.
 	// If not embedded, all the CSS can be appended to the same stylesheet as it can't be unloaded once added after ACSS initialisation or load-config.
 	// If CSS needs to be removed, the developer would place it in an embedded CSS or ACSS style tag and not through initial config load or via load-config.
-	cssExtractInit(o.file);
+	_cssExtractInit(o.file);
 
 	// If this is last file, run the config generator.
 	if (!initInlineLoading && concatConfigCo >= concatConfigLen) {
@@ -5771,6 +5783,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 	let pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	let str, strLength, i, strTrimmed, strTrimCheck, isComponent, innerContent, selectorName, evSplit, ev, sel, isConditional;
 	let inlineActiveID = fileToRemove.substr(8);
+	let observeElseSel = null;	// Back reference @else statements on observe. Store the ref for observe, then when the @else is found, store this elsewhere than the config with that reference.
+	let checkNextElseForObserve = false;
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
@@ -5781,8 +5795,15 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 		strLength = str.length;
 		for (i = 0; i < strLength; i++) {
 			strTrimmed = str[i].trim();
+			if (checkNextElseForObserve && observeElseSel && strTrimmed == '@else') {
+				checkNextElseForObserve = false;
+				// Handle like a regular event, but give it a special event reference so that ACSS can call on a false result from the observe check.
+				strTrimmed = observeElseSel + ':elseObserve';
+			}
+			checkNextElseForObserve = false;
+			observeElseSel = null;
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
-			isComponent = (strTrimmed.substr(0, 11) == '@component ');
+			isComponent = strTrimmed.startsWith('@component ');
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
 			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
 			let noQuestionMark;
@@ -5861,8 +5882,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						compName = '';
 					} else {
 						// Check if the at-rule starts with @media or @support.
-						let isMedia = (strTrimmed.substr(0, 7) == '@media ');
-						let isSupport = (strTrimmed.substr(0, 9) == '@support ');
+						let isMedia = strTrimmed.startsWith('@media ');
+						let isSupport = strTrimmed.startsWith('@support ');
 						if (isMedia || isSupport) {
 							if (!removeState) {
 								// This is a media query type of statement. Set it up and call the config routine again so the internal media query name can be attached to the events.
@@ -5876,7 +5897,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							statement = '';
 						} else {
 							// This looks like a regular CSS at-rule.
-							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							continue;
 						}
 					}
@@ -5911,7 +5932,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								_warn(strTrimmed + ' is not a fully formed selector - it may be missing an event or have incorrect syntax. Or you have too many closing curly brackets.');
 							} else {
 								// This looks like a regular CSS command.
-								cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+								_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							}
 							continue;
 						}
@@ -5934,8 +5955,13 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						// Check that the event isn't a regular CSS command.
 						if (ev.match(COLONSELS) && ev !== 'focus') {
 							// This looks like a regular CSS command.
-							cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
+							_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							continue;
+						}
+
+						if (ev == 'observe') {
+							observeElseSel = sel;
+							checkNextElseForObserve = true;
 						}
 
 						let predefs = [], conds = [];
@@ -6258,7 +6284,7 @@ const _readSiteMap = (o) => {
 	parsedConfig = {};
 
 	// Create any CSS style tags that have been extracted out from the loaded ACSS config. This handles both loaded and embedded config.
-	cssExtractAddTags();
+	_cssExtractAddTags();
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
@@ -6596,7 +6622,7 @@ const _wrapUpStart = (o) => {
 	}
 };
 
-const addCSSToBody = (css, tagRef, toBody) => {
+const _addCSSToBody = (css, tagRef, toBody) => {
 	// Adds to a body based on the ref, otherwise adds to the existing style tag.
 	let tagIfThere = document.querySelector('style[data-from-acss="' + tagRef + '"]');		// Note: tagRef is a predictable string - so this is fine.
 	if (tagIfThere) {
@@ -6613,16 +6639,15 @@ const addCSSToBody = (css, tagRef, toBody) => {
 	}
 };
 
-const cssExtractAddTags = fileRef => {
+const _cssExtractAddTags = fileRef => {
 	// fileRef will be populated if embedded or empty if from loaded config.
-	let tagRef = cssExtractGetRef(fileRef);
+	let tagRef = _cssExtractGetRef(fileRef);
 
 	// No need to do anything if there isn't any CSS for extraction from the ACSS config.
-	if (extractedCSS[tagRef] === '') return;
-
-	// Add CSS to the end of the body. If the tag is already there, in the case of "permanent" loaded config, it will add it to the existing tag.
-	addCSSToBody(extractedCSS[tagRef], tagRef);
-
+	if (extractedCSS[tagRef] !== undefined && extractedCSS[tagRef] !== '') {
+		// Add CSS to the end of the body. If the tag is already there, in the case of "permanent" loaded config, it will add it to the existing tag.
+		_addCSSToBody(extractedCSS[tagRef], tagRef);
+	}
 	// Delete the CSS from memory now that it is added to the DOM. There's no reason it needs to stick around and we don't want to add it more than once.
 	// The embedded CSS style tag that has been created here will get cleaned up in _regenConfig if it came from a removed embedded ACSS tag.
 	delete extractedCSS[tagRef];
@@ -6632,14 +6657,16 @@ const cssExtractAddTags = fileRef => {
 	for (i in extractedCSS) {
 		// Put at the bottom of the headers. Extracted CSS tags in an SPA will always be placed into the DOM before the new inner content is drawn
 		// and it keeps the body content cleaner.
-		addCSSToBody(extractedCSS[i], i);
+		if (extractedCSS[i] !== undefined && extractedCSS[i] !== '') {
+			_addCSSToBody(extractedCSS[i], i);
+		}
 		delete extractedCSS[i];
 	}
 };
 
-const cssExtractConcat = cssObj => {
+const _cssExtractConcat = cssObj => {
 	let { file, statement, selector, commands } = cssObj;
-	let tagRef = cssExtractGetRef(file);
+	let tagRef = _cssExtractGetRef(file);
 
 	// If this tag existed but doesn't any more then it shouldn't be re-added - it's a tag that's been removed pending fully clean-up.
 	if (extractedCSS[tagRef] === undefined) return;
@@ -6690,7 +6717,7 @@ const cssExtractConcat = cssObj => {
 	extractedCSS[tagRef] += cssString;
 };
 
-const cssExtractGetRef = (fileRef) => {
+const _cssExtractGetRef = (fileRef) => {
 	// If fileRef is empty, it's definitely come from loaded config and not embedded - it's optional - for speed.
 	// Return the extracted CSS stylesheet reference. This will be placed into the data-css-ref attribute when the stylesheet gets inserted onto the page.
 	// It's done like this and not via any other internal method is so that the CSS can be tweaked using DevTools.
@@ -6708,8 +6735,8 @@ const cssExtractGetRef = (fileRef) => {
 	}
 };
 
-const cssExtractInit = (fileRef) => {
-	let tagRef = cssExtractGetRef(fileRef);
+const _cssExtractInit = (fileRef) => {
+	let tagRef = _cssExtractGetRef(fileRef);
 	if (tagRef != 'permanent' && extractedCSS[tagRef] !== undefined) {
 		_err('Internal reference for CSS extraction (' + tagRef + ') already exists.', null, 'extractedCSS[tagRef]:', extractedCSS[tagRef]);
 	}
@@ -9982,7 +10009,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (['draw', 'observe', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
+		if (['draw', 'observe', 'elseObserve', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;

@@ -1,4 +1,4 @@
-const cssExtractGetRef = (fileRef) => {
+const _cssExtractGetRef = (fileRef) => {
 	// If fileRef is empty, it's definitely come from loaded config and not embedded - it's optional - for speed.
 	// Return the extracted CSS stylesheet reference. This will be placed into the data-css-ref attribute when the stylesheet gets inserted onto the page.
 	// It's done like this and not via any other internal method is so that the CSS can be tweaked using DevTools.
