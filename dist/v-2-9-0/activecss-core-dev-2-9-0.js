@@ -8167,10 +8167,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 			} else {
 				let scoped = _getScopedVar(wot, varScope);
-
-				// Return the wot if it's a window variable.
-				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef, func);
 				res = scoped.val;
+
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
