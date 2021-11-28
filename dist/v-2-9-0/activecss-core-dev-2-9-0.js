@@ -39,9 +39,9 @@
 			'if-checked',
 			'if-completely-visible',
 			'if-display',
+			'if-empty',
+			'if-empty-trimmed',
 			'if-exists',
-			'if-focus-first',
-			'if-focus-last',
 			'if-form-changed',
 			'if-inner-html',
 			'if-inner-text',
@@ -184,7 +184,6 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
-		observeEventsFalse = {},
 		observeEventsQueue = {},
 		observeEventsMid = {},
 		pageList = [],
@@ -2353,9 +2352,9 @@ const _handleEvents = evObj => {
 						    try {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
-						    	} else if (evType == 'observe') {
+						    	} else {
 									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-									_handleFalseObserve(useForObserveID, primSel, 0, evObj);
+									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}
 						    } catch(err) {
 						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
@@ -2391,9 +2390,9 @@ const _handleEvents = evObj => {
 				    try {
 						if (obj.matches(testSel)) {
 							selectorList.push({ primSel, componentRefs });
-				    	} else if (evType == 'observe') {
+				    	} else {
 							_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-							_handleFalseObserve(useForObserveID, primSel, 0, evObj);
+							elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						}
 
 				    } catch(err) {
@@ -2453,9 +2452,7 @@ const _handleEvents = evObj => {
 						_err('Cannot run an observe event on a custom selector that has no conditional: ' + primSel + ':observe');
 					}
 					_setUpForObserve(useForObserveID, 'i' + primSel, clause);
-					if (!condRes) {
-						_handleFalseObserve(useForObserveID, primSel, clause, evObj);
-					}
+					if (!condRes) elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 				}
 				if (condRes) clauseArr[clauseCo] = clause;	// This condition passed. Remember it for the next bit.
 			}
@@ -2527,15 +2524,6 @@ const _handleEvents = evObj => {
 	}
 
 	return true;
-};
-
-const _handleFalseObserve = (useForObserveID, primSel, clause, evObj) => {
-	if (elObserveTrack[useForObserveID]['i' + primSel][clause].ran !== false) {
-		let evObjClone = _clone(evObj);
-		evObjClone.evType = 'elseObserve';
-		_handleEvents(evObjClone);
-	}
-	elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 };
 
 const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
@@ -2752,11 +2740,16 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		} else if (!justCustomSelectors) {
 			let compDetails;
 			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
+
 			dom.querySelectorAll(sel).forEach(obj => {		// jshint ignore:line
 				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
 				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
-				compDetails = _componentDetails(obj);
-				_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+				if (obj === document.body) {
+					_handleEvents({ obj, evType });
+				} else {
+					compDetails = _componentDetails(obj);
+					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+				}
 			});
 		}
 	}
@@ -5783,8 +5776,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 	let pConfig = (subConfig !== '') ? subConfig : parsedConfig;
 	let str, strLength, i, strTrimmed, strTrimCheck, isComponent, innerContent, selectorName, evSplit, ev, sel, isConditional;
 	let inlineActiveID = fileToRemove.substr(8);
-	let observeElseSel = null;	// Back reference @else statements on observe. Store the ref for observe, then when the @else is found, store this elsewhere than the config with that reference.
-	let checkNextElseForObserve = false;
 	Object.keys(pConfig).forEach(function(key) {
 		if (!pConfig[key].name) return;
 		selectorName = pConfig[key].name;
@@ -5795,13 +5786,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 		strLength = str.length;
 		for (i = 0; i < strLength; i++) {
 			strTrimmed = str[i].trim();
-			if (checkNextElseForObserve && observeElseSel && strTrimmed == '@else') {
-				checkNextElseForObserve = false;
-				// Handle like a regular event, but give it a special event reference so that ACSS can call on a false result from the observe check.
-				strTrimmed = observeElseSel + ':elseObserve';
-			}
-			checkNextElseForObserve = false;
-			observeElseSel = null;
 			// This could be a component that has an event, so we force the below to skip recognising this as a component.
 			isComponent = strTrimmed.startsWith('@component ');
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
@@ -5957,11 +5941,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// This looks like a regular CSS command.
 							_cssExtractConcat({ file: innerContent[0].file, statement, selector: pConfig[key].name, commands: pConfig[key].value });
 							continue;
-						}
-
-						if (ev == 'observe') {
-							observeElseSel = sel;
-							checkNextElseForObserve = true;
 						}
 
 						let predefs = [], conds = [];
@@ -10684,7 +10663,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (['draw', 'observe', 'elseObserve', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
+		if (['draw', 'observe', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;

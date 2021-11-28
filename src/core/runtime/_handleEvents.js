@@ -60,9 +60,9 @@ const _handleEvents = evObj => {
 						    try {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
-						    	} else if (evType == 'observe') {
+						    	} else {
 									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-									_handleFalseObserve(useForObserveID, primSel, 0, evObj);
+									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}
 						    } catch(err) {
 						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
@@ -98,9 +98,9 @@ const _handleEvents = evObj => {
 				    try {
 						if (obj.matches(testSel)) {
 							selectorList.push({ primSel, componentRefs });
-				    	} else if (evType == 'observe') {
+				    	} else {
 							_setUpForObserve(useForObserveID, 'i' + primSel, 0);
-							_handleFalseObserve(useForObserveID, primSel, 0, evObj);
+							elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						}
 
 				    } catch(err) {
@@ -160,9 +160,7 @@ const _handleEvents = evObj => {
 						_err('Cannot run an observe event on a custom selector that has no conditional: ' + primSel + ':observe');
 					}
 					_setUpForObserve(useForObserveID, 'i' + primSel, clause);
-					if (!condRes) {
-						_handleFalseObserve(useForObserveID, primSel, clause, evObj);
-					}
+					if (!condRes) elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 				}
 				if (condRes) clauseArr[clauseCo] = clause;	// This condition passed. Remember it for the next bit.
 			}
