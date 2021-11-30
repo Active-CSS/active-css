@@ -1,6 +1,6 @@
 ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is partially visible. Used by extensions.
 	let el = (typeof o.actVal === 'object') ? o.actVal : (o.actVal._ACSSRepQuo().trim() == '') ? o.secSelObj : _getSel(o, o.actVal);	// Used by devtools highlighting.
-	if (overflows(el, el.parentElement)) {
+	if (!el || overflows(el, el.parentElement)) {
 		return false;
 	} else {
 		let rect = el.getBoundingClientRect();
