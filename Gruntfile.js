@@ -93,7 +93,7 @@
 					'core-test/startup/compiled/core-test-js.js'
 				],
 				options: {
-					esversion: 6,
+					esversion: 9,	// It gets it wrong, it doesn't work with ES6 spread operators. It thinks that came out in ES9.
 					strict: true
 				}
 			},

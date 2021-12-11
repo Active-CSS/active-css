@@ -1558,17 +1558,10 @@ _a.Style = o => {
 _a.TakeClass = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	// Take class away from any element that has it, with an optional scope parameter.
-	let aV = o.actVal;
-	let pos = aV.indexOf('scope(');
-	let cl, scope = '';
-	if (pos !== -1) {
-		cl = aV.substr(1, pos - 1).trim();
-		scope = aV.substr(pos + 6, aV.length - pos - 7);
-		o.actVal = cl;	// this is mutating - bad for the extension when that arrives - change this after it works.
-	} else {
-		cl = aV.substr(1);
-	}
-	_eachRemoveClass(cl, cl, o.doc, scope);
+	let aVRes = _extractActionPars(o.actVal, [ 'scope' ], o);
+	let theClass = aVRes.action.substr(1);
+
+	_eachRemoveClass(theClass, theClass, o.doc, aVRes.scope);
 	_a.AddClass(o);
 };
 
@@ -3728,12 +3721,12 @@ const _recursiveScopeCleanUp = nod => {
 	});
 };
 
-const _renderCompDoms = (o, compDoc=o.doc, childTree='') => {
+const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, numTopElementsInRender=0) => {
 	// Set up any shadow DOM and scoped components so far unrendered and remove these from the pending shadow DOM and scoped array that contains the HTML to draw.
 	// Shadow DOM and scoped content strings are already fully composed with valid Active IDs at this point, they are just not drawn yet.
 	// Search for any data-acss-component tags and handle.
 	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
-		_renderCompDomsDo(o, obj, childTree);
+		_renderCompDomsDo(o, obj, childTree, numTopNodesInRender, numTopElementsInRender);
 
 		// Quick way to check if components and scoped variables are being cleaned up. Leave this here please.
 		// At any time, only the existing scoped vars and shadows should be shown.
@@ -3757,7 +3750,7 @@ const _renderCompDomsClean = varScope => {
 	}
 };
 
-const _renderCompDomsDo = (o, obj, childTree) => {
+const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
@@ -3776,7 +3769,36 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// So check if it already has child nodes. If it does, then it cannot act as a host. Components must have dedicated hosts. So we will add one later.
 	// Shadow DOM components already have hosts, so this action of assigning a host if there is not one does not apply to them.
 	let scopeEl;
-	if (!isShadow && shadowParent.childNodes.length > 1) {
+
+	// Handle a spread scope - ie. multiple top-level nodes, that have been requested to be event scoped. We need a surrogate host from which to
+	// run querySelectorAll for the events.
+	// Otherwise, for non-shadow DOM components, the first element will be the host.
+	// This is a change to previous behaviour, where if there was a parent element with only one child, then that would act as the host.
+	// But that doesn't work with something like an li, a td, or sibling elements which can have multiple siblings but still need event isolation.
+	// The host should really be the first child of the component, but event query selections need to include that first child, which is where it starts to
+	// get tricky. I'm not going to enforce a container div like other frameworks, as that is a workaround and won't allow td and lis and siblings as
+	// separate components.
+	// Storing separate scope references in the parent element won't work either, as the DOM can change, and scope references could change with regards
+	// the parent.
+	// A way to do this could be:
+	// 1. Attach the scope to the first child and not the parent. This is a bit challenging in itself.
+	// 2. Don't attach a scope at all if it doesn't need one. Currently scopes are being added for all components and it isn't necessary.
+	// 2. Have "queryselectorall" and "matches" with the same selector for target selection and action command selection.
+	// This is only for everything except event selectors,that already uses matches. It might be ok.
+	// It could be done that way only for those components that need it so as not to affect performance everywhere.
+	// This selection wrapping function could be expand to allow multiple top level nodes in a component, but I don't know how much performance will be
+	// affected. It might possibly be ok, as the main event loop won't need changing.
+	// For now, this is a work in progress and the events section in the components area of the docs now has the note regarding trs and li scoped components.
+	// This would be great to get eventually resolved. Another option is to allow host parents to hold multiple inner scopes, and that possibly may be
+	// simpler to implement, or it may not.
+	if (!isShadow && (
+			privateEvents ||
+			strictlyPrivateEvents
+			) &&
+			(numTopNodesInRender > 0 && numTopElementsInRender > 1 ||	// like "<div></div><div></div>"
+			numTopNodesInRender > 1 && numTopElementsInRender > 0)		// like "kjh<div></div>"
+		) {
+		// We need the surrogate host for this, otherwise the events won't be isolated to spreading scope nature of the render.
 		scopeEl = document.createElement('acss-scope');
 		shadowParent.replaceChild(scopeEl, obj);
 		// Switch the parent to the new scoping element.
@@ -4065,6 +4087,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	container.innerHTML = content;
 
+	// Get the number of child elements and nodes. Remember that rendering doesn't have to include child elements.
+	// This is used for core scope options later on in _renderCompDomsDo.
+	let numTopElementsInRender = container.childElementCount;
+	let numTopNodesInRender = container.childNodes.length;
+
 	let cid;
 	// Make a list of all immediate children via a reference to their Active IDs. After rendering we then iterate the list and run the draw event.
 	// We do this to make sure we only run the draw events on the new items.
@@ -4174,7 +4201,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		});
 	}
 
-	_renderCompDoms(o, undefined, childTree);
+	_renderCompDoms(o, undefined, childTree, numTopNodesInRender, numTopElementsInRender);
 };
 
 const _renderRefElements = (str, htmlStr, refType) => {
@@ -5052,8 +5079,8 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 	// This function replaces ACSS conditionals dynamically (that have no "if-"), gets the return value as a string (ie. "true" or "false" and puts it
 	// into the expression string for later evaluation.
 
-	// Count parentheses. It's not possible to do matching parentheses with regex and account for all the possible combinations of the insides
-	// that are not quoted. It needs to work with css selectors which are not quoted.
+	// Count parentheses. It's not possible to do matching parentheses with regex (unless using XRegExp) and account for all the possible combinations
+	// of the insides that are not quoted. It needs to work with css selectors which are not quoted.
 	// We could split by colon after escaping the colon preceding the pseudo-selectors and even embedded conditionals.
 	// Like @if func(sadasd):func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) {
 	// That gives us an AND clause. But doesn't give us a way to have an OR, or a way to have complex () around AND and OR clauses.
@@ -5141,22 +5168,25 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 				// Reached the start of the content of the function. Replace the function with data we need to call the conditional when evaluating.
 				item = '\'' + condName + '\', ifObj, \'' + item;
 			}
-
 			// It could contain closing parentheses.
 			// Count the number of closing parentheses.
 			let numClosingBrackets = item.split(')').length - 1;
 			let closingBracketCountDown = numClosingBrackets;
 			if (numClosingBrackets > 0) {
 				let bracketPos = item.indexOf(')');
+				let lastBracketPos = bracketPos;
 				while (bracketPos !== -1 && openInnerBrackets > 0) {
 					openInnerBrackets--;
 					bracketPos = item.indexOf(')', bracketPos + 1);
 					closingBracketCountDown--;
+					if (bracketPos !== -1) {
+						lastBracketPos = bracketPos;
+					}
 				}
 				if (openInnerBrackets <= 0) {
 					funcJustStarted = false;
 					funcInProgress = false;
-					item = item.substr(0, bracketPos) + '\'' + item.substr(bracketPos);
+					item = item.substr(0, lastBracketPos) + '\'' + item.substr(lastBracketPos);
 					// Adjust counters to account for any trailing closing parentheses.
 					let bracketsLeft = numClosingBrackets - closingBracketCountDown;
 					if (bracketsLeft > 0) {
@@ -6887,11 +6917,10 @@ const _syncStore = (o, delayActiveID, syncQueueSet, runButElNotThere) => {
 		let checkObj = o.origLoopObj.resumeProps;
 
 		// Check if we have reached the new action command that we need to resume from. We won't run this one, but we'll start from the action command after this.
-		if (syncQueue[checkObj.ref_subEvCo] && 
+		if (syncQueue[checkObj.ref_subEvCo] &&
 				checkObj.intID == o.intID &&
-				checkObj.secSelObj.isSameNode(o.secSelObj) &&
-				checkObj.loopRef == o.loopRef
-			) {
+				(typeof o.secSel == 'string' && o.secSel.startsWith('~') || checkObj.secSelObj.isSameNode(o.secSelObj)) &&
+				checkObj.loopRef == o.loopRef) {
 
 			// Don't run this command but let it run the next time.
 			_syncEmpty(checkObj.ref_subEvCo);
@@ -9921,6 +9950,24 @@ const _getParVal = (str, typ) => {
 	return '';
 };
 
+const _absLeft = el => {
+	// Position of left edge relative to frame left courtesy of http://www.quirksmode.org/js/findpos.html
+	var x = 0;
+	for (; el; el = el.offsetParent) {
+		x += el.offsetLeft;
+	}
+	return x;
+};
+
+const _absTop = el => {
+	// Position of top edge relative to top of frame courtesy of http://www.quirksmode.org/js/findpos.html
+	var y = 0;
+	for (; el; el = el.offsetParent) {
+		y += el.offsetTop;
+	}
+	return y;
+};
+
 const _actValSelItem = o => {
 	let arr = o.actVal.split(' ');
 	let last = arr.splice(-1);
@@ -9931,6 +9978,32 @@ ActiveCSS._addClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	let arr = str.replace('.', '').split(' ');
 	obj.classList.add(...arr);
+};
+
+const _checkBoundaries = (el, cont, tot) => {
+	// Returns true if the boundaries checks pass.
+	let left = _absLeft(el),
+		right = left + el.offsetWidth,
+		top = _absTop(el),
+		bottom = top + el.offsetHeight;
+	let cleft = _absLeft(cont),
+		cright = cleft + cont.offsetWidth,
+		ctop = _absTop(cont),
+		cbottom = ctop + cont.offsetHeight;
+
+// Working code for counting all 4 corners. For now, we are just interested in supporting vertical.
+// More parameters need to be added - horizontal, vertical and both, with a default of vertical if no parameters added.
+//	if (tot) {
+//		return (left >= cleft && top >= ctop && right <= cright && bottom <= cbottom);
+//	} else {
+//		return (left >= cleft || right <= cright) && (top >= ctop || bottom <= cbottom);
+//	}
+
+	if (tot) {
+		return top >= ctop && bottom <= cbottom;
+	} else {
+		return top >= ctop || bottom <= cbottom;
+	}
 };
 
 const _checkForm = (frm, wot) => {
@@ -10271,6 +10344,109 @@ const _evalDetachedExpr = (valToExpr, varScope) => {
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	const expr = '{=' + valToExpr + '=}';
 	return _replaceJSExpression(expr, true, false, varScope, -1);	// realVal=true, quoteIfString=false, varReplacementRef=-1
+};
+
+const _extractActionPars = (actionValue, parArr, o) => {
+	// Extracts bracket parameters from an action value and returns an object with separated values.
+	// Used in take-class, and designed to be used by others.
+	// It can handle inner brackets for selectors with pseudo-selectors like :not().
+	// The "o" is only used for reporting errors.
+	// actionValue = the full action command value.
+	// parArr = an array of parameter names that has content in parentheses, eg. [ 'scope', 'something' ].
+	// Example:
+	// my-command: .myClass scope(#myScope:not(.cheese)) something(some command string);
+	// Should return this: { action: '.myClass', scope: '#myScope:not(.cheese)', something: 'some command string' }
+
+	let newActionValue = actionValue;
+	let res = {}, pos, parStartLen, splitRes;
+
+	// Escape any escaped parentheses or in quotes so they don't factor into the parentheses splitting that is about to take place.
+	newActionValue = newActionValue.replace(/\\\(/g, '_ACSS_opPa').replace(/\\\)/g, '_ACSS_clPa');
+	newActionValue = _escInQuo(newActionValue, '(', '_ACSS_opPa');
+	newActionValue = _escInQuo(newActionValue, ')', '_ACSS_clPa');
+
+	parArr.forEach(parName => {
+		// Note this was further abstracted out, but would have been slower with the char escaping going on above happening within the abstraction,
+		// so I put it back to this for the sake of speed.
+		let currentActionValue = newActionValue;
+		pos = newActionValue.indexOf(parName + '(');
+		if (pos !== -1) {
+			parStartLen = parName.length + 1;	// Includes name of parameter and first parenthesis.
+			newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
+			// Get the parameter value and the remainder of the action value.
+			// Send over the action value from the beginning of the parameter value.
+			splitRes = _extractActionParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
+			res[parName] = _extractActionParsUnEsc(splitRes.value);
+			newActionValue += splitRes.remainder;
+		}
+	});
+	res.action = _extractActionParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
+
+	return res;
+};
+
+const _extractActionParsUnEsc = str => {
+	return str.replace(/_ACSS_opPa/g, '\\(').replace(/_ACSS_clPa/g, '\\)');
+};
+
+const _extractActionParsSplit = (str, original, o) => {
+	// Example of str content:
+	// str = "#left) another(#myEl:not(has(something))) hi(and the rest) something"
+	// We have already accounted for the opening parenthesis.
+	// Return value should be:
+	// res.value = "#left";
+	// res.remainder = " another(#myEl:not(has(something))) hi(and the rest) something"
+
+	let res = {};
+	// Split by "(".
+	let openingArr = str.split('(');
+	if (openingArr.length == 1) {
+		// No "(" found - there should be only one parameter.
+		let closingPos = str.indexOf(')');
+		if (closingPos === -1) {
+			_err('No closing parenthesis found for parameter in action command', o);
+		}
+		res.value = str.substr(0, closingPos).trim();
+		res.remainder = str.substr(closingPos + 1);
+	} else {
+		let lineCarry = '', line, innerRes, remainderArr;
+		for (let n = 0; n < openingArr.length; n++) {
+			line = openingArr[n];
+			// Now get the content of this line sorted out.
+			innerRes = _extractActionParsInner(line, n + 1, original, o);
+			if (innerRes.value) {
+				// We got the variable that we needed.
+				res.value = lineCarry + innerRes.value;
+				res.remainder = innerRes.remainder;
+				if (n < openingArr.length) {
+					remainderArr = openingArr.slice(n + 1);
+					res.remainder += (typeof remainderArr[0] !== undefined && remainderArr[0] != '' ? '(' : '') + remainderArr.join('(');
+				}
+				break;
+			}
+			lineCarry += line + '(';
+		}
+
+	}
+
+	return res;
+};
+
+const _extractActionParsInner = (str, numOpening, original, o) => {
+	// Split by ')'.
+	let closingArr = str.split(')');
+	if (closingArr.length - 1 > numOpening) {
+		_err('Too many closing parenthesis found in action command', o);
+	} else if (closingArr.length - 1 < numOpening) {
+		// Not enough closing parameters. Return an empty object without a value.
+		return {};
+	} else {
+		// We have the right number of closing parentheses.
+		let res = {};
+		res.remainder = closingArr.slice(-1);
+		res.value = closingArr.slice(0, -1).join(')');
+		return res;
+	}
 };
 
 const _fade = o => {
@@ -10788,47 +10964,31 @@ const _ifFocus = (o, first=true) => {
 };
 
 ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is partially visible. Used by extensions.
-	let el = (typeof o.actVal === 'object') ? o.actVal : (o.actVal._ACSSRepQuo().trim() == '') ? o.secSelObj : _getSel(o, o.actVal);	// Used by devtools highlighting.
-	if (!el || overflows(el, el.parentElement)) {
-		return false;
+	let el, elContainer, aV;
+	if (typeof aV === 'object') {	// Used by devtools highlighting.
+		aV = o.actVal;
 	} else {
-		let rect = el.getBoundingClientRect();
-		let elTop = rect.top;
-		let elBot = rect.bottom;
-		return (tot) ? (elTop >= 0) && (elBot <= window.innerHeight) : elTop < window.innerHeight && elBot >= 0;
+		// The optional "scope" parameter determines which container holds the boundary information.
+		// No "scope" parameter means that the document itself is the container.
+		let aVRes = _extractActionPars(o.actVal, [ 'scope' ], o);
+		if (aVRes.scope) {
+			// Get scope element.
+			elContainer = _getSel(o, aVRes.scope);
+		}
+		aV = aVRes.action;
 	}
-};
 
-// Position of left edge relative to frame left courtesy of http://www.quirksmode.org/js/findpos.html
-const _absleft = el => {
-	var x = 0;
-	for (; el; el = el.offsetParent) {
-		x += el.offsetLeft;
-	}
-	return x;
-};
+	el = (aV._ACSSRepQuo().trim() == '') ? o.secSelObj : _getSel(o, aV);
+	if (!el) return false;
 
-// Position of top edge relative to top of frame.
-const _abstop = el => {
-	var y = 0;
-	for (; el; el = el.offsetParent) {
-		y += el.offsetTop;
-	}
-	return y;
-};
+	// Check in a container if one is found.
+	if (elContainer) return _checkBoundaries(el, elContainer, tot);
 
-// True if el's bounding rectangle includes a non-zero area the container's bounding rectangle.
-const overflows = (el, opt_container) => {
-	var cont = opt_container || el.offsetParent;
-	var left = _absleft(el),
-		right = left + el.offsetWidth,
-		top = _abstop(el),
-		bottom = top + el.offsetHeight;
-	var cleft = _absleft(cont),
-		cright = cleft + cont.offsetWidth,
-		ctop = _abstop(cont),
-		cbottom = ctop + cont.offsetHeight;
-	return left < cleft || top < ctop || right > cright || bottom > cbottom;
+	// Container not found. Use the document.
+	let rect = el.getBoundingClientRect();
+	let elTop = rect.top;
+	let elBot = rect.bottom;
+	return (tot) ? (elTop >= 0) && (elBot <= window.innerHeight) : elTop < window.innerHeight && elBot >= 0;
 };
 
 const _isACSSStyleTag = (nod) => {
@@ -11193,7 +11353,7 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
 				attrs = window.history.state.attrs || '';
 			} else {
-				[...o.secSelObj.attributes].forEach((attr) => {
+				[...o.secSelObj.attributes].forEach(attr => {
 					if (attr.name == 'id') return;	// mustn't set these, otherwise the url could change again in the SPA trigger event.
 					attrs += attr.name + '="' + attr.value + '" ';
 				});

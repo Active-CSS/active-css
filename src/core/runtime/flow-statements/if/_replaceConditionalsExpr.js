@@ -2,8 +2,8 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 	// This function replaces ACSS conditionals dynamically (that have no "if-"), gets the return value as a string (ie. "true" or "false" and puts it
 	// into the expression string for later evaluation.
 
-	// Count parentheses. It's not possible to do matching parentheses with regex and account for all the possible combinations of the insides
-	// that are not quoted. It needs to work with css selectors which are not quoted.
+	// Count parentheses. It's not possible to do matching parentheses with regex (unless using XRegExp) and account for all the possible combinations
+	// of the insides that are not quoted. It needs to work with css selectors which are not quoted.
 	// We could split by colon after escaping the colon preceding the pseudo-selectors and even embedded conditionals.
 	// Like @if func(sadasd):func(sdfsdf .sdfsdf[escapedColon]not(sdfsdf)) {
 	// That gives us an AND clause. But doesn't give us a way to have an OR, or a way to have complex () around AND and OR clauses.
@@ -91,22 +91,25 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 				// Reached the start of the content of the function. Replace the function with data we need to call the conditional when evaluating.
 				item = '\'' + condName + '\', ifObj, \'' + item;
 			}
-
 			// It could contain closing parentheses.
 			// Count the number of closing parentheses.
 			let numClosingBrackets = item.split(')').length - 1;
 			let closingBracketCountDown = numClosingBrackets;
 			if (numClosingBrackets > 0) {
 				let bracketPos = item.indexOf(')');
+				let lastBracketPos = bracketPos;
 				while (bracketPos !== -1 && openInnerBrackets > 0) {
 					openInnerBrackets--;
 					bracketPos = item.indexOf(')', bracketPos + 1);
 					closingBracketCountDown--;
+					if (bracketPos !== -1) {
+						lastBracketPos = bracketPos;
+					}
 				}
 				if (openInnerBrackets <= 0) {
 					funcJustStarted = false;
 					funcInProgress = false;
-					item = item.substr(0, bracketPos) + '\'' + item.substr(bracketPos);
+					item = item.substr(0, lastBracketPos) + '\'' + item.substr(lastBracketPos);
 					// Adjust counters to account for any trailing closing parentheses.
 					let bracketsLeft = numClosingBrackets - closingBracketCountDown;
 					if (bracketsLeft > 0) {

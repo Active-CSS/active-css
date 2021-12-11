@@ -1,4 +1,4 @@
-const _renderCompDomsDo = (o, obj, childTree) => {
+const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
 
 	shadowParent = obj.parentNode;
@@ -17,7 +17,36 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	// So check if it already has child nodes. If it does, then it cannot act as a host. Components must have dedicated hosts. So we will add one later.
 	// Shadow DOM components already have hosts, so this action of assigning a host if there is not one does not apply to them.
 	let scopeEl;
-	if (!isShadow && shadowParent.childNodes.length > 1) {
+
+	// Handle a spread scope - ie. multiple top-level nodes, that have been requested to be event scoped. We need a surrogate host from which to
+	// run querySelectorAll for the events.
+	// Otherwise, for non-shadow DOM components, the first element will be the host.
+	// This is a change to previous behaviour, where if there was a parent element with only one child, then that would act as the host.
+	// But that doesn't work with something like an li, a td, or sibling elements which can have multiple siblings but still need event isolation.
+	// The host should really be the first child of the component, but event query selections need to include that first child, which is where it starts to
+	// get tricky. I'm not going to enforce a container div like other frameworks, as that is a workaround and won't allow td and lis and siblings as
+	// separate components.
+	// Storing separate scope references in the parent element won't work either, as the DOM can change, and scope references could change with regards
+	// the parent.
+	// A way to do this could be:
+	// 1. Attach the scope to the first child and not the parent. This is a bit challenging in itself.
+	// 2. Don't attach a scope at all if it doesn't need one. Currently scopes are being added for all components and it isn't necessary.
+	// 2. Have "queryselectorall" and "matches" with the same selector for target selection and action command selection.
+	// This is only for everything except event selectors,that already uses matches. It might be ok.
+	// It could be done that way only for those components that need it so as not to affect performance everywhere.
+	// This selection wrapping function could be expand to allow multiple top level nodes in a component, but I don't know how much performance will be
+	// affected. It might possibly be ok, as the main event loop won't need changing.
+	// For now, this is a work in progress and the events section in the components area of the docs now has the note regarding trs and li scoped components.
+	// This would be great to get eventually resolved. Another option is to allow host parents to hold multiple inner scopes, and that possibly may be
+	// simpler to implement, or it may not.
+	if (!isShadow && (
+			privateEvents ||
+			strictlyPrivateEvents
+			) &&
+			(numTopNodesInRender > 0 && numTopElementsInRender > 1 ||	// like "<div></div><div></div>"
+			numTopNodesInRender > 1 && numTopElementsInRender > 0)		// like "kjh<div></div>"
+		) {
+		// We need the surrogate host for this, otherwise the events won't be isolated to spreading scope nature of the render.
 		scopeEl = document.createElement('acss-scope');
 		shadowParent.replaceChild(scopeEl, obj);
 		// Switch the parent to the new scoping element.
