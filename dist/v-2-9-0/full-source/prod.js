@@ -7835,6 +7835,8 @@ const _removeVarPlaceholders = obj => {
 			if (varMap[thisVar] === undefined) varMap[thisVar] = [];
 			if (thisNode.nextSibling.data == '/active-var') {
 				// There is no content there. Insert an empty text node now. A variable was probably empty when first drawn.
+				let checkVar = _getScopedVar('scopedProxy.' + thisVar);
+				if (checkVar.val === undefined) _set(scopedProxy, thisVar, '');	// set it if it isn't already - we need this for undefined reactive variables to update.
 				nodesToRemove.push(thisNode.nextSibling);	// Mark for removal.
 				insertedNode = thisNode.parentNode.insertBefore(document.createTextNode(''), thisNode.nextSibling);
 				varMap[thisVar].push(insertedNode);
@@ -8317,7 +8319,7 @@ const _resolveAjaxVars = o => {
 const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
-	_set(scopedProxy, compScope + '.$JSON', res);
+	_set(scopedProxy, compScope + '.JSON', res);
 	for (v in res) {
 		_set(scopedProxy, compScope + '.' + v, res[v]);
 	}
