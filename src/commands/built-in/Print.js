@@ -1,8 +1,10 @@
 _a.Print = o => {
 	if (o.actVal == 'window') {
 		window.print();
+	} else if (o.actVal == 'parent') {
+		parent.print();
 	} else {
-		let iframeSel = _getObj(o.actVal, o);
+		let iframeSel = _getSel(o, o.actVal);
 		// Check that it's an iframe.
 		if (iframeSel) {
 			if (iframeSel.tagName == 'IFRAME') {

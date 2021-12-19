@@ -53,21 +53,13 @@ const _fade = o => {
 	// Set the display value if it isn't set. This won't be used for fade-out, which always ends up with a display of "none".
 	if (!displayValue && o.func != 'FadeOut') displayValue = 'initial';
 
-	let el = _getSel(o, sel, true);
 	let func;
-	if (el !== false) {
-		// Me, self or this.
-		func = _fadeGetFunc(el, o.func, toOpacity);
-		if (func) _fadeDo(el, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
-	} else {
-		// Regular selector.
-		let targArr = _splitIframeEls(sel, o);
-		if (!targArr) return false;	// invalid target.
-		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
-			func = _fadeGetFunc(obj, o.func, toOpacity);
-			if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
-		});
-	}
+	let objs = _getSels(o, sel);
+	if (!objs) return false;	// invalid target.
+	objs.forEach(function (obj) {
+		func = _fadeGetFunc(obj, o.func, toOpacity);
+		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+	});
 };
 
 const _fadeGetFunc = (el, funcIn, toOpacity) => {

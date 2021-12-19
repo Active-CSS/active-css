@@ -759,9 +759,8 @@ const _focusOn = (o, wot, justObj=false) => {
 			}
 		} else {
 			// This will only ever run once, as moveNum will always be one.
-			let targArr = _splitIframeEls(val, o);
-			if (!targArr) return false;	// invalid target.
-			nodes = targArr[0].querySelectorAll(targArr[1]) || null;
+			nodes = _getSels(o, val);
+			if (!nodes) return false;	// invalid target.
 		}
 	}
 	switch (wot) {
@@ -1121,8 +1120,10 @@ _a.PreventDefault = o => {
 _a.Print = o => {
 	if (o.actVal == 'window') {
 		window.print();
+	} else if (o.actVal == 'parent') {
+		parent.print();
 	} else {
-		let iframeSel = _getObj(o.actVal, o);
+		let iframeSel = _getSel(o, o.actVal);
 		// Check that it's an iframe.
 		if (iframeSel) {
 			if (iframeSel.tagName == 'IFRAME') {
@@ -1137,17 +1138,11 @@ _a.Print = o => {
 };
 
 _a.Remove = o => {
-	let thisObj = _getSel(o, o.actVal, true);
-	if (thisObj !== false) {
-		// This is self or a host element.
-		ActiveCSS._removeObj(thisObj);
-	} else {
-		let targArr = _splitIframeEls(o.actVal, o);
-		if (!targArr) return false;	// invalid target.
-		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
-			ActiveCSS._removeObj(obj);
-		});
-	}
+	let objs = _getSels(o, o.actVal);
+	if (!objs) return false;	// invalid target.
+	objs.forEach(function (obj) {
+		ActiveCSS._removeObj(obj);
+	});
 };
 
 _a.RemoveAttribute = o => {
@@ -10504,21 +10499,13 @@ const _fade = o => {
 	// Set the display value if it isn't set. This won't be used for fade-out, which always ends up with a display of "none".
 	if (!displayValue && o.func != 'FadeOut') displayValue = 'initial';
 
-	let el = _getSel(o, sel, true);
 	let func;
-	if (el !== false) {
-		// Me, self or this.
-		func = _fadeGetFunc(el, o.func, toOpacity);
-		if (func) _fadeDo(el, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
-	} else {
-		// Regular selector.
-		let targArr = _splitIframeEls(sel, o);
-		if (!targArr) return false;	// invalid target.
-		targArr[0].querySelectorAll(targArr[1]).forEach(function (obj) {
-			func = _fadeGetFunc(obj, o.func, toOpacity);
-			if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
-		});
-	}
+	let objs = _getSels(o, sel);
+	if (!objs) return false;	// invalid target.
+	objs.forEach(function (obj) {
+		func = _fadeGetFunc(obj, o.func, toOpacity);
+		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+	});
 };
 
 const _fadeGetFunc = (el, funcIn, toOpacity) => {
@@ -10756,17 +10743,6 @@ const _getNumber = str => {
 	return (num >= 0) ? val : false;
 };
 
-const _getObj = (str, o) => {
-	let targArr = _splitIframeEls(str, o);
-	if (!targArr) return false;	// invalid target.
-	try {
-		let obj = targArr[0].querySelector(targArr[1]);
-		return obj;
-	} catch(err) {
-		return false;
-	}
-};
-
 const _getPageFromList = hrf => {
 	// Wildcard or straight href retrieval from pageList. This needs to be really fast as it can run on mouseovers.
 	let pageItem, checkHrf;
@@ -10878,26 +10854,55 @@ const _getScopedRoot = (obj) => {
 	return (obj.parentNode) ? obj.parentNode.closest('[data-active-scoped]') : null;		// Should return null if no closest scoped component found.
 };
 
-const _getSel = (o, sel, priorToGrabAll) => {
+//const _getSel = (o, sel, priorToGrabAll, many=false) => {
+const _getSel = (o, sel, many=false) => {
+	let item = false;
+
+// This switch statement needs to be put into the _splitIframeEls loop.
+// Get the '<' and '&' selectors in there too, which is currently in _prepSelector.
+
+// Consider the potential for double-evaluation if you consider variable substitution as part of this evolution.
+
 	switch (sel) {
 		case 'me':
 		case 'self':
 		case 'this':
-			return o.secSelObj;
+			item = o.secSelObj;
+			if (item && many) item = [ item ];
+			break;
 		case 'host':
 			if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
 				// The host is already being used as the target selector with these events.
-				return o.secSelObj;
+				item = o.secSelObj;
+			} else {
+				let rootNode = _getRootNode(o.secSelObj);
+				item = (rootNode._acssScoped) ? rootNode : rootNode.host;
 			}
-			let rootNode = _getRootNode(o.secSelObj);
-			return (rootNode._acssScoped) ? rootNode : rootNode.host;
+			if (item && many) item = [ item ];
+			break;
 		default:
 			// Set priorToGrabAll to return true to handle result sets in the calling function.
 			// See _a.Remove for an example of handling a result set - it depends on the context, so the action is done in there.
 			// If this happens a lot, use a callback function and pass in arguments - it's not worth the complexity this brings right now though.
 			// Grab the element or the first in the group specified.
-			return (priorToGrabAll !== true) ? _getObj(sel, o) : false;
+			let targArr = _splitIframeEls(sel, o);
+			if (!targArr) return false;	// invalid target.
+			try {
+				let obj = (many) ? targArr[0].querySelectorAll(targArr[1]) : targArr[0].querySelector(targArr[1]);
+				item = obj;
+			} catch(err) {
+				// no need to do anything more.
+			}
 	}
+	if (item) {
+		return item;
+	} else {
+		return false;
+	}
+};
+
+const _getSels = (o, sel) => {
+	return _getSel(o, sel, true);	// true = many objects
 };
 
 const _getTempActiveID = obj => {
