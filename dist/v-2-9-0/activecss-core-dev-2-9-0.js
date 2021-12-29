@@ -10006,7 +10006,7 @@ const _checkBoundaries = (el, cont, tot) => {
 	if (tot) {
 		return top >= ctop && bottom <= cbottom;
 	} else {
-		return top >= ctop || bottom <= cbottom;
+		return top >= ctop && bottom <= cbottom || top >= ctop && top <= cbottom || bottom >= ctop && bottom <= cbottom;
 	}
 };
 
