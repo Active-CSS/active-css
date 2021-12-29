@@ -2,7 +2,7 @@ const _syncCheckAndSet = (o, syncQueueSet) => {
 	// If there isn't a sync option on the command, skip it.
 	if (!o.actVal.endsWith(' await')) return;
 
-	// Remove the " sync" from action command.
+	// Remove the " await" from action command.
 	o.actVal = o.actVal.slice(0, -6).trim();
 
 	// Only sync this command if it's a valid delayed event, otherwise ignore the sync.

@@ -53,16 +53,21 @@ const _fade = o => {
 	// Set the display value if it isn't set. This won't be used for fade-out, which always ends up with a display of "none".
 	if (!displayValue && o.func != 'FadeOut') displayValue = 'initial';
 
-	let func;
-	let objs = _getSels(o, sel);
+	let func, objs;
+	if (!sel) {
+		// Use the target selector if there is no selector specified.
+		if (typeof o.secSelObj === 'object') objs = [ o.secSelObj ];
+	} else {
+		objs = _getSels(o, sel);
+	}
 	if (!objs) return false;	// invalid target.
 	objs.forEach(function (obj) {
-		func = _fadeGetFunc(obj, o.func, toOpacity);
-		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+		func = _fadeGetFunc(obj, o.func, toOpacity, o);
+		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone, o);
 	});
 };
 
-const _fadeGetFunc = (el, funcIn, toOpacity) => {
+const _fadeGetFunc = (el, funcIn, toOpacity, o) => {
 	let funcOut = funcIn;
 	let existingOpac;
 	let computedStylesEl = window.getComputedStyle(el);
@@ -78,13 +83,15 @@ const _fadeGetFunc = (el, funcIn, toOpacity) => {
 		if (existingOpac > toOpacity) {
 			funcOut = 'FadeOut';
 		} else if (existingOpac == toOpacity) {
+			// Restart the sync queue if await was used.
+			_syncRestart(o, o._subEvCo);
 			return;
 		}
 	}
 	return funcOut;
 };
 
-const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone) => {
+const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone, o) => {
 	// If this function starts getting overly complicated then split out FadeOut functionality and put into a separate function.
 	// It doesn't need that level of engineering currently though as it's still maintainable and keeps the general animation all together in one place.
 	var last = +new Date();
@@ -129,6 +136,8 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 				el.style.opacity = toOpac;
 			}
 			delete el._acssMidFade;
+			// Restart the sync queue if await was used.
+			_syncRestart(o, o._subEvCo);
 		}
 	};
 

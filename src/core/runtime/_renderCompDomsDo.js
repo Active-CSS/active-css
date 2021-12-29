@@ -1,5 +1,6 @@
 const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
-	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
+		shadPar, shadEv, strictVars, privVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -11,6 +12,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
+	privVars = components[componentName].privVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -41,7 +43,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	// simpler to implement, or it may not.
 	if (!isShadow && (
 			privateEvents ||
-			strictlyPrivateEvents
+			strictlyPrivateEvents ||
+			privVars
 			) &&
 			(numTopNodesInRender > 0 && numTopElementsInRender > 1 ||	// like "<div></div><div></div>"
 			numTopNodesInRender > 1 && numTopElementsInRender > 0)		// like "kjh<div></div>"
@@ -72,7 +75,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 
 	// Set up a private variable scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the varScope, is not the same as the component name. The varScope is the reference of the unique scope.
-	privVarScopes[varScope] = components[componentName].privVars ? true: false;
+	privVarScopes[varScope] = privVars ? true: false;
 
 	// Set up map per component of higher-level variable scopes to iterate when getting or setting vars. This is for non-"strictlyPrivateVars" components.
 	// It should be only necessary to reference the fact that the current component has a sharing parent.
@@ -171,6 +174,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		}
 	} else {
 		shadow = shadowParent;
+		// All components need a scope, regardless of nature.
 		shadow.setAttribute('data-active-scoped', '');
 		shadow._acssScoped = true;
 	}
@@ -232,7 +236,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
 
 		if (isShadow) {

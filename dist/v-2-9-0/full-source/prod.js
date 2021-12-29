@@ -17,6 +17,9 @@
 			'AjaxFormPreview',
 			'AjaxFormSubmit',
 			'AjaxPreGet',
+			'FadeIn',
+			'FadeOut',
+			'FadeTo',
 			'LoadAsAjax',
 			'LoadConfig',
 			'LoadScript',
@@ -619,14 +622,14 @@ _a.CreateElement = o => {
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
-		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}"' };
+		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}" after stack' };
 
 		// Don't add it if it's already there.
 		if (!addedThisBefore || typeof config[tag].draw[0][0][0] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'][0] === 'undefined' ||
 				config[tag].draw[0][0][0]['&'][0].name != 'render' ||
-				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}"'
+				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}" after stack'
 			) {
 			// Put the draw event render command at the beginning of any draw event that might already be there for this element.
 			config[tag].draw[0][0].unshift(secSel);
@@ -1839,7 +1842,7 @@ _c.IfDefined = o => {
 };
 
 _c.IfDisplay = o => {
-	let el = o.doc.querySelector(o.actVal);
+	let el = _getSel(o, o.actVal);
 	return (el && getComputedStyle(el, null).display !== 'none');
 };
 
@@ -3746,7 +3749,8 @@ const _renderCompDomsClean = varScope => {
 };
 
 const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
-	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
+		shadPar, shadEv, strictVars, privVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -3758,6 +3762,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
+	privVars = components[componentName].privVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -3788,7 +3793,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	// simpler to implement, or it may not.
 	if (!isShadow && (
 			privateEvents ||
-			strictlyPrivateEvents
+			strictlyPrivateEvents ||
+			privVars
 			) &&
 			(numTopNodesInRender > 0 && numTopElementsInRender > 1 ||	// like "<div></div><div></div>"
 			numTopNodesInRender > 1 && numTopElementsInRender > 0)		// like "kjh<div></div>"
@@ -3819,7 +3825,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 
 	// Set up a private variable scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the varScope, is not the same as the component name. The varScope is the reference of the unique scope.
-	privVarScopes[varScope] = components[componentName].privVars ? true: false;
+	privVarScopes[varScope] = privVars ? true: false;
 
 	// Set up map per component of higher-level variable scopes to iterate when getting or setting vars. This is for non-"strictlyPrivateVars" components.
 	// It should be only necessary to reference the fact that the current component has a sharing parent.
@@ -3918,6 +3924,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		}
 	} else {
 		shadow = shadowParent;
+		// All components need a scope, regardless of nature.
 		shadow.setAttribute('data-active-scoped', '');
 		shadow._acssScoped = true;
 	}
@@ -3979,7 +3986,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
 
 		if (isShadow) {
@@ -6873,7 +6880,7 @@ const _syncCheckAndSet = (o, syncQueueSet) => {
 	// If there isn't a sync option on the command, skip it.
 	if (!o.actVal.endsWith(' await')) return;
 
-	// Remove the " sync" from action command.
+	// Remove the " await" from action command.
 	o.actVal = o.actVal.slice(0, -6).trim();
 
 	// Only sync this command if it's a valid delayed event, otherwise ignore the sync.
@@ -9824,16 +9831,21 @@ const _fade = o => {
 	// Set the display value if it isn't set. This won't be used for fade-out, which always ends up with a display of "none".
 	if (!displayValue && o.func != 'FadeOut') displayValue = 'initial';
 
-	let func;
-	let objs = _getSels(o, sel);
+	let func, objs;
+	if (!sel) {
+		// Use the target selector if there is no selector specified.
+		if (typeof o.secSelObj === 'object') objs = [ o.secSelObj ];
+	} else {
+		objs = _getSels(o, sel);
+	}
 	if (!objs) return false;	// invalid target.
 	objs.forEach(function (obj) {
-		func = _fadeGetFunc(obj, o.func, toOpacity);
-		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone);
+		func = _fadeGetFunc(obj, o.func, toOpacity, o);
+		if (func) _fadeDo(obj, duration, func, toOpacity, displayValue, noDisplayNone, waitDisplayNone, o);
 	});
 };
 
-const _fadeGetFunc = (el, funcIn, toOpacity) => {
+const _fadeGetFunc = (el, funcIn, toOpacity, o) => {
 	let funcOut = funcIn;
 	let existingOpac;
 	let computedStylesEl = window.getComputedStyle(el);
@@ -9849,13 +9861,15 @@ const _fadeGetFunc = (el, funcIn, toOpacity) => {
 		if (existingOpac > toOpacity) {
 			funcOut = 'FadeOut';
 		} else if (existingOpac == toOpacity) {
+			// Restart the sync queue if await was used.
+			_syncRestart(o, o._subEvCo);
 			return;
 		}
 	}
 	return funcOut;
 };
 
-const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone) => {
+const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDisplayNone, o) => {
 	// If this function starts getting overly complicated then split out FadeOut functionality and put into a separate function.
 	// It doesn't need that level of engineering currently though as it's still maintainable and keeps the general animation all together in one place.
 	var last = +new Date();
@@ -9900,6 +9914,8 @@ const _fadeDo = (el, duration, func, toOpac, displayValue, noDisplayNone, waitDi
 				el.style.opacity = toOpac;
 			}
 			delete el._acssMidFade;
+			// Restart the sync queue if await was used.
+			_syncRestart(o, o._subEvCo);
 		}
 	};
 

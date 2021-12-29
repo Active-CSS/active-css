@@ -1,6 +1,9 @@
 function checkAjaxPreGetA(o, pars) {
 	let checkAjaxPreGetEl = _initTest('checkAjaxPreGet');
-	if (!checkAjaxPreGetEl) return;
+	if (!checkAjaxPreGetEl) {
+		_fail(null, 'Failed to find checkAjaxPreGet element to perform test.');
+		return;
+	}
 
 	if (o.ajaxObj.res.checkAjaxPreGetTitle != 'Rod' || o.ajaxObj.res.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
 		_fail(checkAjaxPreGetEl, 'Ajax-pre-get command not getting the values from the file in o.res.');
@@ -20,7 +23,10 @@ function checkAjaxPreGetA(o, pars) {
 
 function checkAjaxPreGetFinal(o, pars) {
 	let checkAjaxPreGetEl = _initTest('checkAjaxPreGet');
-	if (!checkAjaxPreGetEl) return;
+	if (!checkAjaxPreGetEl) {
+		_fail(null, 'Failed to find checkAjaxPreGet element to perform test.');
+		return;
+	}
 
 	if (o.vars.checkAjaxPreGetTitle != 'Rod' || o.vars.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
 		_fail(checkAjaxPreGetEl, 'Variables are not getting set as scoped variables after the ajax command and they should be.');
