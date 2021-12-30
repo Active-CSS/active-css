@@ -1560,7 +1560,7 @@ _a.TakeClass = o => {
 	let theClass = aVRes.action.substr(1);
 
 	_eachRemoveClass(theClass, theClass, o.doc, aVRes.scope);
-	_a.AddClass(o);
+	_a.AddClass({ secSelObj: o.secSelObj, actVal: theClass });
 };
 
 _a.ToggleClass = o => {
@@ -3643,23 +3643,23 @@ const _prepSelector = (sel, obj, doc) => {
 		// Handle any "&" in the selector.
 		// Eg. "& div" becomes "[data-activeid=25] div".
 		if (sel.substr(0, 1) == '&') {
-			switch (sel) {
-				case 'window':
-					sel = window;
-					break;
-				case 'body':
-					sel = doc.body;
-					break;
-				case ':root':
-				case ':host':
-					break;
-				default:
+//			switch (sel) {
+//				case 'window':
+//					sel = window;
+//					break;
+//				case 'body':
+//					sel = doc.body;
+//					break;
+//				case ':root':
+//				case ':host':
+//					break;
+//				default:
 					// Substitute the active ID into the selector.
 					attrActiveID = _getActiveID(obj);
 					// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
 					obj.setAttribute('data-activeid', attrActiveID);
 					sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
-			}
+//			}
 		}
 	}
 	if (sel.indexOf('<') === -1) {
@@ -3701,7 +3701,8 @@ const _prepSelector = (sel, obj, doc) => {
 		}
 		if (thisEl) objArr.add(thisEl);
 	});
-	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
+//	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
+	if (attrActiveID) obj.removeAttribute('data-activeid');
 	return objArr;
 };
 
@@ -10917,6 +10918,155 @@ const _getSel = (o, sel, many=false) => {
 	} else {
 		return false;
 	}
+};
+
+//const _getSel = (o, sel, many=false) => {
+//	let res = _getSelector(o, sel, many);
+//	return res.obj || false;
+//};
+
+const _getSelector = (o, sel, many=false) => {
+	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
+	let item = false;
+
+	// In order not to break websites when CSS gets enhanced, it's necessary to take full responsibility for the special ACSS selectors and deal with
+	// them internally so that native behaviour doesn't change things later.
+
+	// Escape any &, < or ... that are in double-quotes. These will need to be individually unescaped at each iteration that uses a queryselector.
+
+	// Handle any presence of "&"
+	let attrActiveID, n, selItem, compDetails;
+	let newSel = sel;
+	if ((
+		newSel.indexOf('&') !== -1 ||
+		newSel.indexOf('self') !== -1 ||
+		newSel.indexOf('me') !== -1 ||
+		newSel.indexOf('this') !== -1
+		) && typeof o.secSelObj === 'object') {
+		attrActiveID = _getActiveID(o.secSelObj);
+		// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
+		o.secSelObj.setAttribute('data-activeid', attrActiveID);
+		newSel = newSel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+		newSel = newSel.replace(/self/g, '[data-activeid=' + attrActiveID + ']');
+		newSel = newSel.replace(/me/g, '[data-activeid=' + attrActiveID + ']');
+		newSel = newSel.replace(/this/g, '[data-activeid=' + attrActiveID + ']');
+	}
+
+//console.log('_getSelector, newSel:', newSel, );
+
+	// The string selector should now be fully iterable if we split by " -> " and "<".
+	let selSplit = newSel.split(/ \-> |</);
+	let newDoc = o.compDoc || o.doc || document;
+	let mainObj = o.obj;
+	let selSplitLen = selSplit.length;
+	let selectWithClosest = false;
+	let justFoundIframe = false;
+	let singleResult = false;
+	let multiResult = false;
+	for (n = 0; n < selSplitLen; n++) {
+		selItem = selSplit[n];
+		if (justFoundIframe !== false && selItem == ' -> ') {
+			// We are drilling into an iframe next.
+			newDoc = justFoundIframe;
+		} else {
+			justFoundIframe = false;
+		}
+		singleResult = false;
+		multiResult = false;
+		switch (selItem) {
+			case ' -> ':
+				break;
+
+			case '<':
+				selectWithClosest = true;
+				break;
+
+			case 'document':	// Special ACSS selector
+				newDoc = document;
+				mainObj = newDoc;
+				break;
+
+			case 'shadow':		// Special ACSS selector
+				if (mainObj) newDoc = mainObj.shadowRoot;
+				mainObj = newDoc;
+				break;
+
+			case 'parent':		// Special ACSS selector
+				// Get object root details.
+				compDetails = _getComponentDetails(o.compDoc);
+				if (!newDoc.isSameNode(compDetails.topEvDoc)) {
+					newDoc = compDetails.topEvDoc;
+				} else if (window.parent.document) {
+					newDoc = window.parent.document;
+				}
+				mainObj = newDoc;
+				break;
+
+			case 'host':		// Special ACSS selector
+				compDetails = _getComponentDetails(o.compDoc);
+				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
+					// The host is already being used as the target selector with these events.
+				} else {
+					let rootNode = _getRootNode(o.mainObj);
+					mainObj = (rootNode._acssScoped) ? rootNode : rootNode.host;
+				}
+				break;
+
+			default:
+				if (selectWithClosest) {
+					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
+					mainObj = mainObj.parentElement;
+					if (!mainObj) break;
+					mainObj = mainObj.closest(selItem);
+					singleResult = true;
+				} else {
+
+//console.log('_getSelector, newDoc:', newDoc, 'selItem:', selItem, 'sel:', sel, 'o:', o);
+					try {
+						mainObj = newDoc.querySelectorAll(selItem);
+					} catch(err) {
+						return { obj: undefined, newDoc };
+					}
+					multiResult = true;
+				}
+				if (justFoundIframe === false) {
+					if (mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
+						justFoundIframe = relatedObj.contentWindow.document;
+						break;
+					}
+				}
+				justFoundIframe = false;
+		}
+		// Reset closest flag so it only happens the once.
+		selectWithClosest = false;
+	}
+
+	let res = { doc: newDoc }, done;
+	if (many) {
+		if (singleResult) {
+			res.obj = [ mainObj ];
+			done = true;
+		}
+	} else {
+		if (multiResult) {
+			res.obj = mainObj[0];
+			done = true;
+		}
+	}
+	if (!done) res.obj = mainObj;
+
+//	try {
+//		let obj = (many) ? targArr[0].querySelectorAll(targArr[1]) : targArr[0].querySelector(targArr[1]);
+//		item = obj;
+//	} catch(err) {
+//		// It didn't work - there's special ACSS selectors in there.
+//	}
+
+	if (attrActiveID) o.secSelObj.removeAttribute('data-activeid');
+
+//console.log('_getSelector, res:', res);
+
+	return res;
 };
 
 const _getSels = (o, sel) => {

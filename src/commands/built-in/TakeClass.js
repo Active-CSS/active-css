@@ -5,5 +5,5 @@ _a.TakeClass = o => {
 	let theClass = aVRes.action.substr(1);
 
 	_eachRemoveClass(theClass, theClass, o.doc, aVRes.scope);
-	_a.AddClass(o);
+	_a.AddClass({ secSelObj: o.secSelObj, actVal: theClass });
 };
