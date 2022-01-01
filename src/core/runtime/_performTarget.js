@@ -1,5 +1,5 @@
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
@@ -31,6 +31,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			func: tmpSecondaryFunc,
 			actName: targName,
 			secSel: passTargSel,
+			secSelEls: secSelEls,
 			origSecSel: targetSelector,
 			actVal: actionValue,
 			origActVal: actionValue,

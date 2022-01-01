@@ -2544,10 +2544,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	o.isTimed = o.actVal.match(TIMEDREGEX);
 	runButElNotThere = o.elNotThere || runButElNotThere;
 
-	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) {
-//		_nextFunc(o);
-		return;
-	}
+	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
 
 	// Check and set up sync commands.
 	_syncCheckAndSet(o, syncQueueSet);
@@ -3238,7 +3235,7 @@ const _performAction = (o, runButElNotThere=false) => {
 };
 
 const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
-	let { _imStCo } = o;
+	let { _imStCo, secSelEls } = o;
 
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
@@ -3274,23 +3271,25 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (o.secSel == '#') {
 			_err(o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
+		let els = secSelEls;
 
-		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		let elsTotal = els.length;
 		let co = 0;
 
 		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
-		els.forEach((obj) => {
-			// Loop over each target selector object and handle all the action commands for each one.
-			co++;
-			checkThere = true;
-			let oCopy = _clone(o);
-			oCopy._elsTotal = elsTotal;
-			oCopy._elsCo = co;
+		if (els !== false) {
+			els.forEach((obj) => {
+				// Loop over each target selector object and handle all the action commands for each one.
+				co++;
+				checkThere = true;
+				let oCopy = _clone(o);
+				oCopy._elsTotal = elsTotal;
+				oCopy._elsCo = co;
 
-			_actionValLoop(oCopy, pars, obj);
-		});
+				_actionValLoop(oCopy, pars, obj);
+			});
+		}
 
 		if (!checkThere) {
 			if (o.ranAction === true) {
@@ -3371,7 +3370,7 @@ const _performSecSel = (loopObj) => {
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
-	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
+	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _getSelector and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
 		varScope = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {
@@ -3405,7 +3404,7 @@ const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inherite
 };
 
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
@@ -3437,6 +3436,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			func: tmpSecondaryFunc,
 			actName: targName,
 			secSel: passTargSel,
+			secSelEls: secSelEls,
 			origSecSel: targetSelector,
 			actVal: actionValue,
 			origActVal: actionValue,
@@ -3511,6 +3511,219 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	if (inheritedScope && !compDoc.isConnected) {
 		compDoc = inheritedScope;
 	}
+
+	// At this point we should have everything we need to run the event selector as the target selector.
+	// However, if this is not the event selector, we need to process each target selector separately.
+	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
+	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
+	// We perform the selector parsing from the doc/compDoc location of the event selector.
+
+	// First, establish if the target is the event selector. If so, there is no target selector to parse and we keep handling for it separate for speed.
+	if (meMap.includes(flowTargetSelector)) {
+		// It's not enough that we send an object, as we may need to cancel delay and we need to be able to store this info.
+		// It won't work unless we can identify it later and have it selectable as a string.
+		if (primSel.indexOf('~') !== -1) {
+			flowTargetSelector = primSel;
+		} else if (typeof obj == 'string') {	// passed in as a string - skip it, this is already a string selector.
+			if (obj == 'window') {
+				flowTargetSelector = window;
+			} else if (obj == 'body') {
+				flowTargetSelector = document.body;
+			} else {
+				flowTargetSelector = obj;
+			}
+		} else {
+			activeTrackObj = _getActiveID(obj);
+			if (activeTrackObj) {
+				flowTargetSelector = idMap[activeTrackObj];
+			} else {
+				// It might not be an element, so a data-activeid wasn't assigned.
+				flowTargetSelector = obj;
+			}
+		}
+
+		// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
+		doc = compDoc;
+
+		let outerTargetObj = {
+			targ: secSels[secSelCounter][targetSelector],
+			targetSelector,
+			secSelEls: [ flowTargetSelector ],
+			obj,
+			compDoc,
+			evType,
+			varScope,
+			evScope,
+			evObj,
+			otherObj,
+			origO,
+			passCond,
+			component,
+			primSel,
+			eve,
+			inheritedScope,
+			_maEvCo,
+			_subEvCo,
+			_imStCo,
+			_taEvCo: targetEventCounter,
+			loopRef,
+			runButElNotThere,
+			passTargSel: flowTargetSelector,
+			activeTrackObj,
+			flowTargetSelector,
+			doc,
+			chilsObj,
+			origLoopObj,
+		};
+
+		_performTarget(outerTargetObj, 0);
+		_resetExitTarget(_imStCo);
+
+	} else {
+
+		// Handle variables that need to be evaluated before grabbing the targets.
+		flowTargetSelector = _sortOutTargSelectorVars(flowTargetSelector, obj, varScope, otherObj);
+
+		let res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+		if (!res.obj) return;
+		doc = res.doc;
+
+		passTargSel = flowTargetSelector;
+
+		let outerTargetObj = {
+			targ: secSels[secSelCounter][targetSelector],
+			targetSelector,
+			secSelEls: res.obj,
+			obj,
+			compDoc,
+			evType,
+			varScope,
+			evScope,
+			evObj,
+			otherObj,
+			origO,
+			passCond,
+			component,
+			primSel,
+			eve,
+			inheritedScope,
+			_maEvCo,
+			_subEvCo,
+			_imStCo,
+			_taEvCo: targetEventCounter,
+			loopRef,
+			runButElNotThere,
+			passTargSel,
+			activeTrackObj,
+			flowTargetSelector,
+			chilsObj,
+			doc,
+			origLoopObj,
+		};
+
+		if (!parallelFlow && typeof passTargSel == 'string' && !['~', '|'].includes(passTargSel.substr(0, 1))) {
+			// This is used for the default "vertical" event flow. (The other option is "parallel" and is setup in _performActionDo().)
+			let els = res.obj;
+			let elsTotal = els.length;
+			let co = 0, secSelObj;
+
+			// Default target selector event flow. Parallel event flow is handled in _performActionDo().
+			// Loop this action command over each of the target selectors before going onto the next action command.
+			els.forEach(secSelObj => {
+				// Loop over each target selector object and handle all the action commands for each one.
+				co++;
+				outerTargetObj.passTargSel = secSelObj;
+				outerTargetObj._elsTotal = elsTotal;
+				outerTargetObj._elsCo = co;
+
+				_performTarget(outerTargetObj, 0);
+				_resetExitTarget(_imStCo);
+			});
+
+		} else {
+			_performTarget(outerTargetObj, 0);
+			_resetExitTarget(_imStCo);
+		}
+	}
+
+	outerTargCounter++;
+	if (secSels[secSelCounter][outerTargCounter]) {
+		_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter);
+	}
+};
+
+
+const _sortOutTargSelectorVars = (passTargSel, obj, varScope, otherObj) => {
+	// passTargSel is the string of the target selector that now goes through some changes.
+	passTargSel = ActiveCSS._sortOutFlowEscapeChars(passTargSel);
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
+		{
+			str: passTargSel,
+			obj,
+			varScope
+		}
+	);
+	strObj = _handleVars([ 'strings', 'scoped' ],
+		{
+			obj: null,
+			str: strObj.str,
+			varScope
+		},
+		strObj.ref
+	);
+	strObj = _handleVars([ 'attrs' ],
+		{
+			str: strObj.str,
+			obj: otherObj,
+			varScope
+		},
+		strObj.ref
+	);
+	return _resolveVars(strObj.str, strObj.ref);
+};
+
+
+/*
+const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
+	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
+
+	let targetSelector, targs, doc, passTargSel, meMap = [ '&', 'self', 'this' ], activeTrackObj = '', n;
+
+	if (!secSels[secSelCounter]) return;
+	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
+
+	// Loop target selectors in sequence.
+	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
+		return;
+	}
+	if (targetSelector == 'conds') return;	// skip the conditions.
+
+	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
+	if (resultOfLoopCheck.atIf) {
+		return;
+	}
+
+	let flowTargetSelector = targetSelector, parallelFlow;
+	if (flowTargetSelector.endsWith(' parallel')) {
+		parallelFlow = true;
+		flowTargetSelector = flowTargetSelector.slice(0, -9).trim();
+	}
+
+	// Does the compDoc still exist? If not, if there is different scoped event root use that. Needed for privateEvents inheritance after component removal.
+	if (inheritedScope && !compDoc.isConnected) {
+		compDoc = inheritedScope;
+	}
+
+	// At this point we should have everything we need to run the event selector as the target selector.
+	// However, if this is not the event selector, we need to process each target selector separately.
+	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
+	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
+	// We perform the selector parsing from the doc/compDoc location of the event selector.
+
+	// First, establish if the target is the event selector. If so, there is no target selector to parse.
 
 	// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
 	if (evType == 'disconnectedCallback' && meMap.includes(flowTargetSelector)) {
@@ -3614,10 +3827,15 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		els.forEach(secSelObj => {
 			// Loop over each target selector object and handle all the action commands for each one.
 			co++;
-			let cloneOuterTargetObj = outerTargetObj;
-			cloneOuterTargetObj.passTargSel = secSelObj;
-			cloneOuterTargetObj._elsTotal = elsTotal;
-			cloneOuterTargetObj._elsCo = co;
+//			let cloneOuterTargetObj = outerTargetObj;
+//			cloneOuterTargetObj.passTargSel = secSelObj;
+//			cloneOuterTargetObj._elsTotal = elsTotal;
+//			cloneOuterTargetObj._elsCo = co;
+
+//			let cloneOuterTargetObj = outerTargetObj;
+			outerTargetObj.passTargSel = secSelObj;
+			outerTargetObj._elsTotal = elsTotal;
+			outerTargetObj._elsCo = co;
 
 			_performTarget(outerTargetObj, 0);
 			_resetExitTarget(_imStCo);
@@ -3633,78 +3851,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter);
 	}
 };
-
-const _prepSelector = (sel, obj, doc) => {
-	// This is currently only being used for target selectors, as action command use of "&" needs more nailing down before implementing - see roadmap.
-	// Returns a collection of unique objects for iterating as target selectors.
-	let attrActiveID, origSel = sel;
-
-	if (sel.indexOf('&') !== -1) {
-		// Handle any "&" in the selector.
-		// Eg. "& div" becomes "[data-activeid=25] div".
-		if (sel.substr(0, 1) == '&') {
-//			switch (sel) {
-//				case 'window':
-//					sel = window;
-//					break;
-//				case 'body':
-//					sel = doc.body;
-//					break;
-//				case ':root':
-//				case ':host':
-//					break;
-//				default:
-					// Substitute the active ID into the selector.
-					attrActiveID = _getActiveID(obj);
-					// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
-					obj.setAttribute('data-activeid', attrActiveID);
-					sel = sel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
-//			}
-		}
-	}
-	if (sel.indexOf('<') === -1) {
-		let res;
-		if (origSel == 'window') {
-			return [ window ];
-		} else if (origSel == 'body') {
-			return [ doc.body ];
-		} else if (origSel == ':root') {
-			return [ document ];
-		} else if (origSel == ':host') {
-			return [ doc ];
-		} else {
-			res = doc.querySelectorAll(sel);
-		}
-		if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
-		return res;
-	}
-	// Handle "<" selection by iterating in stages. There could be multiple instances of "<".
-	let stages = sel.split('<');
-	// Get first item of the array, remove it, then get selector before the "<".
-	let thisEls = doc.querySelectorAll(stages.shift());
-	// thisEls can contain more than one element. In which case we need to run the rest of the closest algorithm on each obj and return the collection.
-	// The returned collection will only contain a unique set of objects, so objects will not appear twice in the collection.
-	// Means we can do stuff like this:
-	// strong < p to get all unique p tags that contain any number of strong tags.
-	// It should be noted in the docs that this may have a performance impact if there are a lot of items before the first "<".
-	// It is pretty fast though.
-	let nextSel, objArr = new Set(), thisEl, parentEl;
-	thisEls.forEach((obj) => {
-		thisEl = obj;
-		for (nextSel of stages) {
-			// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
-			thisEl = thisEl.parentElement;
-			if (!thisEl) break;
-			thisEl = thisEl.closest(nextSel);
-			if (!thisEl) break;
-			// If it gets this far and there is another "<", it will take the next closest nextSel up the tree and continue looping.
-		}
-		if (thisEl) objArr.add(thisEl);
-	});
-//	if (attrActiveID) obj.removeAttribute('data-activeid', attrActiveID);
-	if (attrActiveID) obj.removeAttribute('data-activeid');
-	return objArr;
-};
+*/
 
 const _recursiveScopeCleanUp = nod => {
 	let ID;
@@ -4449,87 +4596,6 @@ const _sortOutDynamicIframes = str => {
 	str = _replaceIframeEsc(str);
 
 	return { str, iframes };
-};
-
-const _splitIframeEls = (sel, o) => {
-	let relatedObj = o.obj;
-	let compDoc = o.compDoc;
-	let targSel, iframeID;
-	let root = (relatedObj && typeof relatedObj == 'object') ? _getRootNode(relatedObj) : null;
-
-	let doc = document, hostIsShadow = false, hostIsScoped = false, splitSel = false;
-	if (root && !root.isSameNode(document)) {
-		// This was called from within a shadow or scoped component object. The doc defaults to the shadowRoot or the scoped host.
-		doc = root;
-		if (supportsShadow && root instanceof ShadowRoot) {
-			hostIsShadow = true;
-		} else {
-			hostIsScoped = true;
-		}
-	}
-	if (sel.indexOf(' -> ') !== -1) {
-		// Handle any doc reference first.
-		splitSel = true;
-		let ref;
-		let refSplit = sel.split(' -> ');
-		let co = 0;
-		for (ref of refSplit) {
-			co++;
-			if (co == refSplit.length) break;	// Break before we get to the last one.
-			if (ref == 'document') {
-				doc = document;
-			} else if (ref == 'shadow') {
-				doc = relatedObj.shadowRoot;
-			} else if (ref == 'parent') {
-				if (hostIsShadow) {
-					root = _getRootNode(root.host);
-					doc = shadowRoot;
-				} else if (!hostIsScoped) {
-					// The parent is the host is the root in a scoped component, and doc is already set to the root.
-				} else if (window.parent.document) {
-					// Reference to an iframe host.
-					doc = window.parent.document;
-				} else {
-					_err('Reference to a parent element that doesn\'t exist.', o);
-				}
-			} else {
-				relatedObj = doc.querySelector(ref);
-				if (relatedObj.tagName == 'IFRAME') {
-					doc = relatedObj.contentWindow.document;
-					iframeID = ref;
-				} else if (!relatedObj) {
-					_err('Reference ' + ref + ' is unknown', o);
-					return false;
-				}
-			}
-		}
-		targSel = refSplit[refSplit.length - 1];
-	} else {
-		targSel = sel;
-	}
-	if (targSel == 'host') {
-		if (!hostIsScoped) {
-			root = _getRootNode(root.host);
-			doc = root;
-		} else {
-			doc = _getRootNode(root);
-		}
-	} else if (compDoc && !splitSel) {
-		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
-		doc = compDoc;
-		if (doc && doc.nodeType !== Node.DOCUMENT_NODE) {
-			let compDetails = _getComponentDetails(doc);
-			doc = compDetails.topEvDoc;
-			if (compDetails.inheritEvDoc) {
-				let checkPrimSel = (o.primSel && o.primSel.startsWith('~') && o.origO && o.origO.primSel) ? o.origO.primSel : o.primSel;
-				if (!o.component || !checkPrimSel || checkPrimSel.indexOf('|' + o.component + ':') === -1) {
-					doc = compDetails.inheritEvDoc;
-				}
-			}
-
-		}
-	}
-	return [doc, targSel, iframeID];
 };
 
 const _trigHashState = (e) => {
@@ -7918,26 +7984,32 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 				getProperty = true;
 				wot = wot.substr(1);
 			}
-			let wotArr = wot.split('.'), ret, err = [];
+			let wotArr = wot.split('.'), ret;
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex, func);
 				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
+				let res;
 				if (colon !== -1) {
 					// This should be an id followed by an attribute, or innerText, or it's a shadow DOM host attribute.
 					let elRef = wot.substr(0, colon), el;
 					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
 					if (elRef == 'host') {
-						let oEvIsCompOpen = (o && compOpenArr.indexOf(o.event) !== -1);
+						let oEvIsCompOpen = (o && (compOpenArr.indexOf(o.event) !== -1 || o.origO && compOpenArr.indexOf(o.origO.event) !== -1));
 						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
+							// o.origO handles coming from a trigger event from these component opening events.
 							el = obj;
+						} else if (o && o.compDoc && o.compDoc.nodeType == Node.ELEMENT_NODE) {
+							el = o.compDoc;
 						} else if (!o || !oEvIsCompOpen) {
-							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
-							el = obj.shadowRoot;
+							if (obj.shadowRoot) {
+								el = obj.shadowRoot;
+							} else {
+								return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
+							}
 						}
 					} else {
 						el = _getSel(o, elRef);
@@ -7948,25 +8020,32 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 						// We can't rely on the src of the iframe element being accurate, as it is not always updated.
 						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef), func);
 					} else {
-						ret = _getAttrOrProp(el, wat, getProperty, null, func);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
+						res = checkAttrProp(el, wat, getProperty, func);
+						if (res !== false) return res;
 					}
 				} else {
-					if (obj && typeof obj !== 'string') {
-						if (secSelObj) {
-							ret = _getAttrOrProp(secSelObj, wot, getProperty, null, func);
-							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						}
-						ret = _getAttrOrProp(obj, wot, getProperty, null, func);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
+					res = checkAttrProp(secSelObj, wot, getProperty, func, varReplacementRef);
+					if (res !== false) return res;
+					res = checkAttrProp(obj, wot, getProperty, func, varReplacementRef);
+					if (res !== false) return res;
+					// Check if there is an origO object from a trigger to check the calling target selector or event selector elements.
+					if (o && o.origO) {
+						res = checkAttrProp(o.origO.secSelObj, wot, getProperty, func, varReplacementRef);
+						if (res !== false) return res;
+						res = checkAttrProp(o.origO.obj, wot, getProperty, func, varReplacementRef);
+						if (res !== false) return res;
 					}
 				}
 			}
-			if (err) err.push(obj);
 			return '';	// More useful to return an empty string. '{@' + wot + '>';
 		});
+	}
+	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
+		if (el && el.nodeType == Node.ELEMENT_NODE) {
+			let ret = _getAttrOrProp(el, wot, getProperty, null, func);
+			if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
+		}
+		return false;
 	}
 	return sel;
 };
@@ -8580,8 +8659,6 @@ const _restoreStorage = () => {
 const _setCSSVariable = o => {
 	if (o.origSecSel == ':root') {
 		o.secSelObj.documentElement.style.setProperty(o.func, o.actVal);
-	} else if (o.origSecSel == ':host') {
-		o.secSelObj.host.style.setProperty(o.func, o.actVal);
 	} else {
 		o.secSelObj.style.setProperty(o.func, o.actVal);
 	}
@@ -10740,12 +10817,12 @@ const _getFieldValType = obj => {
 
 const _getFocusedOfNodes = (sel, o, startingFrom='') => {
 	// Find the current focused node in the list, if there is one.
-	let targArr, nodes, obj, i = -1, useI = -1, checkNode;
-	targArr = _splitIframeEls(sel, o);
-	if (!targArr) return false;	// invalid target.
-	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : (targArr[0].activeElement) ? targArr[0].activeElement : (targArr[0].ownerDocument) ? targArr[0].ownerDocument.activeElement : false;
+	let res, nodes, obj, i = -1, useI = -1, checkNode;
+	res = _getSelector(o, sel, true);
+	if (!res) return false;	// invalid target.
+	checkNode = (startingFrom !== '') ? _getSel(o, startingFrom) : (res.doc.activeElement) ? res.doc.activeElement : (res.doc.ownerDocument) ? res.doc.ownerDocument.activeElement : false;
 	if (!checkNode) return -1;
-	nodes = targArr[0].querySelectorAll(targArr[1]) || null;
+	nodes = res.obj || null;
 	for (obj of nodes) {
 		i++;
 		if (obj.isSameNode(checkNode)) {
@@ -10873,59 +10950,33 @@ const _getScopedRoot = (obj) => {
 	return (obj.parentNode) ? obj.parentNode.closest('[data-active-scoped]') : null;		// Should return null if no closest scoped component found.
 };
 
-//const _getSel = (o, sel, priorToGrabAll, many=false) => {
 const _getSel = (o, sel, many=false) => {
-	let item = false;
-
-// This switch statement needs to be put into the _splitIframeEls loop.
-// Get the '<' and '&' selectors in there too, which is currently in _prepSelector.
-
-// Consider the potential for double-evaluation if you consider variable substitution as part of this evolution.
-
-	switch (sel) {
-		case 'me':
-		case 'self':
-		case 'this':
-			item = o.secSelObj;
-			if (item && many) item = [ item ];
-			break;
-		case 'host':
-			if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
-				// The host is already being used as the target selector with these events.
-				item = o.secSelObj;
-			} else {
-				let rootNode = _getRootNode(o.secSelObj);
-				item = (rootNode._acssScoped) ? rootNode : rootNode.host;
-			}
-			if (item && many) item = [ item ];
-			break;
-		default:
-			// Set priorToGrabAll to return true to handle result sets in the calling function.
-			// See _a.Remove for an example of handling a result set - it depends on the context, so the action is done in there.
-			// If this happens a lot, use a callback function and pass in arguments - it's not worth the complexity this brings right now though.
-			// Grab the element or the first in the group specified.
-			let targArr = _splitIframeEls(sel, o);
-			if (!targArr) return false;	// invalid target.
-			try {
-				let obj = (many) ? targArr[0].querySelectorAll(targArr[1]) : targArr[0].querySelector(targArr[1]);
-				item = obj;
-			} catch(err) {
-				// no need to do anything more.
-			}
-	}
-	if (item) {
-		return item;
-	} else {
-		return false;
-	}
+	let res = _getSelector(o, sel, many);
+	return res.obj || false;
 };
 
-//const _getSel = (o, sel, many=false) => {
-//	let res = _getSelector(o, sel, many);
-//	return res.obj || false;
-//};
-
 const _getSelector = (o, sel, many=false) => {
+	let newDoc;
+	if (o.compDoc) {
+		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
+		newDoc = o.compDoc;
+		if (newDoc && newDoc.nodeType !== Node.DOCUMENT_NODE) {
+			let compDetails = _getComponentDetails(newDoc);
+			newDoc = compDetails.topEvDoc;
+			if (compDetails.inheritEvDoc) {
+				let checkPrimSel = (o.primSel && o.primSel.startsWith('~') && o.origO && o.origO.primSel) ? o.origO.primSel : o.primSel;
+				if (!o.component || !checkPrimSel || checkPrimSel.indexOf('|' + o.component + ':') === -1) {
+					newDoc = compDetails.inheritEvDoc;
+				}
+			}
+		}
+	} else {
+		newDoc = o.doc || document;
+	}
+	if (sel.startsWith('~')) {
+		return { doc: newDoc, obj: sel };
+	}
+
 	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
 	let item = false;
 
@@ -10934,61 +10985,84 @@ const _getSelector = (o, sel, many=false) => {
 
 	// Escape any &, < or ... that are in double-quotes. These will need to be individually unescaped at each iteration that uses a queryselector.
 
-	// Handle any presence of "&"
-	let attrActiveID, n, selItem, compDetails;
+
+// Escaping still needs doing
+
 	let newSel = sel;
+	let attrActiveID, n, selItem, compDetails, elToUse;
+	let obj = o.secSelObj || o.obj;
+
+	let thisObj = false;
 	if ((
-		newSel.indexOf('&') !== -1 ||
-		newSel.indexOf('self') !== -1 ||
-		newSel.indexOf('me') !== -1 ||
-		newSel.indexOf('this') !== -1
-		) && typeof o.secSelObj === 'object') {
-		attrActiveID = _getActiveID(o.secSelObj);
-		// Add the data-activeid attribute so we can search with it. We're going to remove it after. This keeps things simple and quicker than manual traversal.
-		o.secSelObj.setAttribute('data-activeid', attrActiveID);
-		newSel = newSel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
-		newSel = newSel.replace(/self/g, '[data-activeid=' + attrActiveID + ']');
-		newSel = newSel.replace(/me/g, '[data-activeid=' + attrActiveID + ']');
-		newSel = newSel.replace(/this/g, '[data-activeid=' + attrActiveID + ']');
+			newSel.indexOf('&') !== -1 ||
+			/\bself\b/.test(newSel) ||
+			/\bme\b/.test(newSel) ||
+			/\bthis\b/.test(newSel)
+			) && (typeof obj === 'object')
+		) {
+		elToUse = obj;
+		attrActiveID = _getActiveID(elToUse);
+
+		// Add the data-activeid attribute so we can search with it. We're going to remove it after. It keeps it all quicker than manual DOM traversal.
+		elToUse.setAttribute('data-activeid', attrActiveID);
+		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
+		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, '[data-activeid=' + attrActiveID + ']');
+		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, '[data-activeid=' + attrActiveID + ']');
+		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, '[data-activeid=' + attrActiveID + ']');
+		thisObj = true;
 	}
 
-//console.log('_getSelector, newSel:', newSel, );
-
 	// The string selector should now be fully iterable if we split by " -> " and "<".
-	let selSplit = newSel.split(/ \-> |</);
-	let newDoc = o.compDoc || o.doc || document;
-	let mainObj = o.obj;
+	let selSplit = newSel.split(/( \-> |<)/);
+	if (selSplit.length == 1 && thisObj) {
+		return { doc: newDoc, obj: (many ? [ obj ] : obj) };
+	}
+	let mainObj = obj;
+
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
 	let justFoundIframe = false;
 	let singleResult = false;
 	let multiResult = false;
+	let justSetIframeAsDoc = false;
 	for (n = 0; n < selSplitLen; n++) {
 		selItem = selSplit[n];
+
 		if (justFoundIframe !== false && selItem == ' -> ') {
 			// We are drilling into an iframe next.
 			newDoc = justFoundIframe;
+			justFoundIframe = false;
+			justSetIframeAsDoc = true;
+			continue;
 		} else {
 			justFoundIframe = false;
 		}
 		singleResult = false;
 		multiResult = false;
 		switch (selItem) {
-			case ' -> ':
+			case 'window':
+				mainObj = window;
+				newDoc = document;
+				singleResult = true;
 				break;
 
-			case '<':
-				selectWithClosest = true;
+			case 'body':
+				mainObj = (justSetIframeAsDoc) ? newDoc.body : document.body;
+				newDoc = (justSetIframeAsDoc) ? newDoc : document;
+				singleResult = true;
 				break;
 
 			case 'document':	// Special ACSS selector
-				newDoc = document;
+			case ':root':	// Special ACSS selector
+				newDoc = (justSetIframeAsDoc) ? newDoc : document;
 				mainObj = newDoc;
+				singleResult = true;
 				break;
 
 			case 'shadow':		// Special ACSS selector
 				if (mainObj) newDoc = mainObj.shadowRoot;
 				mainObj = newDoc;
+				singleResult = true;
 				break;
 
 			case 'parent':		// Special ACSS selector
@@ -11000,45 +11074,63 @@ const _getSelector = (o, sel, many=false) => {
 					newDoc = window.parent.document;
 				}
 				mainObj = newDoc;
+				singleResult = true;
 				break;
 
 			case 'host':		// Special ACSS selector
+			case ':host':
 				compDetails = _getComponentDetails(o.compDoc);
 				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
 					// The host is already being used as the target selector with these events.
 				} else {
-					let rootNode = _getRootNode(o.mainObj);
+					let rootNode = _getRootNode(mainObj.length == 1 ? mainObj[0] : mainObj);
 					mainObj = (rootNode._acssScoped) ? rootNode : rootNode.host;
 				}
+				singleResult = true;
 				break;
+
+			case ' -> ':
+				break;
+
+			case '<':
+				selectWithClosest = true;
+				continue;
 
 			default:
 				if (selectWithClosest) {
 					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
-					mainObj = mainObj.parentElement;
+					mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
 					if (!mainObj) break;
 					mainObj = mainObj.closest(selItem);
 					singleResult = true;
 				} else {
-
-//console.log('_getSelector, newDoc:', newDoc, 'selItem:', selItem, 'sel:', sel, 'o:', o);
 					try {
 						mainObj = newDoc.querySelectorAll(selItem);
+						if (!mainObj) {
+							if (newDoc.nodeType !== Node.DOCUMENT_NODE) {
+								if (newDoc.matches(selItem)) {
+									mainObj = newDoc;
+								}
+							}
+						}
+							
 					} catch(err) {
+						if (attrActiveID) elToUse.removeAttribute('data-activeid');
 						return { obj: undefined, newDoc };
 					}
 					multiResult = true;
 				}
 				if (justFoundIframe === false) {
 					if (mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
-						justFoundIframe = relatedObj.contentWindow.document;
-						break;
+						justFoundIframe = mainObj[0].contentWindow.document;
+						continue;
 					}
 				}
 				justFoundIframe = false;
 		}
 		// Reset closest flag so it only happens the once.
 		selectWithClosest = false;
+		justSetIframeAsDoc = false;
 	}
 
 	let res = { doc: newDoc }, done;
@@ -11055,23 +11147,12 @@ const _getSelector = (o, sel, many=false) => {
 	}
 	if (!done) res.obj = mainObj;
 
-//	try {
-//		let obj = (many) ? targArr[0].querySelectorAll(targArr[1]) : targArr[0].querySelector(targArr[1]);
-//		item = obj;
-//	} catch(err) {
-//		// It didn't work - there's special ACSS selectors in there.
-//	}
-
-	if (attrActiveID) o.secSelObj.removeAttribute('data-activeid');
-
-//console.log('_getSelector, res:', res);
+	if (attrActiveID) elToUse.removeAttribute('data-activeid');
 
 	return res;
 };
 
-const _getSels = (o, sel) => {
-	return _getSel(o, sel, true);	// true = many objects
-};
+const _getSels = (o, sel) => _getSel(o, sel, true);	// true = many objects
 
 const _getTempActiveID = obj => {
 	// This is used before a component is drawn for real. It is needed as the output starts off in string form, and when added to the page the attribute is removed
