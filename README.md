@@ -19,7 +19,11 @@ Here's a taster:
 }
 ```
 
-[This looks amazing - take me to the website](https://activecss.org/)
+No pre-processing. Runs in real-time.
+All DOM events are supported, plus CSS up to level 4 (if browser supported).
+Works on chromium browsers (Chrome, Edge, Opera, etc.) and Firefox. (ES6+)
+
+[This looks amazing, if basic - take me to the website - I'm curious!](https://activecss.org/)
 
 ## Installation
 
