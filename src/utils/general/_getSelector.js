@@ -27,11 +27,15 @@ const _getSelector = (o, sel, many=false) => {
 	// them internally so that native behaviour doesn't change things later.
 
 	// Escape any &, < or ... that are in double-quotes. These will need to be individually unescaped at each iteration that uses a queryselector.
+	let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
+		innards = innards.replace(/&/g, '_acss*a t*')
+			.replace(/</g, '_acss*s*l s')
+			.replace(/me/g, '_acss*s*m e')
+			.replace(/this/g, '_acss*s*t h')
+			.replace(/self/g, '_acss*s*s e');
+		return innards;
+	});
 
-
-// Escaping still needs doing
-
-	let newSel = sel;
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
 
@@ -48,10 +52,11 @@ const _getSelector = (o, sel, many=false) => {
 
 		// Add the data-activeid attribute so we can search with it. We're going to remove it after. It keeps it all quicker than manual DOM traversal.
 		elToUse.setAttribute('data-activeid', attrActiveID);
-		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, '[data-activeid=' + attrActiveID + ']');
-		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, '[data-activeid=' + attrActiveID + ']');
-		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, '[data-activeid=' + attrActiveID + ']');
-		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, '[data-activeid=' + attrActiveID + ']');
+		let repStr = '[data-activeid=' + attrActiveID + ']';
+		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, repStr);
+		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, repStr);
+		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, repStr);
+		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
 		thisObj = true;
 	}
 
@@ -69,7 +74,7 @@ const _getSelector = (o, sel, many=false) => {
 	let multiResult = false;
 	let justSetIframeAsDoc = false;
 	for (n = 0; n < selSplitLen; n++) {
-		selItem = selSplit[n];
+		selItem = unescForSel(selSplit[n]);
 
 		if (justFoundIframe !== false && selItem == ' -> ') {
 			// We are drilling into an iframe next.
@@ -142,7 +147,7 @@ const _getSelector = (o, sel, many=false) => {
 			default:
 				if (selectWithClosest) {
 					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
-					mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
+					if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
 					if (!mainObj) break;
 					mainObj = mainObj.closest(selItem);
 					singleResult = true;
@@ -164,7 +169,7 @@ const _getSelector = (o, sel, many=false) => {
 					multiResult = true;
 				}
 				if (justFoundIframe === false) {
-					if (mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
+					if (mainObj && mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
 						justFoundIframe = mainObj[0].contentWindow.document;
 						continue;
 					}
@@ -191,6 +196,18 @@ const _getSelector = (o, sel, many=false) => {
 	if (!done) res.obj = mainObj;
 
 	if (attrActiveID) elToUse.removeAttribute('data-activeid');
+
+	function unescForSel(sel) {
+		let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
+			innards = innards.replace(/_acss\*a t\*/g, '&')
+				.replace(/_acss\*s\*l s/g, '<')
+				.replace(/_acss\*s\*m e/g, 'me')
+				.replace(/_acss\*s\*t h/g, 'this')
+				.replace(/_acss\*s\*s e/g, 'self');
+			return innards;
+		});
+		return newSel;
+	}
 
 	return res;
 };
