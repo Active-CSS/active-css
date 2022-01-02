@@ -16,7 +16,7 @@ If you are looking for the core script to download, check out the [dist](https:/
 The production (live) version will look like this:<br>
 activecss-2-9-0.min.js
 
-The development (offline) version (which supports the upcoming DevTools extention) will look like this:<br>
+The development (offline) version will look like this:<br>
 activecss-dev-2-9-0.min.js
 
 There are also npm versions - links on the website.
