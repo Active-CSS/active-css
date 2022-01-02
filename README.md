@@ -5,7 +5,19 @@
 
 # [Active CSS](https://activecss.org/)
 
-Power-up your CSS with actions! It's a little bit epic.
+Boldly go where no CSS author has gone before...
+
+So you think CSS is just for styling, huh? You're one of those people, huh? We'll see.
+
+Here's a taster:
+
+```
+#clickMe:click {
+    body {
+        add-class: .hello;
+    }
+}
+```
 
 ## Installation
 
@@ -28,16 +40,6 @@ You can find comprehensive documentation [on the website](https://activecss.org)
 ## Examples
 
 There are loads of examples [on the concept examples page](https://activecss.org/manual/examples.html).
-
-Here's a taster:
-
-```
-#clickMe:click {
-    body {
-        add-class: .hello;
-    }
-}
-```
 
 Want to see it work? Go to [the website](https://activecss.org).
 
