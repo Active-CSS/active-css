@@ -29,6 +29,7 @@ const _getSelector = (o, sel, many=false) => {
 	// Escape any &, < or ... that are in double-quotes. These will need to be individually unescaped at each iteration that uses a queryselector.
 	let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
 		innards = innards.replace(/&/g, '_acss*a t*')
+			.replace(/\-\>/g, '_acss*s*i n')
 			.replace(/</g, '_acss*s*l s')
 			.replace(/me/g, '_acss*s*m e')
 			.replace(/this/g, '_acss*s*t h')
@@ -73,6 +74,7 @@ const _getSelector = (o, sel, many=false) => {
 	let singleResult = false;
 	let multiResult = false;
 	let justSetIframeAsDoc = false;
+
 	for (n = 0; n < selSplitLen; n++) {
 		selItem = unescForSel(selSplit[n]);
 
@@ -200,6 +202,7 @@ const _getSelector = (o, sel, many=false) => {
 	function unescForSel(sel) {
 		let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
 			innards = innards.replace(/_acss\*a t\*/g, '&')
+				.replace(/_acss\*s\*i n/g, '->')
 				.replace(/_acss\*s\*l s/g, '<')
 				.replace(/_acss\*s\*m e/g, 'me')
 				.replace(/_acss\*s\*t h/g, 'this')
