@@ -7,7 +7,7 @@
 
 Boldly go where no CSS author has gone before...
 
-So you think CSS is just for styling, huh? You're one of those people, huh? We'll see.
+So you think CSS is just for styling, huh? You're one of those people, huh? We'll see. You have literally no idea what you've just stumbled onto.
 
 Here's a taster:
 
