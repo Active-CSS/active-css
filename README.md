@@ -17,7 +17,7 @@ Here's a taster:
 }
 ```
 
-No pre-processing. Runs in real-time in the browser.<br>
+Ultra-fast. No pre-processing. No virtual DOM. Runs in real-time in the browser.<br>
 All DOM events are supported, plus CSS commands up to level 4 (if browser supported).<br>
 Works on chromium browsers (Chrome, Edge, Opera, etc.) and Firefox. (ES6+)
 
