@@ -19,8 +19,8 @@ Here's a taster:
 }
 ```
 
-No pre-processing. Runs in real-time.
-All DOM events are supported, plus CSS up to level 4 (if browser supported).
+No pre-processing. Runs in real-time.<br>
+All DOM events are supported, plus CSS up to level 4 (if browser supported).<br>
 Works on chromium browsers (Chrome, Edge, Opera, etc.) and Firefox. (ES6+)
 
 [This looks amazing, if basic - take me to the website - I'm curious!](https://activecss.org/)
