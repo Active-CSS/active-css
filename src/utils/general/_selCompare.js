@@ -2,7 +2,7 @@ const _selCompare = (o, opt) => {
 	// Takes two parameters. First a selector, and secondly something else to compare.
 	let actVal = o.actVal._ACSSSpaceQuoIn();
 	let spl, compareVal;
-	if (opt == 'eM') {
+	if (opt == 'eM' || opt == 'eMT') {
 		// There can be only one (parameter).
 		if (!actVal) return true;	// No point going further - this could be a variable substitution that equates to empty.
 		if (actVal && actVal == '__object') return false;	// No point going further - this is not empty - it is an array or a variable object.
@@ -10,11 +10,14 @@ const _selCompare = (o, opt) => {
 	} else {
 		// There are two parameters with this conditional.
 		spl = actVal.split(' ');
+		// If there isn't two parameters and it's allowed for the built-in conditional, add a "self" as the default.
+		if (spl.length == 1 && _condDefSelf(o.actName)) spl.unshift('self');
 		compareVal = spl.pop()._ACSSSpaceQuoOut()._ACSSRepQuo();
 		spl = spl.join(' ');
 	} 
 	let el;
 	el = _getSel(o, spl);
+
 	let widthHeightEl = false;
 	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
@@ -58,6 +61,7 @@ const _selCompare = (o, opt) => {
 	}
 	switch (opt) {
 		case 'eM':
+		case 'eMT':
 		case 'maL':
 		case 'miL':
 			// _c.IfEmpty, _c.IfMaxLength, _c.IfMinLength
@@ -70,7 +74,8 @@ const _selCompare = (o, opt) => {
 			}
 			switch (opt) {
 				case 'eM':
-					return (!firstVal || firstVal === '');
+				case 'eMT':
+					return (!firstVal || (opt == 'eMT') ? firstVal.trim() === '' : firstVal === '');
 				case 'maL':
 					return (firstVal.length <= compareVal);
 				case 'miL':
@@ -83,5 +88,11 @@ const _selCompare = (o, opt) => {
 		case 'iH':
 			// _cIfInnerHTML
 			return (el && compareVal == el.innerHTML);
+		case 'iV':
+			// _cIfValue
+			return (el && compareVal == el.value);
+		case 'iC':
+			// _cIfChecked
+			return (el && el.checked);
 	}
 };

@@ -4,7 +4,7 @@ const _performSecSel = (loopObj) => {
 	let loopRef = (!loopObj.loopRef) ? 0 : loopObj.loopRef;
 
 	// In a scoped area, the variable area is always the component variable area itself so that variables used in the component are always available despite
-	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _splitIframeEls and shouldn't be.
+	// where the target selector lives. So the variable scope is never the target scope. This is why this is not in _getSelector and shouldn't be.
 	if (supportsShadow && compDoc instanceof ShadowRoot) {
 		varScope = '_' + compDoc.host._acssActiveID.replace(/id\-/, '');
 	} else if (!compDoc.isSameNode(document) && compDoc.hasAttribute('data-active-scoped')) {

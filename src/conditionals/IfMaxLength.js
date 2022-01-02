@@ -1,1 +1,1 @@
-_c.IfMaxLength = o => { return (_selCompare(o, 'maL')); };
+_c.IfMaxLength = o => _selCompare(o, 'maL');

@@ -17,7 +17,7 @@ const _readSiteMap = (o) => {
 	parsedConfig = {};
 
 	// Create any CSS style tags that have been extracted out from the loaded ACSS config. This handles both loaded and embedded config.
-	cssExtractAddTags();
+	_cssExtractAddTags();
 
 	// Set up events. We can only do this after the config is fully loaded, as there could be multiple events of the same type and we need to know if they are
 	// passive or not (if they use prevent-default or not).
@@ -31,6 +31,11 @@ const _readSiteMap = (o) => {
 	}
 	// Clean up. If we run load-config, we'll run this function again and only attempt to add the new events loaded.
 	preSetupEvents = [];
+
+	// Set up a separate change event for triggering an observe event on the native input event and for otherwise undetectable property changes.
+	// Apologies in advance if this looks like a hack. If anyone has any better ideas to cover these scenarios, let me know.
+	window.addEventListener('input', _handleObserveEvents);
+	window.addEventListener('click', () => { setTimeout(_handleObserveEvents, 0); });
 
 	if (!setupEnded) {
 		_startMainListen();

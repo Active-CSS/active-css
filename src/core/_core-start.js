@@ -7,7 +7,7 @@
 	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
 	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
-	If you find your compile step is taking forever and annoying you, get a faster server. Mine is an £60 Optiplex 780 from 2006 and it's fast enough.
+	If you find your compile step is taking forever and annoying you, get a faster server. Mine is a cheap Optiplex 780 from 2006 and it's fast enough.
 */
 
 (function (global, document) {
@@ -17,6 +17,9 @@
 			'AjaxFormPreview',
 			'AjaxFormSubmit',
 			'AjaxPreGet',
+			'FadeIn',
+			'FadeOut',
+			'FadeTo',
 			'LoadAsAjax',
 			'LoadConfig',
 			'LoadScript',
@@ -34,6 +37,26 @@
 			')', 'g'),
 		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
+		CONDDEFSELF = [
+			'if-empty',
+			'if-checked',
+			'if-completely-visible',
+			'if-display',
+			'if-empty',
+			'if-empty-trimmed',
+			'if-exists',
+			'if-form-changed',
+			'if-inner-html',
+			'if-inner-text',
+			'if-max-height',
+			'if-max-length',
+			'if-max-width',
+			'if-min-height',
+			'if-min-length',
+			'if-min-width',
+			'if-value',
+			'if-visible'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -60,7 +83,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /(after|every) (stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
+		TIMEDREGEX = /(after|every) (0|stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -135,6 +158,7 @@
 		devtoolsInit = [],
 		doesPassive = false,
 		elementObserver,
+		elObserveTrack = [],
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
@@ -163,6 +187,8 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
+		observeEventsQueue = {},
+		observeEventsMid = {},
 		pageList = [],
 		pageWildcards = [],
 		pageWildReg = [],
@@ -189,6 +215,7 @@
 		setupEnded = false,
 		shadowSels = [],
 		shadowDoms = {},
+		shadowObservers = {},
 		strictCompPrivEvs = [],
 		strictPrivVarScopes = [],
 		subEventCounter = -1,

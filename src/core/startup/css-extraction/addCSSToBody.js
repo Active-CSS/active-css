@@ -1,4 +1,4 @@
-const addCSSToBody = (css, tagRef, toBody) => {
+const _addCSSToBody = (css, tagRef, toBody) => {
 	// Adds to a body based on the ref, otherwise adds to the existing style tag.
 	let tagIfThere = document.querySelector('style[data-from-acss="' + tagRef + '"]');		// Note: tagRef is a predictable string - so this is fine.
 	if (tagIfThere) {

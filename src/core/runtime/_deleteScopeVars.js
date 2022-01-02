@@ -14,6 +14,8 @@ const _deleteScopeVars = varScope => {
 	delete privVarScopes[varScope];
 	delete strictCompPrivEvs[varScope];
 	delete strictPrivVarScopes[varScope];
+	if (shadowObservers[varScope]) shadowObservers[varScope].disconnect();
+	delete shadowObservers[varScope];
 	for (i in varMap) {
 		if (i.startsWith(scopePref)) {
 			delete varMap[i];

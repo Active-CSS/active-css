@@ -7,10 +7,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	o.isTimed = o.actVal.match(TIMEDREGEX);
 	runButElNotThere = o.elNotThere || runButElNotThere;
 
-	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) {
-//		_nextFunc(o);
-		return;
-	}
+	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
 
 	// Check and set up sync commands.
 	_syncCheckAndSet(o, syncQueueSet);

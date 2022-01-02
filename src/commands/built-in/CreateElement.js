@@ -25,14 +25,14 @@ _a.CreateElement = o => {
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
-		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}"' };
+		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}" after stack' };
 
 		// Don't add it if it's already there.
 		if (!addedThisBefore || typeof config[tag].draw[0][0][0] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'][0] === 'undefined' ||
 				config[tag].draw[0][0][0]['&'][0].name != 'render' ||
-				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}"'
+				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}" after stack'
 			) {
 			// Put the draw event render command at the beginning of any draw event that might already be there for this element.
 			config[tag].draw[0][0].unshift(secSel);
@@ -81,10 +81,14 @@ _a.CreateElement = o => {
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
 				'let compDetails = _componentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
+				// Handle shadow DOM observe event. Ie. Tell the inner DOM elements that something has changed outside. We only do this when there has
+				// been a change with the host attributes so we keep the isolation aspect of each shadow DOM. This way, the inner component can set
+				// an observe event on the host, which is outside of the actual shadow DOM.
+				'if (this.shadowRoot) _handleObserveEvents(null, this.shadowRoot);' +
 			'}';
 	}
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails', '"use strict";' + createTagJS)(_handleEvents, _componentDetails);	// jshint ignore:line
+	Function('_handleEvents, _componentDetails, _handleObserveEvents', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents);	// jshint ignore:line
 };

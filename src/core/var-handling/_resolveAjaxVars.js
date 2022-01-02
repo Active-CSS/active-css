@@ -24,6 +24,7 @@ const _resolveAjaxVars = o => {
 const _resolveAjaxVarsDecl = (res, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
+	_set(scopedProxy, compScope + '.JSON', res);
 	for (v in res) {
 		_set(scopedProxy, compScope + '.' + v, res[v]);
 	}

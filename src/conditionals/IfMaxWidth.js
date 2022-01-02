@@ -1,1 +1,1 @@
-_c.IfMaxWidth = o => { return (_selCompare(o, 'maW')); };
+_c.IfMaxWidth = o => _selCompare(o, 'maW');

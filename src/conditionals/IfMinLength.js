@@ -1,1 +1,1 @@
-_c.IfMinLength = o => { return (_selCompare(o, 'miL')); };
+_c.IfMinLength = o => _selCompare(o, 'miL');

@@ -22,6 +22,8 @@ const _removeVarPlaceholders = obj => {
 			if (varMap[thisVar] === undefined) varMap[thisVar] = [];
 			if (thisNode.nextSibling.data == '/active-var') {
 				// There is no content there. Insert an empty text node now. A variable was probably empty when first drawn.
+				let checkVar = _getScopedVar('scopedProxy.' + thisVar);
+				if (checkVar.val === undefined) _set(scopedProxy, thisVar, '');	// set it if it isn't already - we need this for undefined reactive variables to update.
 				nodesToRemove.push(thisNode.nextSibling);	// Mark for removal.
 				insertedNode = thisNode.parentNode.insertBefore(document.createTextNode(''), thisNode.nextSibling);
 				varMap[thisVar].push(insertedNode);

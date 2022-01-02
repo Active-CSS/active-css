@@ -1,22 +1,40 @@
 _a.ConsoleLog = o => {
-	let wot;
-	if (o.actVal == 'target') {
-		wot = o;
-	} else if (o.actVal == 'variables') {
-		wot = scopedOrig;
-	} else if (o.actVal == 'conditionals') {
-		wot = conditionals;
-	} else if (o.actVal == 'config') {
-		wot = config;
-	} else if (o.actVal == 'components') {
-		wot = components;
-	} else if (o.actVal == 'trace') {
-		console.trace();
-		return;
-	} else {
-		wot = o.actVal._ACSSRepQuo();
-		console.log(wot);
-		return;
+	let typeDesc = o.actVal._ACSSCapitalize() + ':';
+	switch (o.actVal) {
+		case 'target':
+			console.log(typeDesc, o);
+			return;
+		case 'variables':
+			console.log(typeDesc, scopedOrig);
+			return;
+		case 'conditionals':
+			console.log(typeDesc, conditionals);
+			return;
+		case 'config':
+			console.log(typeDesc, config);
+			return;
+		case 'components':
+			console.log(typeDesc, components);
+			return;
+		case 'trace':
+			console.trace();
+			return;
 	}
-	console.log(o.actVal._ACSSCapitalize() + ':', wot);
+	// If it gets this far, send comma-delimited results to console.log().
+	// Do necessary escaping before splitting by comma.
+
+//console.log('_a.ConsoleLog, o.actVal:', o.actVal);
+
+	let escapedCommas = _escCommaBrack(o.actVal, o);
+
+//console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
+
+	console.log(escapedCommas);
+
+//	let wot = o.actVal._ACSSRepQuo();
+//	// Split by comma.
+//	let args = o.actVal.split(/\s*,\s*/);
+//	// Iterate array and replace with real values for the content.
+//	// Send result array to console.log.
+//	console.log.apply(console, args);
 };

@@ -13,26 +13,32 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 				getProperty = true;
 				wot = wot.substr(1);
 			}
-			let wotArr = wot.split('.'), ret, err = [];
+			let wotArr = wot.split('.'), ret;
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex, func);
 				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-				err.push('Neither attribute or property ' + wotArr[1] + ' found in target or primary selector:');
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
+				let res;
 				if (colon !== -1) {
 					// This should be an id followed by an attribute, or innerText, or it's a shadow DOM host attribute.
 					let elRef = wot.substr(0, colon), el;
 					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
 					if (elRef == 'host') {
-						let oEvIsCompOpen = (o && compOpenArr.indexOf(o.event) !== -1);
+						let oEvIsCompOpen = (o && (compOpenArr.indexOf(o.event) !== -1 || o.origO && compOpenArr.indexOf(o.origO.event) !== -1));
 						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
+							// o.origO handles coming from a trigger event from these component opening events.
 							el = obj;
+						} else if (o && o.compDoc && o.compDoc.nodeType == Node.ELEMENT_NODE) {
+							el = o.compDoc;
 						} else if (!o || !oEvIsCompOpen) {
-							if (!obj.shadowRoot) return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
-							el = obj.shadowRoot;
+							if (obj.shadowRoot) {
+								el = obj.shadowRoot;
+							} else {
+								return '{@' + wot + '}';	// Need to leave this alone. We can't handle this yet. This can be handled in scopedProxy.
+							}
 						}
 					} else {
 						el = _getSel(o, elRef);
@@ -43,25 +49,32 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 						// We can't rely on the src of the iframe element being accurate, as it is not always updated.
 						return _preReplaceVar(_escapeItem(el.contentWindow.location.href, varReplacementRef), func);
 					} else {
-						ret = _getAttrOrProp(el, wat, getProperty, null, func);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						err.push('Neither attribute or property ' + wat + ' found in target or primary selector:');
+						res = checkAttrProp(el, wat, getProperty, func);
+						if (res !== false) return res;
 					}
 				} else {
-					if (obj && typeof obj !== 'string') {
-						if (secSelObj) {
-							ret = _getAttrOrProp(secSelObj, wot, getProperty, null, func);
-							if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						}
-						ret = _getAttrOrProp(obj, wot, getProperty, null, func);
-						if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
-						err.push('Attribute not property ' + wot + ' found in target or primary selector:');
+					res = checkAttrProp(secSelObj, wot, getProperty, func, varReplacementRef);
+					if (res !== false) return res;
+					res = checkAttrProp(obj, wot, getProperty, func, varReplacementRef);
+					if (res !== false) return res;
+					// Check if there is an origO object from a trigger to check the calling target selector or event selector elements.
+					if (o && o.origO) {
+						res = checkAttrProp(o.origO.secSelObj, wot, getProperty, func, varReplacementRef);
+						if (res !== false) return res;
+						res = checkAttrProp(o.origO.obj, wot, getProperty, func, varReplacementRef);
+						if (res !== false) return res;
 					}
 				}
 			}
-			if (err) err.push(obj);
 			return '';	// More useful to return an empty string. '{@' + wot + '>';
 		});
+	}
+	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
+		if (el && el.nodeType == Node.ELEMENT_NODE) {
+			let ret = _getAttrOrProp(el, wot, getProperty, null, func);
+			if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
+		}
+		return false;
 	}
 	return sel;
 };

@@ -5,20 +5,26 @@ const _handleEvents = evObj => {
 	let topVarScope = evObj.varScope;
 	let component = (evObj.component) ? '|' + evObj.component : null;
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
-	if (typeof obj !== 'string' && !obj || !selectors[evType] || evType === undefined) return false;	// No selectors set for this event.
+	if (evType === undefined) return false;
+	if (typeof obj !== 'string') {
+		if (!obj) return false;
+		if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
+	}
+	if (!selectors[evType]) return;		// No selectors set for this event.
 
 	let selectorList = [];
 	// Handle all selectors.
 	let selectorListLen = selectors[evType].length;
-	let i, testSel, debugNot = '', compSelCheckPos;
-	if (evType == 'draw') obj._acssDrawn = true;	// Draw can manually be run twice, but not by the core as this is checked elsewhere.
+	let i, testSel, debugNot = '', compSelCheckPos, useForObserveID;
 
 	// These variables change during the event flow, as selectors found to run need to run in the appropriate component context.
 	let componentRefs = { compDoc, topVarScope, evScope, component, strictPrivateEvs: strictCompPrivEvs[evScope], privateEvs: compPrivEvs[evScope] };
 	let initialComponentRefs = componentRefs;
 
 	let runGlobalScopeEvents = true;
-	if (component && !(typeof obj !== 'string' && evType == 'draw' && customTags.indexOf(obj.tagName) !== -1)) {
+	useForObserveID = (typeof obj === 'string') ? obj.substr(1) : _getActiveID(obj);
+
+	if (component && !(typeof obj !== 'string' && (evType == 'draw' || evType == 'observe') && customTags.indexOf(obj.tagName) !== -1)) {
 		// Split for speed. It could be split into document/shadow areas to make even faster, at the times of adding config.
 		// Don't bother optimizing by trying to remember the selectors per event the first time so they can be reused later on. Been down that route already.
 		// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
@@ -45,22 +51,7 @@ const _handleEvents = evObj => {
 				testSel = primSel.substr(compSelCheckPos + 1);
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-				if (afterEv && origObj) {
-					testSel = ActiveCSS._sortOutFlowEscapeChars(testSel);
-					let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-						{
-							str: testSel,
-							obj: origObj
-						}
-					);
-					strObj = _handleVars([ 'strings', 'scoped' ],
-						{
-							str: strObj.str,
-						},
-						strObj.ref
-					);
-					testSel = _resolveVars(strObj.str, strObj.ref);
-				}
+				if (afterEv && origObj) testSel = _replaceEventVars(testSel, origObj);
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
 						selectorList.push({ primSel, componentRefs });
@@ -69,6 +60,9 @@ const _handleEvents = evObj => {
 						    try {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
+						    	} else {
+									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
+									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}
 						    } catch(err) {
 						        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
@@ -97,31 +91,18 @@ const _handleEvents = evObj => {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
-			if (afterEv && origObj) {
-				testSel = ActiveCSS._sortOutFlowEscapeChars(primSel);
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs' ],
-					{
-						str: testSel,
-						obj: origObj
-					}
-				);
-				strObj = _handleVars([ 'strings', 'scoped' ],
-					{
-						str: strObj.str,
-					},
-					strObj.ref
-				);
-				testSel = _resolveVars(strObj.str, strObj.ref);
-			} else {
-				testSel = primSel;
-			}
+			testSel = (afterEv && origObj) ? _replaceEventVars(primSel, origObj) : primSel;
 
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
 				    try {
 						if (obj.matches(testSel)) {
 							selectorList.push({ primSel, componentRefs });
-				    	}
+				    	} else {
+							_setUpForObserve(useForObserveID, 'i' + primSel, 0);
+							elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
+						}
+
 				    } catch(err) {
 				        _warn(testSel + ' is not a valid CSS selector, skipping. (err: ' + err + ')');
 					}
@@ -140,6 +121,7 @@ const _handleEvents = evObj => {
 	}
 
 	let sel;
+	if (!useForObserveID) useForObserveID = obj;
 
 	selectorListLen = selectorList.length;
 	let actionName, ifrSplit, ifrObj, conds = [], cond, condSplit, passCond;
@@ -168,10 +150,19 @@ const _handleEvents = evObj => {
 					eve,
 					compDoc
 				};
-				if (clause != '0' && _passesConditional(condObj)) {
-					// This condition passed. Remember it for the next bit.
-					clauseArr[clauseCo] = clause;
+				let condRes = true;
+				if (clause != '0') condRes = _passesConditional(condObj);
+
+				if (evType == 'observe') {
+					// Handle observed elements that have ACSS conditionals.
+					// Dont run custom selectors that don't have ACSS conditionals as these will just run all the time.
+					if (clause == '0' && typeof obj === 'string' && primSel.substr(0, 1) == '~') {
+						_err('Cannot run an observe event on a custom selector that has no conditional: ' + primSel + ':observe');
+					}
+					_setUpForObserve(useForObserveID, 'i' + primSel, clause);
+					if (!condRes) elObserveTrack[useForObserveID]['i' + primSel][clause].ran = false;
 				}
+				if (condRes) clauseArr[clauseCo] = clause;	// This condition passed. Remember it for the next bit.
 			}
 		}
 	}
@@ -185,6 +176,7 @@ const _handleEvents = evObj => {
 			let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
 			component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
 			if (config[primSel] && config[primSel][evType]) {
+				let useForObservePrim = 'i' + primSel;
 				for (clause in config[primSel][evType]) {
 					clauseCo++;
 					passCond = '';
@@ -192,6 +184,11 @@ const _handleEvents = evObj => {
 						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
 						// This conditional passed earlier - we can run it.
 						passCond = clauseArr[clauseCo];
+					}
+					if (evType == 'observe') {
+						if (elObserveTrack[useForObserveID][useForObservePrim][clause].ran === true) continue;	// already been run.
+						elObserveTrack[useForObserveID][useForObservePrim][clause].ran = true;
+						// This will subsequently get changed to false if the same condition on the same element fails.
 					}
 
 					// Now that we know what event to run, run the event. This is a specific event declaration under a certain circumstance,

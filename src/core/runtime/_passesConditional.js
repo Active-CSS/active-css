@@ -3,7 +3,7 @@ const _passesConditional = (condObj) => {
 	// This takes up any conditional requirements set. Checks for "conditional" as the secondary selector.
 	// Note: Scoped shadow conditionals look like "|(component name)|(conditional name)", as opposed to just (conditional name).
 
-	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, res, aV;
+	let firstChar, chilsObj, key, obj, func, excl, i, checkExcl, exclLen, eType, eActual, exclArr, exclTargs, exclDoc, iframeID, aV;
 	// Loop conditions attached for this check. Split conditions by spaces not in parentheses.
 
 	clause = clause.replace(/(\(.*?\)|\{.*?\})/g, function(_) {
@@ -13,13 +13,21 @@ const _passesConditional = (condObj) => {
 	let cond, conds = clause.split(/ (?![^\(\[]*[\]\)])/), rules, exclusions, nonIframeArr = [];
 
 	let elC = (evType == 'clickoutside' && ajaxObj) ? ajaxObj : el;	// use click target if clickoutside.
-	let actionBoolState = false;
+	let actionBoolState = true;
 
 	for (cond of conds) {
 		cond = cond.replace(/_ACSSspace/g, ' ').replace(/__ACSSDBQuote/g, '"');
-		
 
 		let parenthesisPos = cond.indexOf('(');
+		if (parenthesisPos === -1) {
+			// Is this a built-in conditional? If so, check it has self as a default. If so, run it with self.
+			// We can just check the CONDDEFSELF array to ascertain this.
+			if (_condDefSelf(cond)) {
+				// It can have defaults, set up parenthesisPos for later.
+				parenthesisPos = cond.length;
+				cond = cond + '(self)';
+			}
+		}
 		if (parenthesisPos !== -1) {
 			// This is a direct reference to a command. See if it is there.
 			let commandName = cond.substr(0, parenthesisPos);

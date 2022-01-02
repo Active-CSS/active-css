@@ -38,9 +38,8 @@ const _focusOn = (o, wot, justObj=false) => {
 			}
 		} else {
 			// This will only ever run once, as moveNum will always be one.
-			let targArr = _splitIframeEls(val, o);
-			if (!targArr) return false;	// invalid target.
-			nodes = targArr[0].querySelectorAll(targArr[1]) || null;
+			nodes = _getSels(o, val);
+			if (!nodes) return false;	// invalid target.
 		}
 	}
 	switch (wot) {

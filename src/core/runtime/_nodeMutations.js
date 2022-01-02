@@ -1,6 +1,9 @@
 // This has been set up to only run when Active CSS setup has fully loaded and completed.
-ActiveCSS._nodeMutations = function(mutations) {
+ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideShadowDOM=false) {
+	_handleObserveEvents(mutations, dom);
+
 	mutations.forEach(mutation => {
+		// Handle any observe events on the node itself.
 		if (mutation.type == 'childList') {
 			if (mutation.addedNodes) {
 				if (DEVCORE) {
@@ -9,7 +12,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
 							_regenConfig(nod, 'addDevTools');
-						} else {
+						} else if (!insideShadowDOM) {		// cannot have ACSS style tags inside shadow DOM elements currently.
 							nod.querySelectorAll('style[type="text/acss"]').forEach(function (obj, index) {
 								if (!nod._acssActiveID && !_isInlineLoaded(nod)) _regenConfig(obj, 'addDevTools');
 							});
@@ -17,7 +20,7 @@ ActiveCSS._nodeMutations = function(mutations) {
 					});
 				}
 			}
-		} else if (mutation.type == 'characterData') {
+		} else if (mutation.type == 'characterData' && !insideShadowDOM) {
 			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
 			let el = mutation.target;
@@ -75,6 +78,5 @@ ActiveCSS._nodeMutations = function(mutations) {
 				}, 0);
 			});
 		}
-
 	});
 };

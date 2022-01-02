@@ -1,6 +1,6 @@
 {
 	"name": "activecss",
-	"version": "2.8.0",
+	"version": "2.9.0",
 	"description": "Modern framework features integrated into CSS.",
 	"main": "index.js",
 	"repository": "https://github.com/Active-CSS/active-css",
@@ -11,7 +11,7 @@
 		"babel-core": "^6.26.3",
 		"babel-loader": "^8.2.2",
 		"babel-preset-env": "^1.7.0",
-		"grunt": "^1.3.0",
+		"grunt": "^1.4.0",
 		"grunt-babel": "^7.0.0",
 		"grunt-contrib-concat": "^1.0.1",
 		"grunt-contrib-jshint": "^2.1.0",

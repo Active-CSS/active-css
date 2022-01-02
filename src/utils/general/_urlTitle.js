@@ -67,7 +67,7 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
 				attrs = window.history.state.attrs || '';
 			} else {
-				[...o.secSelObj.attributes].forEach((attr) => {
+				[...o.secSelObj.attributes].forEach(attr => {
 					if (attr.name == 'id') return;	// mustn't set these, otherwise the url could change again in the SPA trigger event.
 					attrs += attr.name + '="' + attr.value + '" ';
 				});

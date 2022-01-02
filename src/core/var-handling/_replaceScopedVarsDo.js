@@ -4,7 +4,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if (wot.startsWith('$')) return '{' + wot + '}';
+			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 			let realWot;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -30,10 +30,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				}
 			} else {
 				let scoped = _getScopedVar(wot, varScope);
-
-				// Return the wot if it's a window variable.
-				if (scoped.winVar === true) return _preReplaceVar(wot, varReplacementRef, func);
 				res = scoped.val;
+
 				// Return an empty string if undefined.
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;

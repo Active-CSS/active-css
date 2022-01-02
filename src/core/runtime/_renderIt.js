@@ -54,6 +54,11 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	container.innerHTML = content;
 
+	// Get the number of child elements and nodes. Remember that rendering doesn't have to include child elements.
+	// This is used for core scope options later on in _renderCompDomsDo.
+	let numTopElementsInRender = container.childElementCount;
+	let numTopNodesInRender = container.childNodes.length;
+
 	let cid;
 	// Make a list of all immediate children via a reference to their Active IDs. After rendering we then iterate the list and run the draw event.
 	// We do this to make sure we only run the draw events on the new items.
@@ -163,5 +168,5 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		});
 	}
 
-	_renderCompDoms(o, undefined, childTree);
+	_renderCompDoms(o, undefined, childTree, numTopNodesInRender, numTopElementsInRender);
 };

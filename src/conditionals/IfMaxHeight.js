@@ -1,1 +1,1 @@
-_c.IfMaxHeight = o => { return (_selCompare(o, 'maH')); };
+_c.IfMaxHeight = o => _selCompare(o, 'maH');

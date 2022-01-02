@@ -1,5 +1,6 @@
-const _renderCompDomsDo = (o, obj, childTree) => {
-	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow, shadPar, shadEv, strictVars;
+const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
+	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
+		shadPar, shadEv, strictVars, privVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
@@ -11,13 +12,44 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
+	privVars = components[componentName].privVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
 	// So check if it already has child nodes. If it does, then it cannot act as a host. Components must have dedicated hosts. So we will add one later.
 	// Shadow DOM components already have hosts, so this action of assigning a host if there is not one does not apply to them.
 	let scopeEl;
-	if (!isShadow && shadowParent.childNodes.length > 1) {
+
+	// Handle a spread scope - ie. multiple top-level nodes, that have been requested to be event scoped. We need a surrogate host from which to
+	// run querySelectorAll for the events.
+	// Otherwise, for non-shadow DOM components, the first element will be the host.
+	// This is a change to previous behaviour, where if there was a parent element with only one child, then that would act as the host.
+	// But that doesn't work with something like an li, a td, or sibling elements which can have multiple siblings but still need event isolation.
+	// The host should really be the first child of the component, but event query selections need to include that first child, which is where it starts to
+	// get tricky. I'm not going to enforce a container div like other frameworks, as that is a workaround and won't allow td and lis and siblings as
+	// separate components.
+	// Storing separate scope references in the parent element won't work either, as the DOM can change, and scope references could change with regards
+	// the parent.
+	// A way to do this could be:
+	// 1. Attach the scope to the first child and not the parent. This is a bit challenging in itself.
+	// 2. Don't attach a scope at all if it doesn't need one. Currently scopes are being added for all components and it isn't necessary.
+	// 2. Have "queryselectorall" and "matches" with the same selector for target selection and action command selection.
+	// This is only for everything except event selectors,that already uses matches. It might be ok.
+	// It could be done that way only for those components that need it so as not to affect performance everywhere.
+	// This selection wrapping function could be expand to allow multiple top level nodes in a component, but I don't know how much performance will be
+	// affected. It might possibly be ok, as the main event loop won't need changing.
+	// For now, this is a work in progress and the events section in the components area of the docs now has the note regarding trs and li scoped components.
+	// This would be great to get eventually resolved. Another option is to allow host parents to hold multiple inner scopes, and that possibly may be
+	// simpler to implement, or it may not.
+	if (!isShadow && (
+			privateEvents ||
+			strictlyPrivateEvents ||
+			privVars
+			) &&
+			(numTopNodesInRender > 0 && numTopElementsInRender > 1 ||	// like "<div></div><div></div>"
+			numTopNodesInRender > 1 && numTopElementsInRender > 0)		// like "kjh<div></div>"
+		) {
+		// We need the surrogate host for this, otherwise the events won't be isolated to spreading scope nature of the render.
 		scopeEl = document.createElement('acss-scope');
 		shadowParent.replaceChild(scopeEl, obj);
 		// Switch the parent to the new scoping element.
@@ -43,7 +75,7 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 
 	// Set up a private variable scope reference if it is one so we don't have to pass around this figure.
 	// Note that the scope name, the varScope, is not the same as the component name. The varScope is the reference of the unique scope.
-	privVarScopes[varScope] = components[componentName].privVars ? true: false;
+	privVarScopes[varScope] = privVars ? true: false;
 
 	// Set up map per component of higher-level variable scopes to iterate when getting or setting vars. This is for non-"strictlyPrivateVars" components.
 	// It should be only necessary to reference the fact that the current component has a sharing parent.
@@ -130,11 +162,19 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 	if (isShadow) {
 		try {
 			shadow = shadowParent.attachShadow({mode: components[componentName].mode});
+			shadowObservers[evScope] = new MutationObserver(ActiveCSS._shadowNodeMutations);
+			shadowObservers[evScope].observe(shadow, {
+				attributes: true,
+				characterData: true,
+				childList: true,
+				subtree: true
+			});
 		} catch(err) {
 			_err('Error attaching a shadow DOM object. Ensure the shadow DOM has a valid parent *tag*. The error is: ' + err, o);
 		}
 	} else {
 		shadow = shadowParent;
+		// All components need a scope, regardless of nature.
 		shadow.setAttribute('data-active-scoped', '');
 		shadow._acssScoped = true;
 	}
@@ -196,8 +236,18 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
+
+		if (isShadow) {
+			// Iterate elements in this shadow DOM component and do any observe events.
+			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
+			// event in the mutation section would otherwise not get run.
+			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
+
+			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
+			_handleObserveEvents(null, shadow, true);
+		}
 	}, 0);
 
 	if (isShadow) {
@@ -226,5 +276,9 @@ const _renderCompDomsDo = (o, obj, childTree) => {
 				_attachListener(shadow, thisEv, false, true);
 			}
 		}
+		// Set up a separate change event for triggering an observe event on the native input event and for otherwise undetectable property changes.
+		// Apologies in advance if this looks like a hack. If anyone has any better ideas to cover these scenarios, let me know.
+		shadow.addEventListener('input', _handleShadowSpecialEvents);
+		shadow.addEventListener('click', () => { setTimeout(_handleShadowSpecialEvents, 0); });
 	}
 };

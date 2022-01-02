@@ -1,5 +1,5 @@
 const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
-	let { _imStCo } = o;
+	let { _imStCo, secSelEls } = o;
 
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
@@ -35,23 +35,25 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (o.secSel == '#') {
 			_err(o.primSel + ' ' + o.event + ', ' + o.actName + ': "' + o.origSecSel + '" is being converted to "#". Attribute or variable is not present.');
 		}
+		let els = secSelEls;
 
-		let els = _prepSelector(o.secSel, o.obj, o.doc);
 		let elsTotal = els.length;
 		let co = 0;
 
 		// Parallel target selector event flow. Default event flow is handled in _performTargetOuter().
 		// Loop this action command over each of the target selectors before going onto the next action command.
-		els.forEach((obj) => {
-			// Loop over each target selector object and handle all the action commands for each one.
-			co++;
-			checkThere = true;
-			let oCopy = _clone(o);
-			oCopy._elsTotal = elsTotal;
-			oCopy._elsCo = co;
+		if (els !== false) {
+			els.forEach((obj) => {
+				// Loop over each target selector object and handle all the action commands for each one.
+				co++;
+				checkThere = true;
+				let oCopy = _clone(o);
+				oCopy._elsTotal = elsTotal;
+				oCopy._elsCo = co;
 
-			_actionValLoop(oCopy, pars, obj);
-		});
+				_actionValLoop(oCopy, pars, obj);
+			});
+		}
 
 		if (!checkThere) {
 			if (o.ranAction === true) {
