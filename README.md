@@ -47,8 +47,6 @@ There are loads of examples [on the concept examples page](https://activecss.org
 
 Want to see it work? Go to [the website](https://activecss.org).
 
-You'll notice that the syntax looks like CSS. There are lots of features in Active CSS. It is truly epic! You can even use it embedded like CSS, in a special style tag!
-
 It puts the fun back into functionality! Yeah, sorry about that.
 
 ### License
