@@ -19,7 +19,7 @@ Here's a taster:
 }
 ```
 
-No pre-processing. Runs in real-time.<br>
+No pre-processing. Runs in real-time in the browser.<br>
 All DOM events are supported, plus CSS up to level 4 (if browser supported).<br>
 Works on chromium browsers (Chrome, Edge, Opera, etc.) and Firefox. (ES6+)
 
