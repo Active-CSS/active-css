@@ -1,5 +1,7 @@
 // This has been set up to only run when Active CSS setup has fully loaded and completed.
 ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideShadowDOM=false) {
+	if (mutations[0].type == 'attributes' && mutations[0].attributeName == 'data-activeid') return;
+
 	_handleObserveEvents(mutations, dom);
 
 	mutations.forEach(mutation => {
