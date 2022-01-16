@@ -87,7 +87,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
 
-	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
+	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 	} else {

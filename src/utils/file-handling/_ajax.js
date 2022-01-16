@@ -37,6 +37,13 @@
 			mime = 'application/x-www-form-urlencoded';
 	}
 	r.setRequestHeader('Content-type', mime);
+	if (o && o.csrf) {
+		// Is there a meta tag with X-CSRF-TOKEN present?
+		let metaEl = document.querySelector('meta[name="csrf-token"]');
+		if (metaEl) {
+			r.setRequestHeader('X-CSRF-TOKEN', metaEl.getAttribute('content'));
+		}
+	}
 	r.onload = () => {
 		if (r.status != 200) {
 			// Handle application level error.

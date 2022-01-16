@@ -10,7 +10,7 @@ function checkVar(o, pars) {
 	_shouldBe(checkVarEl, 'varTestEvaluatedNumber', pars[5], 8);
 	_shouldBe(checkVarEl, 'window.varTestWinVar as a parameter', pars[6], 'hello');
 	_shouldBe(checkVarEl, 'window.varTestWinVar as a variable', window.varTestWinVar, 'hello');
-	_shouldBe(checkVarEl, 'varTestArrayAssign', pars[7], true);
+	_shouldBe(checkVarEl, 'varTestArrayAssignProp', pars[7], true);
 
 	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
 	_addSuccessClass(checkVarEl);

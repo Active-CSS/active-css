@@ -1,0 +1,23 @@
+#content:draw {
+	render-before-end: "<div id=\"quoteCheckOnSetAttributeAndSetProperty\" data-desc=\"Core - check setting attributes and properties with double quotes\" class=\"coreTest\">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>";
+}
+
+@component quoteCheckOnSetAttributeAndSetPropertyHTML {
+	&:componentOpen {
+		#quoteCheckOnSetAttributeAndSetPropertyButton {
+			trigger-real: click;
+		}
+	}
+	html {
+		<button id="quoteCheckOnSetAttributeAndSetPropertyButton" data-quoted='was "Test Stuff".''>test</button>
+		<div id="quoteCheckOnSetAttributeAndSetPropertyTarget"></div>
+	}
+}
+
+#quoteCheckOnSetAttributeAndSetPropertyButton:click {
+	#quoteCheckOnSetAttributeAndSetPropertyTarget {
+		set-attribute: data-quoted-target "{@data-quoted}";
+		set-property: value "{@data-quoted}";
+		func: quoteCheckOnSetAttributeAndSetPropertyFinal pars("{@data-quoted-target}", "{@@value}");
+	}
+}

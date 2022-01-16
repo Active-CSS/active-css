@@ -8,7 +8,7 @@
 	}
 	#checkStopEventPropagationDiv:draw {
 		trigger-real: click;
-		func: checkStopEventPropagation {checkStopEventPropagationVar} {checkStopEventPropagationAdditionalVar} after 1s;
+		func: checkStopEventPropagation pars({checkStopEventPropagationVar}, {checkStopEventPropagationAdditionalVar}) after 1s;
 	}
 	#checkStopEventPropagationDiv:click {
 		var: checkStopEventPropagationVar 1;

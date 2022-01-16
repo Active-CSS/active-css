@@ -11,12 +11,12 @@
 	func: checkFuncFalse false;
 /*	
 	Still to set up:
-	func: checkFuncArr [1, 2, "cheesey wotsit"];
-	func: checkFuncObj {dave: "hi"};
-	func: checkFuncWinVar window.globIt;
-	func: checkFuncACSSVar {myACSSVariable};
-	func: checkFuncExpr {= 7 + 10 =};
-	func: checkFuncCombined [1, 2, "cheesey wotsit"] {dave: "hi"} window.globIt {myACSSVariable} {= new Date =};*/
+	func: checkFuncArr pars([1, 2, "cheesey wotsit"]);
+	func: checkFuncObj pars({dave: "hi"});
+	func: checkFuncWinVar pars(window.globIt);
+	func: checkFuncACSSVar pars({myACSSVariable});
+	func: checkFuncExpr pars({= 7 + 10 =});
+	func: checkFuncCombined pars([1, 2, "cheesey wotsit"], {dave: "hi"}, window.globIt, {myACSSVariable}, {= new Date =});*/
 
 	func: checkFuncFinal;
 }

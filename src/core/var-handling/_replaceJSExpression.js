@@ -18,10 +18,10 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy, o', '"use strict";return (' + wot + ');')(scopedProxy, o);		// jshint ignore:line
+			res = Function('scopedProxy, o, scopedOrig', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig);		// jshint ignore:line
 		} catch (err) {
 			try {
-				res = Function('scopedProxy, o', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o);		// jshint ignore:line
+				res = Function('scopedProxy, o, scopedOrig', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');

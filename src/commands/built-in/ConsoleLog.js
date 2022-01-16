@@ -1,6 +1,7 @@
 _a.ConsoleLog = o => {
-	let typeDesc = o.actVal._ACSSCapitalize() + ':';
-	switch (o.actVal) {
+	let str = o.actValSing;
+	let typeDesc = str._ACSSCapitalize() + ':';
+	switch (str) {
 		case 'target':
 			console.log(typeDesc, o);
 			return;
@@ -20,21 +21,10 @@ _a.ConsoleLog = o => {
 			console.trace();
 			return;
 	}
-	// If it gets this far, send comma-delimited results to console.log().
-	// Do necessary escaping before splitting by comma.
 
-//console.log('_a.ConsoleLog, o.actVal:', o.actVal);
+	// If there isn't a pars clause, set one up so that the results can be evaluated before being output to the console log.
+	let parsStr = (str.indexOf('pars(') !== -1) ? str : 'pars(' + str + ')';
 
-	let escapedCommas = _escCommaBrack(o.actVal, o);
-
-//console.log('_a.ConsoleLog, escapedCommas:', escapedCommas);
-
-	console.log(escapedCommas);
-
-//	let wot = o.actVal._ACSSRepQuo();
-//	// Split by comma.
-//	let args = o.actVal.split(/\s*,\s*/);
-//	// Iterate array and replace with real values for the content.
-//	// Send result array to console.log.
-//	console.log.apply(console, args);
+	// Get the parameters and send the resultant array to the console log.
+	console.log.apply(null, _extractVarsFromPars(parsStr, o));
 };

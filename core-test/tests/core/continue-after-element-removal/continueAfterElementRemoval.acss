@@ -17,6 +17,6 @@
 	#continueAfterElementRemovalDivElDoesNotExist {
 		var: continueAfterElementVar "This shouldn't run at all";
 	}
-	func: continueAfterElementRemovalFinal "{continueAfterElementVar}";
+	func: continueAfterElementRemovalFinal {continueAfterElementVar};
 }
 
