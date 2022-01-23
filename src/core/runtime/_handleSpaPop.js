@@ -108,10 +108,14 @@ const _handleSpaPop = (e, init) => {
 
 	} else if (!urlObj.attrs) {
 		// Fallback to regular page load if underlying page is not found in @pages.
-		let url = new URL(realUrl);
-		if (url.href != realUrl) {
-			window.location.href = realUrl;
+		// If the URL was changed outside of ACSS, realUrl may not be a full URL and will cause an error, so we wrap in try/catch.
+		// No use case available to do more than this currently, so this could be enhanced later on if a use case crops up.
+		try {
+			let url = new URL(realUrl);
+			if (url.href == realUrl) return;
+		} catch(err) {
 		}
+		window.location.href = realUrl;
 	}
 
 };
