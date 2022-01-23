@@ -1,3 +1,3 @@
-const _escapeQuo = str => {
-	return str.replace(/"/g, '\\"');
+const _escapeQuo = (str, func) => {
+	return str.replace(/"/g, (func.startsWith('Render') ? '"' : '\\"'));
 };

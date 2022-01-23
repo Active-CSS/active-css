@@ -7013,8 +7013,6 @@ const _evalVarString = (str, o, noProxy=false) => {
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	// Allow the o object to get evaluated in the expression if references are there.
-	// Note that arrays and objects will be resolved as the proxy. If these are then passed into a function, in theory we maintain reactivity, but
-	// that needs testing.
 	return _replaceJSExpression(retStr, true, false, o.varScope, -1, o);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 
 };
@@ -8040,7 +8038,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
 		if (el && el.nodeType == Node.ELEMENT_NODE) {
 			let ret = _getAttrOrProp(el, wot, getProperty, null, func);
-			if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
+			if (ret) return _preReplaceVar(_escapeQuo(ret, func), varReplacementRef, func);
 		}
 		return false;
 	}
@@ -8280,7 +8278,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
 				realWot = scoped.name;
 			}
-			if (isBound && (func == 'asRender' || func.indexOf('Render') !== -1)) {
+			if (isBound && (func == 'asRender' || func.startsWith('Render'))) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
 				_addScopedCID(realWot, obj, varScope);
@@ -9628,8 +9626,8 @@ const _escapeInnerQuotes = str => {
 	return newStr;
 };
 
-const _escapeQuo = str => {
-	return str.replace(/"/g, '\\"');
+const _escapeQuo = (str, func) => {
+	return str.replace(/"/g, (func.startsWith('Render') ? '"' : '\\"'));
 };
 
 function _escCommaBrack(str, o) {
