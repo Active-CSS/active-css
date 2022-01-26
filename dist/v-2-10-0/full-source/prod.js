@@ -837,6 +837,52 @@ _a.FormReset = o => {
 	if (el && el.tagName == 'FORM') el.reset();
 };
 
+_a.Fullscreen = o => {
+	// https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen
+	let uiOpts = {};
+	let aV = o.actVal, aVAfterOpts = '';
+	if (_endsWithAny([ ' hide', ' show', ' auto' ], aV)) {
+		let lastSpacePos = aV.lastIndexOf(' ');
+		uiOpts.navigationUI = aV.substr(lastSpacePos + 1);
+		aVAfterOpts = aV.substr(0, lastSpacePos).trim();
+	} else {
+		aVAfterOpts = aV;
+	}
+
+	let el;
+	if (['window', 'document', 'body'].includes(aVAfterOpts)) {
+		el = document.documentElement;
+	} else if (aVAfterOpts != 'exit') {
+		el = _getSel(o, aVAfterOpts);
+	}
+	switch (aVAfterOpts) {
+		case 'exit':
+			if (document.fullscreenElement) {	// is in fullscreen mode.
+				if (document.exitFullscreen) {
+					document.exitFullscreen();
+				} else if (document.webkitExitFullscreen) {
+					document.webkitExitFullscreen();
+				} else if (document.mozCancelFullScreen) {
+					document.mozCancelFullScreen();
+				} else if (document.msExitFullscreen) {
+					document.msExitFullscreen();
+				}
+			}
+			break;
+
+		default:
+			if (el.requestFullscreen) {
+				el.requestFullscreen(uiOpts);
+			} else if (el.mozRequestFullScreen) { /* Firefox */
+				el.mozRequestFullScreen(uiOpts);
+			} else if (el.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+				el.webkitRequestFullscreen(uiOpts);
+			} else if (el.msRequestFullscreen) { /* IE/Edge */
+				el.msRequestFullscreen(uiOpts);
+			}
+	}
+};
+
 _a.FullscreenExit = o => {
 	if (document.exitFullscreen) {
 		document.exitFullscreen();
@@ -2824,7 +2870,7 @@ const _handleSpaPop = (e, init) => {
 	} else if (!urlObj.attrs) {
 		// Fallback to regular page load if underlying page is not found in @pages.
 		// If the URL was changed outside of ACSS, realUrl may not be a full URL and will cause an error, so we wrap in try/catch.
-		// No use case available to do more than this currently, so this could be enhanced later on when a use case crops up.
+		// No use case available to do more than this currently, so this could be enhanced later on if a use case crops up.
 		try {
 			let url = new URL(realUrl);
 			if (url.href == realUrl) return;
@@ -6208,10 +6254,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
-	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
-	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
-	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+//	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
+//	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
+//	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
+//	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+
+	str = str.replace(/(?:((\{|;)[\s]*))continue\;/g, 'continue:1;');
+	str = str.replace(/(?:((\{|;)[\s]*))break\;/g, 'break:1;');
+	str = str.replace(/(?:((\{|;)[\s]*))exit\;/g, 'exit:1;');
+	str = str.replace(/(?:((\{|;)[\s]*))exit\-target\;/g, 'exit\-target:1;');
+
+		
 	str = str.replace(/_ACSS_continue/g, 'continue;');
 	str = str.replace(/_ACSS_break/g, 'break;');
 	str = str.replace(/_ACSS_exit/g, 'exit;');
@@ -9560,6 +9613,13 @@ const _eachRemoveClass = (inClass, classToRemove, doc, scope='') => {
 		if (!obj) return; // element is no longer there.
 		ActiveCSS._removeClassObj(obj, classToRemove);
 	});
+};
+
+const _endsWithAny = (arr, str) => {
+    let item;
+    for (item of arr) {
+        if (str.endsWith(item)) return true;
+    }
 };
 
 const _err = (str, o, ...args) => {	// jshint ignore:line
