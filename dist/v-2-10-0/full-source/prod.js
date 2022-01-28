@@ -839,6 +839,10 @@ _a.FormReset = o => {
 
 _a.Fullscreen = o => {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen
+
+// This isn't ready yet - fix _parseConfig as it's breaking on the looping now as the keywords aren't being sorted out in the regex.
+
+
 	let uiOpts = {};
 	let aV = o.actVal, aVAfterOpts = '';
 	if (_endsWithAny([ ' hide', ' show', ' auto' ], aV)) {
@@ -852,7 +856,7 @@ _a.Fullscreen = o => {
 	let el;
 	if (['window', 'document', 'body'].includes(aVAfterOpts)) {
 		el = document.documentElement;
-	} else if (aVAfterOpts != 'exit') {
+	} else if (aVAfterOpts != 'close') {
 		el = _getSel(o, aVAfterOpts);
 	}
 	switch (aVAfterOpts) {
@@ -6254,15 +6258,15 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-//	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
-//	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
-//	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
-//	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
+	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
 
-	str = str.replace(/(?:((\{|;)[\s]*))continue\;/g, 'continue:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))break\;/g, 'break:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))exit\;/g, 'exit:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))exit\-target\;/g, 'exit\-target:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)continue\;/g, 'continue:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)break\;/g, 'break:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\;/g, 'exit:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\-target\;/g, 'exit\-target:1;');
 
 		
 	str = str.replace(/_ACSS_continue/g, 'continue;');

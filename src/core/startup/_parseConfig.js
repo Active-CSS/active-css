@@ -69,15 +69,15 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-//	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
-//	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
-//	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
-//	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
+	str = str.replace(/(?:[\s\;\{]?)continue\;/g, 'continue:1;');
+	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
+	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
 
-	str = str.replace(/(?:((\{|;)[\s]*))continue\;/g, 'continue:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))break\;/g, 'break:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))exit\;/g, 'exit:1;');
-	str = str.replace(/(?:((\{|;)[\s]*))exit\-target\;/g, 'exit\-target:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)continue\;/g, 'continue:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)break\;/g, 'break:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\;/g, 'exit:1;');
+//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\-target\;/g, 'exit\-target:1;');
 
 		
 	str = str.replace(/_ACSS_continue/g, 'continue;');
