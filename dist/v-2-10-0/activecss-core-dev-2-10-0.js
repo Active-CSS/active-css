@@ -177,6 +177,7 @@
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
+		isWebkit,
 		labelData = [],
 		labelByIDs = [],
 		lazyConfig = '',
@@ -852,8 +853,8 @@ _a.Fullscreen = o => {
 
 	let el;
 	// Handle the window, document or body being called as a target. Either directly, or as a target selector with self, etc.
-	if (['window', 'document', 'body'].includes(aVAfterOpts) ||
-			MEMAP.includes(aVAfterOpts) && ['window', 'document', 'body'].includes(origSecSel)
+	if (aVAfterOpts == 'body' ||
+			MEMAP.includes(aVAfterOpts) && origSecSel == 'body'
 		) {
 		el = document.documentElement;
 	} else if (aVAfterOpts != 'close') {
@@ -3426,6 +3427,9 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	}
 
 	let m = Object.keys(targ)[targCounter];
+
+	if (typeof targ[m] === 'undefined') return;		// target not found.
+
 	let targVal = targ[m].value;
 	let targName = targ[m].name;
 
@@ -5434,7 +5438,6 @@ ActiveCSS._theEventFunction = e => {
 	let compDoc = (e.target instanceof ShadowRoot) ? e.target : undefined;
 	let varScope = e.target._acssVarScope;
 	if (!setupEnded) return;	// Wait for the config to fully load before any events start.
-	let fsDet = _fullscreenDetails();
 	switch (ev) {
 		case 'click':
 			if (!e.ctrlKey && !e.metaKey) {	// Allow default behaviour if control/meta key is used.
@@ -5464,21 +5467,23 @@ ActiveCSS._theEventFunction = e => {
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 			break;
 
-		case fsDet[1] + 'fullscreenchange':
-			_mainEventLoop(ev, e, component, compDoc, varScope);
-			if (fsDet[0]) {
-				_mainEventLoop('fullscreenEnter', e, component, compDoc, varScope);
-			} else {
-				_mainEventLoop('fullscreenExit', e, component, compDoc, varScope);
-			}
-			break;
-
 		default:
 			if (ev == 'change') {
 				// Simulate a mutation and go straight to the observe event handler.
 				_handleObserveEvents(null, compDoc);
+			} else {
+				_mainEventLoop(ev, e, component, compDoc, varScope);
+				if (ev.indexOf('fullscreenchange') !== -1) {
+					let fsDet = _fullscreenDetails();
+					// If e.target is not an element, send the body.
+					if (e.target.nodeName == 'HTML') e = { target: document.body };
+					if (fsDet[0]) {
+						_mainEventLoop('fullscreenEnter', e, component, compDoc, varScope);
+					} else {
+						_mainEventLoop('fullscreenExit', e, component, compDoc, varScope);
+					}
+				}
 			}
-			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
 };
 

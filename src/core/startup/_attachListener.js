@@ -28,7 +28,6 @@ ActiveCSS._theEventFunction = e => {
 	let compDoc = (e.target instanceof ShadowRoot) ? e.target : undefined;
 	let varScope = e.target._acssVarScope;
 	if (!setupEnded) return;	// Wait for the config to fully load before any events start.
-	let fsDet = _fullscreenDetails();
 	switch (ev) {
 		case 'click':
 			if (!e.ctrlKey && !e.metaKey) {	// Allow default behaviour if control/meta key is used.
@@ -58,20 +57,22 @@ ActiveCSS._theEventFunction = e => {
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 			break;
 
-		case fsDet[1] + 'fullscreenchange':
-			_mainEventLoop(ev, e, component, compDoc, varScope);
-			if (fsDet[0]) {
-				_mainEventLoop('fullscreenEnter', e, component, compDoc, varScope);
-			} else {
-				_mainEventLoop('fullscreenExit', e, component, compDoc, varScope);
-			}
-			break;
-
 		default:
 			if (ev == 'change') {
 				// Simulate a mutation and go straight to the observe event handler.
 				_handleObserveEvents(null, compDoc);
+			} else {
+				_mainEventLoop(ev, e, component, compDoc, varScope);
+				if (ev.indexOf('fullscreenchange') !== -1) {
+					let fsDet = _fullscreenDetails();
+					// If e.target is not an element, send the body.
+					if (e.target.nodeName == 'HTML') e = { target: document.body };
+					if (fsDet[0]) {
+						_mainEventLoop('fullscreenEnter', e, component, compDoc, varScope);
+					} else {
+						_mainEventLoop('fullscreenExit', e, component, compDoc, varScope);
+					}
+				}
 			}
-			_mainEventLoop(ev, e, component, compDoc, varScope);
 	}
 };

@@ -12,8 +12,8 @@ _a.Fullscreen = o => {
 
 	let el;
 	// Handle the window, document or body being called as a target. Either directly, or as a target selector with self, etc.
-	if (['window', 'document', 'body'].includes(aVAfterOpts) ||
-			MEMAP.includes(aVAfterOpts) && ['window', 'document', 'body'].includes(origSecSel)
+	if (aVAfterOpts == 'body' ||
+			MEMAP.includes(aVAfterOpts) && origSecSel == 'body'
 		) {
 		el = document.documentElement;
 	} else if (aVAfterOpts != 'close') {

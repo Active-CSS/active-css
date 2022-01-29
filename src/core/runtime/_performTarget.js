@@ -13,6 +13,9 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	}
 
 	let m = Object.keys(targ)[targCounter];
+
+	if (typeof targ[m] === 'undefined') return;		// target not found.
+
 	let targVal = targ[m].value;
 	let targName = targ[m].name;
 
