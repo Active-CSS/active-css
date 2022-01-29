@@ -73,12 +73,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/(?:[\s\;\{]?)break\;/g, 'break:1;');
 	str = str.replace(/(?:[\s\;\{]?)exit\;/g, 'exit:1;');
 	str = str.replace(/(?:[\s\;\{]?)exit\-target\;/g, 'exit\-target:1;');
-
-//	str = str.replace(/(?:[\{;])(?:[\s]*)continue\;/g, 'continue:1;');
-//	str = str.replace(/(?:[\{;])(?:[\s]*)break\;/g, 'break:1;');
-//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\;/g, 'exit:1;');
-//	str = str.replace(/(?:[\{;])(?:[\s]*)exit\-target\;/g, 'exit\-target:1;');
-
 		
 	str = str.replace(/_ACSS_continue/g, 'continue;');
 	str = str.replace(/_ACSS_break/g, 'break;');
