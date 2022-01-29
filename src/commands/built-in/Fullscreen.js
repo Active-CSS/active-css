@@ -1,9 +1,5 @@
 _a.Fullscreen = o => {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen
-
-// This isn't ready yet - fix _parseConfig as it's breaking on the looping now as the keywords aren't being sorted out in the regex.
-
-
 	let uiOpts = {};
 	let aV = o.actVal, aVAfterOpts = '';
 	if (_endsWithAny([ ' hide', ' show', ' auto' ], aV)) {
@@ -15,13 +11,16 @@ _a.Fullscreen = o => {
 	}
 
 	let el;
-	if (['window', 'document', 'body'].includes(aVAfterOpts)) {
+	// Handle the window, document or body being called as a target. Either directly, or as a target selector with self, etc.
+	if (['window', 'document', 'body'].includes(aVAfterOpts) ||
+			MEMAP.includes(aVAfterOpts) && ['window', 'document', 'body'].includes(origSecSel)
+		) {
 		el = document.documentElement;
 	} else if (aVAfterOpts != 'close') {
 		el = _getSel(o, aVAfterOpts);
 	}
 	switch (aVAfterOpts) {
-		case 'exit':
+		case 'close':
 			if (document.fullscreenElement) {	// is in fullscreen mode.
 				if (document.exitFullscreen) {
 					document.exitFullscreen();
@@ -38,11 +37,11 @@ _a.Fullscreen = o => {
 		default:
 			if (el.requestFullscreen) {
 				el.requestFullscreen(uiOpts);
-			} else if (el.mozRequestFullScreen) { /* Firefox */
+			} else if (el.mozRequestFullScreen) {
 				el.mozRequestFullScreen(uiOpts);
-			} else if (el.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+			} else if (el.webkitRequestFullscreen) {
 				el.webkitRequestFullscreen(uiOpts);
-			} else if (el.msRequestFullscreen) { /* IE/Edge */
+			} else if (el.msRequestFullscreen) {
 				el.msRequestFullscreen(uiOpts);
 			}
 	}
