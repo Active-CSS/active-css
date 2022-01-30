@@ -5,7 +5,7 @@ ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is
 	} else {
 		// The optional "scope" parameter determines which container holds the boundary information.
 		// No "scope" parameter means that the document itself is the container.
-		let aVRes = _extractActionPars(o.actVal, [ 'scope' ], o);
+		let aVRes = _extractBracketPars(o.actVal, [ 'scope' ], o);
 		if (aVRes.scope) {
 			// Get scope element.
 			elContainer = _getSel(o, aVRes.scope);

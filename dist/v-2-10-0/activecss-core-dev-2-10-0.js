@@ -177,7 +177,6 @@
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
-		isWebkit,
 		labelData = [],
 		labelByIDs = [],
 		lazyConfig = '',
@@ -1577,7 +1576,7 @@ _a.Style = o => {
 _a.TakeClass = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	// Take class away from any element that has it, with an optional scope parameter.
-	let aVRes = _extractActionPars(o.actVal, [ 'scope' ], o);
+	let aVRes = _extractBracketPars(o.actVal, [ 'scope' ], o);
 	let theClass = aVRes.action.substr(1);
 
 	_eachRemoveClass(theClass, theClass, o.doc, aVRes.scope);
@@ -3713,6 +3712,14 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 	// Shadow DOM and scoped content strings are already fully composed with valid Active IDs at this point, they are just not drawn yet.
 	// Search for any data-acss-component tags and handle.
 	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
+		// If this component requires dynamic loading of HTML or CSS, do that here and then come back when both are completed (if both are present).
+		// This way we should get a non-flickering render, although rendering will be staggered due to dynamic loading.
+		if (obj.classList.contains('htmlPending') || obj.classList.contains('cssPending')) return;
+		if (obj.hasAttribute('data-html-file') || obj.hasAttribute('data-css-file')) {
+			_grabDynamicComponentFile(obj, [ 'html', 'css' ], o, compDoc, childTree, numTopNodesInRender);
+			return;
+		}
+
 		_renderCompDomsDo(o, obj, childTree, numTopNodesInRender, numTopElementsInRender);
 
 		// Quick way to check if components and scoped variables are being cleaned up. Leave this here please.
@@ -3723,6 +3730,26 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 //		console.log('actualDoms:', actualDoms);
 //		console.log('compParents:', compParents);
 	});
+
+	function _grabDynamicComponentFile(obj, arr, o, compDoc, childTree, numTopNodesInRender, numTopElementsInRender) {
+		arr.forEach(typ => {
+			let elClass = typ + 'Pending';
+			if (obj.classList.contains(elClass)) return;		// Already being loaded.
+			let attr = 'data-' + typ + '-file';
+			if (obj.hasAttribute(attr)) {
+				obj.classList.add(elClass);
+				let command = unEscQuotes(obj.getAttribute(attr));
+				obj.removeAttribute(attr);
+				if (command.indexOf(' json ') !== -1) {
+					command = command.replace(/ json /, ' html ');
+				} else if (command.indexOf(' html ') === -1) {
+					command += ' html';
+				}
+				let compName = obj.getAttribute('data-name');
+				_a.Ajax({ actVal: command, doc: o.doc, renderComp: true, renderObj: { renderO: o, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } });
+			}
+		});
+	}
 };
 
 const _renderCompDomsClean = varScope => {
@@ -5785,7 +5812,29 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							components[compName].strictPrivEvs = false;
 							components[compName].privVars = false;
 							components[compName].privEvs = false;
-							let checkStr = strTrimmed + ' ';
+							let checkStr = strTrimmed;
+							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
+							let htmlPos = checkStr.indexOf(' html(');
+							let cssPos = checkStr.indexOf(' css(');
+							let observePos = checkStr.indexOf(' observe(');
+							let templatePos = checkStr.indexOf(' selector(');
+							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1) {
+								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'observe', 'template' ]);
+								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
+								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
+								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
+								checkStr = componentOpts.action;
+							}
+							checkStr += ' ';
+							// Set up HTML and CSS files to preload if the preload-files option is set.
+							if (checkStr.indexOf(' preload-files ') !== -1) {
+								components[compName].preloadFiles = true;
+							}
+							// Set up non-caching of HTML and CSS files, if these need to be loaded dynamically.
+							if (checkStr.indexOf(' nocache-files ') !== -1) {
+								components[compName].nocacheFiles = true;
+							}
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -5849,7 +5898,9 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 				default:
 					if (strTrimmed == 'html') {
 						if (!removeState) {
-							if (componentName) {
+							if (components[componentName].htmlFile) {
+								_warn('Component ' + componentName + ' has embedded html that will be overridden by the html parameter: html(' + components[componentName].htmlFile + ')');
+							} else if (componentName) {
 								// This is component html.
 								components[componentName].data = innerContent[0].value.slice(1, -1);	// remove outer quotes;
 								components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');
@@ -6911,7 +6962,7 @@ const _evalVarString = (str, o, noProxy=false) => {
 };
 const _extractVarsFromPars = (str, o) => {
 	let parArr = [], par, finalPar;
-	let res = _extractActionPars(str, [ 'pars' ], o);
+	let res = _extractBracketPars(str, [ 'pars' ], o);
 	if (res.pars) {
 		let pars = res.pars;
 		// Escape commas in quotes.
@@ -7960,16 +8011,26 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 				c = c.substr(11);
 			}
 			if (!components[c]) return '{|' + c + '}';
-			let ret = components[c].data.trim();
+
+			let ret;
+			if (!components[c].htmlFile && !components[c].cssFile) {
+				ret = components[c].data.trim();
+				ret = ActiveCSS._sortOutFlowEscapeChars(ret);
+			}
 			found = true;
-			ret = ActiveCSS._sortOutFlowEscapeChars(ret);
-			if (components[c].shadow || components[c].scoped || customElComp) {
+			if (components[c].shadow || components[c].scoped || customElComp || components[c].htmlFile || components[c].cssFile) {
 				// This is supposed to be added to its container after the container has rendered. We shouldn't add it now.
 				// Add it to memory and attach after the container has rendered. Return a placeholder for this component.
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
 				// removed from the pending array once drawn.
 				compCount++;
-				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"></data-acss-component>';
+				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"';
+				if (components[c].htmlFile) compRef += ' data-html-file="' + escQuotes(components[c].htmlFile) + '"';
+				if (components[c].cssFile) compRef += ' data-css-file="' + escQuotes(components[c].cssFile) + '"';
+				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
+				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
+				compRef += '></data-acss-component>';
+
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;
@@ -9701,12 +9762,20 @@ const _addActValRaw = o => {
 	if (o.preGet) {
 		delete preGetting[o.finalURL];
 	}
-	if (!o.error && o.preGet) {
-		// Run the afterAjaxPreGet event.
-		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+	if (o.renderComp) {
+		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
+		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
+		obj.classList.remove(typ + 'Pending');
+		compPending[obj.getAttribute('data-ref')] = o.res;
+		_renderCompDoms(renderO, compDoc, childTree, numTopNodesInRender, numTopElementsInRender);
 	} else {
-		// Run the post event - success or failure.
-		_ajaxDisplay(o);
+		if (!o.error && o.preGet) {
+			// Run the afterAjaxPreGet event.
+			_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+		} else {
+			// Run the post event - success or failure.
+			_ajaxDisplay(o);
+		}
 	}
 };
 
@@ -9860,7 +9929,7 @@ const _appendURIPar = (url, pars, doc) => {
 	// Is this a full url? If not, make it so.
 	var isFullURL = new RegExp('^([a-z]+://|//)', 'i');
 	if (url === '' || !isFullURL.test(url)) {
-		url = window.location.protocol + '//' + window.location.host + ((url.substr(0, 1) != '/') ? '/' : '') + url;
+		url = window.top.location.protocol + '//' + window.top.location.host + ((url.substr(0, 1) != '/') ? '/' : '') + url;
 	}
 	let newUrl = new URL(url);
 	let parsArr = pars.split('&'), thisPar, parArr, endBit = '';
@@ -10331,7 +10400,7 @@ const _evalDetachedExpr = (valToExpr, varScope) => {
 	return _replaceJSExpression(expr, true, false, varScope, -1);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 };
 
-const _extractActionPars = (actionValue, parArr, o) => {
+const _extractBracketPars = (actionValue, parArr, o) => {
 	// Extracts bracket parameters from an action value and returns an object with separated values.
 	// Used in take-class, and designed to be used by others.
 	// It can handle inner brackets for selectors with pseudo-selectors like :not().
@@ -10360,21 +10429,21 @@ const _extractActionPars = (actionValue, parArr, o) => {
 			newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
 			// Get the parameter value and the remainder of the action value.
 			// Send over the action value from the beginning of the parameter value.
-			splitRes = _extractActionParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
-			res[parName] = _extractActionParsUnEsc(splitRes.value);
+			splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
+			res[parName] = _extractBracketParsUnEsc(splitRes.value);
 			newActionValue += splitRes.remainder;
 		}
 	});
-	res.action = _extractActionParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
+	res.action = _extractBracketParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
 
 	return res;
 };
 
-const _extractActionParsUnEsc = str => {
+const _extractBracketParsUnEsc = str => {
 	return str.replace(/_ACSS_opPa/g, '\\(').replace(/_ACSS_clPa/g, '\\)');
 };
 
-const _extractActionParsSplit = (str, original, o) => {
+const _extractBracketParsSplit = (str, original, o) => {
 	// Example of str content:
 	// str = "#left) another(#myEl:not(has(something))) hi(and the rest) something"
 	// We have already accounted for the opening parenthesis.
@@ -10398,7 +10467,7 @@ const _extractActionParsSplit = (str, original, o) => {
 		for (let n = 0; n < openingArr.length; n++) {
 			line = openingArr[n];
 			// Now get the content of this line sorted out.
-			innerRes = _extractActionParsInner(line, n + 1, original, o);
+			innerRes = _extractBracketParsInner(line, n + 1, original, o);
 			if (innerRes.value) {
 				// We got the variable that we needed.
 				res.value = lineCarry + innerRes.value;
@@ -10417,11 +10486,15 @@ const _extractActionParsSplit = (str, original, o) => {
 	return res;
 };
 
-const _extractActionParsInner = (str, numOpening, original, o) => {
+const _extractBracketParsInner = (str, numOpening, original, o) => {
 	// Split by ')'.
 	let closingArr = str.split(')');
 	if (closingArr.length - 1 > numOpening) {
-		_err('Too many closing parenthesis found in action command', o);
+		if (o !== undefined) {
+			_err('Too many closing parenthesis found in action command', o);
+		} else {
+			_err('Too many closing parenthesis found in component statement: ' + original);
+		}
 	} else if (closingArr.length - 1 < numOpening) {
 		// Not enough closing parameters. Return an empty object without a value.
 		return {};
@@ -11147,7 +11220,7 @@ ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is
 	} else {
 		// The optional "scope" parameter determines which container holds the boundary information.
 		// No "scope" parameter means that the document itself is the container.
-		let aVRes = _extractActionPars(o.actVal, [ 'scope' ], o);
+		let aVRes = _extractBracketPars(o.actVal, [ 'scope' ], o);
 		if (aVRes.scope) {
 			// Get scope element.
 			elContainer = _getSel(o, aVRes.scope);
@@ -11549,6 +11622,14 @@ const _warn = (str, o, ...args) => {
 	if (DEVCORE) {
 		_errDisplayLine('Active CSS error warning', str, [ 'color: green' ], o, args);	// jshint ignore:line
 	}
+};
+
+const escQuotes = str => {
+	return str.replace(/"/gm, "&quot;");
+};
+
+const unEscQuotes = str => {
+	return str.replace(/\&quot\;/gm, '"');
 };
 
 /**

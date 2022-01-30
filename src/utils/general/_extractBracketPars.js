@@ -1,4 +1,4 @@
-const _extractActionPars = (actionValue, parArr, o) => {
+const _extractBracketPars = (actionValue, parArr, o) => {
 	// Extracts bracket parameters from an action value and returns an object with separated values.
 	// Used in take-class, and designed to be used by others.
 	// It can handle inner brackets for selectors with pseudo-selectors like :not().
@@ -27,21 +27,21 @@ const _extractActionPars = (actionValue, parArr, o) => {
 			newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
 			// Get the parameter value and the remainder of the action value.
 			// Send over the action value from the beginning of the parameter value.
-			splitRes = _extractActionParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
-			res[parName] = _extractActionParsUnEsc(splitRes.value);
+			splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
+			res[parName] = _extractBracketParsUnEsc(splitRes.value);
 			newActionValue += splitRes.remainder;
 		}
 	});
-	res.action = _extractActionParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
+	res.action = _extractBracketParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
 
 	return res;
 };
 
-const _extractActionParsUnEsc = str => {
+const _extractBracketParsUnEsc = str => {
 	return str.replace(/_ACSS_opPa/g, '\\(').replace(/_ACSS_clPa/g, '\\)');
 };
 
-const _extractActionParsSplit = (str, original, o) => {
+const _extractBracketParsSplit = (str, original, o) => {
 	// Example of str content:
 	// str = "#left) another(#myEl:not(has(something))) hi(and the rest) something"
 	// We have already accounted for the opening parenthesis.
@@ -65,7 +65,7 @@ const _extractActionParsSplit = (str, original, o) => {
 		for (let n = 0; n < openingArr.length; n++) {
 			line = openingArr[n];
 			// Now get the content of this line sorted out.
-			innerRes = _extractActionParsInner(line, n + 1, original, o);
+			innerRes = _extractBracketParsInner(line, n + 1, original, o);
 			if (innerRes.value) {
 				// We got the variable that we needed.
 				res.value = lineCarry + innerRes.value;
@@ -84,11 +84,15 @@ const _extractActionParsSplit = (str, original, o) => {
 	return res;
 };
 
-const _extractActionParsInner = (str, numOpening, original, o) => {
+const _extractBracketParsInner = (str, numOpening, original, o) => {
 	// Split by ')'.
 	let closingArr = str.split(')');
 	if (closingArr.length - 1 > numOpening) {
-		_err('Too many closing parenthesis found in action command', o);
+		if (o !== undefined) {
+			_err('Too many closing parenthesis found in action command', o);
+		} else {
+			_err('Too many closing parenthesis found in component statement: ' + original);
+		}
 	} else if (closingArr.length - 1 < numOpening) {
 		// Not enough closing parameters. Return an empty object without a value.
 		return {};

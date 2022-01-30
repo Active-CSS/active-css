@@ -54,7 +54,29 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							components[compName].strictPrivEvs = false;
 							components[compName].privVars = false;
 							components[compName].privEvs = false;
-							let checkStr = strTrimmed + ' ';
+							let checkStr = strTrimmed;
+							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
+							let htmlPos = checkStr.indexOf(' html(');
+							let cssPos = checkStr.indexOf(' css(');
+							let observePos = checkStr.indexOf(' observe(');
+							let templatePos = checkStr.indexOf(' selector(');
+							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1) {
+								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'observe', 'template' ]);
+								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
+								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
+								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
+								checkStr = componentOpts.action;
+							}
+							checkStr += ' ';
+							// Set up HTML and CSS files to preload if the preload-files option is set.
+							if (checkStr.indexOf(' preload-files ') !== -1) {
+								components[compName].preloadFiles = true;
+							}
+							// Set up non-caching of HTML and CSS files, if these need to be loaded dynamically.
+							if (checkStr.indexOf(' nocache-files ') !== -1) {
+								components[compName].nocacheFiles = true;
+							}
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -118,7 +140,9 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 				default:
 					if (strTrimmed == 'html') {
 						if (!removeState) {
-							if (componentName) {
+							if (components[componentName].htmlFile) {
+								_warn('Component ' + componentName + ' has embedded html that will be overridden by the html parameter: html(' + components[componentName].htmlFile + ')');
+							} else if (componentName) {
 								// This is component html.
 								components[componentName].data = innerContent[0].value.slice(1, -1);	// remove outer quotes;
 								components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');

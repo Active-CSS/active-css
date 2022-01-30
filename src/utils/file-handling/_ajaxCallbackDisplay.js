@@ -24,11 +24,19 @@
 	if (o.preGet) {
 		delete preGetting[o.finalURL];
 	}
-	if (!o.error && o.preGet) {
-		// Run the afterAjaxPreGet event.
-		_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+	if (o.renderComp) {
+		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
+		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
+		obj.classList.remove(typ + 'Pending');
+		compPending[obj.getAttribute('data-ref')] = o.res;
+		_renderCompDoms(renderO, compDoc, childTree, numTopNodesInRender, numTopElementsInRender);
 	} else {
-		// Run the post event - success or failure.
-		_ajaxDisplay(o);
+		if (!o.error && o.preGet) {
+			// Run the afterAjaxPreGet event.
+			_handleEvents({ obj: o.obj, evType: 'afterAjaxPreGet', eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+		} else {
+			// Run the post event - success or failure.
+			_ajaxDisplay(o);
+		}
 	}
 };

@@ -1,6 +1,6 @@
 const _extractVarsFromPars = (str, o) => {
 	let parArr = [], par, finalPar;
-	let res = _extractActionPars(str, [ 'pars' ], o);
+	let res = _extractBracketPars(str, [ 'pars' ], o);
 	if (res.pars) {
 		let pars = res.pars;
 		// Escape commas in quotes.
