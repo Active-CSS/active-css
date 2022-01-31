@@ -112,10 +112,11 @@ const _handleSpaPop = (e, init) => {
 		// No use case available to do more than this currently, so this could be enhanced later on if a use case crops up.
 		try {
 			let url = new URL(realUrl);
-			if (url.href == realUrl) return;
+			if (url.href != realUrl) {
+				window.location.href = realUrl;
+			}
 		} catch(err) {
 		}
-		window.location.href = realUrl;
 	}
 
 };
