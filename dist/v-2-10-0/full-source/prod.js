@@ -2104,20 +2104,6 @@ const _unloadAllCancelTimerLoop = i => {
 	}
 };
 
-const _run = (str, varScope, o) => {
-	let inn;
-	let funky = '"use strict";' + str.replace(/\{\=([\s\S]*?)\=\}/m, function(_, wot) {
-		inn = _handleVarsInJS(wot, varScope);
-		return inn;
-	});
-
-	try {
-		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars);		// jshint ignore:line
-	} catch (err) {
-		_err('Function syntax error (' + err + '): ' + funky, o);
-	}
-};
-
 const _actionValLoop = (oCopy, pars, obj, runButElNotThere) => {
 	_actionValLoopDo(oCopy, pars, obj, runButElNotThere, 0);
 };
@@ -2629,8 +2615,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+
+	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
+		// Leave command intact. No variable subsitution other than the use of vars.
+		o.actVal = o.actValSing;
 	} else {
-		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
+		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{
 				str: o.actValSing,
 				func: o.func,
@@ -2881,10 +2871,11 @@ const _handleSpaPop = (e, init) => {
 		// No use case available to do more than this currently, so this could be enhanced later on if a use case crops up.
 		try {
 			let url = new URL(realUrl);
-			if (url.href == realUrl) return;
+			if (url.href != realUrl) {
+				window.location.href = realUrl;
+			}
 		} catch(err) {
 		}
-		window.location.href = realUrl;
 	}
 
 };
@@ -4328,6 +4319,20 @@ const _resolveDynamicIframesDo = (el, iframes) => {
 
 	// Replace placeholder with completed iframe.
 	el.parentNode.replaceChild(iframe, el);
+};
+
+const _run = (str, varScope, o) => {
+	let inn;
+	let funky = '"use strict";' + str.replace(/\{\=([\s\S]*?)\=\}/m, function(_, wot) {
+		inn = _handleVarsInJS(wot, varScope);
+		return inn;
+	});
+
+	try {
+		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars);		// jshint ignore:line
+	} catch (err) {
+		_err('Function syntax error (' + err + '): ' + funky, o);
+	}
 };
 
 const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {

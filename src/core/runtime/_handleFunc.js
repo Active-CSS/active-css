@@ -90,8 +90,12 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+
+	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
+		// Leave command intact. No variable subsitution other than the use of vars.
+		o.actVal = o.actValSing;
 	} else {
-		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional', 'Eval', 'Run'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
+		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{
 				str: o.actValSing,
 				func: o.func,
