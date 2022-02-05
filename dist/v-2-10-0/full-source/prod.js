@@ -10371,9 +10371,12 @@ const _getSelector = (o, sel, many=false) => {
 				break;
 
 			case 'shadow':		// Special ACSS selector
-				if (mainObj) newDoc = mainObj.shadowRoot;
-				mainObj = newDoc;
-				singleResult = true;
+				if (mainObj) {
+					let thisNode = mainObj.length == 1 ? mainObj[0] : mainObj;
+					if (thisNode) newDoc = thisNode.shadowRoot;
+					mainObj = newDoc;
+					singleResult = true;
+				}
 				break;
 
 			case 'parent':		// Special ACSS selector
