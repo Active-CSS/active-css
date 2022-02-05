@@ -30,7 +30,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		let o2 = _clone(o), delLoop = ['after', 'every'], aftEv;
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
-			splitArr = _delaySplit(o2.actVal, aftEv, o.varScope);
+			splitArr = _delaySplit(o2.actVal, aftEv, o);
 			scope = (o.varScope) ? o.varScope : 'main';
 			if (splitArr.lab) splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
