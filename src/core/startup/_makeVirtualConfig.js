@@ -58,12 +58,16 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
 							let cssPos = checkStr.indexOf(' css(');
+							let htmlTemplPos = checkStr.indexOf(' html-template(');
+							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
-							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1) {
-								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'observe', 'template' ]);
+							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
+								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
+								if (componentOpts['css-template']) components[compName].cssTempl = componentOpts['css-template'];
 								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
 								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
 								checkStr = componentOpts.action;

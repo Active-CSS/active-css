@@ -3715,9 +3715,12 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 		// If this component requires dynamic loading of HTML or CSS, do that here and then come back when both are completed (if both are present).
 		// This way we should get a non-flickering render, although rendering will be staggered due to dynamic loading.
 		if (_isPendingAjaxForComponents(obj)) return;
-		if (obj.hasAttribute('data-html-file') || obj.hasAttribute('data-css-file')) {
-			_grabDynamicComponentFile(obj, [ 'html', 'css' ], o, compDoc, childTree, numTopNodesInRender);
-			return;
+		if (obj.hasAttribute('data-html-file') ||
+				obj.hasAttribute('data-css-file') ||
+				obj.hasAttribute('data-html-template') ||
+				obj.hasAttribute('data-css-template')) {
+			let readyToRenderNow = _grabDynamicComponentFile(obj, [ 'html', 'css', 'data-html-template', 'data-css-template' ], o, compDoc, childTree, numTopNodesInRender);
+			if (!readyToRenderNow) return;
 		}
 
 		_renderCompDomsDo(o, obj, childTree, numTopNodesInRender, numTopElementsInRender);
@@ -3732,23 +3735,36 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 	});
 
 	function _grabDynamicComponentFile(obj, arr, o, compDoc, childTree, numTopNodesInRender, numTopElementsInRender) {
+		let readyToRenderNow = true;
 		arr.forEach(typ => {
-			let elClass = typ + 'Pending';
-			if (obj.classList.contains(elClass)) return;		// Already being loaded.
-			let attr = 'data-' + typ + '-file';
-			if (obj.hasAttribute(attr)) {
-				obj.classList.add(elClass);
-				let command = unEscQuotes(obj.getAttribute(attr));
-				obj.removeAttribute(attr);
-				if (command.indexOf(' json ') !== -1) {
-					command = command.replace(/ json /, ' html ');
-				} else if (command.indexOf(' html ') === -1) {
-					command += ' html';
+			if (typ.endsWith('template') && obj.hasAttribute(typ)) {
+				// Grab from a template and place directly into the compRender
+				let templObj = _getSelector(o, obj.getAttribute(typ));
+				if (templObj.obj) {
+					let templNode = templObj.obj.cloneNode(true);
+					let str = templNode.innerHTML;
+					_insertResForComponents(obj, typ, str);
 				}
-				let compName = obj.getAttribute('data-name');
-				_a.Ajax({ actVal: command, doc: o.doc, renderComp: true, renderObj: { renderO: o, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } });
+			} else {
+				let elClass = typ + 'Pending';
+				if (obj.classList.contains(elClass)) return;		// Already being loaded.
+				let attr = 'data-' + typ + '-file';
+				if (obj.hasAttribute(attr)) {
+					readyToRenderNow = false;
+					obj.classList.add(elClass);
+					let command = unEscQuotes(obj.getAttribute(attr));
+					obj.removeAttribute(attr);
+					if (command.indexOf(' json ') !== -1) {
+						command = command.replace(/ json /, ' html ');
+					} else if (command.indexOf(' html ') === -1) {
+						command += ' html';
+					}
+					let compName = obj.getAttribute('data-name');
+					_a.Ajax({ actVal: command, doc: o.doc, renderComp: true, renderObj: { renderO: o, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } });
+				}
 			}
 		});
+		return readyToRenderNow;
 	}
 };
 
@@ -5830,12 +5846,16 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
 							let cssPos = checkStr.indexOf(' css(');
+							let htmlTemplPos = checkStr.indexOf(' html-template(');
+							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
-							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1) {
-								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'observe', 'template' ]);
+							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
+								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
+								if (componentOpts['css-template']) components[compName].cssTempl = componentOpts['css-template'];
 								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
 								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
 								checkStr = componentOpts.action;
@@ -8026,13 +8046,17 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 			}
 			if (!components[c]) return '{|' + c + '}';
 
-			let ret;
-			if (!components[c].htmlFile && !components[c].cssFile) {
-				ret = components[c].data.trim();
-				ret = ActiveCSS._sortOutFlowEscapeChars(ret);
-			}
+			let ret = components[c].data.trim();
+			if (ret !== '') ret = ActiveCSS._sortOutFlowEscapeChars(ret);
 			found = true;
-			if (components[c].shadow || components[c].scoped || customElComp || components[c].htmlFile || components[c].cssFile) {
+			if (components[c].shadow ||
+					components[c].scoped ||
+					customElComp ||
+					components[c].htmlFile ||
+					components[c].cssFile ||
+					components[c].htmlTempl ||
+					components[c].cssTempl
+				) {
 				// This is supposed to be added to its container after the container has rendered. We shouldn't add it now.
 				// Add it to memory and attach after the container has rendered. Return a placeholder for this component.
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
@@ -8041,6 +8065,8 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"';
 				if (components[c].htmlFile) compRef += ' data-html-file="' + escQuotes(components[c].htmlFile) + '"';
 				if (components[c].cssFile) compRef += ' data-css-file="' + escQuotes(components[c].cssFile) + '"';
+				if (components[c].htmlTempl) compRef += ' data-html-template="' + escQuotes(components[c].htmlTempl) + '"';
+				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
 				compRef += '></data-acss-component>';
@@ -9105,9 +9131,7 @@ const _addActValRaw = o => {
 		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
 		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
 		obj.classList.remove(typ + 'Pending');
-		let ref = obj.getAttribute('data-ref');
-		if (compPending[ref] === undefined) compPending[ref] = '';
-		compPending[ref] += (compPending[ref] != '' ? "\n" : '' ) + (typ == 'css' ? '<style>' + o.res + '</style>' : o.res);
+		_insertResForComponents(obj, typ, o.res);
 
 		// Are we ready to render yet? The answer is that we are not ready if we are still waiting for further ajax requests. This callback will be called again later.
 		if (_isPendingAjaxForComponents(obj)) return;
@@ -9340,6 +9364,12 @@ const _getParVal = (str, typ) => {
 		}
 	}
 	return '';
+};
+
+const _insertResForComponents = (obj, typ, str) => {
+	let ref = obj.getAttribute('data-ref');
+	if (compPending[ref] === undefined) compPending[ref] = '';
+	compPending[ref] += (compPending[ref] != '' ? "\n" : '' ) + (typ.startsWith('css') ? '<style>' + str + '</style>' : str);
 };
 
 const _isPendingAjaxForComponents = obj => {
@@ -10403,10 +10433,10 @@ const _getSelector = (o, sel, many=false) => {
 			case 'parent':		// Special ACSS selector
 				// Get object root details.
 				compDetails = _getComponentDetails(o.compDoc);
-				if (!newDoc.isSameNode(compDetails.topEvDoc)) {
-					newDoc = compDetails.topEvDoc;
-				} else if (window.parent.document) {
+				if (!compDetails.topEvDoc || window.parent.document) {
 					newDoc = window.parent.document;
+				} else if (!newDoc.isSameNode(compDetails.topEvDoc)) {
+					newDoc = compDetails.topEvDoc;
 				}
 				mainObj = newDoc;
 				singleResult = true;

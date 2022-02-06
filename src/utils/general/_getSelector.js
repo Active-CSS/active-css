@@ -121,10 +121,10 @@ const _getSelector = (o, sel, many=false) => {
 			case 'parent':		// Special ACSS selector
 				// Get object root details.
 				compDetails = _getComponentDetails(o.compDoc);
-				if (!newDoc.isSameNode(compDetails.topEvDoc)) {
-					newDoc = compDetails.topEvDoc;
-				} else if (window.parent.document) {
+				if (!compDetails.topEvDoc || window.parent.document) {
 					newDoc = window.parent.document;
+				} else if (!newDoc.isSameNode(compDetails.topEvDoc)) {
+					newDoc = compDetails.topEvDoc;
 				}
 				mainObj = newDoc;
 				singleResult = true;

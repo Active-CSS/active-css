@@ -21,13 +21,17 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 			}
 			if (!components[c]) return '{|' + c + '}';
 
-			let ret;
-			if (!components[c].htmlFile && !components[c].cssFile) {
-				ret = components[c].data.trim();
-				ret = ActiveCSS._sortOutFlowEscapeChars(ret);
-			}
+			let ret = components[c].data.trim();
+			if (ret !== '') ret = ActiveCSS._sortOutFlowEscapeChars(ret);
 			found = true;
-			if (components[c].shadow || components[c].scoped || customElComp || components[c].htmlFile || components[c].cssFile) {
+			if (components[c].shadow ||
+					components[c].scoped ||
+					customElComp ||
+					components[c].htmlFile ||
+					components[c].cssFile ||
+					components[c].htmlTempl ||
+					components[c].cssTempl
+				) {
 				// This is supposed to be added to its container after the container has rendered. We shouldn't add it now.
 				// Add it to memory and attach after the container has rendered. Return a placeholder for this component.
 				// Note, we have by this point *drawn the contents of this component - each instance is individual*, so they get rendered separately and
@@ -36,6 +40,8 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"';
 				if (components[c].htmlFile) compRef += ' data-html-file="' + escQuotes(components[c].htmlFile) + '"';
 				if (components[c].cssFile) compRef += ' data-css-file="' + escQuotes(components[c].cssFile) + '"';
+				if (components[c].htmlTempl) compRef += ' data-html-template="' + escQuotes(components[c].htmlTempl) + '"';
+				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
 				compRef += '></data-acss-component>';
