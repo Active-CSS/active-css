@@ -5,7 +5,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
 		// If this component requires dynamic loading of HTML or CSS, do that here and then come back when both are completed (if both are present).
 		// This way we should get a non-flickering render, although rendering will be staggered due to dynamic loading.
-		if (obj.classList.contains('htmlPending') || obj.classList.contains('cssPending')) return;
+		if (_isPendingAjaxForComponents(obj)) return;
 		if (obj.hasAttribute('data-html-file') || obj.hasAttribute('data-css-file')) {
 			_grabDynamicComponentFile(obj, [ 'html', 'css' ], o, compDoc, childTree, numTopNodesInRender);
 			return;

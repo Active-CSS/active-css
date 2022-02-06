@@ -30,7 +30,9 @@
 		// _ajaxCallbackDisplay(o); is called from _resolveAjaxVars, as it needs to account for the asyncronyousness of the shadow DOM.
 	} else {
 		o.res = '';
-		_setHTMLVars(o, true);	// true for empty string.
+		if (!o.renderComp) {
+			_setHTMLVars(o, true);	// true for empty string.
+		}
 		// Commenting out for now - this will be for ajax return feedback.
 //		if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
 //			_debugOutput(o);	//	'', 'ajax' + ((o.preGet) ? '-pre-get' : ''));

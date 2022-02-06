@@ -28,7 +28,13 @@
 		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
 		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
 		obj.classList.remove(typ + 'Pending');
-		compPending[obj.getAttribute('data-ref')] = o.res;
+		let ref = obj.getAttribute('data-ref');
+		if (compPending[ref] === undefined) compPending[ref] = '';
+		compPending[ref] += (compPending[ref] != '' ? "\n" : '' ) + (typ == 'css' ? '<style>' + o.res + '</style>' : o.res);
+
+		// Are we ready to render yet? The answer is that we are not ready if we are still waiting for further ajax requests. This callback will be called again later.
+		if (_isPendingAjaxForComponents(obj)) return;
+
 		_renderCompDoms(renderO, compDoc, childTree, numTopNodesInRender, numTopElementsInRender);
 	} else {
 		if (!o.error && o.preGet) {

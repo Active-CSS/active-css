@@ -3714,7 +3714,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
 		// If this component requires dynamic loading of HTML or CSS, do that here and then come back when both are completed (if both are present).
 		// This way we should get a non-flickering render, although rendering will be staggered due to dynamic loading.
-		if (obj.classList.contains('htmlPending') || obj.classList.contains('cssPending')) return;
+		if (_isPendingAjaxForComponents(obj)) return;
 		if (obj.hasAttribute('data-html-file') || obj.hasAttribute('data-css-file')) {
 			_grabDynamicComponentFile(obj, [ 'html', 'css' ], o, compDoc, childTree, numTopNodesInRender);
 			return;
@@ -9064,7 +9064,9 @@ const _addActValRaw = o => {
 		// _ajaxCallbackDisplay(o); is called from _resolveAjaxVars, as it needs to account for the asyncronyousness of the shadow DOM.
 	} else {
 		o.res = '';
-		_setHTMLVars(o, true);	// true for empty string.
+		if (!o.renderComp) {
+			_setHTMLVars(o, true);	// true for empty string.
+		}
 		// Commenting out for now - this will be for ajax return feedback.
 //		if (debuggerActive || !setupEnded && typeof _debugOutput == 'function') {
 //			_debugOutput(o);	//	'', 'ajax' + ((o.preGet) ? '-pre-get' : ''));
@@ -9103,7 +9105,13 @@ const _addActValRaw = o => {
 		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
 		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
 		obj.classList.remove(typ + 'Pending');
-		compPending[obj.getAttribute('data-ref')] = o.res;
+		let ref = obj.getAttribute('data-ref');
+		if (compPending[ref] === undefined) compPending[ref] = '';
+		compPending[ref] += (compPending[ref] != '' ? "\n" : '' ) + (typ == 'css' ? '<style>' + o.res + '</style>' : o.res);
+
+		// Are we ready to render yet? The answer is that we are not ready if we are still waiting for further ajax requests. This callback will be called again later.
+		if (_isPendingAjaxForComponents(obj)) return;
+
 		_renderCompDoms(renderO, compDoc, childTree, numTopNodesInRender, numTopElementsInRender);
 	} else {
 		if (!o.error && o.preGet) {
@@ -9332,6 +9340,10 @@ const _getParVal = (str, typ) => {
 		}
 	}
 	return '';
+};
+
+const _isPendingAjaxForComponents = obj => {
+	return obj.classList.contains('htmlPending') || obj.classList.contains('cssPending');
 };
 
 const _absLeft = el => {
