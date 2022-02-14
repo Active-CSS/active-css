@@ -1977,6 +1977,8 @@ _c.IfVar = o => {
 		}
 	}
 
+console.log('_c.IfVar, comparing varValue:', varValue, ' with compareVal:', compareVal);
+
 	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };
 
@@ -2754,8 +2756,10 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 				if (obj === document.body) {
 					_handleEvents({ obj, evType });
 				} else {
-					compDetails = _componentDetails(obj);
-					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+					setTimeout(() => {
+						compDetails = _componentDetails(obj);
+						_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+					}, 0);
 				}
 			});
 		}
@@ -3170,7 +3174,7 @@ const _passesConditional = (condObj) => {
 				    if (!c) return m;
 				    return '_ACSSComma';
 				});
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped', 'html' ],
 					{
 						str: aV,
 						func: 'Var',
@@ -3183,6 +3187,9 @@ const _passesConditional = (condObj) => {
 				if (!_checkCond({ commandName, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 					return false;
 				}
+
+console.log('_passesConditional, condition passed, cond:', cond); 
+
 			}
 			continue;
 		}
@@ -4256,11 +4263,22 @@ const _replaceEventVars = (sel, obj) => {
 			obj
 		}
 	);
-	strObj = _handleVars([ 'strings', 'scoped' ],
+	strObj = _handleVars([ 'strings', 'scoped', 'html' ],
 		{
 			str: strObj.str,
 		},
 		strObj.ref
+	);
+	return _resolveVars(strObj.str, strObj.ref);
+};
+
+const _replaceEventVarsMini = (sel, obj) => {
+	let str = ActiveCSS._sortOutFlowEscapeChars(sel);
+	let strObj = _handleVars([ 'rand', 'expr', 'scoped', 'html' ],
+		{
+			str,
+			obj
+		}
 	);
 	return _resolveVars(strObj.str, strObj.ref);
 };
@@ -4283,12 +4301,15 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			unEscaped = true;
 			c = c.replace(/\:UNESCAPED/, '');
 		}
-		if (c.startsWith('document:')) {
+		if (o === undefined) {
+			doc = document;
+		} else if (c.startsWith('document:')) {
 			c = c.substr(9);
 			doc = document;
 		} else {
 			doc = _resolveDocObj(o.doc);
 		}
+
 		let el = doc.getElementById(c);
 		if (el) {
 			let res;
@@ -11533,6 +11554,9 @@ const _selCompare = (o, opt) => {
 			return (el && compareVal == el.innerText);
 		case 'iH':
 			// _cIfInnerHTML
+
+console.log('_selCompare, comparing compareVal:', compareVal, ' with el.innerHTML:', el.innerHTML);
+
 			return (el && compareVal == el.innerHTML);
 		case 'iV':
 			// _cIfValue
