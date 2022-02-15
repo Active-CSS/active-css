@@ -92,7 +92,17 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			)) {
 			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
 			// like a regular event.
-			let targetEl = (mutationTarget.nodeType === Node.TEXT_NODE) ? mutationTarget.parentElement : mutationTarget;
+			let targetEl
+			if (mutationTarget.nodeType === Node.TEXT_NODE) {
+				targetEl = mutationTarget.parentElement;
+			} else {
+				targetEl = mutationTarget;
+				// Handle any targeted non-bubbling innerhtmlchange events on elements inside the main element.
+				targetEl.querySelectorAll('*:not(template *)').forEach(function(obj) {
+					_handleEvents({ obj: obj, evType: 'innerhtmlchange' });
+				});
+			}
+			// Now run innerhtmlchange on the parent element and bubble up the DOM from here.
 			ActiveCSS._theEventFunction({ type: 'innerhtmlchange', target: targetEl, bubbles: true });
 		}
 	});
