@@ -57,6 +57,16 @@
 			'if-value',
 			'if-visible'
 		],
+		CUSTOMEVENTS = [
+			'adoptedCallback',
+			'attributeChangedCallback',
+			'beforeComponentOpen',
+			'componentOpen',
+			'draw',
+			'disconnectCallback',
+			'innerhtmlchange',
+			'observe'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -1977,8 +1987,6 @@ _c.IfVar = o => {
 		}
 	}
 
-console.log('_c.IfVar, comparing varValue:', varValue, ' with compareVal:', compareVal);
-
 	return (typeof varValue == typeof compareVal && varValue == compareVal);
 };
 
@@ -2756,10 +2764,8 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 				if (obj === document.body) {
 					_handleEvents({ obj, evType });
 				} else {
-					setTimeout(() => {
-						compDetails = _componentDetails(obj);
-						_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
-					}, 0);
+					compDetails = _componentDetails(obj);
+					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
 				}
 			});
 		}
@@ -3044,12 +3050,17 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 
 	_handleObserveEvents(mutations, dom);
 
+	let changeNodeList = [];
 	mutations.forEach(mutation => {
+		const mutationType = mutation.type;
+		const mutationTarget = mutation.target;
+		const mutationAddedNodes = mutation.addedNodes;
+		const mutationRemovedNodes = mutation.removedNodes;
 		// Handle any observe events on the node itself.
-		if (mutation.type == 'childList') {
-			if (mutation.addedNodes) {
+		if (mutationType == 'childList') {
+			if (mutationAddedNodes) {
 				if (DEVCORE) {
-					mutation.addedNodes.forEach(nod => {
+					mutationAddedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
@@ -3062,10 +3073,10 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 					});
 				}
 			}
-		} else if (mutation.type == 'characterData' && !insideShadowDOM) {
+		} else if (mutationType == 'characterData' && !insideShadowDOM) {
 			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
-			let el = mutation.target;
+			let el = mutationTarget;
 			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
 				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
 				setTimeout(function() {
@@ -3085,8 +3096,8 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			}
 		}
 
-		if (mutation.removedNodes) {
-			mutation.removedNodes.forEach(nod => {
+		if (mutationRemovedNodes) {
+			mutationRemovedNodes.forEach(nod => {
 				if (!(nod instanceof HTMLElement)) return;
 				// Now perform some clean-up on removed nodes. It doesn't have to be done immediately, so just do it after the current stack.
 				// Note that nested shadow DOMs can also come into play here, and we need to clean up those too.
@@ -3119,6 +3130,16 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 */
 				}, 0);
 			});
+		}
+
+		if (selectors.innerhtmlchange && _isConnected(mutationTarget) && (
+				mutationType == 'characterData' ||
+				mutationType == 'childList' && (mutationAddedNodes.length || mutationRemovedNodes.length)
+			)) {
+			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
+			// like a regular event.
+			let targetEl = (mutationTarget.nodeType === Node.TEXT_NODE) ? mutationTarget.parentElement : mutationTarget;
+			ActiveCSS._theEventFunction({ type: 'innerhtmlchange', target: targetEl, bubbles: true });
 		}
 	});
 };
@@ -3187,9 +3208,6 @@ const _passesConditional = (condObj) => {
 				if (!_checkCond({ commandName, evType, aV, el, varScope, ajaxObj, func, sel, eve, doc, component, compDoc, actionBoolState })) {
 					return false;
 				}
-
-console.log('_passesConditional, condition passed, cond:', cond); 
-
 			}
 			continue;
 		}
@@ -4268,17 +4286,6 @@ const _replaceEventVars = (sel, obj) => {
 			str: strObj.str,
 		},
 		strObj.ref
-	);
-	return _resolveVars(strObj.str, strObj.ref);
-};
-
-const _replaceEventVarsMini = (sel, obj) => {
-	let str = ActiveCSS._sortOutFlowEscapeChars(sel);
-	let strObj = _handleVars([ 'rand', 'expr', 'scoped', 'html' ],
-		{
-			str,
-			obj
-		}
 	);
 	return _resolveVars(strObj.str, strObj.ref);
 };
@@ -6612,6 +6619,11 @@ const _wrapUpStart = (o) => {
 		// Iterate items on this page and do any draw events. Note this needs to be here, because the page has already been drawn and so the draw event
 		// in the mutation section will never get run.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
+
+		// Iterate document items on this page and do any observe events.
+		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
+		// event in the mutation section would otherwise not get run.
+		_runInnerEvent(null, '*:not(template *)', 'innerhtmlchange', document, true);
 
 		// Iterate document items on this page and do any observe events.
 		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
@@ -10983,7 +10995,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (['draw', 'observe', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
+		if (CUSTOMEVENTS.includes(ev)) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;
@@ -11554,9 +11566,6 @@ const _selCompare = (o, opt) => {
 			return (el && compareVal == el.innerText);
 		case 'iH':
 			// _cIfInnerHTML
-
-console.log('_selCompare, comparing compareVal:', compareVal, ' with el.innerHTML:', el.innerHTML);
-
 			return (el && compareVal == el.innerHTML);
 		case 'iV':
 			// _cIfValue

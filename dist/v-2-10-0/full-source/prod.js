@@ -57,6 +57,16 @@
 			'if-value',
 			'if-visible'
 		],
+		CUSTOMEVENTS = [
+			'adoptedCallback',
+			'attributeChangedCallback',
+			'beforeComponentOpen',
+			'componentOpen',
+			'draw',
+			'disconnectCallback',
+			'innerhtmlchange',
+			'observe'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -3040,12 +3050,17 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 
 	_handleObserveEvents(mutations, dom);
 
+	let changeNodeList = [];
 	mutations.forEach(mutation => {
+		const mutationType = mutation.type;
+		const mutationTarget = mutation.target;
+		const mutationAddedNodes = mutation.addedNodes;
+		const mutationRemovedNodes = mutation.removedNodes;
 		// Handle any observe events on the node itself.
-		if (mutation.type == 'childList') {
-			if (mutation.addedNodes) {
+		if (mutationType == 'childList') {
+			if (mutationAddedNodes) {
 				if (DEVCORE) {
-					mutation.addedNodes.forEach(nod => {
+					mutationAddedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
@@ -3058,10 +3073,10 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 					});
 				}
 			}
-		} else if (mutation.type == 'characterData' && !insideShadowDOM) {
+		} else if (mutationType == 'characterData' && !insideShadowDOM) {
 			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
-			let el = mutation.target;
+			let el = mutationTarget;
 			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
 				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
 				setTimeout(function() {
@@ -3081,8 +3096,8 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			}
 		}
 
-		if (mutation.removedNodes) {
-			mutation.removedNodes.forEach(nod => {
+		if (mutationRemovedNodes) {
+			mutationRemovedNodes.forEach(nod => {
 				if (!(nod instanceof HTMLElement)) return;
 				// Now perform some clean-up on removed nodes. It doesn't have to be done immediately, so just do it after the current stack.
 				// Note that nested shadow DOMs can also come into play here, and we need to clean up those too.
@@ -3115,6 +3130,16 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 */
 				}, 0);
 			});
+		}
+
+		if (selectors.innerhtmlchange && _isConnected(mutationTarget) && (
+				mutationType == 'characterData' ||
+				mutationType == 'childList' && (mutationAddedNodes.length || mutationRemovedNodes.length)
+			)) {
+			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
+			// like a regular event.
+			let targetEl = (mutationTarget.nodeType === Node.TEXT_NODE) ? mutationTarget.parentElement : mutationTarget;
+			ActiveCSS._theEventFunction({ type: 'innerhtmlchange', target: targetEl, bubbles: true });
 		}
 	});
 };
@@ -3170,7 +3195,7 @@ const _passesConditional = (condObj) => {
 				    if (!c) return m;
 				    return '_ACSSComma';
 				});
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped', 'html' ],
 					{
 						str: aV,
 						func: 'Var',
@@ -4256,7 +4281,7 @@ const _replaceEventVars = (sel, obj) => {
 			obj
 		}
 	);
-	strObj = _handleVars([ 'strings', 'scoped' ],
+	strObj = _handleVars([ 'strings', 'scoped', 'html' ],
 		{
 			str: strObj.str,
 		},
@@ -4283,12 +4308,15 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			unEscaped = true;
 			c = c.replace(/\:UNESCAPED/, '');
 		}
-		if (c.startsWith('document:')) {
+		if (o === undefined) {
+			doc = document;
+		} else if (c.startsWith('document:')) {
 			c = c.substr(9);
 			doc = document;
 		} else {
 			doc = _resolveDocObj(o.doc);
 		}
+
 		let el = doc.getElementById(c);
 		if (el) {
 			let res;
@@ -6591,6 +6619,11 @@ const _wrapUpStart = (o) => {
 		// Iterate items on this page and do any draw events. Note this needs to be here, because the page has already been drawn and so the draw event
 		// in the mutation section will never get run.
 		_runInnerEvent(null, '*:not(template *)', 'draw', document, true);
+
+		// Iterate document items on this page and do any observe events.
+		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
+		// event in the mutation section would otherwise not get run.
+		_runInnerEvent(null, '*:not(template *)', 'innerhtmlchange', document, true);
 
 		// Iterate document items on this page and do any observe events.
 		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
@@ -10285,7 +10318,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (['draw', 'observe', 'disconnectCallback', 'adoptedCallback', 'attributeChangedCallback', 'beforeComponentOpen', 'componentOpen'].includes(ev)) return false;	// custom Active CSS events.
+		if (CUSTOMEVENTS.includes(ev)) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;

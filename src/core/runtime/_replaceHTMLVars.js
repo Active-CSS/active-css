@@ -16,12 +16,15 @@ const _replaceHTMLVars = (o, str, varReplacementRef=-1) => {
 			unEscaped = true;
 			c = c.replace(/\:UNESCAPED/, '');
 		}
-		if (c.startsWith('document:')) {
+		if (o === undefined) {
+			doc = document;
+		} else if (c.startsWith('document:')) {
 			c = c.substr(9);
 			doc = document;
 		} else {
 			doc = _resolveDocObj(o.doc);
 		}
+
 		let el = doc.getElementById(c);
 		if (el) {
 			let res;

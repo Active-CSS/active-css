@@ -4,12 +4,17 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 
 	_handleObserveEvents(mutations, dom);
 
+	let changeNodeList = [];
 	mutations.forEach(mutation => {
+		const mutationType = mutation.type;
+		const mutationTarget = mutation.target;
+		const mutationAddedNodes = mutation.addedNodes;
+		const mutationRemovedNodes = mutation.removedNodes;
 		// Handle any observe events on the node itself.
-		if (mutation.type == 'childList') {
-			if (mutation.addedNodes) {
+		if (mutationType == 'childList') {
+			if (mutationAddedNodes) {
 				if (DEVCORE) {
-					mutation.addedNodes.forEach(nod => {
+					mutationAddedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
 						if (_isACSSStyleTag(nod) && !nod._acssActiveID && !_isInlineLoaded(nod)) {
@@ -22,10 +27,10 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 					});
 				}
 			}
-		} else if (mutation.type == 'characterData' && !insideShadowDOM) {
+		} else if (mutationType == 'characterData' && !insideShadowDOM) {
 			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
 			// This will be sufficient to set off the processes to sort out the config.
-			let el = mutation.target;
+			let el = mutationTarget;
 			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
 				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
 				setTimeout(function() {
@@ -45,8 +50,8 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			}
 		}
 
-		if (mutation.removedNodes) {
-			mutation.removedNodes.forEach(nod => {
+		if (mutationRemovedNodes) {
+			mutationRemovedNodes.forEach(nod => {
 				if (!(nod instanceof HTMLElement)) return;
 				// Now perform some clean-up on removed nodes. It doesn't have to be done immediately, so just do it after the current stack.
 				// Note that nested shadow DOMs can also come into play here, and we need to clean up those too.
@@ -79,6 +84,16 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 */
 				}, 0);
 			});
+		}
+
+		if (selectors.innerhtmlchange && _isConnected(mutationTarget) && (
+				mutationType == 'characterData' ||
+				mutationType == 'childList' && (mutationAddedNodes.length || mutationRemovedNodes.length)
+			)) {
+			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
+			// like a regular event.
+			let targetEl = (mutationTarget.nodeType === Node.TEXT_NODE) ? mutationTarget.parentElement : mutationTarget;
+			ActiveCSS._theEventFunction({ type: 'innerhtmlchange', target: targetEl, bubbles: true });
 		}
 	});
 };

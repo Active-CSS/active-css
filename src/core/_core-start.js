@@ -57,6 +57,16 @@
 			'if-value',
 			'if-visible'
 		],
+		CUSTOMEVENTS = [
+			'adoptedCallback',
+			'attributeChangedCallback',
+			'beforeComponentOpen',
+			'componentOpen',
+			'draw',
+			'disconnectCallback',
+			'innerhtmlchange',
+			'observe'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',

@@ -6,7 +6,7 @@ const _replaceEventVars = (sel, obj) => {
 			obj
 		}
 	);
-	strObj = _handleVars([ 'strings', 'scoped' ],
+	strObj = _handleVars([ 'strings', 'scoped', 'html' ],
 		{
 			str: strObj.str,
 		},
