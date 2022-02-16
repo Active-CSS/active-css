@@ -3138,7 +3138,7 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			)) {
 			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
 			// like a regular event.
-			let targetEl
+			let targetEl;
 			if (mutationTarget.nodeType === Node.TEXT_NODE) {
 				targetEl = mutationTarget.parentElement;
 			} else {
@@ -10395,7 +10395,7 @@ const _getSelector = (o, sel, many=false) => {
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
 
-	let thisObj = false;
+//	let thisObj = false;
 	if ((
 			newSel.indexOf('&') !== -1 ||
 			/\bself\b/.test(newSel) ||
@@ -10413,14 +10413,15 @@ const _getSelector = (o, sel, many=false) => {
 		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, repStr);
 		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, repStr);
 		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
-		thisObj = true;
+//		thisObj = true;
 	}
 
 	// The string selector should now be fully iterable if we split by " -> " and "<".
 	let selSplit = newSel.split(/( \-> |<)/);
-	if (selSplit.length == 1 && thisObj) {
-		return { doc: newDoc, obj: (many ? [ obj ] : obj) };
-	}
+
+//	if (selSplit.length == 1 && thisObj) {	// leave this here for the moment - it was breaking things.
+//		return { doc: newDoc, obj: (many ? [ obj ] : obj) };
+//	}
 	let mainObj = obj;
 
 	let selSplitLen = selSplit.length;
@@ -10828,18 +10829,20 @@ const _selCompare = (o, opt) => {
 		spl = spl.join(' ');
 	} 
 	let el;
-	el = _getSel(o, spl);
+	el = _getSelector(o, spl);
 
 	let widthHeightEl = false;
 	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
 	}
-	if (!el) {
+	if (!el || !el.obj) {
 		if (widthHeightEl) {
 			// When referencing height or width we need an element. If it isn't there then return false.
 			return false;
 		}
 		el = spl;
+	} else {
+		el = el.obj;
 	}
 	if (widthHeightEl) {
 		compareVal = compareVal.replace('px', '');

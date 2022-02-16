@@ -92,7 +92,7 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 			)) {
 			// There's been an HTML change of some kind. Trigger the innerHTML event on the target. Run it through the main event handler with a dummy "e" so that it bubbles
 			// like a regular event.
-			let targetEl
+			let targetEl;
 			if (mutationTarget.nodeType === Node.TEXT_NODE) {
 				targetEl = mutationTarget.parentElement;
 			} else {

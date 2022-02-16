@@ -16,18 +16,20 @@ const _selCompare = (o, opt) => {
 		spl = spl.join(' ');
 	} 
 	let el;
-	el = _getSel(o, spl);
+	el = _getSelector(o, spl);
 
 	let widthHeightEl = false;
 	if (['maW', 'miW', 'maH', 'miH'].indexOf(opt) !== -1) {
 		widthHeightEl = true;
 	}
-	if (!el) {
+	if (!el || !el.obj) {
 		if (widthHeightEl) {
 			// When referencing height or width we need an element. If it isn't there then return false.
 			return false;
 		}
 		el = spl;
+	} else {
+		el = el.obj;
 	}
 	if (widthHeightEl) {
 		compareVal = compareVal.replace('px', '');
