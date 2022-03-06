@@ -62,6 +62,7 @@
 			'attributeChangedCallback',
 			'beforeComponentOpen',
 			'componentOpen',
+			'connectedCallback',
 			'draw',
 			'disconnectCallback',
 			'innerhtmlchange',
@@ -94,7 +95,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /( after| every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
+		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.

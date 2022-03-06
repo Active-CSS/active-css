@@ -19,6 +19,8 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	// don't forget to handle target selector insertion after this too.
 
+	let container = document.createElement('div');
+
 	let iframes = [];
 	if (content.indexOf('<iframe') !== -1) {
 		// Prepare dynamic iframes for later rendering if it looks like they might be there.
@@ -26,8 +28,6 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		content = contentObj.str;
 		iframes = contentObj.iframes;
 	}
-
-	let container = document.createElement('div');
 
 	// If the first element is a table inner element like a tr, things like tr and subsequent tds are going to disappear with this method.
 	// All we have to do is change these to something else, and put them back afterwards. One method used here is a replace. Probably could be better.

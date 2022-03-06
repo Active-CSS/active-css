@@ -62,6 +62,7 @@
 			'attributeChangedCallback',
 			'beforeComponentOpen',
 			'componentOpen',
+			'connectedCallback',
 			'draw',
 			'disconnectCallback',
 			'innerhtmlchange',
@@ -94,7 +95,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /( after| every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
+		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -2024,7 +2025,7 @@ const _delaySplit = (str, typ, o) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
-	regex = new RegExp(' (' + typ + ' (0|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
+	regex = new RegExp('(?:^| )(' + typ + ' (0|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
@@ -4121,6 +4122,8 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	// don't forget to handle target selector insertion after this too.
 
+	let container = document.createElement('div');
+
 	let iframes = [];
 	if (content.indexOf('<iframe') !== -1) {
 		// Prepare dynamic iframes for later rendering if it looks like they might be there.
@@ -4128,8 +4131,6 @@ const _renderIt = (o, content, childTree, selfTree) => {
 		content = contentObj.str;
 		iframes = contentObj.iframes;
 	}
-
-	let container = document.createElement('div');
 
 	// If the first element is a table inner element like a tr, things like tr and subsequent tds are going to disappear with this method.
 	// All we have to do is change these to something else, and put them back afterwards. One method used here is a replace. Probably could be better.
@@ -11072,7 +11073,6 @@ const _getSelector = (o, sel, many=false) => {
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
 
-//	let thisObj = false;
 	if ((
 			newSel.indexOf('&') !== -1 ||
 			/\bself\b/.test(newSel) ||
@@ -11084,21 +11084,18 @@ const _getSelector = (o, sel, many=false) => {
 		attrActiveID = _getActiveID(elToUse);
 
 		// Add the data-activeid attribute so we can search with it. We're going to remove it after. It keeps it all quicker than manual DOM traversal.
-		elToUse.setAttribute('data-activeid', attrActiveID);
 		let repStr = '[data-activeid=' + attrActiveID + ']';
 		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, repStr);
 		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, repStr);
 		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, repStr);
 		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
-//		thisObj = true;
+		if (newSel == repStr) return { doc: newDoc, obj: selManyize(obj, true) };
+		elToUse.setAttribute('data-activeid', attrActiveID);
 	}
 
 	// The string selector should now be fully iterable if we split by " -> " and "<".
 	let selSplit = newSel.split(/( \-> |<)/);
 
-//	if (selSplit.length == 1 && thisObj) {	// leave this here for the moment - it was breaking things.
-//		return { doc: newDoc, obj: (many ? [ obj ] : obj) };
-//	}
 	let mainObj = obj;
 
 	let selSplitLen = selSplit.length;
@@ -11219,19 +11216,7 @@ const _getSelector = (o, sel, many=false) => {
 		justSetIframeAsDoc = false;
 	}
 
-	let res = { doc: newDoc }, done;
-	if (many) {
-		if (singleResult) {
-			res.obj = [ mainObj ];
-			done = true;
-		}
-	} else {
-		if (multiResult) {
-			res.obj = mainObj[0];
-			done = true;
-		}
-	}
-	if (!done) res.obj = mainObj;
+	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
 	if (attrActiveID) elToUse.removeAttribute('data-activeid');
 
@@ -11246,6 +11231,19 @@ const _getSelector = (o, sel, many=false) => {
 			return innards;
 		});
 		return newSel;
+	}
+
+	function selManyize(mainObj, singleResult, multiResult) {
+		if (many) {
+			if (singleResult) {
+				return [ mainObj ];
+			}
+		} else {
+			if (multiResult) {
+				return mainObj[0];
+			}
+		}
+		return mainObj;
 	}
 
 	return res;

@@ -40,7 +40,6 @@ const _getSelector = (o, sel, many=false) => {
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
 
-//	let thisObj = false;
 	if ((
 			newSel.indexOf('&') !== -1 ||
 			/\bself\b/.test(newSel) ||
@@ -52,21 +51,18 @@ const _getSelector = (o, sel, many=false) => {
 		attrActiveID = _getActiveID(elToUse);
 
 		// Add the data-activeid attribute so we can search with it. We're going to remove it after. It keeps it all quicker than manual DOM traversal.
-		elToUse.setAttribute('data-activeid', attrActiveID);
 		let repStr = '[data-activeid=' + attrActiveID + ']';
 		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, repStr);
 		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, repStr);
 		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, repStr);
 		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
-//		thisObj = true;
+		if (newSel == repStr) return { doc: newDoc, obj: selManyize(obj, true) };
+		elToUse.setAttribute('data-activeid', attrActiveID);
 	}
 
 	// The string selector should now be fully iterable if we split by " -> " and "<".
 	let selSplit = newSel.split(/( \-> |<)/);
 
-//	if (selSplit.length == 1 && thisObj) {	// leave this here for the moment - it was breaking things.
-//		return { doc: newDoc, obj: (many ? [ obj ] : obj) };
-//	}
 	let mainObj = obj;
 
 	let selSplitLen = selSplit.length;
@@ -187,19 +183,7 @@ const _getSelector = (o, sel, many=false) => {
 		justSetIframeAsDoc = false;
 	}
 
-	let res = { doc: newDoc }, done;
-	if (many) {
-		if (singleResult) {
-			res.obj = [ mainObj ];
-			done = true;
-		}
-	} else {
-		if (multiResult) {
-			res.obj = mainObj[0];
-			done = true;
-		}
-	}
-	if (!done) res.obj = mainObj;
+	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
 	if (attrActiveID) elToUse.removeAttribute('data-activeid');
 
@@ -214,6 +198,19 @@ const _getSelector = (o, sel, many=false) => {
 			return innards;
 		});
 		return newSel;
+	}
+
+	function selManyize(mainObj, singleResult, multiResult) {
+		if (many) {
+			if (singleResult) {
+				return [ mainObj ];
+			}
+		} else {
+			if (multiResult) {
+				return mainObj[0];
+			}
+		}
+		return mainObj;
 	}
 
 	return res;
