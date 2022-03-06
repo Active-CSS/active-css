@@ -153,10 +153,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Restart the sync queue if await was used.
-	if (!o.isAsync && _isSyncQueueSet(o._subEvCo)) {
+	if (!o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
 		_syncRestart(o, o._subEvCo);
 		return;
 	}
 
- 	_nextFunc(o);
+	_nextFunc(o);
  };

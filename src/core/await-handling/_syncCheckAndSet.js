@@ -4,6 +4,7 @@ const _syncCheckAndSet = (o, syncQueueSet) => {
 
 	// Remove the " await" from action command.
 	o.actVal = o.actVal.slice(0, -6).trim();
+	o.isAwait = true;
 
 	// Only sync this command if it's a valid delayed event, otherwise ignore the sync.
 	if (!o.isAsync && !o.isTimed) return;
