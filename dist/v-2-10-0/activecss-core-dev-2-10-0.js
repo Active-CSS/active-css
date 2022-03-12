@@ -696,6 +696,16 @@ _a.DocumentTitle = o => {
 	_setDocTitle(o.actVal._ACSSRepQuo());
 };
 
+_a.Empty = o => {
+	if (!_isConnected(o.secSelObj)) return false;
+	let els = _getSels(o, o.actVal);
+	if (els) {
+		els.forEach(obj => {
+			obj.innerHTML = '';
+		});
+	}
+};
+
 _a.Eval = o => {
 	// Run JavaScript dynamically in the global window scope. This is straight-up JavaScript that runs globally.
 	let evalContent = o.actVal.slice(2, -2);
@@ -1886,6 +1896,15 @@ _c.IfFunc = o => {
 			_err('Function ' + o.actVal + ' does not exist', o);
 		}
 	}
+};
+
+_c.IfHas = o => {
+	let aVRes = _extractBracketPars(o.actVal, [ 'scope' ], o);
+	// Get scope element if it is there.
+	let scope = (aVRes.scope) ? _getSel(o, aVRes.scope.trim()) : o.secSelObj;
+	if (!scope || !_isConnected(scope)) return false;
+
+	return scope.querySelector(aVRes.action) ? true : false;
 };
 
 _c.IfHasClass = o => {
