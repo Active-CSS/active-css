@@ -309,13 +309,15 @@ _a.CancelTimer = o => {
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, intID, delayRef, loopref;
-	let scope = (o.varScope) ? o.varScope : 'main';
+	let scope = (o.evScope) ? o.evScope : 'main';
+
 	// It could be a label cancel. If the label exists, remove the delay.
 	if (labelData[scope + val]) {
 		// This is a label cancel. We know it is tied to a specific action value.
 		// Format:
 		// labelData[splitArr.lab] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, tid: tid };
 		// labelByIDs[tid] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, lab: splitArr.lab };
+
 		let delData = labelData[scope + val];
 		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
 		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
@@ -2358,7 +2360,7 @@ const _handleEvents = evObj => {
 		// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
 		// on a per object basis. It is fine as it is working dynamically. If you do have a go, you will need to consider things like routing affecting DOM
 		// attributes, adding/removing attributes, properties, plus monitoring all objects for any external manipulation. It's really not worth it. This code is
-		// short and fast enough on most devices.
+		// short and fast enough on most devices. Browser implementation may want to take that route though, as it is a cleaner approach at a lower code level.
 
 		// Events have an additional action in Active CSS. They can bubble up per component. So a selector in a higher component will be inherited by a lower
 		// component if the mode of the lower component is set to open. If set to closed, only that component's event will be processed. The developer can
@@ -2420,7 +2422,6 @@ const _handleEvents = evObj => {
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
 			testSel = (afterEv && origObj) ? _replaceEventVars(primSel, origObj) : primSel;
-
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
 				    try {
@@ -2595,7 +2596,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		let splitArr, tid, scope;
 		for (aftEv of delLoop) {
 			splitArr = _delaySplit(o2.actVal, aftEv, o);
-			scope = (o.varScope) ? o.varScope : 'main';
+			scope = (o.evScope) ? o.evScope : 'main';
 			if (splitArr.lab) splitArr.lab = scope + splitArr.lab;
 			if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
 				o2.actVal = splitArr.str;
@@ -12334,4 +12335,4 @@ if (window.NodeList && !NodeList.prototype.forEach) {
 			}
 		}, 0);
 	});
-}(window, document));
+}(window, document));                                                                                                              

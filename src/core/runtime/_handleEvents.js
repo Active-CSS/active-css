@@ -30,7 +30,7 @@ const _handleEvents = evObj => {
 		// The DOM state could change at any time, thereby potential changing the state of any object, and it's more trouble than it's worth to keep track of it
 		// on a per object basis. It is fine as it is working dynamically. If you do have a go, you will need to consider things like routing affecting DOM
 		// attributes, adding/removing attributes, properties, plus monitoring all objects for any external manipulation. It's really not worth it. This code is
-		// short and fast enough on most devices.
+		// short and fast enough on most devices. Browser implementation may want to take that route though, as it is a cleaner approach at a lower code level.
 
 		// Events have an additional action in Active CSS. They can bubble up per component. So a selector in a higher component will be inherited by a lower
 		// component if the mode of the lower component is set to open. If set to closed, only that component's event will be processed. The developer can
@@ -92,7 +92,6 @@ const _handleEvents = evObj => {
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
 			// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
 			testSel = (afterEv && origObj) ? _replaceEventVars(primSel, origObj) : primSel;
-
 			if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				if (typeof obj !== 'string') {
 				    try {
