@@ -18,20 +18,28 @@ const _extractBracketPars = (actionValue, parArr, o) => {
 	newActionValue = _escInQuo(newActionValue, ')', '_ACSS_clPa');
 
 	parArr.forEach(parName => {
-		// Note this was further abstracted out, but would have been slower with the char escaping going on above happening within the abstraction,
-		// so I put it back to this for the sake of speed.
-		let currentActionValue = newActionValue;
-		pos = newActionValue.indexOf(parName + '(');
-		if (pos !== -1) {
-			parStartLen = parName.length + 1;	// Includes name of parameter and first parenthesis.
-			newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
-			// Get the parameter value and the remainder of the action value.
-			// Send over the action value from the beginning of the parameter value.
-			splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
-			res[parName] = _extractBracketParsUnEsc(splitRes.value);
-			newActionValue += splitRes.remainder;
+		let trackArr = [];
+		while (true) {
+			// Note this was further abstracted out, but would have been slower with the char escaping going on above happening within the abstraction,
+			// so I put it back to this for the sake of speed.
+			let currentActionValue = newActionValue;
+			pos = newActionValue.indexOf(parName + '(');
+			if (pos !== -1) {
+				parStartLen = parName.length + 1;	// Includes name of parameter and first parenthesis.
+				newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
+				// Get the parameter value and the remainder of the action value.
+				// Send over the action value from the beginning of the parameter value.
+				splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
+				trackArr.push(_extractBracketParsUnEsc(splitRes.value));
+				newActionValue += splitRes.remainder;
+				// Check for any others.
+				continue;
+			}
+			if (trackArr.length > 0) res[parName] = (trackArr.length == 1) ? trackArr[0] : trackArr;
+			break;
 		}
 	});
+
 	res.action = _extractBracketParsUnEsc(newActionValue);	// The action is what is left after the parameter loop.
 
 	return res;
@@ -48,7 +56,6 @@ const _extractBracketParsSplit = (str, original, o) => {
 	// Return value should be:
 	// res.value = "#left";
 	// res.remainder = " another(#myEl:not(has(something))) hi(and the rest) something"
-
 	let res = {};
 	// Split by "(".
 	let openingArr = str.split('(');
@@ -62,11 +69,15 @@ const _extractBracketParsSplit = (str, original, o) => {
 		res.remainder = str.substr(closingPos + 1);
 	} else {
 		let lineCarry = '', line, innerRes, remainderArr;
+		let co = 0;
 		for (let n = 0; n < openingArr.length; n++) {
 			line = openingArr[n];
+			co++;
 			// Now get the content of this line sorted out.
-			innerRes = _extractBracketParsInner(line, n + 1, original, o);
-			if (innerRes.value) {
+			innerRes = _extractBracketParsInner(line, co, original, o);
+			if (typeof innerRes === 'number') {
+				co = co - innerRes;
+			} else if (innerRes.value) {
 				// We got the variable that we needed.
 				res.value = lineCarry + innerRes.value;
 				res.remainder = innerRes.remainder;
@@ -78,7 +89,6 @@ const _extractBracketParsSplit = (str, original, o) => {
 			}
 			lineCarry += line + '(';
 		}
-
 	}
 
 	return res;
@@ -94,8 +104,8 @@ const _extractBracketParsInner = (str, numOpening, original, o) => {
 			_err('Too many closing parenthesis found in component statement: ' + original);
 		}
 	} else if (closingArr.length - 1 < numOpening) {
-		// Not enough closing parameters. Return an empty object without a value.
-		return {};
+		// Not enough closing parameters. Return the number of closing parameters so they can be accounted for.
+		return closingArr.length - 1;
 	} else {
 		// We have the right number of closing parentheses.
 		let res = {};

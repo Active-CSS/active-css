@@ -7,7 +7,21 @@ const _ajaxDo = o => {
 		if (preGetMid == preGetMax) return;	// Skip this pre-get - there is a threshold set.
 	}
 	// Sort out the extra vars and grab the contents of the url.
-	let ajaxArr = o.actVal.split(' ');
+	let aVRes = _extractBracketPars(o.actVal, [ 'header' ], o);
+	if (aVRes.header) {
+		// Convert inner string to formatted headers array.
+		o.xhrHeaders = [];
+		const trimHeadVals = str => {
+			// Make this generic if same sort of thing needed again.
+			return str.trim()._ACSSRepQuo().replace(/_ACSS_comma/g, ',');
+		};
+		for (const headerStr of aVRes.header) {
+			let newHeaderStr = _escInQuo(headerStr, ',', '_ACSS_comma');
+			let arr = newHeaderStr.split(',');
+			o.xhrHeaders.push({ key: trimHeadVals(arr[0]), val: trimHeadVals(arr[1]) });
+		}
+	}
+	let ajaxArr = aVRes.action.split(' ');
 	o.formMethod = _optDef(ajaxArr, 'get', 'GET', 'POST');
 	o.dataType = _optDef(ajaxArr, 'html', 'HTML', 'JSON');
 	o.cache = _optDef(ajaxArr, 'cache', true, false);
