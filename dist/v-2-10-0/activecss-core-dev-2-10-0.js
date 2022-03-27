@@ -5433,6 +5433,18 @@ const _addConfigError = (str, o) => {
 	_handleEvents({ obj: o.obj, evType: 'loadconfigerror', eve: o.e });
 };
 
+const _addToSystemInit = (inlineActiveID, command, actionVal) => {
+	let sel, ev;
+	if (inlineActiveID) {
+		sel = '~_embedded_' + inlineActiveID;
+		ev = 'loaded';
+	} else {
+		sel = '~_acssSystem';
+		ev = !setupEnded ? 'init' : 'afterLoadConfig';
+	}
+	return sel + ':' + ev + '{' + command + ':' + actionVal + ';}';
+};
+
 const _assignLoopToConfig = (configObj, nam, val, file, line, intID, componentName, ev) => {
 	let secsels, secselsLength, secsel, i, thisAct, secSelCounter = -1;
 
@@ -5891,7 +5903,18 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
-						let compName = strTrimmed.split(' ')[1].trim();
+						let checkCompName = strTrimmed.split(' ')[1].trim();
+						let compName, elementName;
+						if (checkCompName.indexOf('-') !== -1) {
+							// This is an element. Generate the internal component name for tying into the element.
+							elementName = checkCompName;
+							compName = _ucFirst(checkCompName._ACSSConvFunc());
+						} else {
+							compName = checkCompName;
+						}
+
+// set up accept-vars as option. default to no ACSS variables allowed in html/css files.
+
 						if (!removeState) {
 							if (!components[compName]) components[compName] = {};
 							components[compName].mode = null;
@@ -5909,8 +5932,9 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
+							let componentOpts = {};
 							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
-								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
+								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
 								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
@@ -5949,7 +5973,13 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privEvs = true;
 							}
+
+							if (elementName) {
+								// Tie in official creation of the element to the component, with attribute observation options if present.
+								_a.CreateElement({ actVal: elementName + ' ' + compName + (componentOpts.observe ? ' observe(' + componentOpts.observe + ')' : '') });
+							}
 						}
+
 						// Recurse and set up componentness.
 						_makeVirtualConfig(innerContent, '', compName, removeState, fileToRemove);
 						if (!removeState) {
@@ -6195,15 +6225,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
-		let sel, ev;
-		if (inlineActiveID) {
-			sel = '~_embedded_' + inlineActiveID;
-			ev = 'loaded';
-		} else {
-			sel = '~_acssSystem';
-			ev = !setupEnded ? 'init' : 'afterLoadConfig';
-		}
-		systemInitConfig += sel + ':' + ev + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		systemInitConfig += _addToSystemInit(inlineActiveID, (!typ ? 'create-command' : 'create-conditional'), innards);
 		return '';
 	});
 	str += systemInitConfig;
@@ -10963,6 +10985,17 @@ const _getFocusedOfNodes = (sel, o, startingFrom='') => {
 	return [ nodes, useI ];
 };
 
+const _getMinExistingPos = (str, arr) => {
+	let minArr = [], pos;
+	for (let n = 0; n < arr.length; n++) {
+		pos = str.indexOf(arr[n]);
+		if (pos !== -1) {
+			minArr.push(pos);
+		}
+	}
+	return minArr.length > 0 ? Math.min(...minArr) : -1;
+};
+
 const _getNumber = str => {
 	let val = parseFloat(str);
 	let num = str - val + 1;
@@ -11126,6 +11159,7 @@ const _getSelector = (o, sel, many=false) => {
 
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
+	let addedAttrs = [];
 
 	if ((
 			newSel.indexOf('&') !== -1 ||
@@ -11145,13 +11179,13 @@ const _getSelector = (o, sel, many=false) => {
 		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
 		if (newSel == repStr) return { doc: newDoc, obj: selManyize(obj, true) };
 		elToUse.setAttribute('data-activeid', attrActiveID);
+		addedAttrs.push(elToUse);
 	}
 
 	// The string selector should now be fully iterable if we split by " -> " and "<".
 	let selSplit = newSel.split(/( \-> |<)/);
 
 	let mainObj = obj;
-
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
 	let justFoundIframe = false;
@@ -11160,9 +11194,8 @@ const _getSelector = (o, sel, many=false) => {
 	let justSetIframeAsDoc = false;
 
 	for (n = 0; n < selSplitLen; n++) {
-		selItem = unescForSel(selSplit[n]);
-
-		if (justFoundIframe !== false && selItem == ' -> ') {
+		selItem = unescForSel(selSplit[n]).trim();
+		if (justFoundIframe !== false && selItem == '->') {
 			// We are drilling into an iframe next.
 			newDoc = justFoundIframe;
 			justFoundIframe = false;
@@ -11226,7 +11259,7 @@ const _getSelector = (o, sel, many=false) => {
 				singleResult = true;
 				break;
 
-			case ' -> ':
+			case '->':
 				break;
 
 			case '<':
@@ -11238,25 +11271,36 @@ const _getSelector = (o, sel, many=false) => {
 					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
 					if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
 					if (!mainObj) break;
-					mainObj = mainObj.closest(selItem);
-					singleResult = true;
-				} else {
-					try {
-						mainObj = newDoc.querySelectorAll(selItem);
-						if (!mainObj) {
-							if (newDoc.nodeType !== Node.DOCUMENT_NODE) {
-								if (newDoc.matches(selItem)) {
-									mainObj = newDoc;
-								}
+
+					// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
+					// Grab the string up to the presence of the first ' ', '>', '+' or '~'.
+					let pos = _getMinExistingPos(selItem, [ ' ', '>', '+', '~' ]);
+					let firstSel = (pos === -1) ? selItem : selItem.substr(0, pos);
+					mainObj = mainObj.closest(firstSel);
+					if (mainObj && pos !== -1) {
+						let subAttrActiveID = _getActiveID(mainObj);
+						mainObj.setAttribute('data-activeid', subAttrActiveID);
+						addedAttrs.push(mainObj);
+						newDoc = mainObj.parentNode;
+						selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+					}
+				}
+				try {
+					mainObj = newDoc.querySelectorAll(selItem);
+					if (!mainObj) {
+						if (newDoc.nodeType !== Node.DOCUMENT_NODE) {
+							if (newDoc.matches(selItem)) {
+								mainObj = newDoc;
 							}
 						}
-							
-					} catch(err) {
-						if (attrActiveID) elToUse.removeAttribute('data-activeid');
-						return { obj: undefined, newDoc };
 					}
-					multiResult = true;
+
+				} catch(err) {
+					if (attrActiveID) removeAddedAttrs();
+					return { obj: undefined, newDoc };
 				}
+				multiResult = true;
+
 				if (justFoundIframe === false) {
 					if (mainObj && mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
 						justFoundIframe = mainObj[0].contentWindow.document;
@@ -11272,7 +11316,7 @@ const _getSelector = (o, sel, many=false) => {
 
 	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
-	if (attrActiveID) elToUse.removeAttribute('data-activeid');
+	removeAddedAttrs();
 
 	function unescForSel(sel) {
 		let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
@@ -11298,6 +11342,12 @@ const _getSelector = (o, sel, many=false) => {
 			}
 		}
 		return mainObj;
+	}
+
+	function removeAddedAttrs() {
+		for (let el of addedAttrs) {
+			el.removeAttribute('data-activeid');
+		}
 	}
 
 	return res;
@@ -11663,6 +11713,10 @@ const _setUnderPage = () => {
 const _toggleClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	obj.classList.toggle(str);
+};
+
+const _ucFirst = str => {
+	return str ? str[0].toUpperCase() + str.substring(1) : str;
 };
 
 const _unEscNoVars = str => {

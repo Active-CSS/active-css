@@ -44,7 +44,18 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
-						let compName = strTrimmed.split(' ')[1].trim();
+						let checkCompName = strTrimmed.split(' ')[1].trim();
+						let compName, elementName;
+						if (checkCompName.indexOf('-') !== -1) {
+							// This is an element. Generate the internal component name for tying into the element.
+							elementName = checkCompName;
+							compName = _ucFirst(checkCompName._ACSSConvFunc());
+						} else {
+							compName = checkCompName;
+						}
+
+// set up accept-vars as option. default to no ACSS variables allowed in html/css files.
+
 						if (!removeState) {
 							if (!components[compName]) components[compName] = {};
 							components[compName].mode = null;
@@ -62,8 +73,9 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
+							let componentOpts = {};
 							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
-								let componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
+								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
 								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
@@ -102,7 +114,13 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privEvs = true;
 							}
+
+							if (elementName) {
+								// Tie in official creation of the element to the component, with attribute observation options if present.
+								_a.CreateElement({ actVal: elementName + ' ' + compName + (componentOpts.observe ? ' observe(' + componentOpts.observe + ')' : '') });
+							}
 						}
+
 						// Recurse and set up componentness.
 						_makeVirtualConfig(innerContent, '', compName, removeState, fileToRemove);
 						if (!removeState) {

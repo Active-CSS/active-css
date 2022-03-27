@@ -39,6 +39,7 @@ const _getSelector = (o, sel, many=false) => {
 
 	let attrActiveID, n, selItem, compDetails, elToUse;
 	let obj = o.secSelObj || o.obj;
+	let addedAttrs = [];
 
 	if ((
 			newSel.indexOf('&') !== -1 ||
@@ -58,13 +59,13 @@ const _getSelector = (o, sel, many=false) => {
 		if (newSel.indexOf('this') !== -1) newSel = newSel.replace(/\bthis\b/g, repStr);
 		if (newSel == repStr) return { doc: newDoc, obj: selManyize(obj, true) };
 		elToUse.setAttribute('data-activeid', attrActiveID);
+		addedAttrs.push(elToUse);
 	}
 
 	// The string selector should now be fully iterable if we split by " -> " and "<".
 	let selSplit = newSel.split(/( \-> |<)/);
 
 	let mainObj = obj;
-
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
 	let justFoundIframe = false;
@@ -73,9 +74,8 @@ const _getSelector = (o, sel, many=false) => {
 	let justSetIframeAsDoc = false;
 
 	for (n = 0; n < selSplitLen; n++) {
-		selItem = unescForSel(selSplit[n]);
-
-		if (justFoundIframe !== false && selItem == ' -> ') {
+		selItem = unescForSel(selSplit[n]).trim();
+		if (justFoundIframe !== false && selItem == '->') {
 			// We are drilling into an iframe next.
 			newDoc = justFoundIframe;
 			justFoundIframe = false;
@@ -139,7 +139,7 @@ const _getSelector = (o, sel, many=false) => {
 				singleResult = true;
 				break;
 
-			case ' -> ':
+			case '->':
 				break;
 
 			case '<':
@@ -151,25 +151,36 @@ const _getSelector = (o, sel, many=false) => {
 					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
 					if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
 					if (!mainObj) break;
-					mainObj = mainObj.closest(selItem);
-					singleResult = true;
-				} else {
-					try {
-						mainObj = newDoc.querySelectorAll(selItem);
-						if (!mainObj) {
-							if (newDoc.nodeType !== Node.DOCUMENT_NODE) {
-								if (newDoc.matches(selItem)) {
-									mainObj = newDoc;
-								}
+
+					// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
+					// Grab the string up to the presence of the first ' ', '>', '+' or '~'.
+					let pos = _getMinExistingPos(selItem, [ ' ', '>', '+', '~' ]);
+					let firstSel = (pos === -1) ? selItem : selItem.substr(0, pos);
+					mainObj = mainObj.closest(firstSel);
+					if (mainObj && pos !== -1) {
+						let subAttrActiveID = _getActiveID(mainObj);
+						mainObj.setAttribute('data-activeid', subAttrActiveID);
+						addedAttrs.push(mainObj);
+						newDoc = mainObj.parentNode;
+						selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+					}
+				}
+				try {
+					mainObj = newDoc.querySelectorAll(selItem);
+					if (!mainObj) {
+						if (newDoc.nodeType !== Node.DOCUMENT_NODE) {
+							if (newDoc.matches(selItem)) {
+								mainObj = newDoc;
 							}
 						}
-							
-					} catch(err) {
-						if (attrActiveID) elToUse.removeAttribute('data-activeid');
-						return { obj: undefined, newDoc };
 					}
-					multiResult = true;
+
+				} catch(err) {
+					if (attrActiveID) removeAddedAttrs();
+					return { obj: undefined, newDoc };
 				}
+				multiResult = true;
+
 				if (justFoundIframe === false) {
 					if (mainObj && mainObj.length == 1 && mainObj[0].tagName == 'IFRAME') {
 						justFoundIframe = mainObj[0].contentWindow.document;
@@ -185,7 +196,7 @@ const _getSelector = (o, sel, many=false) => {
 
 	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
-	if (attrActiveID) elToUse.removeAttribute('data-activeid');
+	removeAddedAttrs();
 
 	function unescForSel(sel) {
 		let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
@@ -211,6 +222,12 @@ const _getSelector = (o, sel, many=false) => {
 			}
 		}
 		return mainObj;
+	}
+
+	function removeAddedAttrs() {
+		for (let el of addedAttrs) {
+			el.removeAttribute('data-activeid');
+		}
 	}
 
 	return res;

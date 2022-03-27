@@ -24,15 +24,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	let systemInitConfig = '';
 	str = str.replace(/@command[\s]+(conditional[\s]+)?([\u00BF-\u1FFF\u2C00-\uD7FF\w\-]+[\s]*\{\=[\s\S]*?\=\})/g, function(_, typ, innards) {
 		// Take these out of whereever they are and put them at the bottom of the config after this action. If typ is undefined it's not a conditional.
-		let sel, ev;
-		if (inlineActiveID) {
-			sel = '~_embedded_' + inlineActiveID;
-			ev = 'loaded';
-		} else {
-			sel = '~_acssSystem';
-			ev = !setupEnded ? 'init' : 'afterLoadConfig';
-		}
-		systemInitConfig += sel + ':' + ev + '{' + (!typ ? 'create-command' : 'create-conditional') + ':' + innards + ';}';
+		systemInitConfig += _addToSystemInit(inlineActiveID, (!typ ? 'create-command' : 'create-conditional'), innards);
 		return '';
 	});
 	str += systemInitConfig;
