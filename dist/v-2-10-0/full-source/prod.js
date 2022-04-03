@@ -2049,17 +2049,7 @@ const _delaySplit = (str, typ, o) => {
 	regex = new RegExp('(?:^| )(' + typ + ' (0|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
-			let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
-				{
-					str: delayValue,
-					func: o.func,
-					o,
-					obj: o.obj,
-					secSelObj: o.secSelObj,
-					varScope: o.varScope
-				}
-			);
-			convTime = _resolveVars(strObj.str, strObj.ref, o.func) + (delayType || '');
+			convTime = _basicOVarEval(delayValue, o, o.func) + (delayType || '');
 		} else {
 			convTime = wot2;
 		}
@@ -7046,6 +7036,23 @@ const _allowResolve = fullVar => {
 	if (resolvableVars.indexOf(baseVar) === -1) resolvableVars[baseVar] = true;
 };
 
+const _basicOVarEval = (str, o, func='') => {
+	if (!str) return '';
+
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope: o.varScope
+		}
+	);
+
+	return _resolveVars(strObj.str, strObj.ref, func);
+};
+
 const _escapeItem = (str='', varName=null) => {
 	// This is for putting content directly into html. It needs to be in string format and may not come in as such.
 	if (varName && varName.substr(0, 1) == '$' && varName !== '$HTML_ESCAPED') return str;		// Don't escape html variables.
@@ -9117,7 +9124,11 @@ const _addActValRaw = o => {
 		if (o.xhrHeaders) {
 			let xhrHeaderObj;
 			for (const xhrHeaderObj of o.xhrHeaders) {
-				r.setRequestHeader(xhrHeaderObj.key, xhrHeaderObj.val);
+				try {
+					r.setRequestHeader(xhrHeaderObj.key, xhrHeaderObj.val);
+				} catch (err) {
+					_err('Invalid header and value used in ajax request', o, 'header:', (xhrHeaderObj ? xhrHeaderObj.key : xhrHeaderObj), 'value:', (xhrHeaderObj ? xhrHeaderObj.val : xhrHeaderObj));
+				}
 			}
 		}
 	}
@@ -9337,16 +9348,19 @@ const _ajaxDo = o => {
 	// Sort out the extra vars and grab the contents of the url.
 	let aVRes = _extractBracketPars(o.actVal, [ 'header' ], o);
 	if (aVRes.header) {
+		// _extractBracketPars brings back a string or an array based on how many header pars there are. We always need an array for the logic to handle header().
+		if (typeof aVRes.header == 'string') aVRes.header = [ aVRes.header ];
 		// Convert inner string to formatted headers array.
 		o.xhrHeaders = [];
 		const trimHeadVals = str => {
 			// Make this generic if same sort of thing needed again.
 			return str.trim()._ACSSRepQuo().replace(/_ACSS_comma/g, ',');
 		};
+		let oToUseForVars = (o && o.renderObj) ? o.renderObj.renderO : o;
 		for (const headerStr of aVRes.header) {
 			let newHeaderStr = _escInQuo(headerStr, ',', '_ACSS_comma');
 			let arr = newHeaderStr.split(',');
-			o.xhrHeaders.push({ key: trimHeadVals(arr[0]), val: trimHeadVals(arr[1]) });
+			o.xhrHeaders.push({ key: _basicOVarEval(trimHeadVals(arr[0]), oToUseForVars), val: _basicOVarEval(trimHeadVals(arr[1]), oToUseForVars) });
 		}
 	}
 	let ajaxArr = aVRes.action.split(' ');
@@ -9713,8 +9727,8 @@ const _errDisplayLine = (pref, message, errStyle, o, argsIn) => {	// jshint igno
 	}
 	message = '%c' + pref + ', ' + message;
 	if (o) {
-		message += ' --> "' + o.actName + ': ' + o.actVal + ';"';
-		message += (o.file.startsWith('_inline_')) ? '    (embedded ACSS)' : '    (line ' + o.line + ', file: ' + o.file + ')';
+		message += ' --> "' + (o.actName || '') + ': ' + o.actVal + ';"';
+		if (o.file) message += (o.file && o.file.startsWith('_inline_')) ? '    (embedded ACSS)' : '    ((line ' + o.line + ', file: ' + o.file + ')';
 	}
 	console.log(message, errStyle);
 	if (args) console.log.apply(console, args);

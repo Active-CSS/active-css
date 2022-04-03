@@ -5,17 +5,7 @@ const _delaySplit = (str, typ, o) => {
 	regex = new RegExp('(?:^| )(' + typ + ' (0|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
-			let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
-				{
-					str: delayValue,
-					func: o.func,
-					o,
-					obj: o.obj,
-					secSelObj: o.secSelObj,
-					varScope: o.varScope
-				}
-			);
-			convTime = _resolveVars(strObj.str, strObj.ref, o.func) + (delayType || '');
+			convTime = _basicOVarEval(delayValue, o, o.func) + (delayType || '');
 		} else {
 			convTime = wot2;
 		}

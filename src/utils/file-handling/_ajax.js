@@ -48,7 +48,11 @@
 		if (o.xhrHeaders) {
 			let xhrHeaderObj;
 			for (const xhrHeaderObj of o.xhrHeaders) {
-				r.setRequestHeader(xhrHeaderObj.key, xhrHeaderObj.val);
+				try {
+					r.setRequestHeader(xhrHeaderObj.key, xhrHeaderObj.val);
+				} catch (err) {
+					_err('Invalid header and value used in ajax request', o, 'header:', (xhrHeaderObj ? xhrHeaderObj.key : xhrHeaderObj), 'value:', (xhrHeaderObj ? xhrHeaderObj.val : xhrHeaderObj));
+				}
 			}
 		}
 	}
