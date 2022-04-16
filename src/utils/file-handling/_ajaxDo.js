@@ -29,6 +29,7 @@ const _ajaxDo = o => {
 	o.dataType = _optDef(ajaxArr, 'html', 'HTML', 'JSON');
 	o.cache = _optDef(ajaxArr, 'cache', true, false);
 	o.nocache = _optDef(ajaxArr, 'nocache', true, false);
+	o.acceptVars = _optDef(ajaxArr, 'accept-vars', true, false);
 	o.csrf = _optDef(ajaxArr, 'csrf', true, false);
 	let intVars = (o.nocache ? '_=' + Date.now() + '&' : '') + '_ACSS=1' + (o.formPreview ? '&_ACSSFORMPREVIEW=1' : '') + (o.formSubmit ? '&_ACSSFORMSUBMIT=1' : '') + '&_ACSSTYPE=' + o.dataType;
 	o.pars = intVars;

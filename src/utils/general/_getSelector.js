@@ -163,6 +163,9 @@ const _getSelector = (o, sel, many=false) => {
 						addedAttrs.push(mainObj);
 						newDoc = mainObj.parentNode;
 						selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+					} else {
+						singleResult = true;
+						continue;
 					}
 				}
 				try {

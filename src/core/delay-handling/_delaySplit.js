@@ -15,9 +15,22 @@ const _delaySplit = (str, typ, o) => {
 
 	// "after" and "every" share the same label. I can't think of a scenario where they would need to have their own label, but this functionality may need to be
 	// added to later on. Maybe not.
-	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)/gm, function(_, wot) {
+	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\}\@\-]+)(?=([^\\]*(\\.|([^\\]*\\.)*[^\\]*"))*[^"]*$)/gm, function(_, wot) {
 		// Label should be wot.
 		theLabel = wot.split(' ')[1];
+
+		// Do any attribute replacing needed.
+		let strObj = _handleVars([ 'attrs' ],
+			{
+				str: theLabel,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		theLabel = _resolveVars(strObj.str, strObj.ref);
+
 		return (typ == 'every') ? '' : wot;
 	});
 

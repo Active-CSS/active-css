@@ -65,6 +65,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							components[compName].strictPrivEvs = false;
 							components[compName].privVars = false;
 							components[compName].privEvs = false;
+							components[compName].acceptVars = true;
 							let checkStr = strTrimmed;
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
@@ -97,6 +98,15 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
+							}
+							// Does this component allow any ACSS vars to be imported via the HTML or CSS import options and accept variable substitution in any way?
+							// The default is to accept vars in components that have no imports. Individual imports can have specific accept-vars as options.
+							if (componentOpts.html || componentOpts.css || componentOpts['html-template'] || componentOpts['css-template']) {
+								if (checkStr.indexOf(' accept-vars ') === -1) {
+									components[compName].acceptVars = false;
+								}
+							} else {
+								components[compName].acceptVars = true;
 							}
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;

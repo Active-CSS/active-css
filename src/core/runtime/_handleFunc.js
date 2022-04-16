@@ -146,12 +146,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_removeCancel(delayRef, o.func, o.actPos, o.intID, o.loopRef);
 	}
 
-	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (!cssVariableChange && !o.isAsync) {
-		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
-	}
-
 	// Restart the sync queue if await was used.
 	if (!o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
 		_syncRestart(o, o._subEvCo);

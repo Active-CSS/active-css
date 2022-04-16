@@ -1,5 +1,5 @@
 const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
-	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
+	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is doubled-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
@@ -8,7 +8,12 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (o && o.res) {
 					res = _preReplaceVar(o.res, varReplacementRef);
 				} else {
-					res = '{$STRING}';
+					let scoped = _getScopedVar('__acssSTRING', varScope);
+					if (!scoped.val && typeof scoped.val !== 'string') {
+						res = '{$STRING}';
+					} else {
+						res = _preReplaceVar(scoped.val, varReplacementRef);
+					}
 				}
 				return res;
 
@@ -19,7 +24,6 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-//					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
 					res = _preReplaceVar(scoped.val, varReplacementRef);
 				}
 				return res;

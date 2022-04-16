@@ -61,6 +61,7 @@
 			'adoptedCallback',
 			'attributeChangedCallback',
 			'beforeComponentOpen',
+			'clickoutside',
 			'componentOpen',
 			'connectedCallback',
 			'draw',
@@ -78,7 +79,7 @@
 			'"': '_ACSS_later_double_quote'
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
-		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
@@ -145,6 +146,8 @@
 		compCount = 0,
 		components = [],
 		compPending = {},
+		compPendingVars = {},
+		compPendingVarsCo = 0,
 		compParents = [],
 		compPrivEvs = [],
 		config = [],
@@ -2059,9 +2062,22 @@ const _delaySplit = (str, typ, o) => {
 
 	// "after" and "every" share the same label. I can't think of a scenario where they would need to have their own label, but this functionality may need to be
 	// added to later on. Maybe not.
-	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)/gm, function(_, wot) {
+	str = str.replace(/(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\}\@\-]+)(?=([^\\]*(\\.|([^\\]*\\.)*[^\\]*"))*[^"]*$)/gm, function(_, wot) {
 		// Label should be wot.
 		theLabel = wot.split(' ')[1];
+
+		// Do any attribute replacing needed.
+		let strObj = _handleVars([ 'attrs' ],
+			{
+				str: theLabel,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		theLabel = _resolveVars(strObj.str, strObj.ref);
+
 		return (typ == 'every') ? '' : wot;
 	});
 
@@ -2699,12 +2715,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		// Also... don't try and clean up after a non-delayed action. Only clean-up here after delayed actions are completed. Otherwise we get actions being removed
 		// that shouldn't be when clashing actions from different events with different action values, but the same everything esle.
 		_removeCancel(delayRef, o.func, o.actPos, o.intID, o.loopRef);
-	}
-
-	// Handle general "after" callback. This check on the name needs to be more specific or it's gonna barf on custom commands that contain ajax or load. FIXME!
-	if (!cssVariableChange && !o.isAsync) {
-		if (!runButElNotThere && (!o.secSelObj || !_isConnected(o.secSelObj))) o.secSelObj = undefined;
-		_handleEvents({ obj: o.secSelObj, evType: 'after' + o.actName._ACSSConvFunc(), otherObj: o.secSelObj, eve: o.e, afterEv: true, origObj: o.obj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 	}
 
 	// Restart the sync queue if await was used.
@@ -3828,12 +3838,12 @@ const _renderCompDomsClean = varScope => {
 
 const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
-		shadPar, shadEv, strictVars, privVars;
+		shadPar, shadEv, strictVars, privVars, acceptVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
-
 	shadRef = obj.getAttribute('data-ref');
+
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
 	strictlyPrivateEvents = components[componentName].strictPrivEvs;
@@ -3841,6 +3851,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
 	privVars = components[componentName].privVars;
+	acceptVars = components[componentName].acceptVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -3945,36 +3956,22 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo });
 
 	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
+	let strObj;
 
-	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
-		{
-			str: compPending[shadRef],
-			func: o.func,
-			o,
-			obj: o.obj,
-			secSelObj: o.secSelObj,
-			varScope: varScopeToPassIn,
-			shadowParent: shadowParent
+	if (acceptVars) {
+		compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
+	}
+
+	if (compPendingVars[shadRef] !== undefined) {
+		// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
+		for (const tmpContent in compPendingVars[shadRef]) {
+			// Output the variables for real from the map.
+			let newStr = _resolveComponentAcceptedVars(compPendingVars[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
+			compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
 		}
-	);
-	strObj = _handleVars([ 'strings', 'html' ],
-		{
-			str: strObj.str,
-			varScope: varScopeToPassIn,
-		},
-		strObj.ref
-	);
-	// Lastly, handle any {$STRING} value from ajax content if it exists.
-	strObj = _handleVars([ 'strings' ],
-		{
-			str: strObj.str,
-			o: o.ajaxObj,
-			varScope: varScopeToPassIn,
-		},
-		strObj.ref
-	);
-	// Output the variables for real from the map.
-	compPending[shadRef] = _resolveVars(strObj.str, strObj.ref);
+		// All tmp content has been replaced. Remove the placeholder reference from memory.
+		delete compPendingVars[shadRef];
+	}
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
@@ -4109,6 +4106,39 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		shadow.addEventListener('click', () => { setTimeout(_handleShadowSpecialEvents, 0); });
 	}
+};
+
+
+const _resolveComponentAcceptedVars = (str, o, varScope, shadowParent) => {
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope,
+			shadowParent: shadowParent
+		}
+	);
+	strObj = _handleVars([ 'strings', 'html' ],
+		{
+			str: strObj.str,
+			varScope,
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: o.ajaxObj,
+			varScope,
+		},
+		strObj.ref
+	);
+
+	return _resolveVars(strObj.str, strObj.ref);
 };
 
 const _renderIt = (o, content, childTree, selfTree) => {
@@ -5914,6 +5944,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							components[compName].strictPrivEvs = false;
 							components[compName].privVars = false;
 							components[compName].privEvs = false;
+							components[compName].acceptVars = true;
 							let checkStr = strTrimmed;
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
@@ -5946,6 +5977,15 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
+							}
+							// Does this component allow any ACSS vars to be imported via the HTML or CSS import options and accept variable substitution in any way?
+							// The default is to accept vars in components that have no imports. Individual imports can have specific accept-vars as options.
+							if (componentOpts.html || componentOpts.css || componentOpts['html-template'] || componentOpts['css-template']) {
+								if (checkStr.indexOf(' accept-vars ') === -1) {
+									components[compName].acceptVars = false;
+								}
+							} else {
+								components[compName].acceptVars = true;
 							}
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
@@ -8420,7 +8460,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 };
 
 const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
-	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is double-up here.
+	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is doubled-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
@@ -8429,7 +8469,12 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (o && o.res) {
 					res = _preReplaceVar(o.res, varReplacementRef);
 				} else {
-					res = '{$STRING}';
+					let scoped = _getScopedVar('__acssSTRING', varScope);
+					if (!scoped.val && typeof scoped.val !== 'string') {
+						res = '{$STRING}';
+					} else {
+						res = _preReplaceVar(scoped.val, varReplacementRef);
+					}
 				}
 				return res;
 
@@ -8440,7 +8485,6 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (!scoped.val && typeof scoped.val !== 'string') {
 					res = '{' + innards + '}';
 				} else {
-//					res = ActiveCSS._sortOutFlowEscapeChars(scoped.val);
 					res = _preReplaceVar(scoped.val, varReplacementRef);
 				}
 				return res;
@@ -8468,11 +8512,11 @@ const _resolveAjaxVars = o => {
 	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 	if (typeORes === 'object' && !o.preGet) {
 		if (compScope == 'main') {
-			_resolveAjaxVarsDecl(o.res, compScope);
+			_resolveAjaxVarsDecl(o, compScope);
 		} else {
 			// There could be a potential clash in rendering vars if ajax is called before a component is drawn. This gets around that.
 			setTimeout(function() {
-				_resolveAjaxVarsDecl(o.res, compScope);
+				_resolveAjaxVarsDecl(o, compScope);
 				_ajaxCallbackDisplay(o);
 			}, 0);	// jshint ignore:line
 			return;
@@ -8481,17 +8525,49 @@ const _resolveAjaxVars = o => {
 		// Escape any embedded Active CSS or JavaScript so it doesn't get variable substitution run inside these.
 		o.res = _escapeInline(o.res, 'script');
 		o.res = _escapeInline(o.res, 'style type="text/acss"');
+		if (o.acceptVars && !o.renderComp) {
+			o.res = _resolveAcceptedVars(o.res, o, compScope);
+		}
 		_setHTMLVars(o);
 	}
 	_ajaxCallbackDisplay(o);
 };
 
-const _resolveAjaxVarsDecl = (res, compScope) => {
+const _resolveAjaxVarsDecl = (o, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
-	_set(scopedProxy, compScope + '.JSON', res);
-	for (v in res) {
-		_set(scopedProxy, compScope + '.' + v, res[v]);
+	_set(scopedProxy, compScope + '.JSON', o.res);
+	let substVars = (o.acceptVars && !o.renderComp);
+	for (v in o.res) {
+		// If vars allowed in JSON string values, substitute these in at this point.
+		let adjustedVal = substVars ? _resolveAcceptedVars(o.res[v], o, compScope) : o.res[v];
+		_set(scopedProxy, compScope + '.' + v, adjustedVal);
+	}
+};
+
+
+const _resolveAcceptedVars = (val, o, varScope) => {
+	if (typeof val === 'string') {
+		let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+			{
+				str: val,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope,
+			}
+		);
+		strObj = _handleVars([ 'strings', 'html' ],
+			{
+				str: strObj.str,
+				varScope,
+			},
+			strObj.ref
+		);
+
+		// Return the new value.
+		return _resolveVars(strObj.str, strObj.ref);
 	}
 };
 
@@ -8754,6 +8830,7 @@ const _setHTMLVars = (o, isEmptyStr=false) => {
 	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 
 	_set(scopedProxy, compScope + '.__acssHTML', str);
+	_set(scopedProxy, compScope + '.__acssSTRING', str);
 	// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
 	_set(scopedProxy, compScope + '.__acssHTML_NOVARS', escStr);
 	// Escape HTML and curlies with safe HTML entities.
@@ -9192,6 +9269,7 @@ const _addActValRaw = o => {
 			_resolveAjaxVars(o);
 		} catch(err) {
 			// If there's an error here, it's probably because the response from the server was 200 ok but JSON.parse failed.
+			_warn('Ajax error: ' + err, o);
 			_ajaxCallbackErr(str, '', o);
 		}
 		// _ajaxCallbackDisplay(o); is called from _resolveAjaxVars, as it needs to account for the asyncronyousness of the shadow DOM.
@@ -9236,12 +9314,16 @@ const _addActValRaw = o => {
 	}
 	if (o.renderComp) {
 		// This has been called as an option for component rendering. Remove the pending class for this component and call _renderCompDoms again.
-		let { renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
+		let { varScope, renderO, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } = o.renderObj;
 		obj.classList.remove(typ + 'Pending');
-		_insertResForComponents(obj, typ, o.res);
+
+		_insertResForComponents(obj, typ, o.res, o.acceptVars);
 
 		// Are we ready to render yet? The answer is that we are not ready if we are still waiting for further ajax requests. This callback will be called again later.
 		if (_isPendingAjaxForComponents(obj)) return;
+
+		// By this point, the HTML that is loaded in the component will only have content from files. Variables have not yet been replaced in specific places
+		// yet, and those places have been put into a temporary area for replacement in renderCompDomsDo and a placeholder given.
 
 		_renderCompDoms(renderO, compDoc, childTree, numTopNodesInRender, numTopElementsInRender);
 	} else {
@@ -9368,6 +9450,7 @@ const _ajaxDo = o => {
 	o.dataType = _optDef(ajaxArr, 'html', 'HTML', 'JSON');
 	o.cache = _optDef(ajaxArr, 'cache', true, false);
 	o.nocache = _optDef(ajaxArr, 'nocache', true, false);
+	o.acceptVars = _optDef(ajaxArr, 'accept-vars', true, false);
 	o.csrf = _optDef(ajaxArr, 'csrf', true, false);
 	let intVars = (o.nocache ? '_=' + Date.now() + '&' : '') + '_ACSS=1' + (o.formPreview ? '&_ACSSFORMPREVIEW=1' : '') + (o.formSubmit ? '&_ACSSFORMSUBMIT=1' : '') + '&_ACSSTYPE=' + o.dataType;
 	o.pars = intVars;
@@ -9490,10 +9573,18 @@ const _getParVal = (str, typ) => {
 	return '';
 };
 
-const _insertResForComponents = (obj, typ, str) => {
+const _insertResForComponents = (obj, typ, str, acceptVars) => {
 	let ref = obj.getAttribute('data-ref');
 	if (compPending[ref] === undefined) compPending[ref] = '';
-	compPending[ref] += (compPending[ref] != '' ? "\n" : '' ) + (typ.startsWith('css') ? '<style>' + str + '</style>' : str);
+	let content = (typ.startsWith('css') ? '<style>' + str + '</style>' : str);
+	if (acceptVars) {
+		// Place these results into a temporary location for replacing back when we render the component and get the correct scope.
+		if (compPendingVars[ref] === undefined) compPendingVars[ref] = [];
+		compPendingVars[ref]['_' + compPendingVarsCo] = content;
+		content = '_acssIntCompVarRepl_' + compPendingVarsCo + '_';
+		compPendingVarsCo++;
+	}
+	compPending[ref] += content;
 };
 
 const _isPendingAjaxForComponents = obj => {
@@ -10620,6 +10711,9 @@ const _getSelector = (o, sel, many=false) => {
 						addedAttrs.push(mainObj);
 						newDoc = mainObj.parentNode;
 						selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+					} else {
+						singleResult = true;
+						continue;
 					}
 				}
 				try {

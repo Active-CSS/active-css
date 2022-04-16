@@ -8,8 +8,6 @@
 	}
 	a:draw {
 		trigger-real: click;
-	}
-	a:afterTriggerReal {
 		func: checkPreventDefaultShadow;	/* If prevent-default works at all then passing the test in the function will be enough. */
 	}
 	html {

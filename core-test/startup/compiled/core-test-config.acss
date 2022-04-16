@@ -987,8 +987,6 @@ create-element-tag:connectedCallback {
 	}
 	a:draw {
 		trigger-real: click;
-	}
-	a:afterTriggerReal {
 		func: checkPreventDefault;	/* If prevent-default works at all then passing the test in the function will be enough. */
 	}
 	html {
@@ -1009,8 +1007,6 @@ create-element-tag:connectedCallback {
 	}
 	a:draw {
 		trigger-real: click;
-	}
-	a:afterTriggerReal {
 		func: checkPreventDefaultShadow;	/* If prevent-default works at all then passing the test in the function will be enough. */
 	}
 	html {
