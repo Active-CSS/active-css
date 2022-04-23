@@ -32,7 +32,7 @@ _a.Render = o => {
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
-	content = _replaceComponents(o, content, childTree);
+	content = _replaceComponents(o, content);
 
 	_renderIt(o, content, childTree, selfTree);
 };

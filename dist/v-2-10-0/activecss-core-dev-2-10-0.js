@@ -627,13 +627,13 @@ _a.CreateElement = o => {
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
-		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render', value: '"{|_acss-host_' + component + '}" after stack' };
+		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render-before-end', value: '"{|_acss-host_' + component + '}" after stack' };
 
 		// Don't add it if it's already there.
 		if (!addedThisBefore || typeof config[tag].draw[0][0][0] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'] === 'undefined' ||
 				typeof config[tag].draw[0][0][0]['&'][0] === 'undefined' ||
-				config[tag].draw[0][0][0]['&'][0].name != 'render' ||
+				config[tag].draw[0][0][0]['&'][0].name != 'render-before-end' ||
 				config[tag].draw[0][0][0]['&'][0].value != '"{|_acss-host_' + component + '}" after stack'
 			) {
 			// Put the draw event render command at the beginning of any draw event that might already be there for this element.
@@ -1278,7 +1278,7 @@ _a.Render = o => {
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
-	content = _replaceComponents(o, content, childTree);
+	content = _replaceComponents(o, content);
 
 	_renderIt(o, content, childTree, selfTree);
 };
@@ -4058,6 +4058,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow or the insides.
+	shadow.innerHTML = '';
 	shadow.appendChild(template.content);
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
@@ -8176,7 +8177,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	return sel;
 };
 
-const _replaceComponents = (o, str, childTree) => {
+const _replaceComponents = (o, str) => {
 	// This needs to be recursive to facilitate easier syntax. XSS defense needs to occur elsewhere otherwise this ceases to be useful. This must stay recursive.
 	let co = 0, found;
 	while (co < 50) {
@@ -8222,7 +8223,7 @@ const _replaceComponents = (o, str, childTree) => {
 				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
-				compRef += '>' + (childTree ? childTree : '') + '</data-acss-component>';
+				compRef += '></data-acss-component>';
 
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.

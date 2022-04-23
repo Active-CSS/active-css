@@ -1,4 +1,4 @@
-const _replaceComponents = (o, str, childTree) => {
+const _replaceComponents = (o, str) => {
 	// This needs to be recursive to facilitate easier syntax. XSS defense needs to occur elsewhere otherwise this ceases to be useful. This must stay recursive.
 	let co = 0, found;
 	while (co < 50) {
@@ -44,7 +44,7 @@ const _replaceComponents = (o, str, childTree) => {
 				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
-				compRef += '>' + (childTree ? childTree : '') + '</data-acss-component>';
+				compRef += '></data-acss-component>';
 
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.
