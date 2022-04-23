@@ -4,8 +4,6 @@
 /***
 	When compiling the core, this file always goes first, and _core-end.js always goes last.
 	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
-	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
-	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
 	If you find your compile step is taking forever and annoying you, get a faster server. Mine is a cheap Optiplex 780 from 2006 and it's fast enough.
 */

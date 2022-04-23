@@ -93,10 +93,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
-	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
 		compPending[shadRef] =  _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
-		embeddedChildren = true;
 	}
 
 	strictPrivVarScopes[evScope] = strictVars;
@@ -197,11 +195,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 
 	// Attach the shadow or the insides.
 	shadow.appendChild(template.content);
-
-	if (!embeddedChildren && childTree) {
-		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
-		shadowParent.insertAdjacentHTML('beforeend', childTree);
-	}
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
 		_replaceTempActiveID(obj);

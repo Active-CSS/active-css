@@ -4,8 +4,6 @@
 /***
 	When compiling the core, this file always goes first, and _core-end.js always goes last.
 	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
-	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
-	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
 	If you find your compile step is taking forever and annoying you, get a faster server. Mine is a cheap Optiplex 780 from 2006 and it's fast enough.
 */
@@ -1280,7 +1278,7 @@ _a.Render = o => {
 
 	// Handle any components. This is only in string form at the moment and replaces the component with a placeholder - not the full html.
 	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
-	content = _replaceComponents(o, content);
+	content = _replaceComponents(o, content, childTree);
 
 	_renderIt(o, content, childTree, selfTree);
 };
@@ -3830,6 +3828,20 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 						command += ' html';
 					}
 					let compName = obj.getAttribute('data-name');
+
+					// Allow variable substitution.
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+						{
+							str: command,
+							func: o.func,
+							o,
+							obj: o.obj,
+							secSelObj: o.secSelObj,
+							varScope: o.varScope,
+						}
+					);
+					command = _resolveVars(strObj.str, strObj.ref);
+
 					_a.Ajax({ actVal: command, doc: o.doc, renderComp: true, renderObj: { renderO: o, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } });
 				}
 			}
@@ -3945,10 +3957,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
-	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
 		compPending[shadRef] =  _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
-		embeddedChildren = true;
 	}
 
 	strictPrivVarScopes[evScope] = strictVars;
@@ -4049,11 +4059,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 
 	// Attach the shadow or the insides.
 	shadow.appendChild(template.content);
-
-	if (!embeddedChildren && childTree) {
-		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
-		shadowParent.insertAdjacentHTML('beforeend', childTree);
-	}
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
 		_replaceTempActiveID(obj);
@@ -8171,7 +8176,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	return sel;
 };
 
-const _replaceComponents = (o, str, varReplacementRef=-1) => {
+const _replaceComponents = (o, str, childTree) => {
 	// This needs to be recursive to facilitate easier syntax. XSS defense needs to occur elsewhere otherwise this ceases to be useful. This must stay recursive.
 	let co = 0, found;
 	while (co < 50) {
@@ -8217,7 +8222,7 @@ const _replaceComponents = (o, str, varReplacementRef=-1) => {
 				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
-				compRef += '></data-acss-component>';
+				compRef += '>' + (childTree ? childTree : '') + '</data-acss-component>';
 
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.

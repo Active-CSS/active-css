@@ -51,6 +51,20 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 						command += ' html';
 					}
 					let compName = obj.getAttribute('data-name');
+
+					// Allow variable substitution.
+					let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+						{
+							str: command,
+							func: o.func,
+							o,
+							obj: o.obj,
+							secSelObj: o.secSelObj,
+							varScope: o.varScope,
+						}
+					);
+					command = _resolveVars(strObj.str, strObj.ref);
+
 					_a.Ajax({ actVal: command, doc: o.doc, renderComp: true, renderObj: { renderO: o, typ, obj, compName, compDoc, childTree, numTopNodesInRender, numTopElementsInRender } });
 				}
 			}
