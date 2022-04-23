@@ -950,6 +950,7 @@ _a.Func = o => {
 
 	let parArr = _extractVarsFromPars(parsStr, o);
 
+	if (!window[func] || typeof window[func] !== 'function') _err('Function ' + func + ' does not exist, is not a function, or is not in the window scope.');
 	window[func](o, parArr);
 };
 
