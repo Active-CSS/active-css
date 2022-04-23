@@ -662,6 +662,10 @@ _a.CreateElement = o => {
 				'return [' + attrs.slice(0, -1) + '];' +	// trim off trailing comma from attrs.
 			'}';
 	}
+
+	// Note: connectedCallback, etc. are not working as expected in components, so this below is undocumented code and needs to be fixed to get working.
+	// The code is left here in case people are using it. But it does needs proper address at some point. At some point in time it would have done something.
+
 	createTagJS +=
 			'constructor() {' +
 				'super();' +
