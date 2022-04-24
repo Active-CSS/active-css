@@ -57,7 +57,10 @@ const _resolveAcceptedVars = (val, o, varScope) => {
 			strObj.ref
 		);
 
+		let res = _resolveVars(strObj.str, strObj.ref);
+		res = res.replace(/\\{/gm, '{').replace(/\\}/gm, '}');
+
 		// Return the new value.
-		return _resolveVars(strObj.str, strObj.ref);
+		return res;
 	}
 };

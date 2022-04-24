@@ -294,5 +294,8 @@ const _resolveComponentAcceptedVars = (str, o, varScope, shadowParent) => {
 		strObj.ref
 	);
 
-	return _resolveVars(strObj.str, strObj.ref);
+	let res = _resolveVars(strObj.str, strObj.ref);
+	res = res.replace(/\\{/gm, '{').replace(/\\}/gm, '}');
+
+	return res;
 };
