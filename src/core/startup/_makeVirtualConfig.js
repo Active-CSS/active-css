@@ -44,7 +44,18 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
-						let compName = strTrimmed.split(' ')[1].trim();
+						let checkCompName = strTrimmed.split(' ')[1].trim();
+						let compName, elementName;
+						if (checkCompName.indexOf('-') !== -1) {
+							// This is an element. Generate the internal component name for tying into the element.
+							elementName = checkCompName;
+							compName = _ucFirst(checkCompName._ACSSConvFunc());
+						} else {
+							compName = checkCompName;
+						}
+
+// set up accept-vars as option. default to no ACSS variables allowed in html/css files.
+
 						if (!removeState) {
 							if (!components[compName]) components[compName] = {};
 							components[compName].mode = null;
@@ -54,11 +65,48 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							components[compName].strictPrivEvs = false;
 							components[compName].privVars = false;
 							components[compName].privEvs = false;
-							let checkStr = strTrimmed + ' ';
+							components[compName].acceptVars = true;
+							let checkStr = strTrimmed;
+							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
+							let htmlPos = checkStr.indexOf(' html(');
+							let cssPos = checkStr.indexOf(' css(');
+							let htmlTemplPos = checkStr.indexOf(' html-template(');
+							let cssTemplPos = checkStr.indexOf(' css-template(');
+							let observePos = checkStr.indexOf(' observe(');
+							let templatePos = checkStr.indexOf(' selector(');
+							let componentOpts = {};
+							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
+								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
+								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
+								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
+								if (componentOpts['css-template']) components[compName].cssTempl = componentOpts['css-template'];
+								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
+								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
+								checkStr = componentOpts.action;
+							}
+							checkStr += ' ';
+							// Set up HTML and CSS files to preload if the preload-files option is set.
+							if (checkStr.indexOf(' preload-files ') !== -1) {
+								components[compName].preloadFiles = true;
+							}
+							// Set up non-caching of HTML and CSS files, if these need to be loaded dynamically.
+							if (checkStr.indexOf(' nocache-files ') !== -1) {
+								components[compName].nocacheFiles = true;
+							}
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
 								components[compName].mode = (strTrimmed.indexOf(' closed') !== -1) ? 'closed' : 'open';
+							}
+							// Does this component allow any ACSS vars to be imported via the HTML or CSS import options and accept variable substitution in any way?
+							// The default is to accept vars in components that have no imports. Individual imports can have specific accept-vars as options.
+							if (componentOpts.html || componentOpts.css || componentOpts['html-template'] || componentOpts['css-template']) {
+								if (checkStr.indexOf(' accept-vars ') === -1) {
+									components[compName].acceptVars = false;
+								}
+							} else {
+								components[compName].acceptVars = true;
 							}
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
@@ -76,7 +124,13 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else if (checkStr.indexOf(' privateEvents ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privEvs = true;
 							}
+
+							if (elementName) {
+								// Tie in official creation of the element to the component, with attribute observation options if present.
+								_a.CreateElement({ actVal: elementName + ' ' + compName + (componentOpts.observe ? ' observe(' + componentOpts.observe + ')' : '') });
+							}
 						}
+
 						// Recurse and set up componentness.
 						_makeVirtualConfig(innerContent, '', compName, removeState, fileToRemove);
 						if (!removeState) {
@@ -118,7 +172,9 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 				default:
 					if (strTrimmed == 'html') {
 						if (!removeState) {
-							if (componentName) {
+							if (components[componentName].htmlFile) {
+								_warn('Component ' + componentName + ' has embedded html that will be overridden by the html parameter: html(' + components[componentName].htmlFile + ')');
+							} else if (componentName) {
 								// This is component html.
 								components[componentName].data = innerContent[0].value.slice(1, -1);	// remove outer quotes;
 								components[componentName].data = components[componentName].data.replace(/\\\"/g, '"');

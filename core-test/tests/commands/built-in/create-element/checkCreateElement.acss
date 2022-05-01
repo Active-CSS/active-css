@@ -41,7 +41,7 @@ create-element-tag:connectedCallback {
 }
 
 #checkCreateElementDiv:draw {
-	func: checkCreateElement {createElementConnectCallbackVar} {createElementDisconnectedCallbackVar} {createElementAttributeChangeVar} after 1s;
+	func: checkCreateElement pars({createElementConnectCallbackVar}, {createElementDisconnectedCallbackVar}, {createElementAttributeChangeVar}) after 1s;
 }
 
 #checkCreateElement:test {

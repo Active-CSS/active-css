@@ -72,7 +72,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
 		if (el && el.nodeType == Node.ELEMENT_NODE) {
 			let ret = _getAttrOrProp(el, wot, getProperty, null, func);
-			if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
+			if (ret) return _preReplaceVar(_escapeQuo(ret, func), varReplacementRef, func);
 		}
 		return false;
 	}

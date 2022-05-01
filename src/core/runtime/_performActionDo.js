@@ -18,7 +18,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Put any commas in brackets back.
 		newActVal = newActVal.replace(/_ACSStmpcomma_/g, ',');
 	}
-	if (['Var', 'VarDelete'].indexOf(o.func) !== -1) {
+	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value is a JavaScript expression, but not in {= =}, to make it quicker to type.
 		newActVal = ActiveCSS._sortOutFlowEscapeChars(newActVal);
 		// Now escape any commas inside any kind of brackets.

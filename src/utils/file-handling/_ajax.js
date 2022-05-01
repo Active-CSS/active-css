@@ -37,6 +37,26 @@
 			mime = 'application/x-www-form-urlencoded';
 	}
 	r.setRequestHeader('Content-type', mime);
+	if (o) {
+		if (o.csrf) {
+			// Is there a meta tag with X-CSRF-TOKEN present?
+			let metaEl = document.querySelector('meta[name="csrf-token"]');
+			if (metaEl) {
+				r.setRequestHeader('X-CSRF-TOKEN', metaEl.getAttribute('content'));
+			}
+		}
+		if (o.xhrHeaders) {
+			let xhrHeaderObj;
+			for (const xhrHeaderObj of o.xhrHeaders) {
+				try {
+					r.setRequestHeader(xhrHeaderObj.key, xhrHeaderObj.val);
+				} catch (err) {
+					_err('Invalid header and value used in ajax request', o, 'header:', (xhrHeaderObj ? xhrHeaderObj.key : xhrHeaderObj), 'value:', (xhrHeaderObj ? xhrHeaderObj.val : xhrHeaderObj));
+				}
+			}
+		}
+	}
+
 	r.onload = () => {
 		if (r.status != 200) {
 			// Handle application level error.

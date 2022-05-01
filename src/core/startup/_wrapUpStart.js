@@ -40,6 +40,11 @@ const _wrapUpStart = (o) => {
 		// Iterate document items on this page and do any observe events.
 		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
 		// event in the mutation section would otherwise not get run.
+		_runInnerEvent(null, '*:not(template *)', 'innerhtmlchange', document, true);
+
+		// Iterate document items on this page and do any observe events.
+		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
+		// event in the mutation section would otherwise not get run.
 		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
 
 		// Iterate document level custom selectors that use the observe event and run any of those that pass the conditionals.

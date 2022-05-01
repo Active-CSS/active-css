@@ -10,7 +10,7 @@
 	&:componentOpen {
 	    #renderHTMLExample {
 	        render: "<span id=\"checkRenderTestDiv\"><strong>render</strong></span>";
-			func: checkRender;
+			func: checkRender after 100ms;
 	    }
 		#renderEscapePTag {
 	        render-after-end: "<span id=\"checkRenderAttrSubHack\">{@data-hackA}</span>" after stack;

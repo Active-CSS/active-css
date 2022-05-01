@@ -7,11 +7,30 @@ const _ajaxDo = o => {
 		if (preGetMid == preGetMax) return;	// Skip this pre-get - there is a threshold set.
 	}
 	// Sort out the extra vars and grab the contents of the url.
-	let ajaxArr = o.actVal.split(' ');
+	let aVRes = _extractBracketPars(o.actVal, [ 'header' ], o);
+	if (aVRes.header) {
+		// _extractBracketPars brings back a string or an array based on how many header pars there are. We always need an array for the logic to handle header().
+		if (typeof aVRes.header == 'string') aVRes.header = [ aVRes.header ];
+		// Convert inner string to formatted headers array.
+		o.xhrHeaders = [];
+		const trimHeadVals = str => {
+			// Make this generic if same sort of thing needed again.
+			return str.trim()._ACSSRepQuo().replace(/_ACSS_comma/g, ',');
+		};
+		let oToUseForVars = (o && o.renderObj) ? o.renderObj.renderO : o;
+		for (const headerStr of aVRes.header) {
+			let newHeaderStr = _escInQuo(headerStr, ',', '_ACSS_comma');
+			let arr = newHeaderStr.split(',');
+			o.xhrHeaders.push({ key: _basicOVarEval(trimHeadVals(arr[0]), oToUseForVars), val: _basicOVarEval(trimHeadVals(arr[1]), oToUseForVars) });
+		}
+	}
+	let ajaxArr = aVRes.action.split(' ');
 	o.formMethod = _optDef(ajaxArr, 'get', 'GET', 'POST');
 	o.dataType = _optDef(ajaxArr, 'html', 'HTML', 'JSON');
 	o.cache = _optDef(ajaxArr, 'cache', true, false);
 	o.nocache = _optDef(ajaxArr, 'nocache', true, false);
+	o.acceptVars = _optDef(ajaxArr, 'accept-vars', true, false);
+	o.csrf = _optDef(ajaxArr, 'csrf', true, false);
 	let intVars = (o.nocache ? '_=' + Date.now() + '&' : '') + '_ACSS=1' + (o.formPreview ? '&_ACSSFORMPREVIEW=1' : '') + (o.formSubmit ? '&_ACSSFORMSUBMIT=1' : '') + '&_ACSSTYPE=' + o.dataType;
 	o.pars = intVars;
 	let url = o.url;

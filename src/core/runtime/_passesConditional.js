@@ -49,7 +49,7 @@ const _passesConditional = (condObj) => {
 				    if (!c) return m;
 				    return '_ACSSComma';
 				});
-				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+				let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped', 'html' ],
 					{
 						str: aV,
 						func: 'Var',

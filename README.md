@@ -8,11 +8,26 @@
 Boldly go where no CSS author has gone before...
 
 Here's a taster:
-
 ```
 #clickMe:click {
     body {
         add-class: .hello;
+    }
+}
+```
+
+Example of a component (because you love components):
+```
+button:click {
+    render-after-end: "<hello-world></hello-world>";
+}
+
+@component hello-world private {
+    html {
+        <p>Hello world</p>
+    }
+    p:click {
+        alert: "Why are you clicking me, you crazy!";
     }
 }
 ```
@@ -30,10 +45,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
 The production (live) version will look like this:<br>
-activecss-2-9-1.min.js
+activecss-2-10-0.min.js
 
 The development (offline) version will look like this:<br>
-activecss-dev-2-9-1.min.js
+activecss-dev-2-10-0.min.js
 
 There are also npm versions - links on the website.
 

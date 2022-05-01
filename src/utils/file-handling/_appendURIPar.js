@@ -9,7 +9,7 @@ const _appendURIPar = (url, pars, doc) => {
 	// Is this a full url? If not, make it so.
 	var isFullURL = new RegExp('^([a-z]+://|//)', 'i');
 	if (url === '' || !isFullURL.test(url)) {
-		url = window.location.protocol + '//' + window.location.host + ((url.substr(0, 1) != '/') ? '/' : '') + url;
+		url = window.top.location.protocol + '//' + window.top.location.host + ((url.substr(0, 1) != '/') ? '/' : '') + url;
 	}
 	let newUrl = new URL(url);
 	let parsArr = pars.split('&'), thisPar, parArr, endBit = '';

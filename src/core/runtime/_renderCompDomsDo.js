@@ -1,11 +1,11 @@
 const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
-		shadPar, shadEv, strictVars, privVars;
+		shadPar, shadEv, strictVars, privVars, acceptVars;
 
 	shadowParent = obj.parentNode;
 	parentCompDetails = _componentDetails(shadowParent);
-
 	shadRef = obj.getAttribute('data-ref');
+
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
 	strictlyPrivateEvents = components[componentName].strictPrivEvs;
@@ -13,6 +13,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
 	privVars = components[componentName].privVars;
+	acceptVars = components[componentName].acceptVars;
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -92,10 +93,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
-	let embeddedChildren = false;
 	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
 		compPending[shadRef] =  _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
-		embeddedChildren = true;
 	}
 
 	strictPrivVarScopes[evScope] = strictVars;
@@ -117,36 +116,22 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo });
 
 	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
+	let strObj;
 
-	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
-		{
-			str: compPending[shadRef],
-			func: o.func,
-			o,
-			obj: o.obj,
-			secSelObj: o.secSelObj,
-			varScope: varScopeToPassIn,
-			shadowParent: shadowParent
+	if (acceptVars) {
+		compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
+	}
+
+	if (compPendingVars[shadRef] !== undefined) {
+		// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
+		for (const tmpContent in compPendingVars[shadRef]) {
+			// Output the variables for real from the map.
+			let newStr = _resolveComponentAcceptedVars(compPendingVars[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
+			compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
 		}
-	);
-	strObj = _handleVars([ 'strings', 'html' ],
-		{
-			str: strObj.str,
-			varScope: varScopeToPassIn,
-		},
-		strObj.ref
-	);
-	// Lastly, handle any {$STRING} value from ajax content if it exists.
-	strObj = _handleVars([ 'strings' ],
-		{
-			str: strObj.str,
-			o: o.ajaxObj,
-			varScope: varScopeToPassIn,
-		},
-		strObj.ref
-	);
-	// Output the variables for real from the map.
-	compPending[shadRef] = _resolveVars(strObj.str, strObj.ref);
+		// All tmp content has been replaced. Remove the placeholder reference from memory.
+		delete compPendingVars[shadRef];
+	}
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
@@ -209,12 +194,8 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow or the insides.
+	shadow.innerHTML = '';
 	shadow.appendChild(template.content);
-
-	if (!embeddedChildren && childTree) {
-		// Attach unreferenced children that need to be outside the shadow or the insides - basically it will go at the end of the container.
-		shadowParent.insertAdjacentHTML('beforeend', childTree);
-	}
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
 		_replaceTempActiveID(obj);
@@ -281,4 +262,40 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		shadow.addEventListener('input', _handleShadowSpecialEvents);
 		shadow.addEventListener('click', () => { setTimeout(_handleShadowSpecialEvents, 0); });
 	}
+};
+
+
+const _resolveComponentAcceptedVars = (str, o, varScope, shadowParent) => {
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'scoped' ],
+		{
+			str,
+			func: o.func,
+			o,
+			obj: o.obj,
+			secSelObj: o.secSelObj,
+			varScope,
+			shadowParent: shadowParent
+		}
+	);
+	strObj = _handleVars([ 'strings', 'html' ],
+		{
+			str: strObj.str,
+			varScope,
+		},
+		strObj.ref
+	);
+	// Lastly, handle any {$STRING} value from ajax content if it exists.
+	strObj = _handleVars([ 'strings' ],
+		{
+			str: strObj.str,
+			o: o.ajaxObj,
+			varScope,
+		},
+		strObj.ref
+	);
+
+	let res = _resolveVars(strObj.str, strObj.ref);
+	res = res.replace(/\\{/gm, '{').replace(/\\}/gm, '}');
+
+	return res;
 };

@@ -17,16 +17,16 @@
 			varTestArray['array'] [],
 			varTestArray['array']['subAssign'] {},
 			varTestArray['array']['subAssign'].dave true,
-			varTestArrayAssign varTestArray['array']['subAssign'].dave
+			varTestArrayAssignProp {varTestArray['array']['subAssign'].dave}
 		;
-		func: checkVar "{varTestString}"
-			{varTestBooleanTrue}
-			{varTestBooleanFalse}
-			{varTestBooleanDigitPositive}
-			{varTestBooleanDigitNegative}
-			{varTestEvaluatedNumber}
-			"{window.varTestWinVar}"
-			{varTestArrayAssign}
+		func: checkVar pars({varTestString},
+			{varTestBooleanTrue},
+			{varTestBooleanFalse},
+			{varTestBooleanDigitPositive},
+			{varTestBooleanDigitNegative},
+			{varTestEvaluatedNumber},
+			{window.varTestWinVar},
+			{varTestArrayAssignProp})
 		;
 	}
 	html {

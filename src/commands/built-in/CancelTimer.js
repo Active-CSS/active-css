@@ -5,13 +5,15 @@ _a.CancelTimer = o => {
 	let func = val._ACSSConvFunc();
 	let found = true;
 	let i, pos, intID, delayRef, loopref;
-	let scope = (o.varScope) ? o.varScope : 'main';
+	let scope = (o.evScope) ? o.evScope : 'main';
+
 	// It could be a label cancel. If the label exists, remove the delay.
 	if (labelData[scope + val]) {
 		// This is a label cancel. We know it is tied to a specific action value.
 		// Format:
 		// labelData[splitArr.lab] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, tid: tid };
 		// labelByIDs[tid] => { del: delayRef, func: o2.func, pos: o2.pos, o2.intID, lab: splitArr.lab };
+
 		let delData = labelData[scope + val];
 		_clearTimeouts(delayArr[delData.del][delData.func][delData.pos][delData.intID][delData.loopRef]);
 		_removeCancel(delData.del, delData.func, delData.pos, delData.intID, delData.loopRef);
@@ -61,7 +63,7 @@ _a.CancelTimer = o => {
 			let activeIDArr = [];
 			// Loop the secSels in the delayArr.
 			Object.keys(delayArr).forEach(function(key) {
-				if (['~', '|'].includes(key.substr(0, 1))) return;
+				if (key.indexOf('~') !== -1 || key.indexOf('|') !== -1) return;
 				o.doc.querySelectorAll(key).forEach(function (obj, index) {
 					activeIDArr.push(_getActiveID(obj));
 				});
@@ -74,7 +76,7 @@ _a.CancelTimer = o => {
 					_addCancelAttr(o.secSel, func);
 				}
 			} else {
-				if (['~', '|'].includes(o.secSel.substr(0, 1))) {
+				if (o.secSel.indexOf('~') !== -1 || o.secSel.indexOf('|') !== -1) {
 					// If it's not in the delay arr we can ignore it.
 					if (!delayArr[delayRef] || !delayArr[delayRef][func] || !delayArr[delayRef][func][o.actPos] || !delayArr[delayRef][func][o.actPos][o.intID] ||
 						!delayArr[delayRef][func][o.actPos][o.intID][o.loopRef]) return;

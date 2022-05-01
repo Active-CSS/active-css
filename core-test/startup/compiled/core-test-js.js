@@ -2218,7 +2218,7 @@ function checkVar(o, pars) {
 	_shouldBe(checkVarEl, 'varTestEvaluatedNumber', pars[5], 8);
 	_shouldBe(checkVarEl, 'window.varTestWinVar as a parameter', pars[6], 'hello');
 	_shouldBe(checkVarEl, 'window.varTestWinVar as a variable', window.varTestWinVar, 'hello');
-	_shouldBe(checkVarEl, 'varTestArrayAssign', pars[7], true);
+	_shouldBe(checkVarEl, 'varTestArrayAssignProp', pars[7], true);
 
 	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
 	_addSuccessClass(checkVarEl);
@@ -2316,4 +2316,20 @@ function continueAfterElementRemovalFinal(o, pars) {
 			_fail(continueAfterElementRemovalEl, 'Failed to continue running actions after element was removed. pars:', pars);
 		}
 	}
+}
+
+function quoteCheckOnSetAttributeAndSetPropertyFinal(o, pars) {
+	let quoteCheckOnSetAttributeAndSetPropertyEl = _initTest('quoteCheckOnSetAttributeAndSetProperty');
+	if (!quoteCheckOnSetAttributeAndSetProperty) return;
+
+	let el = _getObj('#quoteCheckOnSetAttributeAndSetPropertyTarget');
+	if (!el) {
+		_fail(quoteCheckOnSetAttributeAndSetPropertyEl, '#quoteCheckOnSetAttributeAndSetPropertyTarget is not present for attribute/property check.');
+	}
+
+	_shouldBe(quoteCheckOnSetAttributeAndSetPropertyEl, 'attribute', pars[0], 'was "Test Stuff".');
+	_shouldBe(quoteCheckOnSetAttributeAndSetPropertyEl, 'property', pars[1], 'was "Test Stuff".');
+
+	// The test will not pass if any of the above comparisons fail. The success flag added below will be ignored by the test system.
+	_addSuccessClass(quoteCheckOnSetAttributeAndSetPropertyEl);
 }

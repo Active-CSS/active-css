@@ -4,8 +4,6 @@
 /***
 	When compiling the core, this file always goes first, and _core-end.js always goes last.
 	The sequence of the other files shouldn't matter - they should be just functions. They can be given a sequence if need dictates though.
-	By doing a simple concatenate of core files we avoid using changeable imports and bloating the core. It's just a better solution.
-	Plus we can easily dictate what version contains what files and enforce maintenance simplicity by organising directories for that.
 	The compilation time to build the core for each change made is quick enough. Plus the compile tests highlight syntax errors right away.
 	If you find your compile step is taking forever and annoying you, get a faster server. Mine is a cheap Optiplex 780 from 2006 and it's fast enough.
 */
@@ -57,6 +55,18 @@
 			'if-value',
 			'if-visible'
 		],
+		CUSTOMEVENTS = [
+			'adoptedCallback',
+			'attributeChangedCallback',
+			'beforeComponentOpen',
+			'clickoutside',
+			'componentOpen',
+			'connectedCallback',
+			'draw',
+			'disconnectCallback',
+			'innerhtmlchange',
+			'observe'
+		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {
 			',': '_ACSS_later_comma',
@@ -67,7 +77,8 @@
 			'"': '_ACSS_later_double_quote'
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
-		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		MEMAP = [ '&', 'self', 'this', 'me' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -83,7 +94,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /(after|every) (0|stack|(\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\[\]]+(\})?(s|ms))(?=(?:[^"]|"[^"]*")*$)/gm,
+		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -133,6 +144,8 @@
 		compCount = 0,
 		components = [],
 		compPending = {},
+		compPendingVars = {},
+		compPendingVarsCo = 0,
 		compParents = [],
 		compPrivEvs = [],
 		config = [],

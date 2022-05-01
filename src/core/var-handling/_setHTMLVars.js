@@ -5,6 +5,7 @@ const _setHTMLVars = (o, isEmptyStr=false) => {
 	let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
 
 	_set(scopedProxy, compScope + '.__acssHTML', str);
+	_set(scopedProxy, compScope + '.__acssSTRING', str);
 	// Allow no variables to get rendered from this HTML variable type but keep HTML intact.
 	_set(scopedProxy, compScope + '.__acssHTML_NOVARS', escStr);
 	// Escape HTML and curlies with safe HTML entities.

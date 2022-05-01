@@ -8,7 +8,7 @@ const _checkForm = (frm, wot) => {
 	for (var e = 0, el = frm.elements.length; e < el; e++) {
 		n = frm.elements[e];
 		c = false;
-		if (!n.hasAttribute('name')) continue;
+ 		if (!n.hasAttribute('name') || n.disabled) continue;
 		switch (n.nodeName.toLowerCase()) {
 			case 'select':
 				def = 0;

@@ -583,7 +583,7 @@ create-element-tag:connectedCallback {
 }
 
 #checkCreateElementDiv:draw {
-	func: checkCreateElement {createElementConnectCallbackVar} {createElementDisconnectedCallbackVar} {createElementAttributeChangeVar} after 1s;
+	func: checkCreateElement pars({createElementConnectCallbackVar}, {createElementDisconnectedCallbackVar}, {createElementAttributeChangeVar}) after 1s;
 }
 
 #checkCreateElement:test {
@@ -836,12 +836,12 @@ create-element-tag:connectedCallback {
 	func: checkFuncFalse false;
 /*	
 	Still to set up:
-	func: checkFuncArr [1, 2, "cheesey wotsit"];
-	func: checkFuncObj {dave: "hi"};
-	func: checkFuncWinVar window.globIt;
-	func: checkFuncACSSVar {myACSSVariable};
-	func: checkFuncExpr {= 7 + 10 =};
-	func: checkFuncCombined [1, 2, "cheesey wotsit"] {dave: "hi"} window.globIt {myACSSVariable} {= new Date =};*/
+	func: checkFuncArr pars([1, 2, "cheesey wotsit"]);
+	func: checkFuncObj pars({dave: "hi"});
+	func: checkFuncWinVar pars(window.globIt);
+	func: checkFuncACSSVar pars({myACSSVariable});
+	func: checkFuncExpr pars({= 7 + 10 =});
+	func: checkFuncCombined pars([1, 2, "cheesey wotsit"], {dave: "hi"}, window.globIt, {myACSSVariable}, {= new Date =});*/
 
 	func: checkFuncFinal;
 }
@@ -987,8 +987,6 @@ create-element-tag:connectedCallback {
 	}
 	a:draw {
 		trigger-real: click;
-	}
-	a:afterTriggerReal {
 		func: checkPreventDefault;	/* If prevent-default works at all then passing the test in the function will be enough. */
 	}
 	html {
@@ -1009,8 +1007,6 @@ create-element-tag:connectedCallback {
 	}
 	a:draw {
 		trigger-real: click;
-	}
-	a:afterTriggerReal {
 		func: checkPreventDefaultShadow;	/* If prevent-default works at all then passing the test in the function will be enough. */
 	}
 	html {
@@ -1198,7 +1194,7 @@ create-element-tag:connectedCallback {
 	&:componentOpen {
 	    #renderHTMLExample {
 	        render: "<span id=\"checkRenderTestDiv\"><strong>render</strong></span>";
-			func: checkRender;
+			func: checkRender after 100ms;
 	    }
 		#renderEscapePTag {
 	        render-after-end: "<span id=\"checkRenderAttrSubHack\">{@data-hackA}</span>" after stack;
@@ -1445,7 +1441,7 @@ create-element-tag:connectedCallback {
 	}
 	#checkStopEventPropagationDiv:draw {
 		trigger-real: click;
-		func: checkStopEventPropagation {checkStopEventPropagationVar} {checkStopEventPropagationAdditionalVar} after 1s;
+		func: checkStopEventPropagation pars({checkStopEventPropagationVar}, {checkStopEventPropagationAdditionalVar}) after 1s;
 	}
 	#checkStopEventPropagationDiv:click {
 		var: checkStopEventPropagationVar 1;
@@ -1536,7 +1532,7 @@ create-element-tag:connectedCallback {
 	}
 	#checkStopPropagationDiv:draw {
 		trigger-real: click;
-		func: checkStopPropagation {checkStopPropagationVar} {checkStopPropagationAdditionalVar} after 1s;
+		func: checkStopPropagation pars({checkStopPropagationVar}, {checkStopPropagationAdditionalVar}) after 1s;
 	}
 	#checkStopPropagationDiv:click {
 		var: checkStopPropagationVar 1;
@@ -1684,16 +1680,16 @@ create-element-tag:connectedCallback {
 			varTestArray['array'] [],
 			varTestArray['array']['subAssign'] {},
 			varTestArray['array']['subAssign'].dave true,
-			varTestArrayAssign varTestArray['array']['subAssign'].dave
+			varTestArrayAssignProp {varTestArray['array']['subAssign'].dave}
 		;
-		func: checkVar "{varTestString}"
-			{varTestBooleanTrue}
-			{varTestBooleanFalse}
-			{varTestBooleanDigitPositive}
-			{varTestBooleanDigitNegative}
-			{varTestEvaluatedNumber}
-			"{window.varTestWinVar}"
-			{varTestArrayAssign}
+		func: checkVar pars({varTestString},
+			{varTestBooleanTrue},
+			{varTestBooleanFalse},
+			{varTestBooleanDigitPositive},
+			{varTestBooleanDigitNegative},
+			{varTestEvaluatedNumber},
+			{window.varTestWinVar},
+			{varTestArrayAssignProp})
 		;
 	}
 	html {
@@ -1809,6 +1805,30 @@ create-element-tag:connectedCallback {
 	#continueAfterElementRemovalDivElDoesNotExist {
 		var: continueAfterElementVar "This shouldn't run at all";
 	}
-	func: continueAfterElementRemovalFinal "{continueAfterElementVar}";
+	func: continueAfterElementRemovalFinal {continueAfterElementVar};
 }
 
+
+#content:draw {
+	render-before-end: "<div id=\"quoteCheckOnSetAttributeAndSetProperty\" data-desc=\"Core - check setting attributes and properties with double quotes\" class=\"coreTest\">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>";
+}
+
+@component quoteCheckOnSetAttributeAndSetPropertyHTML {
+	&:componentOpen {
+		#quoteCheckOnSetAttributeAndSetPropertyButton {
+			trigger-real: click;
+		}
+	}
+	html {
+		<button id="quoteCheckOnSetAttributeAndSetPropertyButton" data-quoted='was "Test Stuff".''>test</button>
+		<div id="quoteCheckOnSetAttributeAndSetPropertyTarget"></div>
+	}
+}
+
+#quoteCheckOnSetAttributeAndSetPropertyButton:click {
+	#quoteCheckOnSetAttributeAndSetPropertyTarget {
+		set-attribute: data-quoted-target "{@data-quoted}";
+		set-property: value "{@data-quoted}";
+		func: quoteCheckOnSetAttributeAndSetPropertyFinal pars("{@data-quoted-target}", "{@@value}");
+	}
+}
