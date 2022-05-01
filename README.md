@@ -8,11 +8,26 @@
 Boldly go where no CSS author has gone before...
 
 Here's a taster:
-
 ```
 #clickMe:click {
     body {
         add-class: .hello;
+    }
+}
+```
+
+Example of a component (because you love components):
+```
+button:click {
+    render-after-end: "<hello-world></hello-world>";
+}
+
+@component hello-world private {
+    html {
+        <p>Hello world</p>
+    }
+    p:click {
+        alert: "Why are you clicking me, you crazy!";
     }
 }
 ```
