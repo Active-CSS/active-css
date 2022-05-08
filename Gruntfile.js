@@ -6,8 +6,8 @@
 	module.exports = function(grunt) {
 		grunt.initConfig({
 			// Custom variables.
-			realVersion: '2.10.0',
-			fileVersion: '2-10-0',
+			realVersion: '2.11.0',
+			fileVersion: '2-11-0',
 
 			pkg: grunt.file.readJSON('package.json'),
 

@@ -35,6 +35,11 @@ const _ajaxDo = o => {
 	o.pars = intVars;
 	let url = o.url;
 	if (o.preGet && url === '') return;	// Don't try to pre-get empty values. It's ok for a regular ajax call.
+
+	// Handle any relative URLs based on the ACSS file location to align to the CSS handling for relative URLs.
+	// http://www.w3.org/TR/CSS21/syndata.html#value-def-uri
+	url = _getAbsURLFromRel(url, o);
+
 	if (o.formSubmit) {
 		// Send the form.
 		o.pars += '&' + _checkForm(o.secSelObj, 'pars');
