@@ -137,9 +137,15 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Handle no html content.
 							if (components[compName].data === undefined) {
 								components[compName].data = '';
-								components[compName].file = innerContent[0].file;
-								components[compName].line = innerContent[0].line;
-								components[compName].intID = innerContent[0].intID;
+								if (innerContent && typeof innerContent[0] !== undefined) {
+									components[compName].file = innerContent[0].file;
+									components[compName].line = innerContent[0].line;
+									components[compName].intID = innerContent[0].intID;
+								} else {
+									components[compName].file = '';
+									components[compName].line = '';
+									components[compName].intID = '';
+								}
 							}
 							// Reset the component name, otherwise this will get attached to all the remaining events.
 						} else {
