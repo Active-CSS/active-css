@@ -6043,7 +6043,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Handle no html content.
 							if (components[compName].data === undefined) {
 								components[compName].data = '';
-								if (innerContent && typeof innerContent[0] !== undefined) {
+								if (innerContent && typeof innerContent[0] === 'object') {
 									components[compName].file = innerContent[0].file;
 									components[compName].line = innerContent[0].line;
 									components[compName].intID = innerContent[0].intID;
