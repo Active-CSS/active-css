@@ -10637,6 +10637,7 @@ const _getSel = (o, sel, many=false) => {
 };
 
 const _getSelector = (o, sel, many=false) => {
+	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
 	let newDoc;
 	if (o.compDoc) {
 		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
@@ -10657,8 +10658,6 @@ const _getSelector = (o, sel, many=false) => {
 	if (sel.startsWith('~')) {
 		return { doc: newDoc, obj: sel };
 	}
-
-	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
 	let item = false;
 
 	// In order not to break websites when CSS gets enhanced, it's necessary to take full responsibility for the special ACSS selectors and deal with
@@ -10700,12 +10699,13 @@ const _getSelector = (o, sel, many=false) => {
 		addedAttrs.push(elToUse);
 	}
 
-	// The string selector should now be fully iterable if we split by " -> " and "<".
-	let selSplit = newSel.split(/( \-> |<)/);
+	// The string selector should now be fully iterable if we split by " -> ", "<" and " - ".
+	let selSplit = newSel.split(/( \-> |<| \- )/);
 
 	let mainObj = obj;
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
+	let selectWithAdjPrev = false;
 	let justFoundIframe = false;
 	let singleResult = false;
 	let multiResult = false;
@@ -10784,24 +10784,24 @@ const _getSelector = (o, sel, many=false) => {
 				selectWithClosest = true;
 				continue;
 
-			default:
-				if (selectWithClosest) {
-					// Get closest nextSel to the current element, but we want to start from the parent. Note that this will always only bring back one node.
-					if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj).parentElement;
-					if (!mainObj) break;
+			case '-':
+				selectWithAdjPrev = true;
+				continue;
 
-					// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
-					// Grab the string up to the presence of the first ' ', '>', '+' or '~'.
-					let pos = _getMinExistingPos(selItem, [ ' ', '>', '+', '~' ]);
-					let firstSel = (pos === -1) ? selItem : selItem.substr(0, pos);
-					mainObj = mainObj.closest(firstSel);
-					if (mainObj && pos !== -1) {
-						let subAttrActiveID = _getActiveID(mainObj);
-						mainObj.setAttribute('data-activeid', subAttrActiveID);
-						addedAttrs.push(mainObj);
-						newDoc = mainObj.parentNode;
-						selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
-					} else {
+			default:
+				if (selectWithAdjPrev || selectWithClosest) {
+					let typ;
+					if (selectWithAdjPrev) {
+						typ = 'prevAdj';
+					} else if (selectWithClosest) {
+						typ = 'closest';
+					}
+					let checkRes = _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs);
+					selItem = checkRes.selItem;
+					mainObj = checkRes.mainObj;
+					newDoc = checkRes.newDoc;
+					addedAttrs = checkRes.addedAttrs;
+					if (!checkRes.moreToDo) {
 						singleResult = true;
 						continue;
 					}
@@ -10832,12 +10832,65 @@ const _getSelector = (o, sel, many=false) => {
 		}
 		// Reset closest flag so it only happens the once.
 		selectWithClosest = false;
+		selectWithAdjPrev = false;
 		justSetIframeAsDoc = false;
 	}
 
 	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
 	removeAddedAttrs();
+
+	function _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs) {
+		// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
+		// Grab the string up to the presence of the first ' ', '>', '+' or '~'.
+		let pos = _getMinExistingPos(selItem, [ ' ', '>', '+', '~' ]);
+		let firstSel = (pos === -1) ? selItem : selItem.substr(0, pos);
+		if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj);
+		switch (typ) {
+			case 'closest':
+				mainObj = mainObj.parentElement;
+				if (mainObj) mainObj = mainObj.closest(firstSel);
+				break;
+
+			case 'prevAdj':
+				if (mainObj) {
+					let prevSibl = mainObj.previousSibling;
+					mainObj = (prevSibl && prevSibl.matches(firstSel)) ? prevSibl : null;
+				}
+				break;
+
+			case 'prevAdjAll':
+				if (mainObj) mainObj = getPreviousSiblings(mainObj, firstSel);
+
+				// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
+				// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
+				break;
+
+		}
+		let moreToDo = false;
+		if (mainObj && pos !== -1) {
+			let subAttrActiveID = _getActiveID(mainObj);
+			mainObj.setAttribute('data-activeid', subAttrActiveID);
+			addedAttrs.push(mainObj);
+			newDoc = mainObj.parentNode;
+			selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+			moreToDo = true;
+		}
+		return { selItem, mainObj, newDoc, addedAttrs, moreToDo };
+	}
+
+	function getPreviousSiblings(elem, filter) {
+		// https://stackoverflow.com/questions/4378784/how-to-find-all-siblings-of-the-currently-selected-dom-object
+		let sibs = [];
+		let prevEl = elem.previousSibling;
+		while (prevEl) {
+			if (prevEl.matches(filter)) {
+				sibs.push(prevEl);
+			}
+			prevEl = prevEl.previousSibling;
+		}
+		return sibs;
+	}
 
 	function unescForSel(sel) {
 		let newSel = sel.replace(/("(.*?)")/g, function(_, innards) {
