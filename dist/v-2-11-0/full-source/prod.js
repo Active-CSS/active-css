@@ -10699,13 +10699,14 @@ const _getSelector = (o, sel, many=false) => {
 		addedAttrs.push(elToUse);
 	}
 
-	// The string selector should now be fully iterable if we split by " -> ", "<" and " - ".
-	let selSplit = newSel.split(/( \-> |<| \- )/);
+	// The string selector should now be fully iterable if we split by " -> ", "<", " - " and " -~ ".
+	let selSplit = newSel.split(/( \-> |<| \- | \-~ )/);
 
 	let mainObj = obj;
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
 	let selectWithAdjPrev = false;
+	let selectWithAdjPrevAll = false;
 	let justFoundIframe = false;
 	let singleResult = false;
 	let multiResult = false;
@@ -10788,20 +10789,39 @@ const _getSelector = (o, sel, many=false) => {
 				selectWithAdjPrev = true;
 				continue;
 
+			case '-~':
+				selectWithAdjPrevAll = true;
+				continue;
+
 			default:
-				if (selectWithAdjPrev || selectWithClosest) {
+				if (selectWithAdjPrev || selectWithClosest || selectWithAdjPrevAll) {
 					let typ;
 					if (selectWithAdjPrev) {
 						typ = 'prevAdj';
 					} else if (selectWithClosest) {
 						typ = 'closest';
+					} else if (selectWithAdjPrevAll) {
+						typ = 'prevAdjAll';
 					}
+					// Reset flags so they only happens the once.
+					selectWithClosest = false;
+					selectWithAdjPrev = false;
+					selectWithAdjPrevAll = false;
 					let checkRes = _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs);
 					selItem = checkRes.selItem;
 					mainObj = checkRes.mainObj;
 					newDoc = checkRes.newDoc;
 					addedAttrs = checkRes.addedAttrs;
 					if (!checkRes.moreToDo) {
+						if (typ == 'prevAdjAll') {
+							if (checkRes.multiObjs) {
+								multiResult = true;
+								mainObj = checkRes.multiObjs;
+								break;
+							} else {
+								return removeCleanup(newDoc);
+							}
+						}
 						singleResult = true;
 						continue;
 					}
@@ -10817,9 +10837,9 @@ const _getSelector = (o, sel, many=false) => {
 					}
 
 				} catch(err) {
-					if (attrActiveID) removeAddedAttrs();
-					return { obj: undefined, newDoc };
+					return removeCleanup(newDoc);
 				}
+
 				multiResult = true;
 
 				if (justFoundIframe === false) {
@@ -10830,15 +10850,17 @@ const _getSelector = (o, sel, many=false) => {
 				}
 				justFoundIframe = false;
 		}
-		// Reset closest flag so it only happens the once.
-		selectWithClosest = false;
-		selectWithAdjPrev = false;
 		justSetIframeAsDoc = false;
 	}
 
 	let res = { doc: newDoc, obj: selManyize(mainObj, singleResult, multiResult) };
 
 	removeAddedAttrs();
+
+	function removeCleanup(newDoc) {
+		removeAddedAttrs();
+		return { obj: undefined, newDoc };
+	}
 
 	function _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs) {
 		// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
@@ -10860,11 +10882,18 @@ const _getSelector = (o, sel, many=false) => {
 				break;
 
 			case 'prevAdjAll':
-				if (mainObj) mainObj = getPreviousSiblings(mainObj, firstSel);
-
 				// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
 				// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
+				if (mainObj) {
+					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
+					let multiObjs = getPreviousSiblings(mainObj, firstSel);
+					if (multiObjs.length > 0) {
+						return { selItem, multiObjs, newDoc, addedAttrs, moreToDo: false };
+					}
+					return;
+				}
 				break;
+				
 
 		}
 		let moreToDo = false;
@@ -10884,7 +10913,10 @@ const _getSelector = (o, sel, many=false) => {
 		let sibs = [];
 		let prevEl = elem.previousSibling;
 		while (prevEl) {
-			if (prevEl.matches(filter)) {
+			if (prevEl.nodeType === Node.ELEMENT_NODE && prevEl.matches(filter)) {
+
+// This will get enhanced shortly to allow further selection from these elements as the bases.
+
 				sibs.push(prevEl);
 			}
 			prevEl = prevEl.previousSibling;
