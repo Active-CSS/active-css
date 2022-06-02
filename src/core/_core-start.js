@@ -78,7 +78,7 @@
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
-		MEMAP = [ '&', 'self', 'this', 'me' ],
+		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,

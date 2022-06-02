@@ -14,6 +14,19 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle the pause command, which uses a similar method as "await".
 	if (o.func == 'Pause') {
+		// Allow variables in the pause command.
+		o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actVal).trim();
+		let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 		_pauseHandler(o);
 		return;
 	}

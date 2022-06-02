@@ -1,5 +1,5 @@
 _a.Var = o => {
-	let locStorage, sessStorage, newActVal = o.actValSing;
+	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush = false;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -36,6 +36,11 @@ _a.Var = o => {
 		} else if (varName.endsWith('--')) {
 			varName = varName.slice(0, -2);
 			varDetails = '{' + varName + '}-1';
+		} else if (varName.endsWith('[]')) {
+			varName = varName.slice(0, -2);
+			isArrayPush = true;
+			console.log('Pushing value to array not yet supported.');
+			return;
 		} else {
 			// Assign to null if no assignment.
 			varDetails = 'null';

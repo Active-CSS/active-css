@@ -4,9 +4,10 @@ const _handleLoop = (loopObj) => {
 	// Sort out the scope here as it doesn't need doing multiple times from inside the loop (if it is a loop).
 	let scopePrefix = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 
-	let statement = atIfDetails.name; 
+	let statement = atIfDetails.name;
 
 	if (statement) {
+		if (!statement.startsWith('@el') && loopObj.previousIfRes) loopObj.previousIfRes.res = false;
 		switch (statement) {
 			case '@else':
 			case '@else if':

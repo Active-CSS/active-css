@@ -78,7 +78,7 @@
 		},
 		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
-		MEMAP = [ '&', 'self', 'this', 'me' ],
+		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
@@ -1696,7 +1696,7 @@ _a.UrlReplace = o => {
 };
 
 _a.Var = o => {
-	let locStorage, sessStorage, newActVal = o.actValSing;
+	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush = false;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -1733,6 +1733,11 @@ _a.Var = o => {
 		} else if (varName.endsWith('--')) {
 			varName = varName.slice(0, -2);
 			varDetails = '{' + varName + '}-1';
+		} else if (varName.endsWith('[]')) {
+			varName = varName.slice(0, -2);
+			isArrayPush = true;
+			console.log('Pushing value to array not yet supported.');
+			return;
 		} else {
 			// Assign to null if no assignment.
 			varDetails = 'null';
@@ -2601,6 +2606,19 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	// Handle the pause command, which uses a similar method as "await".
 	if (o.func == 'Pause') {
+		// Allow variables in the pause command.
+		o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actVal).trim();
+		let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
 		_pauseHandler(o);
 		return;
 	}
@@ -4739,9 +4757,10 @@ const _handleLoop = (loopObj) => {
 	// Sort out the scope here as it doesn't need doing multiple times from inside the loop (if it is a loop).
 	let scopePrefix = ((varScope && privVarScopes[varScope]) ? varScope : 'main') + '.';
 
-	let statement = atIfDetails.name; 
+	let statement = atIfDetails.name;
 
 	if (statement) {
+		if (!statement.startsWith('@el') && loopObj.previousIfRes) loopObj.previousIfRes.res = false;
 		switch (statement) {
 			case '@else':
 			case '@else if':
@@ -5083,12 +5102,6 @@ const _loopVarToNumber = (str, varScope) => {
 
 	// Return the number or false if that value doesn't equate to a number.
 	return _getNumber(expr);
-};
-
-const _checkAtIfOk = oObj => {
-	let ifRes = _handleLoop(oObj);
-	// Returns true if it isn't an @if statement, or the boolean result of the @if statement.
-	return (typeof ifRes === 'object') ? (ifRes.command == '@if' && ifRes.res) : true;
 };
 
 const _handleIf = (loopObj, ifType) => {
@@ -8403,12 +8416,12 @@ const _replaceScopedVars = (str, obj=null, func='', o=null, fromUpdate=false, sh
 
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
-	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
+	let originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
 			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
-			let realWot;
+			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
 				// Remove the outer parentheses now that we know this needs binding.
@@ -8436,7 +8449,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				res = scoped.val;
 
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? scoped.fullName : '';	// Return the name of the variable if it's an object so it can be evaluated later with it's properties.
+
 				realWot = scoped.name;
 			}
 			if (isBound && (func == 'asRender' || func.startsWith('Render'))) {
@@ -8456,11 +8470,21 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
-					_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
+					if (isBound) {
+						// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
+						// If this isn't a bound attribute, we will insert it properly into the attribute so it gets escaped with the original var value.
+						// originalStr will be the full contents of the attribute and can contain multiple variables.
+						_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
+					} else {
+						if (walker && func == 'SetAttribute') {
+							res = _escapeItem(res);
+						}
+					}
 				}
-				// Send the regular scoped variable back.
-				return _preReplaceVar(res, varReplacementRef);
+
+				// Send the regular scoped variable back, in a placeholder if appropriate.
+				let retVar = _preReplaceVar(res, varReplacementRef);
+				return retVar;
 			}
 		});
 	}
