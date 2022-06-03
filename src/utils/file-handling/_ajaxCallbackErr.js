@@ -43,10 +43,12 @@
 
 	if (!isComponent || !objToUse.hasAttribute('data-ajax-failure')) {
 		let commonObj = { obj: objToUse, evType: generalEvent + o.errorCode, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo };
+
+		// Handle error code event.
 		if (o.errorCode) _handleEvents(commonObj);
-		commonObj.evType = generalEvent + 'Error';
 
 		// Handle general error event.
+		commonObj.evType = generalEvent + 'Error';
 		_handleEvents(commonObj);
 	}
 

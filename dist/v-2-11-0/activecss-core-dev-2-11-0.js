@@ -8550,7 +8550,19 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scoped = _getScopedVar(innards, varScope);
+					if (!scoped.val) {
+						// Try it without a $ from the server - this could be an API.
+						innards = innards.replace(/\$/g, '');
+						scoped = _getScopedVar(innards, varScope);
+					}
+
 					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
+
+
+//				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
+//					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
+//					let scoped = _getScopedVar(innards, varScope);
+//					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
 				} else {
 					return '{' + innards + '}';
 				}
@@ -10119,10 +10131,12 @@ const _addActValRaw = o => {
 
 	if (!isComponent || !objToUse.hasAttribute('data-ajax-failure')) {
 		let commonObj = { obj: objToUse, evType: generalEvent + o.errorCode, eve: o.e, otherObj: o, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo };
+
+		// Handle error code event.
 		if (o.errorCode) _handleEvents(commonObj);
-		commonObj.evType = generalEvent + 'Error';
 
 		// Handle general error event.
+		commonObj.evType = generalEvent + 'Error';
 		_handleEvents(commonObj);
 	}
 

@@ -32,6 +32,11 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
 					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
 					let scoped = _getScopedVar(innards, varScope);
+					if (!scoped.val) {
+						// Try it without a $ from the server - this could be an API.
+						innards = innards.replace(/\$/g, '');
+						scoped = _getScopedVar(innards, varScope);
+					}
 					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
 				} else {
 					return '{' + innards + '}';
