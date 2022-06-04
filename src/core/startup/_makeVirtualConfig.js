@@ -54,8 +54,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							compName = checkCompName;
 						}
 
-// set up accept-vars as option. default to no ACSS variables allowed in html/css files.
-
 						if (!removeState) {
 							if (!components[compName]) components[compName] = {};
 							components[compName].mode = null;
@@ -102,18 +100,12 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								components[compName].acceptVars = true;
 							}
-
-console.log('_makeVirtualConfig, compName:', compName, 'checkStr:', '"' + checkStr + '"');
-
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
 								components[compName].scoped = true;
 							} else if (checkStr.indexOf(' privateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privVars = true;
-
-console.log('_makeVirtualConfig, compName:', compName, 'privVars is getting set to true');
-
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
