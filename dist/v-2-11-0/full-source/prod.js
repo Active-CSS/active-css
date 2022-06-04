@@ -144,8 +144,10 @@
 		compCount = 0,
 		components = [],
 		compPending = {},
-		compPendingVars = {},
-		compPendingVarsCo = 0,
+		compPendingHTML = {},
+		compPendingHTMLCo = 0,
+		compPendingJSON = {},
+		compPendingJSONCo = 0,
 		compParents = [],
 		compPrivEvs = [],
 		config = [],
@@ -3807,9 +3809,10 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 		if (_isPendingAjaxForComponents(obj)) return;
 		if (obj.hasAttribute('data-html-file') ||
 				obj.hasAttribute('data-css-file') ||
+				obj.hasAttribute('data-json-file') ||
 				obj.hasAttribute('data-html-template') ||
 				obj.hasAttribute('data-css-template')) {
-			let readyToRenderNow = _grabDynamicComponentFile(obj, [ 'html', 'css', 'data-html-template', 'data-css-template' ], o, compDoc, childTree, numTopNodesInRender);
+			let readyToRenderNow = _grabDynamicComponentFile(obj, [ 'html', 'css', 'json', 'data-html-template', 'data-css-template' ], o, compDoc, childTree, numTopNodesInRender);
 			if (!readyToRenderNow) return;
 		}
 
@@ -3952,6 +3955,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	}
 
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
+
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
 	if (scopedProxy[varScope] === undefined) {
@@ -3995,6 +3999,18 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
 
+	if (compPendingJSON[shadRef] !== undefined) {
+		// Convert JSON string to variables and get these declared in the correct component scope now that it has been established.
+		let compScope = privVarScopes[varScopeToPassIn] ? varScopeToPassIn : 'main';
+		for (const json in compPendingJSON[shadRef]) {
+			// Send the JSON string through the same code as it would do if it was coming straight from loading.
+			let res = JSON.parse(compPendingJSON[shadRef][json]);
+			_resolveAjaxVarsDecl({ res, obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo }, compScope);
+		}
+		// All tmp content has been replaced. Remove the placeholder reference from memory.
+		delete compPendingJSON[shadRef];
+	}
+
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
@@ -4008,15 +4024,15 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
 	}
 
-	if (compPendingVars[shadRef] !== undefined) {
+	if (compPendingHTML[shadRef] !== undefined) {
 		// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
-		for (const tmpContent in compPendingVars[shadRef]) {
+		for (const tmpContent in compPendingHTML[shadRef]) {
 			// Output the variables for real from the map.
-			let newStr = _resolveComponentAcceptedVars(compPendingVars[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
+			let newStr = _resolveComponentAcceptedVars(compPendingHTML[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
 			compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
 		}
 		// All tmp content has been replaced. Remove the placeholder reference from memory.
-		delete compPendingVars[shadRef];
+		delete compPendingHTML[shadRef];
 	}
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -5989,15 +6005,17 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
 							let cssPos = checkStr.indexOf(' css(');
+							let jsonPos = checkStr.indexOf(' json(');
 							let htmlTemplPos = checkStr.indexOf(' html-template(');
 							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
 							let componentOpts = {};
-							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
-								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
+							if (htmlPos !== -1 || cssPos !== -1 || jsonPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
+								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'json', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts.json) components[compName].jsonFile = componentOpts.json;
 								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
 								if (componentOpts['css-template']) components[compName].cssTempl = componentOpts['css-template'];
 								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
@@ -6005,14 +6023,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								checkStr = componentOpts.action;
 							}
 							checkStr += ' ';
-							// Set up HTML and CSS files to preload if the preload-files option is set.
-							if (checkStr.indexOf(' preload-files ') !== -1) {
-								components[compName].preloadFiles = true;
-							}
-							// Set up non-caching of HTML and CSS files, if these need to be loaded dynamically.
-							if (checkStr.indexOf(' nocache-files ') !== -1) {
-								components[compName].nocacheFiles = true;
-							}
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -6027,12 +6037,18 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								components[compName].acceptVars = true;
 							}
+
+console.log('_makeVirtualConfig, compName:', compName, 'checkStr:', '"' + checkStr + '"');
+
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
 								components[compName].scoped = true;
 							} else if (checkStr.indexOf(' privateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privVars = true;
+
+console.log('_makeVirtualConfig, compName:', compName, 'privVars is getting set to true');
+
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
@@ -8245,6 +8261,7 @@ const _replaceComponents = (o, str) => {
 				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"';
 				if (components[c].htmlFile) compRef += ' data-html-file="' + escQuotes(components[c].htmlFile) + '"';
 				if (components[c].cssFile) compRef += ' data-css-file="' + escQuotes(components[c].cssFile) + '"';
+				if (components[c].jsonFile) compRef += ' data-json-file="' + escQuotes(components[c].jsonFile) + '"';
 				if (components[c].htmlTempl) compRef += ' data-html-template="' + escQuotes(components[c].htmlTempl) + '"';
 				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
@@ -8555,14 +8572,7 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 						innards = innards.replace(/\$/g, '');
 						scoped = _getScopedVar(innards, varScope);
 					}
-
 					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
-
-
-//				if (innards.indexOf('$') !== -1 && ['$CHILDREN', '$SELF'].indexOf(innards) === -1) {
-//					// This should be treated as an HTML variable string. It's a regular Active CSS variable that allows HTML.
-//					let scoped = _getScopedVar(innards, varScope);
-//					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
 				} else {
 					return '{' + innards + '}';
 				}
@@ -9724,21 +9734,29 @@ const _getParVal = (str, typ) => {
 };
 
 const _insertResForComponents = (obj, typ, str, acceptVars) => {
-	let ref = obj.getAttribute('data-ref');
+	let ref = obj.getAttribute('data-ref'), content = '';
 	if (compPending[ref] === undefined) compPending[ref] = '';
-	let content = (typ.startsWith('css') ? '<style>' + str + '</style>' : str);
+	if (typ.startsWith('css')) {
+		content = '<style>' + str + '</style>';
+	} else if (typ.startsWith('json')) {
+		if (compPendingJSON[ref] === undefined) compPendingJSON[ref] = [];
+		compPendingJSON[ref]['_' + compPendingJSONCo] = str;
+		compPendingJSONCo++;
+	} else {
+		content = str;
+	}
 	if (acceptVars) {
 		// Place these results into a temporary location for replacing back when we render the component and get the correct scope.
-		if (compPendingVars[ref] === undefined) compPendingVars[ref] = [];
-		compPendingVars[ref]['_' + compPendingVarsCo] = content;
-		content = '_acssIntCompVarRepl_' + compPendingVarsCo + '_';
-		compPendingVarsCo++;
+		if (compPendingHTML[ref] === undefined) compPendingHTML[ref] = [];
+		compPendingHTML[ref]['_' + compPendingHTMLCo] = content;
+		content = '_acssIntCompVarRepl_' + compPendingHTMLCo + '_';
+		compPendingHTMLCo++;
 	}
 	compPending[ref] += content;
 };
 
 const _isPendingAjaxForComponents = obj => {
-	return obj.classList.contains('htmlPending') || obj.classList.contains('cssPending');
+	return obj.classList.contains('htmlPending') || obj.classList.contains('cssPending') || obj.classList.contains('jsonPending');
 };
 
 const _absLeft = el => {
@@ -10173,11 +10191,13 @@ const _extractBracketPars = (actionValue, parArr, o) => {
 			if (pos !== -1) {
 				parStartLen = parName.length + 1;	// Includes name of parameter and first parenthesis.
 				newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
+
 				// Get the parameter value and the remainder of the action value.
 				// Send over the action value from the beginning of the parameter value.
 				splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
 				trackArr.push(_extractBracketParsUnEsc(splitRes.value));
 				newActionValue += splitRes.remainder;
+
 				// Check for any others.
 				continue;
 			}
@@ -10202,6 +10222,7 @@ const _extractBracketParsSplit = (str, original, o) => {
 	// Return value should be:
 	// res.value = "#left";
 	// res.remainder = " another(#myEl:not(has(something))) hi(and the rest) something"
+
 	let res = {};
 	// Split by "(".
 	let openingArr = str.split('(');
@@ -10229,7 +10250,8 @@ const _extractBracketParsSplit = (str, original, o) => {
 				res.remainder = innerRes.remainder;
 				if (n < openingArr.length) {
 					remainderArr = openingArr.slice(n + 1);
-					res.remainder += (typeof remainderArr[0] !== undefined && remainderArr[0] != '' ? '(' : '') + remainderArr.join('(');
+					res.remainder += (typeof remainderArr[0] !== undefined && remainderArr.length > 0 ? '(' : '') + remainderArr.join('(');
+
 				}
 				break;
 			}

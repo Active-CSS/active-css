@@ -8,9 +8,10 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 		if (_isPendingAjaxForComponents(obj)) return;
 		if (obj.hasAttribute('data-html-file') ||
 				obj.hasAttribute('data-css-file') ||
+				obj.hasAttribute('data-json-file') ||
 				obj.hasAttribute('data-html-template') ||
 				obj.hasAttribute('data-css-template')) {
-			let readyToRenderNow = _grabDynamicComponentFile(obj, [ 'html', 'css', 'data-html-template', 'data-css-template' ], o, compDoc, childTree, numTopNodesInRender);
+			let readyToRenderNow = _grabDynamicComponentFile(obj, [ 'html', 'css', 'json', 'data-html-template', 'data-css-template' ], o, compDoc, childTree, numTopNodesInRender);
 			if (!readyToRenderNow) return;
 		}
 

@@ -66,6 +66,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	}
 
 	varScope = _getActiveID(shadowParent).replace('id-', '_');
+
 	// Set the variable scope up for this area. It is really important this doesn't get moved otherwise the first variable set in the scope will only initialise
 	// the scope and not actually set up the variable, causing a hard-to-debug "variable not always getting set" scenario.
 	if (scopedProxy[varScope] === undefined) {
@@ -109,6 +110,18 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
 
+	if (compPendingJSON[shadRef] !== undefined) {
+		// Convert JSON string to variables and get these declared in the correct component scope now that it has been established.
+		let compScope = privVarScopes[varScopeToPassIn] ? varScopeToPassIn : 'main';
+		for (const json in compPendingJSON[shadRef]) {
+			// Send the JSON string through the same code as it would do if it was coming straight from loading.
+			let res = JSON.parse(compPendingJSON[shadRef][json]);
+			_resolveAjaxVarsDecl({ res, obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo }, compScope);
+		}
+		// All tmp content has been replaced. Remove the placeholder reference from memory.
+		delete compPendingJSON[shadRef];
+	}
+
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
@@ -122,15 +135,15 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
 	}
 
-	if (compPendingVars[shadRef] !== undefined) {
+	if (compPendingHTML[shadRef] !== undefined) {
 		// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
-		for (const tmpContent in compPendingVars[shadRef]) {
+		for (const tmpContent in compPendingHTML[shadRef]) {
 			// Output the variables for real from the map.
-			let newStr = _resolveComponentAcceptedVars(compPendingVars[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
+			let newStr = _resolveComponentAcceptedVars(compPendingHTML[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
 			compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
 		}
 		// All tmp content has been replaced. Remove the placeholder reference from memory.
-		delete compPendingVars[shadRef];
+		delete compPendingHTML[shadRef];
 	}
 
 	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);

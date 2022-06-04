@@ -70,15 +70,17 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							// Get any reference to load options. Done like this for speed. _extractBracketPars is necessarily intensive to handle inner parentheses for selectors.
 							let htmlPos = checkStr.indexOf(' html(');
 							let cssPos = checkStr.indexOf(' css(');
+							let jsonPos = checkStr.indexOf(' json(');
 							let htmlTemplPos = checkStr.indexOf(' html-template(');
 							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
 							let componentOpts = {};
-							if (htmlPos !== -1 || cssPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
-								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'html-template', 'css-template', 'observe', 'template' ]);
+							if (htmlPos !== -1 || cssPos !== -1 || jsonPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
+								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'json', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
 								if (componentOpts.css) components[compName].cssFile = componentOpts.css;
+								if (componentOpts.json) components[compName].jsonFile = componentOpts.json;
 								if (componentOpts['html-template']) components[compName].htmlTempl = componentOpts['html-template'];
 								if (componentOpts['css-template']) components[compName].cssTempl = componentOpts['css-template'];
 								if (componentOpts.observe) components[compName].observeOpt = componentOpts.observe;
@@ -86,14 +88,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								checkStr = componentOpts.action;
 							}
 							checkStr += ' ';
-							// Set up HTML and CSS files to preload if the preload-files option is set.
-							if (checkStr.indexOf(' preload-files ') !== -1) {
-								components[compName].preloadFiles = true;
-							}
-							// Set up non-caching of HTML and CSS files, if these need to be loaded dynamically.
-							if (checkStr.indexOf(' nocache-files ') !== -1) {
-								components[compName].nocacheFiles = true;
-							}
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -108,12 +102,18 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								components[compName].acceptVars = true;
 							}
+
+console.log('_makeVirtualConfig, compName:', compName, 'checkStr:', '"' + checkStr + '"');
+
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
 								components[compName].scoped = true;
 							} else if (checkStr.indexOf(' privateVars ') !== -1 || checkStr.indexOf(' private ') !== -1) {
 								components[compName].privVars = true;
+
+console.log('_makeVirtualConfig, compName:', compName, 'privVars is getting set to true');
+
 								// Private variable areas are always scoped, as they need their own area.
 								// We get a performance hit with scoped areas, so we try and limit this to where needed.
 								// The only other place we have an area scoped is where events are within components. Shadow DOM is similar but has its own handling.
