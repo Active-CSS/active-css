@@ -3109,9 +3109,9 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 		const mutationAddedNodes = mutation.addedNodes;
 		const mutationRemovedNodes = mutation.removedNodes;
 		// Handle any observe events on the node itself.
-		if (mutationType == 'childList') {
-			if (mutationAddedNodes) {
-				if (DEVCORE) {
+		if (DEVCORE) {
+			if (mutationType == 'childList') {
+				if (mutationAddedNodes) {
 					mutationAddedNodes.forEach(nod => {
 						if (!(nod instanceof HTMLElement)) return;
 						// Handle the addition of embedded Active CSS styles into the config via DevTools. Config is already loaded if called via ajax.
@@ -3124,27 +3124,27 @@ ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideSha
 						}
 					});
 				}
-			}
-		} else if (mutationType == 'characterData' && !insideShadowDOM) {
-			// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
-			// This will be sufficient to set off the processes to sort out the config.
-			let el = mutationTarget;
-			if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
-				// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
-				setTimeout(function() {
-					// This is an embedded Active CSS tag. Replace it so it triggers off the config changes.
-					let parEl = el.parentElement;
-					let newTag = '<style type="text/acss">' + parEl.innerText + '</style>';
-					// Remove from the config first. If we remove the element after we've changed the content we get the scenario of the removal happening
-					// after the addition and it buggers things up. So just do a manual removal.
-					_regenConfig(parEl, 'remove');
-					// Now we can safely add it.
-					parEl.insertAdjacentHTML('beforebegin', newTag);	// Can't do a straight replace with a real node because of br tags being inserted.
-					// Now change the type of the element so it doesn't get picked up in mutations.
-					parEl.type = 'text/dummy';
-					// Now it's safe to remove - it's not going to trigger a delete mutation.
-					parEl.remove();
-				}, 0);
+			} else if (mutationType == 'characterData' && !insideShadowDOM) {
+				// Detect change to embedded Active CSS. The handling is just to copy the insides of the tag and replace it with a new one.
+				// This will be sufficient to set off the processes to sort out the config.
+				let el = mutationTarget;
+				if (el.nodeType == Node.TEXT_NODE && _isACSSStyleTag(el.parentElement)) {
+					// We need to run this at the end of the call stack, otherwise we could clash with other stuff going on.
+					setTimeout(function() {
+						// This is an embedded Active CSS tag. Replace it so it triggers off the config changes.
+						let parEl = el.parentElement;
+						let newTag = '<style type="text/acss">' + parEl.innerText + '</style>';
+						// Remove from the config first. If we remove the element after we've changed the content we get the scenario of the removal happening
+						// after the addition and it buggers things up. So just do a manual removal.
+						_regenConfig(parEl, 'remove');
+						// Now we can safely add it.
+						parEl.insertAdjacentHTML('beforebegin', newTag);	// Can't do a straight replace with a real node because of br tags being inserted.
+						// Now change the type of the element so it doesn't get picked up in mutations.
+						parEl.type = 'text/dummy';
+						// Now it's safe to remove - it's not going to trigger a delete mutation.
+						parEl.remove();
+					}, 0);
+				}
 			}
 		}
 
@@ -5449,9 +5449,18 @@ const _addACSSStyleTag = (acssTag) => {
 	inlineIDArr.push(activeID);
 	concatConfigLen++;
 	_addConfig(acssTag.innerHTML, { file: '_inline_' + activeID, inlineActiveID: activeID });
+
+	// If prod version, wipe embedded config from page (code can be viewed from source in the prod edition, but will not be seen with DevTools).
+	// The tag needs to stay on the page so that the core can detect tag removal and adjust loaded config in memory.
+	// Embedded config cannot be adjusted maliciously via DevTools in the prod version of the core, so this action is a courtesy and a reduction of unnecessary
+	// text nodes on the page.
+	// Mark the tag as loaded with an attribute so it is obvious where the tag came from when inspecting.
+	if (!DEVCORE) {
+		acssTag.innerHTML = '';
+		acssTag.setAttribute('data-embedded-acss-loaded', true);
+	}
 	return activeID;
 };
-
 const _addConfig = (str, o) => {
 	// Concatenate the config files before processing.
 	// On empty config, throw a warning.
