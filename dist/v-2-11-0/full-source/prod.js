@@ -33,7 +33,7 @@
 			'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
 			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 			')', 'g'),
-		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		COMMENTS = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		CONDDEFSELF = [
 			'if-empty',
@@ -76,13 +76,13 @@
 			':': '_ACSS_later_colon',
 			'"': '_ACSS_later_double_quote'
 		},
-		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
-		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		INQUOTES = /("([^"]|"")*")/gm,
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\$\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
-		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
+		PARSELINEX = /(([^\:]+):([^\;]*)|(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]+)([\+\-]+)?);/,
 		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
 		PARSESEL = 1,
 		RANDHEX = 'ABCDEF',
@@ -91,7 +91,7 @@
 		SELFREGEX = /\{\$SELF\}/g,
 		WRAPSTATEMENTS = [ '@media', '@support' ],
 		INNERSTATEMENTS = [ '@each', '@else', '@for', '@if', '@while' ],
-		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
 		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
@@ -560,7 +560,7 @@ _a.CreateCommand = o => {
 
 	flyCommands[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', newFunc);		// jshint ignore:line
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
 };
 
 _a.CreateConditional = o => {
@@ -597,7 +597,7 @@ _a.CreateConditional = o => {
 
 	flyConds[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', newFunc);		// jshint ignore:line
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
 };
 
 _a.CreateElement = o => {
@@ -696,7 +696,7 @@ _a.CreateElement = o => {
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails, _handleObserveEvents', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents);	// jshint ignore:line
+	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML);	// jshint ignore:line
 };
 
 _a.DocumentTitle = o => {
@@ -2689,7 +2689,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
 
-	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
+	let isFunc = (typeof _a[o.func] === 'function');	// if it's ever needed to speed up the event flow, set these up as props at config load. For now though, keep the init fast.
+	o.isCSSCommand = !(isFunc || o.isDollarVar);	// This is for evaluating any variables as values rather than variable names - ie. for CSS commands.
+
+	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1 || o.isDollarVar) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 
@@ -2718,27 +2721,29 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_debugOutput(o);	// A couple of extra objects variables are set in here, and we want them later for the feedback results (not yet implemented fully).
 	}
 
-	let cssVariableChange;
-	if (typeof _a[o.func] !== 'function') {
-		// Apply this as a CSS style if it isn't a function.
+	if (!o.isCSSCommand) {
+		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
+		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
+		o.vars = scopedProxy[compScope];
+	}
+
+	if (isFunc) {
+		// Run the function.
+		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
+	} else if (o.isDollarVar) {
+		_setACSSVariable(o);
+	} else {
 		if (o.func.startsWith('--')) {
 			_setCSSVariable(o);
-			cssVariableChange = true;
 		} else {
 			if (_isConnected(o.secSelObj)) {
 				o.secSelObj.style[o.actName] = o.actVal;
 			}
 		}
-	} else {
-		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
-		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
-		o.vars = scopedProxy[compScope];
-		// Run the function.
-		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
 	if (o.interval) {
-		// Restore the actVal to it's state prior to variable evaluation so interval works correctly.
+		// Restore the actVal & func to their original states prior to variable evaluation so interval works correctly.
 		o.actVal = o.origActValSing;
 		o.actValSing = o.actVal;
 	} else if (!o.interval && delayActiveID) {
@@ -2774,6 +2779,7 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		// This is a document fragment.
 		let domFirstChild = dom.firstChild;
 		if (domFirstChild) {
+			if (domFirstChild === Node.TEXT_NODE) return;	// If the document only has a text node then it's not a valid document for ACSS. Skip observe events.
 			ref = (domFirstChild._acssActiveID) ? dom.firstChild._acssActiveID : _getActiveID(dom.firstChild).substr(3);
 		} else {
 			// It shouldn't really get in here, but if it does due to an empty component, just skip the queueing and run.
@@ -3334,9 +3340,10 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
-	// Split action by comma.
+	// Split action by comma if it isn't a dollar variable.
 	let newActVal = o.actVal;
-	if (o.actVal.indexOf(',') !== -1) {	// Note this could be optimized with a single split regex.
+	o.isDollarVar = o.func.startsWith('$');
+	if (!o.isDollarVar && o.actVal.indexOf(',') !== -1) {	// Note this could be optimized with a single split regex.
 		// Remove commas in brackets from what is coming up in the next replace.
 		newActVal = newActVal.replace(/\(.*?\)/g, function(m, c) {
 			return m.replace(/,/g, '_ACSStmpcomma_');
@@ -3356,7 +3363,15 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		newActVal = _escCommaBrack(newActVal, o);
 	}
 	// Store the original copies of the action values before we start looping secSels.
-	let actValsLen, actVals = newActVal.split('_ACSSComma'), comm, activeID;
+	let actValsLen, actVals;
+	if (o.isDollarVar) {
+		// No comma delimited action values for dollar variable assignment or regular CSS commands.
+		actVals = [ newActVal ];
+	} else {
+		actVals = newActVal.split('_ACSSComma');
+	}
+	let comm, activeID;
+
 	actValsLen = actVals.length;
 	let pars = { loopI, actVals, actValsLen };
 
@@ -3525,7 +3540,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 		delete outerTargetObj.previousIfRes;
 
 		// Generate the object that performs the magic in the functions.
-		tmpSecondaryFunc = targName._ACSSConvFunc();
+		tmpSecondaryFunc = (!targName.startsWith('$')) ? targName._ACSSConvFunc() : targName;
 
 		actionValue = targVal;
 
@@ -3832,6 +3847,8 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 					let templNode = templObj.obj.cloneNode(true);
 					let str = templNode.innerHTML;
 					_insertResForComponents(obj, typ, str);
+				} else {
+					_warn('Could not find template ' + obj.getAttribute(typ) + ' in this scope. If the template tag is in the document scope, prefix with "document ->".');
 				}
 			} else {
 				let elClass = typ + 'Pending';
@@ -4091,7 +4108,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow or the insides.
-	shadow.innerHTML = '';
 	shadow.appendChild(template.content);
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
@@ -4334,9 +4350,10 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	if (isIframe) return;
 
-	if (drawArr.length == 0) {
+	if (drawArr.length == 0 && o.secSelObj.parentNode) {
 		// What was rendered was the inner contents of an element only, so we need to remove var placeholders on the node itself.
-		// May as well use the parent of the target selector to ensure we got it. This could be tweaked to be more exact.
+		// May as well use the parent of the target selector to ensure we got it (only if it hasn't been replaced by the render).
+		// This could be tweaked to be more exact.
 		_removeVarPlaceholders(o.secSelObj.parentNode);
 	}
 
@@ -4489,7 +4506,7 @@ const _run = (str, varScope, o) => {
 	});
 
 	try {
-		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars);		// jshint ignore:line
+		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML);		// jshint ignore:line
 	} catch (err) {
 		_err('Function syntax error (' + err + '): ' + funky, o);
 	}
@@ -5367,6 +5384,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 		},
 		strObj.ref
 	);
+
 	// Lastly, handle any {$STRING} value from ajax content if it exists.
 	strObj = _handleVars([ 'strings' ],
 		{
@@ -5376,6 +5394,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 		},
 		strObj.ref
 	);
+
 	// Output the variables for real from the map.
 	let readyStatement = _resolveVars(strObj.str, strObj.ref);
 
@@ -5384,7 +5403,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds);		// jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML);		// jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
@@ -5754,10 +5773,19 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			line = line.replace(/\*debugfile[\s\S]*?\*|([^:]|^)\/\/.*$/g, '');
 			var attr = PARSELINEX.exec(line);
 			if (attr) {
-				// Attribute
+				let nam, val;
+				if (attr[4]) {	// attr[4] will be "$var" *only if* it has a "++" or "--" assignment.
+					// Handle dollar var ++/-- here, so less to do in event flow. In the DevTools extension, recreate the ++ and -- so it's easier to spot.
+					nam = attr[4];
+					val = attr[4] + ' ' + attr[5][0] + ' 1';
+				} else {
+					// Regular ACSS/CSS command or $var assignment.
+					nam = _sortOutEscapeChars(attr[2].trim());
+					val = _sortOutEscapeChars(attr[3].trim());
+				}
 				obj = {
-					name: _sortOutEscapeChars(attr[1].trim()),
-					value: _sortOutEscapeChars(attr[2].trim()),
+					name: nam,
+					value: val,
 					type: 'attr',
 					line: configLine,
 					file: configFile,
@@ -6297,17 +6325,30 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	if (inlineActiveID) str = _unEscNoVars(str);
+
+	// Convert the single quotes into double-quotes where applicable and do the necessary escaping.
+	// https://regex101.com/?regex=%28%5B%5C%27%22%5D%29%28%28%5C%5C%5C1%7C.%29%2A%3F%29%5C1&options=gm&text=defined+%28+%27WP_DEBUG%27+%29+||+define%28+%27%5CWP_DEBUG%27%2C+true+%29%3B%0Aecho+%27class%3D%22input-text+card-number%22+type%3D%22text%22+maxlength%3D%2220%22%27%3B%0Aecho+%27How+are+you%3F+I%5C%27m+fine%2C+thank+you%27%3B
+	str = str.replace(/(['"])((\\\1|.)*?)\1/gm, function(_, quot, innards) {
+		if (quot == '"') {
+			innards = innards.replace(/\\"/g, '_ACSS_escaped_quote');
+		} else {
+			innards = innards.replace(/\\'/gm, '_ACSS_sing_quote');
+			innards = innards.replace(/"/g, '_ACSS_escaped_quote');
+		}
+		innards = innards.replace(COMMENTS, '');
+		return '"' + innards + '"';
+	});
+	str = str.replace(/_ACSS_sing_quote/g, "'");
+
 	// Remove all comments. But not comments within quotes. Easy way is to escape the ones inside, then run a general removal, and then unescape.
-//	str = str.replace(INQUOTES, function(_, innards) {
-//		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
-//	});
+	str = str.replace(INQUOTES, function(_, innards) {
+		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
+	});
 
 	str = str.replace(COMMENTS, '');
-//	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
+	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n]+/g, '');
-	// Replace escaped quotes with something else for now, as they are going to complicate things.
-	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	let systemInitConfig = '';
@@ -6367,13 +6408,16 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}\}/gi, function(_, innards) {
+		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+		return '_ACSS_subst_brace_start_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
+	});
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\" \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
-//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
@@ -6395,7 +6439,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\. \$\[\]\(\)]+)\}/gi, function(_, innards) {
 		if (innards.trim() == '') return '{}';
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
-//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
@@ -6432,18 +6475,26 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		'/': '_ACSS_slash',
 		'@': '_ACSS_at',
 	};
+
 	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
+
 	// Convert @conditional into ?, so we don't have to bother with handling that in the parser.
 	str = str.replace(/@conditional[\s]+/g, '?');
+
 	// Do a similar thing for parentheses. Handles pars({#formID}&mypar=y) syntax.
 	str = str.replace(/([\(]([^\(\)]|\(\))*[\)])/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
+
 	// Sort out var action command syntax, as that could be pretty much anything. This might need tweaking.
-	str = str.replace(/[\s]*var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
+	str = str.replace(/[\s]*[^\S]var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
 		return 'var: ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
+	});
+
+	str = str.replace(/[\s]*(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)[\s]*\:([\s\S]*?)\;/gim, function(_, varname, innards) {
+		return varname + ': ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
 	});
 
 	// Infinite loop failsafe variable. Without this, unbalanced curlies may call an infinite loop later.
@@ -7161,20 +7212,21 @@ const _escapeItem = (str='', varName=null) => {
 };
 
 const _evalVarString = (str, o, noProxy=false) => {
-	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'html' ],
+	let varScope = o.varScope || 'main';
+	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings', 'scoped', 'html' ],
 		{
 			str,
 			func: o.func,
 			o,
 			obj: o.obj,
 			secSelObj: o.secSelObj,
-			varScope: o.varScope
+			varScope
 		}
 	);
 
 	let retStr = _resolveVars(strObj.str, strObj.ref);
-	retStr = _resolveInnerBracketVars(retStr, o.varScope);
-	retStr = _prefixScopedVars(retStr, o.varScope);
+	retStr = _resolveInnerBracketVars(retStr, varScope);
+	retStr = _prefixScopedVars(retStr, varScope);
 
 	// Place the expression into the correct format for evaluating. The expression must contain "scopedProxy." as a prefix where it is needed, unless
 	// noProxy is set to true, in which case it will send over the original value. That is used in console-log and func commands.
@@ -7183,7 +7235,7 @@ const _evalVarString = (str, o, noProxy=false) => {
 
 	// Evaluate the whole expression (right-hand side). This can be any JavaScript expression, so it needs to be evalled as an expression - don't change this behaviour.
 	// Allow the o object to get evaluated in the expression if references are there.
-	return _replaceJSExpression(retStr, true, false, o.varScope, -1, o);	// realVal=true, quoteIfString=false, varReplacementRef=-1
+	return _replaceJSExpression(retStr, true, false, varScope, -1, o, true);	// realVal=true, quoteIfString=false, varReplacementRef=-1
 
 };
 const _extractVarsFromPars = (str, o) => {
@@ -7198,7 +7250,7 @@ const _extractVarsFromPars = (str, o) => {
 		// Iterate and handle each parameter so it passes into the func as it should.
 		for (par of parSplit) {
 			par = par.replace(/__ACSSFComma/g, ',');
-			finalPar = _evalVarString(par, o, true);
+			finalPar = _evalVarString(par.trim(), o, true);
 			parArr.push(finalPar);
 		}
 	}
@@ -7249,6 +7301,13 @@ const _getScopedVar = (nam, scope=false) => {
 		scopeName = scopedObj.name;
 		fullName = 'scopedProxy.' + scopeName;
 		val = scopedObj.val;
+	}
+
+	if (typeof val === 'object' && val.nodeType) {
+		// If this is a DOM node, refer to the actual DOM node and not the proxy variable.
+		val = _get(scopedProxy.__getTarget, scopeName);
+		scopeName = '__getTarget.' + scopeName;
+		fullName = 'scopedProxy.' + scopeName;
 	}
 
 	return { fullName, name: scopeName, val, winVar };
@@ -8263,7 +8322,6 @@ const _replaceComponents = (o, str) => {
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
 				compRef += '></data-acss-component>';
-
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;
@@ -8304,14 +8362,14 @@ const _replaceComponents = (o, str) => {
 	return str;
 };
 
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null, noConvertVar=false) => {
 	if (sel.indexOf('{=') === -1) return sel;
 	let res;
 
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
-		wot = _replaceScopedVarsExpr(wot, varScope);
+		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
 
 		let q = '';
 		if (quoteIfString) {
@@ -8324,10 +8382,10 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy, o, scopedOrig', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig);		// jshint ignore:line
+			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML);		// jshint ignore:line
 		} catch (err) {
 			try {
-				res = Function('scopedProxy, o, scopedOrig', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig);		// jshint ignore:line
+				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');
@@ -8433,7 +8491,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -8502,6 +8559,36 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 		});
 	}
 
+	if (str.indexOf('$') !== -1) {
+
+		/***
+		 * New dollar-only var type needs to handle these:
+		 *
+		 * $regularVar
+		 * $regularVar.$objProp
+		 * $regularVar[$objProp]
+		 * $regularVar['sdfsdf sdfsdf']
+		 * $regularVar[ { something: $sdfsdf + $sdfsdf, sdfsd: [ "sdfsdf sdfsdf()" ] }, "test\"" ]
+		 *
+		**/
+
+		// Don't touch non-curly dollar vars in quotes.
+		str = str.replace(INQUOTES, function(_, innards) {
+			return innards.replace(/\$/gm, '_ACSS_scoped_D');
+		});
+		str = str.replace(/(?:(^|[^\.\{]))(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]([\u00BF-\u1FFF\u2C00-\uD7FF\w]+)?)/gim, function(_, _start, wot) {
+			let scoped = _getScopedVar(wot, varScope);
+			let res;
+			if (scoped.val !== undefined) {
+				res = _start + scoped.fullName;
+			} else {
+				res = _start + wot;
+			}
+			return res;
+		});
+		str = str.replace(/_ACSS_scoped_D/gm, '$');
+	}
+
 	return str;
 };
 
@@ -8510,6 +8597,7 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 	if (str == 'true' || str == 'false' || str == 'null') return str;		// See isNaN MDN for interesting rules.
 
 	let res, origWot, firstVar;
+
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FFa-z\$]([\u00BF-\u1FFF\u2C00-\uD7FF\w\.\:\'\"\[\]]+)?)\}/gim, function(_, wot) {
 		if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 		origWot = wot;
@@ -8525,7 +8613,24 @@ const _replaceScopedVarsExpr = (str, varScope=null) => {
 		}
 	});
 
-	// By this point the result is a string or a reference to a variable.
+	// New dollar-only variable type.
+	// Don't touch non-curly dollar vars in quotes.
+	str = str.replace(INQUOTES, function(_, innards) {
+		return innards.replace(/\$/gm, '_ACSS_scoped_D');
+	});
+	str = str.replace(/(?:(^|[^\.\{]))(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]([\u00BF-\u1FFF\u2C00-\uD7FF\w]+)?)/gim, function(_, _start, wot) {
+		let scoped = _getScopedVar(wot, varScope);
+		let res;
+		if (scoped.val !== undefined) {
+			res = _start + scoped.fullName;
+		} else {
+			res = _start + wot;
+		}
+		return res;
+	});
+	str = str.replace(/_ACSS_scoped_D/gm, '$');
+
+	// By this point the result is a string expression with correct references to variables.
 	return str;
 };
 
@@ -8533,7 +8638,7 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 	// This function should only deal once with {$STRING}, and once with HTML variables. Gets called for different reasons, hence it's purpose is doubled-up here.
 	// This is the function that translates HTML variables for an output string.
 	let res = '';
-	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\[\]\.\$]+)\}/gi, function(_, innards) {
 		switch (innards) {
 			case '$STRING':
 				if (o && o.res) {
@@ -8565,13 +8670,11 @@ const _replaceStringVars = (o, str, varScope, varReplacementRef=-1) => {
 					let scoped = _getScopedVar(innards, varScope);
 					if (!scoped.val) {
 						// Try it without a $ from the server - this could be an API.
-						innards = innards.replace(/\$/g, '');
-						scoped = _getScopedVar(innards, varScope);
+						scoped = _getScopedVar(innards.replace(/\$/g, ''), varScope);
+						return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '{' + innards + '}';
 					}
-					return (scoped.val) ? _preReplaceVar(scoped.val, varReplacementRef) : '';
-				} else {
-					return '{' + innards + '}';
 				}
+				return '{' + innards + '}';
 		}
 	});
 	return str;
@@ -8737,19 +8840,13 @@ const _resolveInnerBracketVars = (str, scope) => {
 	let newStr = str;
 
 	if (str.indexOf('[') !== -1) {
-		newStr = str.replace(/\[([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.]+)/g, function(_, innerVariable) {
+		newStr = str.replace(/\[([\$\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.]+)/g, function(_, innerVariable) {
 			// Is this a scoped variable?
-			if (DIGITREGEX.test(innerVariable) || _resolvable(innerVariable)) return '[' + innerVariable;	// Do not resolve variable or content found that has not already been defined.
+			if (DIGITREGEX.test(innerVariable) || _resolvable(innerVariable)) {
+				return '[' + innerVariable;	// Do not resolve variable or content found that has not already been defined.
+			}
 			let res;
 			let scoped = _getScopedVar(innerVariable, scope);
-			// Leave this commented out for the moment - not convinced this is sorted out until tests have been written.
-//			if (typeof scoped.val === 'string') {
-//				// Return the value in quotes.
-//				res = '"' + scoped.val + '"';
-//			} else if (typeof scoped.val === 'number') {
-//				// Return the value as it is.
-//				res = scoped.val;
-//			} else if (scoped.val !== undefined) {
 			if (scoped.val !== undefined) {
 				// Return the fully scoped name.
 				res = scoped.fullName;
@@ -8762,12 +8859,7 @@ const _resolveInnerBracketVars = (str, scope) => {
 		});
 	}
 
-	// Now evaluate the inner brackets so that we return a result for each inner variable. This is cleaner than leaving these to get evaluated as they are,
-	// as they won't evaluate easily. Strange but true.
-
-	// Grab all the innards of all the outer square brackets. This will give us enough to evaluate.
-	// Use _replaceConditionalsExpr as a model to handle the balanced brackets. In theory it should be simpler than that function.
-	// Then for each full match, evaluate and insert the result into newStr for returning.
+	// Now evaluate the inner brackets so that we return a result for each inner variable.
 	newStr = _resolveInnerBracketVarsDo(newStr);
 
 	return newStr;
@@ -8844,7 +8936,8 @@ const recursInnerScoped = str => {
 		// Return the value as it is.
 		res = scoped.val;
 	} else {
-		throw 'Active CSS error: Could not evaluate ' + variable;
+		// Return the string itself - it could be a complex structure which we can leave alone.
+		res = scoped.fullName;
 	}
 
 	return newBeginning + res + remainder;
@@ -8857,7 +8950,7 @@ const _resolveVars = (str, varReplacementRef, func='') => {
 		let res;
 		if (resolvingObj[ref] !== undefined && resolvingObj[ref][subRef] !== undefined) {
 			res = _escNoVars(resolvingObj[ref][subRef]);
-			if (func.startsWith('Render')) {
+			if (typeof res === 'string' && func.startsWith('Render')) {
 				// Escape backslashes from variables prior to render.
 				res = res.replace(/\\/gm, '____acssEscBkSl');
 			}
@@ -8891,6 +8984,18 @@ const _restoreStorage = () => {
 			_allowResolve('local.' + key);
 		}		
 	}
+};
+
+const _setACSSVariable = o => {
+	// Convert into regular var command format.
+	let oldFunc = o.func;
+	let oldActValSing = o.actValSing;
+	o.func = 'Var';
+	o.actValSing = (oldFunc + ' ' + o.actValSing).trim();
+	_a.Var(o);
+	// Watch there are no timers in var assignment flow or this next bit will break things. There shouldn't ever be anyway, for speed reasons.
+	o.func = oldFunc;
+	o.actValSing = oldActValSing;
 };
 
 const _setCSSVariable = o => {
@@ -9852,7 +9957,8 @@ const _checkForm = (frm, wot) => {
 						break;
 				}
 				break;
-			case 'hidden':
+			default:
+				c = (n.value != n.defaultValue);
 				parStr += (pars) ? parAdd + n.getAttribute('name') + '=' + encodeURIComponent(n.value) : '';
 				break;
 		}
@@ -11519,9 +11625,13 @@ const _warn = (str, o, ...args) => {
 	}
 };
 
+const escapeHTML = str => _safeTags(str);
+
 const escQuotes = str => {
 	return str.replace(/"/gm, "&quot;");
 };
+
+const unEscapeHTML = str => _unSafeTags(str);
 
 const unEscQuotes = str => {
 	return str.replace(/\&quot\;/gm, '"');

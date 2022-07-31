@@ -10,7 +10,7 @@ const _extractVarsFromPars = (str, o) => {
 		// Iterate and handle each parameter so it passes into the func as it should.
 		for (par of parSplit) {
 			par = par.replace(/__ACSSFComma/g, ',');
-			finalPar = _evalVarString(par, o, true);
+			finalPar = _evalVarString(par.trim(), o, true);
 			parArr.push(finalPar);
 		}
 	}

@@ -39,7 +39,8 @@ const _checkForm = (frm, wot) => {
 						break;
 				}
 				break;
-			case 'hidden':
+			default:
+				c = (n.value != n.defaultValue);
 				parStr += (pars) ? parAdd + n.getAttribute('name') + '=' + encodeURIComponent(n.value) : '';
 				break;
 		}

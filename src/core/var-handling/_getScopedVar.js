@@ -29,5 +29,12 @@ const _getScopedVar = (nam, scope=false) => {
 		val = scopedObj.val;
 	}
 
+	if (typeof val === 'object' && val.nodeType) {
+		// If this is a DOM node, refer to the actual DOM node and not the proxy variable.
+		val = _get(scopedProxy.__getTarget, scopeName);
+		scopeName = '__getTarget.' + scopeName;
+		fullName = 'scopedProxy.' + scopeName;
+	}
+
 	return { fullName, name: scopeName, val, winVar };
 };

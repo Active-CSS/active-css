@@ -4,7 +4,6 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 	if (str.indexOf('{') !== -1) {
 		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
 			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -71,6 +70,36 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 				return retVar;
 			}
 		});
+	}
+
+	if (str.indexOf('$') !== -1) {
+
+		/***
+		 * New dollar-only var type needs to handle these:
+		 *
+		 * $regularVar
+		 * $regularVar.$objProp
+		 * $regularVar[$objProp]
+		 * $regularVar['sdfsdf sdfsdf']
+		 * $regularVar[ { something: $sdfsdf + $sdfsdf, sdfsd: [ "sdfsdf sdfsdf()" ] }, "test\"" ]
+		 *
+		**/
+
+		// Don't touch non-curly dollar vars in quotes.
+		str = str.replace(INQUOTES, function(_, innards) {
+			return innards.replace(/\$/gm, '_ACSS_scoped_D');
+		});
+		str = str.replace(/(?:(^|[^\.\{]))(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]([\u00BF-\u1FFF\u2C00-\uD7FF\w]+)?)/gim, function(_, _start, wot) {
+			let scoped = _getScopedVar(wot, varScope);
+			let res;
+			if (scoped.val !== undefined) {
+				res = _start + scoped.fullName;
+			} else {
+				res = _start + wot;
+			}
+			return res;
+		});
+		str = str.replace(/_ACSS_scoped_D/gm, '$');
 	}
 
 	return str;

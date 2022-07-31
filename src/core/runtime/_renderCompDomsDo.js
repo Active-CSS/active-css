@@ -207,7 +207,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow or the insides.
-	shadow.innerHTML = '';
 	shadow.appendChild(template.content);
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {

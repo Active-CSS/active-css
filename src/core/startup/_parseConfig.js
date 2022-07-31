@@ -8,17 +8,30 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// This sequence, and the placing into the config array after this, is why the core is so quick, even on large configs. Do not do manually looping on
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	if (inlineActiveID) str = _unEscNoVars(str);
+
+	// Convert the single quotes into double-quotes where applicable and do the necessary escaping.
+	// https://regex101.com/?regex=%28%5B%5C%27%22%5D%29%28%28%5C%5C%5C1%7C.%29%2A%3F%29%5C1&options=gm&text=defined+%28+%27WP_DEBUG%27+%29+||+define%28+%27%5CWP_DEBUG%27%2C+true+%29%3B%0Aecho+%27class%3D%22input-text+card-number%22+type%3D%22text%22+maxlength%3D%2220%22%27%3B%0Aecho+%27How+are+you%3F+I%5C%27m+fine%2C+thank+you%27%3B
+	str = str.replace(/(['"])((\\\1|.)*?)\1/gm, function(_, quot, innards) {
+		if (quot == '"') {
+			innards = innards.replace(/\\"/g, '_ACSS_escaped_quote');
+		} else {
+			innards = innards.replace(/\\'/gm, '_ACSS_sing_quote');
+			innards = innards.replace(/"/g, '_ACSS_escaped_quote');
+		}
+		innards = innards.replace(COMMENTS, '');
+		return '"' + innards + '"';
+	});
+	str = str.replace(/_ACSS_sing_quote/g, "'");
+
 	// Remove all comments. But not comments within quotes. Easy way is to escape the ones inside, then run a general removal, and then unescape.
-//	str = str.replace(INQUOTES, function(_, innards) {
-//		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
-//	});
+	str = str.replace(INQUOTES, function(_, innards) {
+		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
+	});
 
 	str = str.replace(COMMENTS, '');
-//	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
+	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
 	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
 	str = str.replace(/[\r\n]+/g, '');
-	// Replace escaped quotes with something else for now, as they are going to complicate things.
-	str = str.replace(/\\\"/g, '_ACSS_escaped_quote');
 
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	let systemInitConfig = '';
@@ -78,13 +91,16 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
-	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\.\{\$\|\@\}]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}\}/gi, function(_, innards) {
+		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
+		return '_ACSS_subst_brace_start_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
+	});
+	str = str.replace(/\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
 		return '_ACSS_subst_dollar_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\" \.\[\]]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
-//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}\}/gi, function(_, innards) {
@@ -106,7 +122,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/\{([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\. \$\[\]\(\)]+)\}/gi, function(_, innards) {
 		if (innards.trim() == '') return '{}';
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
-//		innards = innards.replace(/'/g, '"');	// this breaks single quotes in variables referenced in attributes when rendering.
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
@@ -143,18 +158,26 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		'/': '_ACSS_slash',
 		'@': '_ACSS_at',
 	};
+
 	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
+
 	// Convert @conditional into ?, so we don't have to bother with handling that in the parser.
 	str = str.replace(/@conditional[\s]+/g, '?');
+
 	// Do a similar thing for parentheses. Handles pars({#formID}&mypar=y) syntax.
 	str = str.replace(/([\(]([^\(\)]|\(\))*[\)])/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
+
 	// Sort out var action command syntax, as that could be pretty much anything. This might need tweaking.
-	str = str.replace(/[\s]*var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
+	str = str.replace(/[\s]*[^\S]var[\s]*\:([\s\S]*?)\;/gim, function(_, innards) {
 		return 'var: ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
+	});
+
+	str = str.replace(/[\s]*(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)[\s]*\:([\s\S]*?)\;/gim, function(_, varname, innards) {
+		return varname + ': ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
 	});
 
 	// Infinite loop failsafe variable. Without this, unbalanced curlies may call an infinite loop later.

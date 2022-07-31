@@ -69,7 +69,8 @@ const recursInnerScoped = str => {
 		// Return the value as it is.
 		res = scoped.val;
 	} else {
-		throw 'Active CSS error: Could not evaluate ' + variable;
+		// Return the string itself - it could be a complex structure which we can leave alone.
+		res = scoped.fullName;
 	}
 
 	return newBeginning + res + remainder;

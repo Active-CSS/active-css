@@ -33,7 +33,7 @@
 			'(active|any\\-link|blank|checked|current|default|disabled|drop|empty|enabled|first\\-child|first\\-of\\-type|focus|focus\\-visible|focus\\-within|future|hover|indeterminate|in\\-range|invalid|last\\-child|last\\-of\\-type|link|local\\-link|only\\-child|only\\-of\\-type|optional|out\\-of\\-range|past|paused|placeholder\\-shown|playing|read\\-only|read\\-write|required|root|host|scope|target|target\\-within|user\\-error|user\\-invalid|valid|visited)(?![\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w_\\-])|' +
 			'(current|dir|drop|has|is|lang|host\\-context|not|nth\\-column|nth\\-child|nth\\-last\\-child|nth\\-last\\-column|nth\\-last\\-of\\-type|nth\\-of\\-type|where)\\(' +
 			')', 'g'),
-		COMMENTS = /\/\*[\s\S]*?\*\/|(\t| |^)\/\/.*$/gm,
+		COMMENTS = /\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm,
 		CONDCOMMAND = /^[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\!]+$/,
 		CONDDEFSELF = [
 			'if-empty',
@@ -76,13 +76,13 @@
 			':': '_ACSS_later_colon',
 			'"': '_ACSS_later_double_quote'
 		},
-		INQUOTES = /("([^"]|"")*"|'([^']|'')*')/gm,
-		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
+		INQUOTES = /("([^"]|"")*")/gm,
+		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\$\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
 		PARSEDEBUG = 4,
 		PARSEEND = 2,
-		PARSELINEX = /([^\:]+):([^\;]*)(;)?/,
+		PARSELINEX = /(([^\:]+):([^\;]*)|(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]+)([\+\-]+)?);/,
 		PARSEREGEX = /((?!\*debugfile)[^\s\;\{\}][^\;\{\}]*(?=\{))|(\})|((?!\*debugfile)[^\;\{\}]+\;(?!\s*\*\/))|(\*debugfile[\s\S]*?\*)/gmi,
 		PARSESEL = 1,
 		RANDHEX = 'ABCDEF',
@@ -91,7 +91,7 @@
 		SELFREGEX = /\{\$SELF\}/g,
 		WRAPSTATEMENTS = [ '@media', '@support' ],
 		INNERSTATEMENTS = [ '@each', '@else', '@for', '@if', '@while' ],
-		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
+		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
 		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,

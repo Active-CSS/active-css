@@ -100,7 +100,10 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	o.actValSing = ActiveCSS._sortOutFlowEscapeChars(o.actValSing).trim();
 
-	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
+	let isFunc = (typeof _a[o.func] === 'function');	// if it's ever needed to speed up the event flow, set these up as props at config load. For now though, keep the init fast.
+	o.isCSSCommand = !(isFunc || o.isDollarVar);	// This is for evaluating any variables as values rather than variable names - ie. for CSS commands.
+
+	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1 || o.isDollarVar) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
 		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
 
@@ -129,27 +132,29 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_debugOutput(o);	// A couple of extra objects variables are set in here, and we want them later for the feedback results (not yet implemented fully).
 	}
 
-	let cssVariableChange;
-	if (typeof _a[o.func] !== 'function') {
-		// Apply this as a CSS style if it isn't a function.
+	if (!o.isCSSCommand) {
+		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
+		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
+		o.vars = scopedProxy[compScope];
+	}
+
+	if (isFunc) {
+		// Run the function.
+		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
+	} else if (o.isDollarVar) {
+		_setACSSVariable(o);
+	} else {
 		if (o.func.startsWith('--')) {
 			_setCSSVariable(o);
-			cssVariableChange = true;
 		} else {
 			if (_isConnected(o.secSelObj)) {
 				o.secSelObj.style[o.actName] = o.actVal;
 			}
 		}
-	} else {
-		// Allow the variables for this scope to be read by the external function - we want the vars as of right now.
-		let compScope = ((o.varScope && privVarScopes[o.varScope]) ? o.varScope : 'main');
-		o.vars = scopedProxy[compScope];
-		// Run the function.
-		_a[o.func](o, scopedProxy, privVarScopes, flyCommands, _run);
 	}
 
 	if (o.interval) {
-		// Restore the actVal to it's state prior to variable evaluation so interval works correctly.
+		// Restore the actVal & func to their original states prior to variable evaluation so interval works correctly.
 		o.actVal = o.origActValSing;
 		o.actValSing = o.actVal;
 	} else if (!o.interval && delayActiveID) {

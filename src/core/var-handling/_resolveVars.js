@@ -5,7 +5,7 @@ const _resolveVars = (str, varReplacementRef, func='') => {
 		let res;
 		if (resolvingObj[ref] !== undefined && resolvingObj[ref][subRef] !== undefined) {
 			res = _escNoVars(resolvingObj[ref][subRef]);
-			if (func.startsWith('Render')) {
+			if (typeof res === 'string' && func.startsWith('Render')) {
 				// Escape backslashes from variables prior to render.
 				res = res.replace(/\\/gm, '____acssEscBkSl');
 			}

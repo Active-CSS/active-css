@@ -46,7 +46,6 @@ const _replaceComponents = (o, str) => {
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
 				compRef += '></data-acss-component>';
-
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;

@@ -135,9 +135,10 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 	if (isIframe) return;
 
-	if (drawArr.length == 0) {
+	if (drawArr.length == 0 && o.secSelObj.parentNode) {
 		// What was rendered was the inner contents of an element only, so we need to remove var placeholders on the node itself.
-		// May as well use the parent of the target selector to ensure we got it. This could be tweaked to be more exact.
+		// May as well use the parent of the target selector to ensure we got it (only if it hasn't been replaced by the render).
+		// This could be tweaked to be more exact.
 		_removeVarPlaceholders(o.secSelObj.parentNode);
 	}
 

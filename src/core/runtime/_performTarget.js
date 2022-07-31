@@ -25,7 +25,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 		delete outerTargetObj.previousIfRes;
 
 		// Generate the object that performs the magic in the functions.
-		tmpSecondaryFunc = targName._ACSSConvFunc();
+		tmpSecondaryFunc = (!targName.startsWith('$')) ? targName._ACSSConvFunc() : targName;
 
 		actionValue = targVal;
 

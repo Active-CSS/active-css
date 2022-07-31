@@ -36,6 +36,8 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 					let templNode = templObj.obj.cloneNode(true);
 					let str = templNode.innerHTML;
 					_insertResForComponents(obj, typ, str);
+				} else {
+					_warn('Could not find template ' + obj.getAttribute(typ) + ' in this scope. If the template tag is in the document scope, prefix with "document ->".');
 				}
 			} else {
 				let elClass = typ + 'Pending';

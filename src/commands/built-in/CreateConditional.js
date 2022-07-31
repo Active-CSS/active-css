@@ -32,5 +32,5 @@ _a.CreateConditional = o => {
 
 	flyConds[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', newFunc);		// jshint ignore:line
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
 };
