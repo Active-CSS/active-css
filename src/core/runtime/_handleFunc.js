@@ -105,15 +105,31 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1 || o.isDollarVar) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
-		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+		o.actValSing = _unEscNoVars(o.actValSing.replace(/__ACSS_int_com/g, ','));
 
 	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
 		// Leave command intact. No variable subsitution other than the use of vars.
-		o.actVal = o.actValSing;
+		o.actVal = _unEscNoVars(o.actValSing);
 	} else {
 		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{
 				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
+
+		if (!o.func.startsWith('Render')) o.actVal = _unEscNoVars(o.actVal);
+
+		// Handle any additional attributes now requested from a prior variable assignment. This data is in the HTML already, so there is no security risk,
+		// although it could get weird if user content contains an attribute reference. So to sort that out, it is escaped prior to this in _replaceAttrs.
+		strObj = _handleVars([ 'attrs' ],
+			{
+				str: o.actVal,
 				func: o.func,
 				o,
 				obj: o.obj,

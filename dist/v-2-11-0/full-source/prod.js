@@ -2694,15 +2694,31 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1 || o.isDollarVar) {
 		// Special handling for var commands, as each value after the variable name is a JavaScript expression, but not within {= =}, to make it quicker to type.
-		o.actValSing = o.actValSing.replace(/__ACSS_int_com/g, ',');
+		o.actValSing = _unEscNoVars(o.actValSing.replace(/__ACSS_int_com/g, ','));
 
 	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
 		// Leave command intact. No variable subsitution other than the use of vars.
-		o.actVal = o.actValSing;
+		o.actVal = _unEscNoVars(o.actValSing);
 	} else {
 		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{
 				str: o.actValSing,
+				func: o.func,
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		o.actVal = _resolveVars(strObj.str, strObj.ref, o.func);
+
+		if (!o.func.startsWith('Render')) o.actVal = _unEscNoVars(o.actVal);
+
+		// Handle any additional attributes now requested from a prior variable assignment. This data is in the HTML already, so there is no security risk,
+		// although it could get weird if user content contains an attribute reference. So to sort that out, it is escaped prior to this in _replaceAttrs.
+		strObj = _handleVars([ 'attrs' ],
+			{
+				str: o.actVal,
 				func: o.func,
 				o,
 				obj: o.obj,
@@ -4364,8 +4380,9 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	}
 
 	let item, el;
+	let attrRemoveDoc = (_checkScopeForEv(o.evScope) === false) ? document : o.doc;
 	for (item of drawArr) {
-		el = o.doc.querySelector('[data-activeid=' + item + ']');
+		el = attrRemoveDoc.querySelector('[data-activeid="' + item + '"]');
 		if (!el) continue;
 
 		if (el.tagName != 'IFRAME') {
@@ -8208,8 +8225,10 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
 	if (sel.indexOf('{@') !== -1) {
+		sel = sel.replace(/__acssVAssigned\%\%/g, '');
 		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
 			let getProperty = false;
+			let realWot = wot;
 			if (wot.startsWith('@')) {
 				getProperty = true;
 				wot = wot.substr(1);
@@ -8267,7 +8286,16 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					}
 				}
 			}
-			return '';	// More useful to return an empty string. '{@' + wot + '>';
+			if (func == 'Var' && !wot.startsWith('host')) {
+
+//console.log('_replaceAttrs, realWot:', realWot);
+
+				// Assume it isn't ready to be evaluated. Useful for presetting on variable assignment. Encrypt a bit, but only to stop someone accidentally typing
+				// it in user content - there is no security risk with this, because any attribute referenced is on the page already.
+				return '{@__acssVAssigned%%' + realWot + '}';
+			} else {
+				return '';	// More useful to return an empty string. '{@' + wot + '>';
+			}
 		});
 	}
 	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {

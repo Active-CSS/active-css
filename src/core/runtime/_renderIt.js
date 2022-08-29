@@ -143,8 +143,9 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	}
 
 	let item, el;
+	let attrRemoveDoc = (_checkScopeForEv(o.evScope) === false) ? document : o.doc;
 	for (item of drawArr) {
-		el = o.doc.querySelector('[data-activeid=' + item + ']');
+		el = attrRemoveDoc.querySelector('[data-activeid="' + item + '"]');
 		if (!el) continue;
 
 		if (el.tagName != 'IFRAME') {
