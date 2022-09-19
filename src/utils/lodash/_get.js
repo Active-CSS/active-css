@@ -1,31 +1,17 @@
 /**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
+ * The base implementation of `_.get` without support for default values.
+ * ACSS mod: renamed to _get because the core doesn't use default values.
  *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
+ * @private
  * @param {Object} object The object to query.
  * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
  * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
 */
-
-
-const _get = (object, path, defaultValue) => {
-	var result = object == null ? undefined : _baseGet(object, path);
-	return result === undefined ? defaultValue : result;
+const _get = (object, path) => {
+	path = _castPath(path, object);
+	var index = 0, length = path.length;
+	while (object != null && index < length) {
+		object = object[_toKey(path[index++])];
+	}
+	return (index && index == length) ? object : undefined;
 };

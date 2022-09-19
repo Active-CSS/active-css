@@ -6,7 +6,7 @@ const _run = (str, varScope, o) => {
 	});
 
 	try {
-		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML);		// jshint ignore:line
+		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML, getVar', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 	} catch (err) {
 		_err('Function syntax error (' + err + '): ' + funky, o);
 	}

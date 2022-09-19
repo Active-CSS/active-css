@@ -46,5 +46,5 @@ _a.CreateCommand = o => {
 
 	flyCommands[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', 'escapeHTML', 'unEscapeHTML', 'getVar', newFunc);		// jshint ignore:line
 };

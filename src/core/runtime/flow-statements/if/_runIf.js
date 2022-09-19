@@ -36,7 +36,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML);		// jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);

@@ -560,7 +560,7 @@ _a.CreateCommand = o => {
 
 	flyCommands[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
+	_a[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyCommands', '_run', 'escapeHTML', 'unEscapeHTML', 'getVar', newFunc);		// jshint ignore:line
 };
 
 _a.CreateConditional = o => {
@@ -597,7 +597,7 @@ _a.CreateConditional = o => {
 
 	flyConds[funcName] = '{=' + funcStart + funcContent.substr(2);
 
-	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', 'escapeHTML', 'unEscapeHTML', newFunc);		// jshint ignore:line
+	_c[funcName] = new Function('o', 'scopedProxy', 'privVarScopes', 'flyConds', '_run', 'escapeHTML', 'unEscapeHTML', 'getVar', newFunc);		// jshint ignore:line
 };
 
 _a.CreateElement = o => {
@@ -696,7 +696,7 @@ _a.CreateElement = o => {
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML);	// jshint ignore:line
+	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar);	// jshint ignore:line
 };
 
 _a.DocumentTitle = o => {
@@ -4529,7 +4529,7 @@ const _run = (str, varScope, o) => {
 	});
 
 	try {
-		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML);		// jshint ignore:line
+		return Function('scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML, getVar', funky)(scopedProxy, o, _safeTags, _unSafeTags, _escNoVars, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 	} catch (err) {
 		_err('Function syntax error (' + err + '): ' + funky, o);
 	}
@@ -5426,7 +5426,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML);		// jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
@@ -8404,6 +8404,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
+		// Replace references to the proxy, as there may be properties only available in the original.
+		wot = wot.replace(/(scopedProxy\.__getTarget|scopedProxy)/g, 'scopedOrig');
 
 		let q = '';
 		if (quoteIfString) {
@@ -8416,10 +8418,11 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML);		// jshint ignore:line
+			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 		} catch (err) {
+			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot);
 			try {
-				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML);		// jshint ignore:line
+				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');
@@ -9301,6 +9304,8 @@ const _varUpdateDomDo = (change, dataObj) => {
 		}
 	}
 };
+
+const getVar = (baseVar, str) => _get(baseVar, str);
 
 ActiveCSS._deHighlightDOM = () => {
 	// Just get rid of all overlays on the screen.
@@ -12408,23 +12413,6 @@ const _baseAssignValue = (object, key, value) => {
 };
 
 /**
- * The base implementation of `_.get` without support for default values.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @returns {*} Returns the resolved value.
-*/
-const _baseGet = (object, path) => {
-	path = _castPath(path, object);
-	var index = 0, length = path.length;
-	while (object != null && index < length) {
-		object = object[_toKey(path[index++])];
-	}
-	return (index && index == length) ? object : undefined;
-};
-
-/**
 * The base implementation of `_.set`.
 *
 * @private
@@ -12538,35 +12526,21 @@ const _eq = (value, other) => {
 };
 
 /**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
+ * The base implementation of `_.get` without support for default values.
+ * ACSS mod: renamed to _get because the core doesn't use default values.
  *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
+ * @private
  * @param {Object} object The object to query.
  * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
  * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
 */
-
-
-const _get = (object, path, defaultValue) => {
-	var result = object == null ? undefined : _baseGet(object, path);
-	return result === undefined ? defaultValue : result;
+const _get = (object, path) => {
+	path = _castPath(path, object);
+	var index = 0, length = path.length;
+	while (object != null && index < length) {
+		object = object[_toKey(path[index++])];
+	}
+	return (index && index == length) ? object : undefined;
 };
 
 /**
@@ -12675,6 +12649,7 @@ const _last = array => {
 
 /**
  * Gets the parent value at `path` of `object`.
+ * ACSS mod: use _get instead of _baseget as we don't need the default value supported function.
  *
  * @private
  * @param {Object} object The object to query.
@@ -12682,7 +12657,7 @@ const _last = array => {
  * @returns {*} Returns the parent value.
  */
 const _parent = (object, path) => {
-	return path.length < 2 ? object : _baseGet(object, _slice(path, 0, -1));
+	return path.length < 2 ? object : _get(object, _slice(path, 0, -1));
 };
 
 /**
