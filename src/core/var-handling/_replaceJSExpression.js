@@ -3,6 +3,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 	let res;
 
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
+		if (wot == '') return null;
+
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
 		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
