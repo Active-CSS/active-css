@@ -10861,6 +10861,7 @@ const _getSel = (o, sel, many=false) => {
 
 const _getSelector = (o, sel, many=false) => {
 	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
+	// It is not a full solution. It allows drilling through one multi-result after a special selector, but no further than that currently.
 	let newDoc;
 	if (o.compDoc) {
 		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.
@@ -10948,6 +10949,7 @@ const _getSelector = (o, sel, many=false) => {
 		}
 		singleResult = false;
 		multiResult = false;
+
 		switch (selItem) {
 			case 'window':
 				mainObj = window;
@@ -11026,7 +11028,7 @@ const _getSelector = (o, sel, many=false) => {
 					} else if (selectWithAdjPrevAll) {
 						typ = 'prevAdjAll';
 					}
-					// Reset flags so they only happens the once.
+					// Reset flags so they only happen the once.
 					selectWithClosest = false;
 					selectWithAdjPrev = false;
 					selectWithAdjPrevAll = false;
@@ -11086,48 +11088,74 @@ const _getSelector = (o, sel, many=false) => {
 	}
 
 	function _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs) {
+		// Handle multiple items coming in.
+		if (!mainObj) return;
+
 		// Split by regular CSS combinator. We want the first item. The rest we handle with regular selector syntax.
 		// Grab the string up to the presence of the first ' ', '>', '+' or '~'.
 		let pos = _getMinExistingPos(selItem, [ ' ', '>', '+', '~' ]);
-		let firstSel = (pos === -1) ? selItem : selItem.substr(0, pos);
-		if (mainObj) mainObj = (mainObj.length == 1 ? mainObj[0] : mainObj);
-		switch (typ) {
-			case 'closest':
-				mainObj = mainObj.parentElement;
-				if (mainObj) mainObj = mainObj.closest(firstSel);
-				break;
-
-			case 'prevAdj':
-				if (mainObj) {
-					let prevSibl = mainObj.previousSibling;
-					mainObj = (prevSibl && prevSibl.matches(firstSel)) ? prevSibl : null;
-				}
-				break;
-
-			case 'prevAdjAll':
-				// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
-				// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
-				if (mainObj) {
-					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
-					let multiObjs = getPreviousSiblings(mainObj, firstSel);
-					if (multiObjs.length > 0) {
-						return { selItem, multiObjs, newDoc, addedAttrs, moreToDo: false };
-					}
-					return;
-				}
-				break;
-				
+		let firstSel, remainingSel = '';
+		if (pos === -1) {
+			firstSel = selItem;
+		} else {
+			firstSel = selItem.substr(0, pos);
+			remainingSel = selItem.substr(pos);
 
 		}
-		let moreToDo = false;
-		if (mainObj && pos !== -1) {
-			let subAttrActiveID = _getActiveID(mainObj);
-			mainObj.setAttribute('data-activeid', subAttrActiveID);
-			addedAttrs.push(mainObj);
-			newDoc = mainObj.parentNode;
-			selItem = '[data-activeid=' + subAttrActiveID + ']' + selItem.substr(pos);
+
+		let returnEls = [];
+		for (const thisObj of mainObj) {
+			switch (typ) {
+				case 'closest':
+					mainObj = thisObj.parentElement;
+					if (mainObj) mainObj = mainObj.closest(firstSel);
+					if (mainObj) mainObj = [ mainObj ];
+					break;
+
+				case 'prevAdj':
+					if (mainObj) {
+						let prevSibl = thisObj.previousSibling;
+						mainObj = (prevSibl && prevSibl.matches(firstSel)) ? prevSibl : null;
+						if (mainObj) mainObj = [ mainObj ];
+					}
+					break;
+
+				case 'prevAdjAll':
+					// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
+					// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
+					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
+					mainObj = getPreviousSiblings(thisObj, firstSel);
+					break;
+			}
+			if (mainObj && mainObj.length > 0) {
+				returnEls = returnEls.concat(mainObj);
+			}
+		}
+		mainObj = returnEls;
+
+		let moreToDo = false, subAttrActiveID;
+		if (mainObj && mainObj.length > 0) {
+			// Send back the parent with a data-activeid combo selector for selecting inside. Those attributes get removed after query.
+			let els = mainObj;
+			if (typ == 'closest') {
+				mainObj = newDoc;
+			} else {
+				mainObj = mainObj.parentNode;
+			}
+			selItem = '';
+			for (const el of els) {
+				subAttrActiveID = _getActiveID(el);
+				let selItemToAdd = '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+				if (selItem.indexOf(selItemToAdd) === -1) {
+					el.setAttribute('data-activeid', subAttrActiveID);
+					addedAttrs.push(el);
+					if (selItem != '') selItem += ',';
+					selItem += '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+				}
+			}
 			moreToDo = true;
 		}
+
 		return { selItem, mainObj, newDoc, addedAttrs, moreToDo };
 	}
 
@@ -11137,9 +11165,6 @@ const _getSelector = (o, sel, many=false) => {
 		let prevEl = elem.previousSibling;
 		while (prevEl) {
 			if (prevEl.nodeType === Node.ELEMENT_NODE && prevEl.matches(filter)) {
-
-// This will get enhanced shortly to allow further selection from these elements as the bases.
-
 				sibs.push(prevEl);
 			}
 			prevEl = prevEl.previousSibling;
