@@ -124,7 +124,6 @@
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
-	// Mark as ok when clean-up code is in place or isn't needed.
 	var coreVersionExtension = '2-0-0',
 		// Active CSS action commands.
 		_a = {},

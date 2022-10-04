@@ -1,5 +1,5 @@
 _a.Var = o => {
-	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush = false;
+	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -12,6 +12,11 @@ _a.Var = o => {
 	// Get the name of the variable on the left.
 	let arr = newActVal._ACSSSpaceQuoIn().split(' ');
 	let varName = arr.shift()._ACSSSpaceQuoOut();
+
+	if (varName.endsWith('[]')) {
+		isArrayPush = true;
+		varName = varName.slice(0, -2);
+	}
 
 	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings' ],
 		{
@@ -36,11 +41,6 @@ _a.Var = o => {
 		} else if (varName.endsWith('--')) {
 			varName = varName.slice(0, -2);
 			varDetails = '{' + varName + '}-1';
-		} else if (varName.endsWith('[]')) {
-			varName = varName.slice(0, -2);
-			isArrayPush = true;
-			console.log('Pushing value to array not yet supported.');
-			return;
 		} else {
 			// Assign to null if no assignment.
 			varDetails = 'null';
@@ -71,7 +71,7 @@ _a.Var = o => {
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
-	if (varName.startsWith('window.')) {
+	if (varName.toLowerCase().startsWith('window.')) {
 		// Leave it as it is - it's a variable in the window scope.
 		isWindowVar = true;
 		scopedVar = varName.substr(7);
@@ -88,6 +88,20 @@ _a.Var = o => {
 	// Escape result for curlies to stop possible re-evaluation on re-assignment.
 	if (typeof expr === 'string') {
 		expr = _escNoVars(expr);
+	}
+
+
+	if (isArrayPush) {
+		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
+		// get size of existing array.
+		let scoped = _getScopedVar(scopedVar, o.varScope);
+		if (!_isArray(scoped.val)) {
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + scopedVar + ' = "' + typeof scoped.val + '"');
+		} else {
+			let newLength = scoped.val.length;
+			_set(scopedProxy, scopedVar + '[' + newLength + ']', expr);
+		}
+		return;
 	}
 
 	// Set the variable in the correct scope.

@@ -124,7 +124,6 @@
 
 	if (typeof module !== 'undefined') module.exports = ActiveCSS;	// This is for NPM.
 
-	// Mark as ok when clean-up code is in place or isn't needed.
 	var coreVersionExtension = '2-0-0',
 		// Active CSS action commands.
 		_a = {},
@@ -1693,7 +1692,7 @@ _a.UrlReplace = o => {
 };
 
 _a.Var = o => {
-	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush = false;
+	let locStorage, sessStorage, newActVal = o.actValSing, isArrayPush;
 
 	if (newActVal.endsWith(' session-storage')) {
 		sessStorage = true;
@@ -1706,6 +1705,11 @@ _a.Var = o => {
 	// Get the name of the variable on the left.
 	let arr = newActVal._ACSSSpaceQuoIn().split(' ');
 	let varName = arr.shift()._ACSSSpaceQuoOut();
+
+	if (varName.endsWith('[]')) {
+		isArrayPush = true;
+		varName = varName.slice(0, -2);
+	}
 
 	let strObj = _handleVars([ 'rand', 'expr', 'attrs', 'strings' ],
 		{
@@ -1730,11 +1734,6 @@ _a.Var = o => {
 		} else if (varName.endsWith('--')) {
 			varName = varName.slice(0, -2);
 			varDetails = '{' + varName + '}-1';
-		} else if (varName.endsWith('[]')) {
-			varName = varName.slice(0, -2);
-			isArrayPush = true;
-			console.log('Pushing value to array not yet supported.');
-			return;
 		} else {
 			// Assign to null if no assignment.
 			varDetails = 'null';
@@ -1765,7 +1764,7 @@ _a.Var = o => {
 
 	// Set up left-hand variable for use in _set() later on.
 	let scopedVar, isWindowVar = false;
-	if (varName.startsWith('window.')) {
+	if (varName.toLowerCase().startsWith('window.')) {
 		// Leave it as it is - it's a variable in the window scope.
 		isWindowVar = true;
 		scopedVar = varName.substr(7);
@@ -1782,6 +1781,20 @@ _a.Var = o => {
 	// Escape result for curlies to stop possible re-evaluation on re-assignment.
 	if (typeof expr === 'string') {
 		expr = _escNoVars(expr);
+	}
+
+
+	if (isArrayPush) {
+		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
+		// get size of existing array.
+		let scoped = _getScopedVar(scopedVar, o.varScope);
+		if (!_isArray(scoped.val)) {
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + scopedVar + ' = "' + typeof scoped.val + '"');
+		} else {
+			let newLength = scoped.val.length;
+			_set(scopedProxy, scopedVar + '[' + newLength + ']', expr);
+		}
+		return;
 	}
 
 	// Set the variable in the correct scope.
@@ -3359,7 +3372,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	// Split action by comma if it isn't a dollar variable.
 	let newActVal = o.actVal;
 
-	o.isDollarVar = o.func.startsWith('$');
+	o.isDollarVar = o.func.startsWith('$') || o.func.startsWith('Window.$');
 	let isTransition = (o.func == 'Transition');	// If any more are needed, set up an array.
 	let skipCommaDelim = (o.isDollarVar || isTransition);
 
@@ -8529,7 +8542,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 	let originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \:\"\-\.\[\]]+(\})?)\}/gm, function(_, wot) {
 			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -8554,6 +8567,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					return _;
 				}
 			} else {
+				if (wot.indexOf(':') !== -1) return _;
 				let scoped = _getScopedVar(wot, varScope);
 				res = scoped.val;
 

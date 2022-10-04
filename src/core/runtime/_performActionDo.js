@@ -6,7 +6,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	// Split action by comma if it isn't a dollar variable.
 	let newActVal = o.actVal;
 
-	o.isDollarVar = o.func.startsWith('$');
+	o.isDollarVar = o.func.startsWith('$') || o.func.startsWith('Window.$');
 	let isTransition = (o.func == 'Transition');	// If any more are needed, set up an array.
 	let skipCommaDelim = (o.isDollarVar || isTransition);
 

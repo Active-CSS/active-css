@@ -3,7 +3,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 	let originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \:\"\-\.\[\]]+(\})?)\}/gm, function(_, wot) {
 			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
@@ -28,6 +28,7 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					return _;
 				}
 			} else {
+				if (wot.indexOf(':') !== -1) return _;
 				let scoped = _getScopedVar(wot, varScope);
 				res = scoped.val;
 
