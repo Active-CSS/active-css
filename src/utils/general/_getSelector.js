@@ -238,8 +238,7 @@ const _getSelector = (o, sel, many=false) => {
 			firstSel = selItem;
 		} else {
 			firstSel = selItem.substr(0, pos);
-			remainingSel = selItem.substr(pos);
-
+			remainingSel = selItem.substr(pos).trim();
 		}
 
 		let returnEls = [];
@@ -260,8 +259,7 @@ const _getSelector = (o, sel, many=false) => {
 					break;
 
 				case 'prevAdjAll':
-					// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
-					// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
+					// Grab the elements. Compile the results and return as a multi-result.
 					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
 					mainObj = getPreviousSiblings(thisObj, firstSel);
 					break;
@@ -292,7 +290,7 @@ const _getSelector = (o, sel, many=false) => {
 					selItem += '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
 				}
 			}
-			moreToDo = true;
+			if (remainingSel !== '') moreToDo = true;
 		}
 
 		return { selItem, mainObj, newDoc, addedAttrs, moreToDo };

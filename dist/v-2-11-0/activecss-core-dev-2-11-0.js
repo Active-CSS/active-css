@@ -1740,6 +1740,25 @@ _a.Var = o => {
 		}
 	}
 
+	let expr = _evalVarString(varDetails, o);
+
+	// Escape result for curlies to stop possible re-evaluation on re-assignment.
+	if (typeof expr === 'string') {
+		expr = _escNoVars(expr);
+	}
+
+	if (isArrayPush) {
+		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
+		let scoped = _getScopedVar(varName, o.varScope);
+		if (!_isArray(scoped.val)) {
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"');
+		} else {
+			let newLength = scoped.val.length;
+			_set(scopedProxy, scoped.name + '[' + newLength + ']', expr);
+		}
+		return;
+	}
+
 	// Now check the varname before the "." or the "[" to see if it is the session or local storage reference arrays.
 	let storeCheck = varName;
 	let storeCheckDot = varName.indexOf('.');
@@ -1774,27 +1793,6 @@ _a.Var = o => {
 	} else {
 		let scoped = _getScopedVar(varName, o.varScope);
 		scopedVar = scoped.name;
-	}
-
-	let expr = _evalVarString(varDetails, o);
-
-	// Escape result for curlies to stop possible re-evaluation on re-assignment.
-	if (typeof expr === 'string') {
-		expr = _escNoVars(expr);
-	}
-
-
-	if (isArrayPush) {
-		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
-		// get size of existing array.
-		let scoped = _getScopedVar(scopedVar, o.varScope);
-		if (!_isArray(scoped.val)) {
-			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + scopedVar + ' = "' + typeof scoped.val + '"');
-		} else {
-			let newLength = scoped.val.length;
-			_set(scopedProxy, scopedVar + '[' + newLength + ']', expr);
-		}
-		return;
 	}
 
 	// Set the variable in the correct scope.
@@ -11792,8 +11790,7 @@ const _getSelector = (o, sel, many=false) => {
 			firstSel = selItem;
 		} else {
 			firstSel = selItem.substr(0, pos);
-			remainingSel = selItem.substr(pos);
-
+			remainingSel = selItem.substr(pos).trim();
 		}
 
 		let returnEls = [];
@@ -11814,8 +11811,7 @@ const _getSelector = (o, sel, many=false) => {
 					break;
 
 				case 'prevAdjAll':
-					// Grab the elements. Iterate and call _getSelector on each one. Compile the results and return as a multi-result.
-					// It's probably not going to be the fastest thing in the world, so the docs will need to come with a warning.
+					// Grab the elements. Compile the results and return as a multi-result.
 					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
 					mainObj = getPreviousSiblings(thisObj, firstSel);
 					break;
@@ -11846,7 +11842,7 @@ const _getSelector = (o, sel, many=false) => {
 					selItem += '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
 				}
 			}
-			moreToDo = true;
+			if (remainingSel !== '') moreToDo = true;
 		}
 
 		return { selItem, mainObj, newDoc, addedAttrs, moreToDo };

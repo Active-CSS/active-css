@@ -47,6 +47,25 @@ _a.Var = o => {
 		}
 	}
 
+	let expr = _evalVarString(varDetails, o);
+
+	// Escape result for curlies to stop possible re-evaluation on re-assignment.
+	if (typeof expr === 'string') {
+		expr = _escNoVars(expr);
+	}
+
+	if (isArrayPush) {
+		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
+		let scoped = _getScopedVar(varName, o.varScope);
+		if (!_isArray(scoped.val)) {
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"');
+		} else {
+			let newLength = scoped.val.length;
+			_set(scopedProxy, scoped.name + '[' + newLength + ']', expr);
+		}
+		return;
+	}
+
 	// Now check the varname before the "." or the "[" to see if it is the session or local storage reference arrays.
 	let storeCheck = varName;
 	let storeCheckDot = varName.indexOf('.');
@@ -81,27 +100,6 @@ _a.Var = o => {
 	} else {
 		let scoped = _getScopedVar(varName, o.varScope);
 		scopedVar = scoped.name;
-	}
-
-	let expr = _evalVarString(varDetails, o);
-
-	// Escape result for curlies to stop possible re-evaluation on re-assignment.
-	if (typeof expr === 'string') {
-		expr = _escNoVars(expr);
-	}
-
-
-	if (isArrayPush) {
-		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
-		// get size of existing array.
-		let scoped = _getScopedVar(scopedVar, o.varScope);
-		if (!_isArray(scoped.val)) {
-			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + scopedVar + ' = "' + typeof scoped.val + '"');
-		} else {
-			let newLength = scoped.val.length;
-			_set(scopedProxy, scopedVar + '[' + newLength + ']', expr);
-		}
-		return;
 	}
 
 	// Set the variable in the correct scope.
