@@ -4140,8 +4140,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
-console.log('_renderCompDomsDo, template.content:', template.content);
-
 	// Attach the shadow or the insides.
 	shadow.replaceChildren(template.content);
 
