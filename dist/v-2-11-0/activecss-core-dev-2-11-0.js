@@ -7283,7 +7283,8 @@ const _extractVarsFromPars = (str, o) => {
 		let parSplit = pars.split(',');
 		// Iterate and handle each parameter so it passes into the func as it should.
 		for (par of parSplit) {
-			par = par.replace(/__ACSSFComma/g, ',');
+			// Remove any starting and ending {= =} now that they have gotten this far, and unescape comma.
+			par = par.replace(/__ACSSFComma/g, ',').replace(/^\{\=|\=\}$/g, '');
 			finalPar = _evalVarString(par.trim(), o, true);
 			parArr.push(finalPar);
 		}
