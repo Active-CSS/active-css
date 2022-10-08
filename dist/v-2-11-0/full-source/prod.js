@@ -4141,7 +4141,31 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
 	// Attach the shadow or the insides.
-	shadow.replaceChildren(template.content);
+	if (!isShadow && o.origActVal.indexOf('|_acss-host_') === -1 && !privateEvents && !strictlyPrivateEvents && !privVars && o.renderPos) {
+		switch (o.renderPos) {
+			case 'beforebegin':
+				shadow.before(template.content);
+				break;
+
+			case 'beforeend':
+				shadow.append(template.content);
+				break;
+
+			case 'afterbegin':
+				shadow.prepend(template.content);
+				break;
+
+			case 'afterend':
+				shadow.after(template.content);
+				break;
+
+			default:
+				_warn(o.func + ' not supported for component - contact support');
+				return;
+		}
+	} else {
+		shadow.replaceChildren(template.content);
+	}
 
 	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
 		_replaceTempActiveID(obj);
