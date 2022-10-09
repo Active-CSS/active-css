@@ -1675,7 +1675,7 @@ function checkRenderEscaping(o) {
 	// Test inserted attribute substitution inside a render.
 	let attrHackTag = _getObj('#checkRenderAttrSubHack');
 
-	if (attrHackTag.textContent !== '<script>createHavoc()</script>') {
+	if (attrHackTag.textContent !== '&lt;script&gt;createHavoc()&lt;/script&gt;') {
 		_fail(checkRenderEl, 'Render did not properly escape the insert attribute variable into the test content area. #checkRenderAttrSubHack.textContent:', attrHackTag.textContent);
 	}
 

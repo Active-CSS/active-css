@@ -3,9 +3,14 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 
 	// Substitute any ajax variable if present. Note {@i} should never be in secSel at this point, only a numbered reference.
 	if (!o.secSel && !runButElNotThere) return;
-	// Split action by comma.
+	// Split action by comma if it isn't a dollar variable.
 	let newActVal = o.actVal;
-	if (o.actVal.indexOf(',') !== -1) {	// Note this could be optimized with a single split regex.
+
+	o.isDollarVar = o.func.startsWith('$') || o.func.startsWith('Window.$');
+	let isTransition = (o.func == 'Transition');	// If any more are needed, set up an array.
+	let skipCommaDelim = (o.isDollarVar || isTransition);
+
+	if (!skipCommaDelim && o.actVal.indexOf(',') !== -1) {	// Note this could be optimized with a single split regex.
 		// Remove commas in brackets from what is coming up in the next replace.
 		newActVal = newActVal.replace(/\(.*?\)/g, function(m, c) {
 			return m.replace(/,/g, '_ACSStmpcomma_');
@@ -18,14 +23,24 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Put any commas in brackets back.
 		newActVal = newActVal.replace(/_ACSStmpcomma_/g, ',');
 	}
+
 	if (['Var', 'VarDelete', 'Func', 'ConsoleLog'].indexOf(o.func) !== -1) {
 		// Special handling for var commands, as each value is a JavaScript expression, but not in {= =}, to make it quicker to type.
 		newActVal = ActiveCSS._sortOutFlowEscapeChars(newActVal);
 		// Now escape any commas inside any kind of brackets.
 		newActVal = _escCommaBrack(newActVal, o);
 	}
+
 	// Store the original copies of the action values before we start looping secSels.
-	let actValsLen, actVals = newActVal.split('_ACSSComma'), comm, activeID;
+	let actValsLen, actVals;
+	if (skipCommaDelim) {
+		// No comma delimited action values for dollar variable assignment or regular CSS commands.
+		actVals = [ newActVal ];
+	} else {
+		actVals = newActVal.split('_ACSSComma');
+	}
+	let comm, activeID;
+
 	actValsLen = actVals.length;
 	let pars = { loopI, actVals, actValsLen };
 

@@ -81,7 +81,7 @@ const _focusOn = (o, wot, justObj=false) => {
 	}
 	if (!el) return;
 	targEl = (el.tagName == 'FORM') ? el.elements[0] : el;
-	if (doClick && (wot == 'pcc' || wot == 'ncc')) {
+	if (doClick && (wot == 'pcc' || wot == 'ncc') || !justObj && o.func.substr(0, 5) == 'Click') {
 		ActiveCSS.trigger(targEl, 'click');
 		setTimeout(function () {	// Needed for everything not to get highlighted when used in combination with select text area.
 			if (endOfField && _isTextField(el)) {
@@ -92,16 +92,13 @@ const _focusOn = (o, wot, justObj=false) => {
 			}
 		}, 0);
 	} else if (!justObj) {
-		if (o.func.substr(0, 5) == 'Click') {
-			ActiveCSS.trigger(targEl, 'click');
+		if (endOfField && _isTextField(el)) {
+			// Position cursor at end of line.
+			_placeCaretAtEnd(el);
 		} else {
-			if (endOfField && _isTextField(el)) {
-				// Position cursor at end of line.
-				_placeCaretAtEnd(el);
-			} else {
-				el.focus();
-			}
+			el.focus();
 		}
 	}
+
 	return targEl;
 };

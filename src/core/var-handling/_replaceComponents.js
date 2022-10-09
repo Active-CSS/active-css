@@ -40,12 +40,12 @@ const _replaceComponents = (o, str) => {
 				let compRef = '<data-acss-component data-name="' + c + '" data-ref="' + compCount + '"';
 				if (components[c].htmlFile) compRef += ' data-html-file="' + escQuotes(components[c].htmlFile) + '"';
 				if (components[c].cssFile) compRef += ' data-css-file="' + escQuotes(components[c].cssFile) + '"';
+				if (components[c].jsonFile) compRef += ' data-json-file="' + escQuotes(components[c].jsonFile) + '"';
 				if (components[c].htmlTempl) compRef += ' data-html-template="' + escQuotes(components[c].htmlTempl) + '"';
 				if (components[c].cssTempl) compRef += ' data-css-template="' + escQuotes(components[c].cssTempl) + '"';
 				if (components[c].observeOpt) compRef += ' data-observe-opt="' + escQuotes(components[c].observeOpt) + '"';
 				if (components[c].selector) compRef += ' data-html-selector="' + escQuotes(components[c].selector) + '"';
 				compRef += '></data-acss-component>';
-
 				compPending[compCount] = ret;
 				// Replace the fully rendered component instance with the compRef placeholder.
 				ret = compRef;

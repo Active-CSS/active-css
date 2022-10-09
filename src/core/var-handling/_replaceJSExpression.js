@@ -1,11 +1,15 @@
-const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null) => {
+const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null, noConvertVar=false) => {
 	if (sel.indexOf('{=') === -1) return sel;
 	let res;
 
 	sel = sel.replace(/\{\=([\s\S]*?)\=\}/gm, function(str, wot) {
+		if (wot == '') return null;
+
 		// Evaluate the JavaScript expression.
 		// See if any unscoped variables need replacing.
-		wot = _replaceScopedVarsExpr(wot, varScope);
+		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
+		// Replace references to the proxy, as there may be properties only available in the original.
+		wot = wot.replace(/(scopedProxy|scopedOrig)(\.__getTarget)?/g, 'scopedOrig');
 
 		let q = '';
 		if (quoteIfString) {
@@ -18,10 +22,11 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		}
 
 		try {
-			res = Function('scopedProxy, o, scopedOrig', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig);		// jshint ignore:line
+			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 		} catch (err) {
+			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot);
 			try {
-				res = Function('scopedProxy, o, scopedOrig', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig);		// jshint ignore:line
+				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 			} catch (err) {
 				// Try as a string.
 				console.log('JavaScript expression error (' + err + '): ' + sel + '. Is this a string variable that needs double-quotes?');

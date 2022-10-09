@@ -1,11 +1,10 @@
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
-	let res, cid, isBound = false, isAttribute = false, isHost = false, originalStr = str;
+	let originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
-		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \"\-\.\:\[\]]+(\})?)\}/gm, function(_, wot) {
-			if (wot.startsWith('$') || wot.indexOf('.$') !== -1) return '{' + wot + '}';
-			let realWot;
+		str = str.replace(/\{((\{)?(\@)?[\u00BF-\u1FFF\u2C00-\uD7FF\w\$\' \:\"\-\.\[\]]+(\})?)\}/gm, function(_, wot) {
+			let realWot, res, cid, isBound = false, isAttribute = false, isHost = false;
 			if (wot[0] == '{') {		// wot is a string. Double curly in pre-regex string signifies a variable that is bound to be bound.
 				isBound = true;
 				// Remove the outer parentheses now that we know this needs binding.
@@ -29,11 +28,13 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 					return _;
 				}
 			} else {
+				if (wot.indexOf(':') !== -1) return _;
 				let scoped = _getScopedVar(wot, varScope);
 				res = scoped.val;
 
 				// Return an empty string if undefined.
-				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? '__object' : '';	// remember typeof null is an "object".
+				res = (res === true) ? 'true' : (res === false) ? 'false' : (res === null) ? 'null' : (typeof res === 'string') ? ((noHTMLEscape || func == 'SetAttribute') ? res : _escapeItem(res, origVar)) : (typeof res === 'number') ? res.toString() : (res && typeof res === 'object') ? scoped.fullName : '';	// Return the name of the variable if it's an object so it can be evaluated later with it's properties.
+
 				realWot = scoped.name;
 			}
 			if (isBound && (func == 'asRender' || func.startsWith('Render'))) {
@@ -53,13 +54,53 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 			} else {
 				// If this is an attribute, store more data needed to retrieve the attribute later.
 				if (func == 'SetAttribute') {
-					// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
-					_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
+					if (isBound) {
+						// Inner brackets vars get resolved into the original string so that we get reactivity happening correctly in loops, etc.
+						// If this isn't a bound attribute, we will insert it properly into the attribute so it gets escaped with the original var value.
+						// originalStr will be the full contents of the attribute and can contain multiple variables.
+						_addScopedAttr(realWot, o, _resolveInnerBracketVars(originalStr, varScope), walker, varScope);
+					} else {
+						if (walker && func == 'SetAttribute') {
+							res = _escapeItem(res);
+						}
+					}
 				}
-				// Send the regular scoped variable back.
-				return _preReplaceVar(res, varReplacementRef);
+
+				// Send the regular scoped variable back, in a placeholder if appropriate.
+				let retVar = _preReplaceVar(res, varReplacementRef);
+				return retVar;
 			}
 		});
+	}
+
+	if (str.indexOf('$') !== -1) {
+
+		/***
+		 * New dollar-only var type needs to handle these:
+		 *
+		 * $regularVar
+		 * $regularVar.$objProp
+		 * $regularVar[$objProp]
+		 * $regularVar['sdfsdf sdfsdf']
+		 * $regularVar[ { something: $sdfsdf + $sdfsdf, sdfsd: [ "sdfsdf sdfsdf()" ] }, "test\"" ]
+		 *
+		**/
+
+		// Don't touch non-curly dollar vars in quotes.
+		str = str.replace(INQUOTES, function(_, innards) {
+			return innards.replace(/\$/gm, '_ACSS_scoped_D');
+		});
+		str = str.replace(/(?:(^|[^\.\{]))(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w]([\u00BF-\u1FFF\u2C00-\uD7FF\w]+)?)/gim, function(_, _start, wot) {
+			let scoped = _getScopedVar(wot, varScope);
+			let res;
+			if (scoped.val !== undefined) {
+				res = _start + scoped.fullName;
+			} else {
+				res = _start + wot;
+			}
+			return res;
+		});
+		str = str.replace(/_ACSS_scoped_D/gm, '$');
 	}
 
 	return str;

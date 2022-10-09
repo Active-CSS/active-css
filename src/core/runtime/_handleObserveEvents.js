@@ -15,6 +15,7 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		// This is a document fragment.
 		let domFirstChild = dom.firstChild;
 		if (domFirstChild) {
+			if (domFirstChild === Node.TEXT_NODE) return;	// If the document only has a text node then it's not a valid document for ACSS. Skip observe events.
 			ref = (domFirstChild._acssActiveID) ? dom.firstChild._acssActiveID : _getActiveID(dom.firstChild).substr(3);
 		} else {
 			// It shouldn't really get in here, but if it does due to an empty component, just skip the queueing and run.

@@ -94,5 +94,5 @@ _a.CreateElement = o => {
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails, _handleObserveEvents', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents);	// jshint ignore:line
+	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar);	// jshint ignore:line
 };

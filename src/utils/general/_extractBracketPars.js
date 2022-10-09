@@ -27,11 +27,13 @@ const _extractBracketPars = (actionValue, parArr, o) => {
 			if (pos !== -1) {
 				parStartLen = parName.length + 1;	// Includes name of parameter and first parenthesis.
 				newActionValue = currentActionValue.substr(0, pos - 1).trim();		// Strips off the parameters as it goes.
+
 				// Get the parameter value and the remainder of the action value.
 				// Send over the action value from the beginning of the parameter value.
 				splitRes = _extractBracketParsSplit(currentActionValue.substr(pos + parStartLen), actionValue, o);
 				trackArr.push(_extractBracketParsUnEsc(splitRes.value));
 				newActionValue += splitRes.remainder;
+
 				// Check for any others.
 				continue;
 			}
@@ -56,6 +58,7 @@ const _extractBracketParsSplit = (str, original, o) => {
 	// Return value should be:
 	// res.value = "#left";
 	// res.remainder = " another(#myEl:not(has(something))) hi(and the rest) something"
+
 	let res = {};
 	// Split by "(".
 	let openingArr = str.split('(');
@@ -83,7 +86,8 @@ const _extractBracketParsSplit = (str, original, o) => {
 				res.remainder = innerRes.remainder;
 				if (n < openingArr.length) {
 					remainderArr = openingArr.slice(n + 1);
-					res.remainder += (typeof remainderArr[0] !== undefined && remainderArr[0] != '' ? '(' : '') + remainderArr.join('(');
+					res.remainder += (typeof remainderArr[0] !== undefined && remainderArr.length > 0 ? '(' : '') + remainderArr.join('(');
+
 				}
 				break;
 			}

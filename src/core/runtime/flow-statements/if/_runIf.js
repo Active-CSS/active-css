@@ -17,6 +17,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 		},
 		strObj.ref
 	);
+
 	// Lastly, handle any {$STRING} value from ajax content if it exists.
 	strObj = _handleVars([ 'strings' ],
 		{
@@ -26,6 +27,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 		},
 		strObj.ref
 	);
+
 	// Output the variables for real from the map.
 	let readyStatement = _resolveVars(strObj.str, strObj.ref);
 
@@ -34,7 +36,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 	
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds);		// jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);

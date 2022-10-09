@@ -14,7 +14,7 @@
 
 module.exports = function(config) {
 	/* Core version */
-	const activeCSSVersion = '2-10-0';
+	const activeCSSVersion = '2-11-0';
 
 	/* Core files (comment as required) */
 	const activeCSSProduction = 'dist/v-' + activeCSSVersion + '/activecss-' + activeCSSVersion + '.min.js';
@@ -87,7 +87,8 @@ module.exports = function(config) {
 		// Firefox and Chrome are different browsers, so both of these are worth doing.
 //		browsers: ['ChromeHeadless', 'FirefoxHeadless'],
 		// Before ready to commit, unless you have a fast server it might be worth just using this one and commenting the other browsers out.
-		browsers: ['ChromeHeadless'],
+//		browsers: ['ChromeHeadless'],	// Weird errors due to ACSS being loaded more than once on ChromeHeadless. Switching to Firefox solves the problem.
+		browsers: ['FirefoxHeadless'],
 
 		browserNoActivityTimeout: 15000,
 
@@ -103,6 +104,6 @@ module.exports = function(config) {
 		// Concurrency level
 		// how many browser should be started simultaneous
 //		concurrency: Infinity
-		concurrency: 1	// Mainly because on my sloth-slow server Firefox times out. But also because it's easier to what is going on.
+//		concurrency: 1	// Mainly because on my sloth-slow server Firefox times out. But also because it's easier to what is going on.
 	})
 }

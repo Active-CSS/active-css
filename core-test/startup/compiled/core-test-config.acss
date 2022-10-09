@@ -1820,7 +1820,7 @@ create-element-tag:connectedCallback {
 		}
 	}
 	html {
-		<button id="quoteCheckOnSetAttributeAndSetPropertyButton" data-quoted='was "Test Stuff".''>test</button>
+		<button id="quoteCheckOnSetAttributeAndSetPropertyButton" data-quoted='was &quot;Test Stuff&quot;.'>test</button>
 		<div id="quoteCheckOnSetAttributeAndSetPropertyTarget"></div>
 	}
 }

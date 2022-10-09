@@ -41,10 +41,19 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 			line = line.replace(/\*debugfile[\s\S]*?\*|([^:]|^)\/\/.*$/g, '');
 			var attr = PARSELINEX.exec(line);
 			if (attr) {
-				// Attribute
+				let nam, val;
+				if (attr[4]) {	// attr[4] will be "$var" *only if* it has a "++" or "--" assignment.
+					// Handle dollar var ++/-- here, so less to do in event flow. In the DevTools extension, recreate the ++ and -- so it's easier to spot.
+					nam = attr[4];
+					val = attr[4] + ' ' + attr[5][0] + ' 1';
+				} else {
+					// Regular ACSS/CSS command or $var assignment.
+					nam = _sortOutEscapeChars(attr[2].trim());
+					val = _sortOutEscapeChars(attr[3].trim());
+				}
 				obj = {
-					name: _sortOutEscapeChars(attr[1].trim()),
-					value: _sortOutEscapeChars(attr[2].trim()),
+					name: nam,
+					value: val,
 					type: 'attr',
 					line: configLine,
 					file: configFile,
