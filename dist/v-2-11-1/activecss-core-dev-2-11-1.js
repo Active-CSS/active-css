@@ -11839,7 +11839,7 @@ const _getSelector = (o, sel, many=false) => {
 		mainObj = returnEls;
 
 		let moreToDo = false, subAttrActiveID;
-		if (mainObj && mainObj.length > 1) {
+		if (mainObj && mainObj.length > 1 || remainingSel != '') {
 			// Send back the parent with a data-activeid combo selector for selecting inside. Those attributes get removed after query.
 			let els = mainObj;
 			if (typ == 'closest') {
@@ -11851,12 +11851,12 @@ const _getSelector = (o, sel, many=false) => {
 			selItem = '';
 			for (const el of els) {
 				subAttrActiveID = _getActiveID(el);
-				let selItemToAdd = '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+				let selItemToAdd = '[data-activeid=' + subAttrActiveID + '] ' + remainingSel;
 				if (selItem.indexOf(selItemToAdd) === -1) {
 					el.setAttribute('data-activeid', subAttrActiveID);
 					addedAttrs.push(el);
 					if (selItem != '') selItem += ',';
-					selItem += '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+					selItem += '[data-activeid=' + subAttrActiveID + '] ' + remainingSel;
 				}
 			}
 			moreToDo = true;
