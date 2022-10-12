@@ -177,15 +177,6 @@ const _getSelector = (o, sel, many=false) => {
 					newDoc = checkRes.newDoc;
 					addedAttrs = checkRes.addedAttrs;
 					if (!checkRes.moreToDo) {
-						if (typ == 'prevAdjAll') {
-							if (checkRes.multiObjs) {
-								multiResult = true;
-								mainObj = checkRes.multiObjs;
-								break;
-							} else {
-								return removeCleanup(newDoc);
-							}
-						}
 						singleResult = true;
 						continue;
 					}
@@ -271,26 +262,29 @@ const _getSelector = (o, sel, many=false) => {
 		mainObj = returnEls;
 
 		let moreToDo = false, subAttrActiveID;
-		if (mainObj && mainObj.length > 0) {
+		if (mainObj && mainObj.length > 1 || remainingSel != '') {
 			// Send back the parent with a data-activeid combo selector for selecting inside. Those attributes get removed after query.
 			let els = mainObj;
 			if (typ == 'closest') {
+				// mainObj becomes the doc so that it can find the data-activeid elements for the next step.
 				mainObj = newDoc;
 			} else {
-				mainObj = mainObj.parentNode;
+				mainObj = mainObj.parentNode || newDoc;
 			}
 			selItem = '';
 			for (const el of els) {
 				subAttrActiveID = _getActiveID(el);
-				let selItemToAdd = '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+				let selItemToAdd = '[data-activeid=' + subAttrActiveID + '] ' + remainingSel;
 				if (selItem.indexOf(selItemToAdd) === -1) {
 					el.setAttribute('data-activeid', subAttrActiveID);
 					addedAttrs.push(el);
 					if (selItem != '') selItem += ',';
-					selItem += '[data-activeid=' + subAttrActiveID + ']' + remainingSel;
+					selItem += '[data-activeid=' + subAttrActiveID + '] ' + remainingSel;
 				}
 			}
-			if (remainingSel !== '') moreToDo = true;
+			moreToDo = true;
+		} else {
+			mainObj = mainObj[0];
 		}
 
 		return { selItem, mainObj, newDoc, addedAttrs, moreToDo };
