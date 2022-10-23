@@ -27,7 +27,7 @@ const _resolveAjaxVars = o => {
 const _resolveAjaxVarsDecl = (o, compScope) => {
 	// Loop the items in res and assign to variables.
 	let v;
-	_set(scopedProxy, compScope + '.JSON', o.res);
+	_set(scopedProxy, compScope + '.$JSON', o.res);
 	let substVars = (o.acceptVars && !o.renderComp);
 	for (v in o.res) {
 		// If vars allowed in JSON string values, substitute these in at this point.
