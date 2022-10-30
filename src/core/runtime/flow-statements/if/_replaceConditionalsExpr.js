@@ -56,6 +56,7 @@ const _replaceConditionalsExpr = (str, varScope=null, o=null) => {
 	let condName = '';
 
 	let newArr = arr.map(item => {
+		item = item.trim();
 		if (item == '') return '';
 		if (item == '(') {
 			if (funcInProgress) {

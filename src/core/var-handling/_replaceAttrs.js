@@ -19,7 +19,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 			if (wotArr[1] && wotArr[0] == 'selected' && obj.tagName == 'SELECT') {
 				// If selected is used, like [selected.value], then it gets the attribute of the selected option, rather than the select tag itself.
 				ret = _getAttrOrProp(obj, wotArr[1], getProperty, obj.selectedIndex, func);
-				if (ret) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
+				if (ret !== false) return _preReplaceVar(_escapeQuo(ret), varReplacementRef, func);
 			} else {
 				let colon = wot.lastIndexOf(':');	// Get the last colon - there could be colons in the selector itself.
 				let res;
@@ -83,7 +83,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
 		if (el && el.nodeType == Node.ELEMENT_NODE) {
 			let ret = _getAttrOrProp(el, wot, getProperty, null, func);
-			if (ret) return _preReplaceVar(_escapeQuo(ret, func), varReplacementRef, func);
+			if (ret !== false) return _preReplaceVar(_escapeQuo(ret, func), varReplacementRef, func);
 		}
 		return false;
 	}
