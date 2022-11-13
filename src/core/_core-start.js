@@ -208,6 +208,7 @@
 		pageWildReg = [],
 		parsedConfig = {},
 		passiveEvents = true,
+		pauseTrack = {},
 		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
