@@ -247,6 +247,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 
 		shadow.querySelectorAll('*:not(template *)').forEach(function(obj) {
+			if (!_isConnected(obj)) return;
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
 				// Handle any shadow DOMs now pending within this shadow DOM.
 				_renderCompDomsDo(o, obj);
