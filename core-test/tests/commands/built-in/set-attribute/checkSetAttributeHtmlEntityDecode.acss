@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkSetAttributeHtmlEntityDecode\" data-desc=\"set-attribute command - no-double-escape option\" class=\"coreTest\">{|checkSetAttributeHtmlEntityDecodeHTML}</div>";
-}
-
 @component checkSetAttributeHtmlEntityDecodeHTML {
 	html {
 		<div id="setAttributeHtmlEntityDecodeDiv"></div>

@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkTakeClass\" data-desc=\"Basic take-class command\" class=\"coreTest\">{|checkTakeClassHTML}</div>";
-}
-
 @component checkTakeClassHTML {
 	html {
 		<p>Click on a fruit to select it.</p>

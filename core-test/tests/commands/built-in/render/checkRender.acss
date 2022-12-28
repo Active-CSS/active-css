@@ -1,8 +1,3 @@
-#content:draw {
-    var: renderHackA "<script>createHavoc()</script>";
-	render-before-end: "<div id=\"checkRender\" data-desc=\"Basic render command\" class=\"coreTest\">{|checkRenderHTML}</div>";
-}
-
 @component checkRenderHTML {
 	&:beforeComponentOpen {
 	    var: renderHackB "<script>doMoreHavoc()</script>";

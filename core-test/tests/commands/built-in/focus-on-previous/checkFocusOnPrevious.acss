@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkFocusOnPrevious\" data-desc=\"Basic focus-on-previous command\" class=\"coreTest\">{|checkFocusOnPreviousHTML}</div>";
-}
-
 @component checkFocusOnPreviousHTML {
 	html {
 		<div class="focusOnPreviousBlock">

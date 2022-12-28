@@ -1,6 +1,5 @@
-#content:draw {
+body:init {
 	var: ccValIs10 10, ccValIs20 20;
-	render-before-end: "<div id=\"checkCreateConditional\" data-desc=\"Basic create-conditional command\" class=\"coreTest\">{|checkCreateConditionalHTML}</div>";
 }
 
 @component checkCreateConditionalHTML {

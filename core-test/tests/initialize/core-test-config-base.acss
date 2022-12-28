@@ -11,12 +11,14 @@ body:init {
 		clickoutsideEvent: [1000, 1500],
 		clickOnFirst: [2000, 2100],
 		clickOnLast: [2200, 2300],
-		clickOnNext: [2400],
-		loadConfig: [5000]	/* This test must be run last, otherwise it can clash with delayed results. */
+		clickOnNext: [2400]
 	};
 	
+    /* Individual test pre-setups (if needed) */
+    var: renderHackA "<script>createHavoc()</script>";
+
 	/* This has to go at the end if stuff goes above it :) */
-	render: "<div id=\"content\"></div>";
+	render: "<test-results></test-results>";
 }
 
 .coreTest:draw {
@@ -24,4 +26,79 @@ body:init {
 	var: window.testsRun[testIndex] {};
 	var: window.testsRun[testIndex].desc "{@data-desc}";
 	trigger: test;
+}
+
+@component test-results {
+	html {
+		<div id="content">
+			<div id="checkIfVar" data-desc="Basic if-var conditional" class="coreTest">{|checkIfVarHTML}</div>
+			<div id="checkAddClass" data-desc="Basic add-class command" class="coreTest"></div>
+			<div id="checkAjax" data-desc="Basic ajax command" class="coreTest">{|checkAjaxHTML}</div>
+			<div id="checkAjaxError" data-desc="Ajax error events (error code followed by general error)" class="coreTest">{|checkAjaxErrorHTML}</div>
+			<div id="checkAjaxPreGet" data-desc="Basic ajax-pre-get command" class="coreTest">{|checkAjaxPreGet}</div>
+			<div id="checkAlert" data-desc="Basic alert command" class="coreTest"></div>
+			<div id="checkBlur" data-desc="Basic blur command" class="coreTest">{|checkBlurHTML}</div>
+			<div id="checkCancelTimer" data-desc="Basic cancel-timer command" class="coreTest">{|checkCancelTimerHTML}</div>
+			<div id="checkClickOnFirst" data-desc="Basic click-on-first command" class="coreTest">{|checkClickOnFirstHTML}</div>
+			<div id="checkClickOnLast" data-desc="Basic click-on-last command" class="coreTest">{|checkClickOnLastHTML}</div>
+			<div id="checkClickOnNext" data-desc="Basic click-on-next command" class="coreTest">{|checkClickOnNextHTML}</div>
+			<div id="checkClickOnNextCycle" data-desc="Basic click-on-next-cycle command" class="coreTest">{|checkClickOnNextCycleHTML}</div>
+			<div id="checkClickOnPrevious" data-desc="Basic click-on-previous command" class="coreTest">{|checkClickOnPreviousHTML}</div>
+			<div id="checkClickOnPreviousCycle" data-desc="Basic click-on-previous-cycle command" class="coreTest">{|checkClickOnPreviousCycleHTML}</div>
+			<div id="checkClickoutsideEvent" data-desc="Basic clickoutside-event command" class="coreTest">{|checkClickoutsideEventHTML}</div>
+			<div id="checkCreateCommand" data-desc="Basic create-command command" class="coreTest">{|checkCreateCommandHTML}</div>
+			<div id="checkCreateConditional" data-desc="Basic create-conditional command" class="coreTest">{|checkCreateConditionalHTML}</div>
+			<div id="checkCreateElement" data-desc="Basic create-element command" class="coreTest">{|checkCreateElementHTML}</div>
+			<div id="checkEval" data-desc="Basic eval command" class="coreTest"></div>
+			<div id="checkFocusOff" data-desc="Basic focus-off command" class="coreTest">{|checkFocusOffHTML}</div>	
+			<div id="checkFocusOnFirst" data-desc="Basic focus-on-first command" class="coreTest">{|checkFocusOnFirstHTML}</div>
+			<div id="checkFocusOnLast" data-desc="Basic focus-on-last command" class="coreTest">{|checkFocusOnLastHTML}</div>
+			<div id="checkFocusOnNext" data-desc="Basic focus-on-next command" class="coreTest">{|checkFocusOnNextHTML}</div>
+			<div id="checkFocusOnNextCycle" data-desc="Basic focus-on-next-cycle command" class="coreTest">{|checkFocusOnNextCycleHTML}</div>
+			<div id="checkFocusOnPrevious" data-desc="Basic focus-on-previous command" class="coreTest">{|checkFocusOnPreviousHTML}</div>
+			<div id="checkFocusOnPreviousCycle" data-desc="Basic focus-on-previous-cycle command" class="coreTest">{|checkFocusOnPreviousCycleHTML}</div>
+			<div id="checkFormReset" data-desc="Basic form-reset command" class="coreTest">{|checkFormResetHTML}</div>
+			<div id="checkFunc" data-desc="Basic func command" class="coreTest"></div>
+			<div id="checkIframeReload" data-desc="Basic iframe-reload command" class="coreTest">{|checkIframeReloadHTML}</div>
+			<div id="checkLoadConfig" data-desc="Basic load-config command" class="coreTest">{|checkLoadConfigHTML}</div>
+			<div id="checkLoadImages" data-desc="Basic load-images command" class="coreTest">{|checkLoadImagesHTML}</div>
+			<div id="checkLoadScript" data-desc="Basic load-script command" class="coreTest">{|checkLoadScriptHTML}</div>
+			<div id="checkLoadStyle" data-desc="Basic load-style command in document scope" class="coreTest">{|checkLoadStyleHTML}</div>
+			<div id="checkLoadStyleShad" data-desc="Basic load-style command in shadow scope" class="coreTest">{|checkLoadStyleHTMLShadow}</div>
+			<div id="checkLoadStyleShad2" data-desc="Basic load-style command in multiple shadow scopes" class="coreTest">{|checkLoadStyleHTMLShadow2}</div>
+			<div id="checkPreventDefault" data-desc="Basic prevent-default command" class="coreTest">{|checkPreventDefaultHTML}</div>
+			<div id="checkPreventDefaultShadow" data-desc="Basic prevent-default in shadow command" class="coreTest">{|checkPreventDefaultHTMLShadow}</div>
+			<div id="checkRemove" data-desc="Basic remove command" class="coreTest">{|checkRemoveHTML}</div>
+			<div id="checkRemoveAttribute" data-desc="Basic remove-attribute command" class="coreTest">{|checkRemoveAttributeHTML}</div>
+			<div id="checkRemoveClass" data-desc="Basic remove-class command" class="coreTest removeClassToRemove"></div>
+			<!-- remove-clone test pended for now -->
+			<div id="checkRemoveCookie" data-desc="Basic remove-cookie command" class="coreTest"></div>
+			<div id="checkRemoveProperty" data-desc="Basic remove-property command" class="coreTest">{|checkRemovePropertyHTML}</div>
+			<div id="checkRender" data-desc="Basic render command" class="coreTest">{|checkRenderHTML}</div>
+			<div id="checkRenderAfterBegin" data-desc="Basic render-after-begin command" class="coreTest">{|checkRenderAfterBeginHTML}</div>
+			<div id="checkRenderAfterEnd" data-desc="Basic render-after-end command" class="coreTest">{|checkRenderAfterEndHTML}</div>
+			<div id="checkRenderBeforeBegin" data-desc="Basic render-before-begin command" class="coreTest">{|checkRenderBeforeBeginHTML}</div>
+			<div id="checkRenderBeforeEnd" data-desc="Basic render-before-end command" class="coreTest">{|checkRenderBeforeEndHTML}</div>
+			<div id="checkRenderReplace" data-desc="Basic render-replace command" class="coreTest">{|checkRenderReplaceHTML}</div>
+			<div id="checkRun" data-desc="Basic run command" class="coreTest"></div>
+			<div id="checkScrollIntoView" data-desc="Basic scroll-into-view command" class="coreTest">{|checkScrollIntoViewHTML}</div>
+			<div id="checkScrollX" data-desc="Basic scroll-x command" class="coreTest">{|checkScrollXHTML}</div>
+			<div id="checkScrollY" data-desc="Basic scroll-y command" class="coreTest">{|checkScrollYHTML}</div>
+			<div id="checkSetAttribute" data-desc="Basic set-attribute command" class="coreTest">{|checkSetAttributeHTML}</div>
+			<div id="checkSetAttributeHtmlEntityDecode" data-desc="set-attribute command - no-double-escape option" class="coreTest">{|checkSetAttributeHtmlEntityDecodeHTML}</div>
+			<div id="checkSetClass" data-desc="Basic set-class command" class="coreTest">{|checkSetClassHTML}</div>
+			<div id="checkSetCookie" data-desc="Basic set-cookie command" class="coreTest"></div>
+			<div id="checkSetProperty" data-desc="Basic set-property command" class="coreTest">{|checkSetPropertyHTML}</div>
+			<div id="checkStopEventPropagation" data-desc="Basic stop-event-propagation command" class="coreTest">{|checkStopEventPropagationHTML}</div>
+			<div id="checkStopImmediateEventPropagation" data-desc="Basic stop-immediate-event-propagation command" class="coreTest">{|checkStopImmediateEventPropagationHTML}</div>
+			<div id="checkStopImmediatePropagation" data-desc="Basic stop-immediate-propagation command" class="coreTest">{|checkStopImmediatePropagationHTML}</div>
+			<div id="checkStopPropagation" data-desc="Basic stop-propagation command" class="coreTest">{|checkStopPropagationHTML}</div>
+			<div id="checkStyle" data-desc="Basic style command" class="coreTest"></div>
+			<div id="checkTakeClass" data-desc="Basic take-class command" class="coreTest">{|checkTakeClassHTML}</div>
+			<div id="checkToggleClass" data-desc="Basic toggle-class command" class="coreTest">{|checkToggleClassHTML}</div>
+			<div id="checkTrigger" data-desc="Basic trigger command" class="coreTest">{|checkTriggerHTML}</div>
+			<div id="checkTriggerReal" data-desc="Basic trigger-real command" class="coreTest">{|checkTriggerRealHTML}</div>
+			<div id="checkVar" data-desc="Basic var command" class="coreTest">{|checkVarHTML}</div>
+		</div>
+	}
 }

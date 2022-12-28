@@ -4198,7 +4198,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			if (!obj._acssDrawn) _handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
 
 		if (isShadow) {
@@ -4442,7 +4442,7 @@ const _renderIt = (o, content, childTree, selfTree) => {
 
 		if (!el || el.shadow || el.scoped || el.tagName == 'IFRAME') continue;		// We can skip tags that already have shadow or scoped components.
 
-		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+  		_handleEvents({ obj: el, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
 
 		el.querySelectorAll('*:not(template *)').forEach(function(obj) {	// jshint ignore:line
 			// We can potentially have the same element running a draw event twice. Like the first draw event can add content inside any divs in the first object, which

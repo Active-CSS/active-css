@@ -254,7 +254,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			if (!obj._acssDrawn) _handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
 
 		if (isShadow) {

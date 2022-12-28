@@ -1331,7 +1331,7 @@ function checkLoadConfig(o) {
 	let checkLoadConfigEl = _initTest('checkLoadConfig');
 	if (!checkLoadConfigEl) return;
 
-	let el = _getObj('#checkLoadConfig div');
+	let el = _getObj('#loadConfigResults');
 	if (!el) {
 		_fail(checkLoadConfigEl, 'The test div was not drawn prior to the load-config command before run.');
 	} else if (el.innerHTML !== 'Here is some text.') {

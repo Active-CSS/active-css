@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkIframeReload\" data-desc=\"Basic iframe-reload command\" class=\"coreTest\">{|checkIframeReloadHTML}</div>";
-}
-
 @component checkIframeReloadHTML {
 	html {
 		<iframe id="checkIframeIframe" srcdoc="<p>iframe test</p>"></iframe>
