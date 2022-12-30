@@ -1662,6 +1662,10 @@ _a.Trigger = o => {
 	}
 };
 
+_a.TriggerFresh = o => {
+	ActiveCSS.triggerFresh(o.secSelObj, o.actVal);
+};
+
 _a.TriggerReal = o => {
 	// Simulate a real event, not just a programmatical one.
 	if (!_isConnected(o.secSelObj)) {
@@ -1864,11 +1868,20 @@ ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope, eve) => {
 	*/
 	// Subject to conditionals.
 	if (typeof sel == 'object') {
-		// This is an object that was passed.
-		_handleEvents({ obj: sel, evType: ev, varScope, evScope, compDoc, component, eve });
+		// This is an object that was passed. Get the correct component for this element.
+		let compDetails = (sel.hasAttribute('data-active-scoped')) ? _getComponentDetails(sel) : _componentDetails(sel);
+		_handleEvents({ obj: sel, evType: ev, varScope: compDetails.varScope, evScope: compDetails.evScope, compDoc: compDetails.compDoc, component: compDetails.component, eve });
 	} else {
 		_a.Trigger({ secSel: sel, actVal: ev, varScope, evScope, compDoc, component, eve });
 	}
+};
+
+ActiveCSS.triggerFresh = (sel, ev) => {
+	/* API command */
+	setTimeout(() => {
+		let compDetails = (sel.hasAttribute('data-active-scoped')) ? _getComponentDetails(sel) : _componentDetails(sel);
+		_handleEvents({ obj: sel, evType: ev, varScope: compDetails.varScope, evScope: compDetails.evScope, compDoc: compDetails.compDoc, component: compDetails.component });
+	}, 0);
 };
 
 ActiveCSS.triggerReal = (obj, ev, varScope, compDoc, component) => {
