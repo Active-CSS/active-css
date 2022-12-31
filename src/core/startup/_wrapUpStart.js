@@ -23,6 +23,9 @@ const _wrapUpStart = (o) => {
 			subtree: true
 		});
 
+		// Component intersection observer.
+		compIO = new IntersectionObserver(_handleCompIO);
+
 		setupEnded = true;
 
 		// Handle any developer initialization events

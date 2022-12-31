@@ -141,6 +141,7 @@
 		clickOutsideSels = [],
 		clickOutsideSet = false,
 		compCount = 0,
+		compIO,
 		components = [],
 		compPending = {},
 		compPendingHTML = {},

@@ -2,18 +2,43 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
 		shadPar, shadEv, strictVars, privVars, acceptVars;
 
-	shadowParent = obj.parentNode;
-	parentCompDetails = _componentDetails(shadowParent);
-	shadRef = obj.getAttribute('data-ref');
-
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	shadowParent = obj.parentNode;
+
+	if (components[componentName].renderWhenVisible) {
+		if ('IntersectionObserver' in window) {
+			// Come back in here when it is visible.
+			if (shadowParent._acssCompIO) {
+				// This has already been prepared, and is now ready to be rendered. Clean-up io props and skip the rest.
+				compIO.unobserve(shadowParent);
+				delete shadowParent._acssCompIO;
+			} else {
+				shadowParent._acssCompIO = {};
+				let props = shadowParent._acssCompIO;
+				props.o = o;
+				props.obj = obj;
+				props.childTree = childTree;
+				props.numTopNodesInRender = numTopNodesInRender;
+				props.numTopElementsInRender = numTopElementsInRender;
+				compIO.observe(shadowParent);
+				return;
+			}
+		} else {
+			// Show a warning that this isn't supported in this browser.
+			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.');
+		}
+	}
+
 	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
 	privVars = components[componentName].privVars;
 	acceptVars = components[componentName].acceptVars;
+
+	parentCompDetails = _componentDetails(shadowParent);
+	shadRef = obj.getAttribute('data-ref');
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.

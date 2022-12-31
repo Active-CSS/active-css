@@ -141,6 +141,7 @@
 		clickOutsideSels = [],
 		clickOutsideSet = false,
 		compCount = 0,
+		compIO,
 		components = [],
 		compPending = {},
 		compPendingHTML = {},
@@ -2386,6 +2387,17 @@ const _handleClickOutside = (el, e) => {
 	return true;
 };
 
+// Renders the now visible component when render-when-visible option is on component.
+const _handleCompIO = entries => {
+	entries.forEach(entry => {
+		if (entry.intersectionRatio > 0) {
+			let el = entry.target;
+			let props = el._acssCompIO;
+			_renderCompDomsDo(props.o, props.obj, props.childTree, props.numTopNodesInRender, props.numTopElementsInRender);
+		}
+	});
+};
+
 const _handleEvents = evObj => {
 	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
 	let varScope, thisDoc;
@@ -3959,18 +3971,43 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
 		shadPar, shadEv, strictVars, privVars, acceptVars;
 
-	shadowParent = obj.parentNode;
-	parentCompDetails = _componentDetails(shadowParent);
-	shadRef = obj.getAttribute('data-ref');
-
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	shadowParent = obj.parentNode;
+
+	if (components[componentName].renderWhenVisible) {
+		if ('IntersectionObserver' in window) {
+			// Come back in here when it is visible.
+			if (shadowParent._acssCompIO) {
+				// This has already been prepared, and is now ready to be rendered. Clean-up io props and skip the rest.
+				compIO.unobserve(shadowParent);
+				delete shadowParent._acssCompIO;
+			} else {
+				shadowParent._acssCompIO = {};
+				let props = shadowParent._acssCompIO;
+				props.o = o;
+				props.obj = obj;
+				props.childTree = childTree;
+				props.numTopNodesInRender = numTopNodesInRender;
+				props.numTopElementsInRender = numTopElementsInRender;
+				compIO.observe(shadowParent);
+				return;
+			}
+		} else {
+			// Show a warning that this isn't supported in this browser.
+			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.');
+		}
+	}
+
 	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
 	privVars = components[componentName].privVars;
 	acceptVars = components[componentName].acceptVars;
+
+	parentCompDetails = _componentDetails(shadowParent);
+	shadRef = obj.getAttribute('data-ref');
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -6135,7 +6172,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
 								checkStr = componentOpts.action;
 							}
-							checkStr += ' ';
+							checkStr += ' ';	// makes it possible to have a simple index check for values.
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -6150,6 +6187,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								components[compName].acceptVars = true;
 							}
+							components[compName].renderWhenVisible = (checkStr.indexOf(' render-when-visible ') !== -1);
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;
@@ -6880,6 +6918,9 @@ const _wrapUpStart = (o) => {
 			childList: true,
 			subtree: true
 		});
+
+		// Component intersection observer.
+		compIO = new IntersectionObserver(_handleCompIO);
 
 		setupEnded = true;
 
