@@ -2393,6 +2393,7 @@ const _handleCompIO = entries => {
 		if (entry.intersectionRatio > 0) {
 			let el = entry.target;
 			let props = el._acssCompIO;
+			el.removeAttribute('data-pending-visible');
 			_renderCompDomsDo(props.o, props.obj, props.childTree, props.numTopNodesInRender, props.numTopElementsInRender);
 		}
 	});
@@ -3881,7 +3882,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 	// Set up any shadow DOM and scoped components so far unrendered and remove these from the pending shadow DOM and scoped array that contains the HTML to draw.
 	// Shadow DOM and scoped content strings are already fully composed with valid Active IDs at this point, they are just not drawn yet.
 	// Search for any data-acss-component tags and handle.
-	compDoc.querySelectorAll('data-acss-component').forEach(function (obj, index) {
+	compDoc.querySelectorAll('data-acss-component:not([data-pending-visible])').forEach(function (obj, index) {
 		// If this component requires dynamic loading of HTML or CSS, do that here and then come back when both are completed (if both are present).
 		// This way we should get a non-flickering render, although rendering will be staggered due to dynamic loading.
 		if (_isPendingAjaxForComponents(obj)) return;
@@ -3990,6 +3991,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				props.childTree = childTree;
 				props.numTopNodesInRender = numTopNodesInRender;
 				props.numTopElementsInRender = numTopElementsInRender;
+				obj.setAttribute('data-pending-visible', '');
 				compIO.observe(shadowParent);
 				return;
 			}

@@ -21,6 +21,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				props.childTree = childTree;
 				props.numTopNodesInRender = numTopNodesInRender;
 				props.numTopElementsInRender = numTopElementsInRender;
+				obj.setAttribute('data-pending-visible', '');
 				compIO.observe(shadowParent);
 				return;
 			}

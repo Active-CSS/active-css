@@ -4,6 +4,7 @@ const _handleCompIO = entries => {
 		if (entry.intersectionRatio > 0) {
 			let el = entry.target;
 			let props = el._acssCompIO;
+			el.removeAttribute('data-pending-visible');
 			_renderCompDomsDo(props.o, props.obj, props.childTree, props.numTopNodesInRender, props.numTopElementsInRender);
 		}
 	});
