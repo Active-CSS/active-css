@@ -2321,6 +2321,7 @@ const _deleteIDVars = activeID => {
 	delete idMap[activeID];
 	delete varInStyleMap[activeID];
 	delete elObserveTrack[activeID];
+	delete pauseTrack[activeID];
 };
 
 const _deleteScopeVars = varScope => {
@@ -7186,13 +7187,16 @@ const _isSyncQueueSet = (val) => {
 const _pause = (o, tim) => {
 	_setResumeObj(o);
 	let restartObj = _clone(o);
-	pauseTrack._tgResPos = true;
+	let activeID = _getActiveID(restartObj.secSelObj);
+	let subEvCo = restartObj._subEvCo;
+	pauseTrack[activeID] = {};
+	pauseTrack[activeID][subEvCo] = true;
 	setTimeout(() => {
 		o = null;
 		// If pause has not been cancelled, restart the event queue.
-		if (pauseTrack._tgResPos) {
-			delete pauseTrack._tgResPos;
-			_syncRestart(restartObj, restartObj._subEvCo);
+		if (pauseTrack[activeID] && pauseTrack[activeID][subEvCo]) {
+			delete pauseTrack[activeID][subEvCo];
+			_syncRestart(restartObj, subEvCo);
 		}
 		restartObj = null;
 		return;

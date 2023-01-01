@@ -3,4 +3,5 @@ const _deleteIDVars = activeID => {
 	delete idMap[activeID];
 	delete varInStyleMap[activeID];
 	delete elObserveTrack[activeID];
+	delete pauseTrack[activeID];
 };
