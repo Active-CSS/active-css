@@ -99,6 +99,12 @@ body:init {
 			<div id="checkTrigger" data-desc="Basic trigger command" class="coreTest">{|checkTriggerHTML}</div>
 			<div id="checkTriggerReal" data-desc="Basic trigger-real command" class="coreTest">{|checkTriggerRealHTML}</div>
 			<div id="checkVar" data-desc="Basic var command" class="coreTest">{|checkVarHTML}</div>
+			<!-- System -->
+			<div id="checkAwaitAjax" data-desc="Core - await option for ajax action commands" class="coreTest">{|checkAwaitAjaxHTML}</div>
+			<div id="checkAwait" data-desc="Core - await option for delayed action commands" class="coreTest">{|checkAwaitHTML}</div>
+			<div id="comments" data-desc="Core - check \/* comments *\/" class="coreTest">{|commentsHTML}</div>
+			<div id="continueAfterElementRemoval" data-desc="Core - continue running action commands after element removal" class="coreTest">{|continueAfterElementRemovalHTML}</div>
+			<div id="quoteCheckOnSetAttributeAndSetProperty" data-desc="Core - check setting attributes and properties with double quotes" class="coreTest">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>
 		</div>
 	}
 }

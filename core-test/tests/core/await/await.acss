@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkAwait\" data-desc=\"Core - await option for delayed action commands\" class=\"coreTest\">{|checkAwaitHTML}</div>";
-}
-
 @component checkAwaitHTML privateEvents {
 	&:componentOpen {
 		div {

@@ -44,7 +44,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
-						let checkCompName = strTrimmed.split(' ')[1].trim();
+						let checkCompName = strTrimmed.replace(/\s+/g, ' ').split(' ')[1].trim();
 						let compName, elementName;
 						if (checkCompName.indexOf('-') !== -1) {
 							// This is an element. Generate the internal component name for tying into the element.

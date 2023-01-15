@@ -9,6 +9,16 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// the main config. If you can't work out a regex for a new feature, let the main developers know and they'll sort it out.
 	if (inlineActiveID) str = _unEscNoVars(str);
 
+	// First up, remove everything between /* and */.
+	// Handle escaped \/* and *\/ so they don't match. These are the way to output these when used in double quotes.
+	str = str.replace(/\\\/\*/gm, '_ACSSOPCO');
+	str = str.replace(/\*\\\//gm, '_ACSSOPCL');
+	// Now wipe the rest.
+	str = str.replace(/\/\*[\s\S]*?\*\//gm, '');
+	// Put the escaped ones back.
+	str = str.replace(/_ACSSOPCO/gm, '/*');
+	str = str.replace(/_ACSSOPCL/gm, '*/');
+
 	// Convert the single quotes into double-quotes where applicable and do the necessary escaping.
 	// https://regex101.com/?regex=%28%5B%5C%27%22%5D%29%28%28%5C%5C%5C1%7C.%29%2A%3F%29%5C1&options=gm&text=defined+%28+%27WP_DEBUG%27+%29+||+define%28+%27%5CWP_DEBUG%27%2C+true+%29%3B%0Aecho+%27class%3D%22input-text+card-number%22+type%3D%22text%22+maxlength%3D%2220%22%27%3B%0Aecho+%27How+are+you%3F+I%5C%27m+fine%2C+thank+you%27%3B
 	str = str.replace(/(['"])((\\\1|.)*?)\1/gm, function(_, quot, innards) {
@@ -18,20 +28,12 @@ const _parseConfig = (str, inlineActiveID=null) => {
 			innards = innards.replace(/\\'/gm, '_ACSS_sing_quote');
 			innards = innards.replace(/"/g, '_ACSS_escaped_quote');
 		}
-		innards = innards.replace(COMMENTS, '');
 		return '"' + innards + '"';
 	});
 	str = str.replace(/_ACSS_sing_quote/g, "'");
 
-	// Remove all comments. But not comments within quotes. Easy way is to escape the ones inside, then run a general removal, and then unescape.
-	str = str.replace(INQUOTES, function(_, innards) {
-		return innards.replace(/\/\*/gm, '_ACSSOPCO').replace(/\/\*/gm, '_ACSSCLCO');
-	});
-
-	str = str.replace(COMMENTS, '');
-	str = str.replace(/_ACSSOPCO/gm, '/*').replace(/_ACSSCLCO/, '*/');
-	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing.
-	str = str.replace(/[\r\n]+/g, '');
+	// Remove line-breaks, etc., so we remove any multi-line weirdness in parsing. Maintain HTML display integrity in components when faced with a line break.
+	str = str.replace(/[\r\n]+/g, ' ');
 
 	// Convert @command into a friendly-to-parse body:init event. Otherwise it gets unnecessarily messy to handle later on due to being JS and not CSS.
 	let systemInitConfig = '';

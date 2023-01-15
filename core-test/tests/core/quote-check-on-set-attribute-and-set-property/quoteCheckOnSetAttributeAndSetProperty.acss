@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"quoteCheckOnSetAttributeAndSetProperty\" data-desc=\"Core - check setting attributes and properties with double quotes\" class=\"coreTest\">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>";
-}
-
 @component quoteCheckOnSetAttributeAndSetPropertyHTML {
 	&:componentOpen {
 		#quoteCheckOnSetAttributeAndSetPropertyButton {

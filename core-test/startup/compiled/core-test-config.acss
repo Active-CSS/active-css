@@ -99,6 +99,12 @@ body:init {
 			<div id="checkTrigger" data-desc="Basic trigger command" class="coreTest">{|checkTriggerHTML}</div>
 			<div id="checkTriggerReal" data-desc="Basic trigger-real command" class="coreTest">{|checkTriggerRealHTML}</div>
 			<div id="checkVar" data-desc="Basic var command" class="coreTest">{|checkVarHTML}</div>
+			<!-- System -->
+			<div id="checkAwaitAjax" data-desc="Core - await option for ajax action commands" class="coreTest">{|checkAwaitAjaxHTML}</div>
+			<div id="checkAwait" data-desc="Core - await option for delayed action commands" class="coreTest">{|checkAwaitHTML}</div>
+			<div id="comments" data-desc="Core - check \/* comments *\/" class="coreTest">{|commentsHTML}</div>
+			<div id="continueAfterElementRemoval" data-desc="Core - continue running action commands after element removal" class="coreTest">{|continueAfterElementRemovalHTML}</div>
+			<div id="quoteCheckOnSetAttributeAndSetProperty" data-desc="Core - check setting attributes and properties with double quotes" class="coreTest">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>
 		</div>
 	}
 }
@@ -1562,10 +1568,6 @@ create-element-tag:connectedCallback {
 	func: checkIfVarFinal {ifVarOkCounter} after stack;
 }
 
-#content:draw {
-	render-before-end: "<div id=\"checkAwaitAjax\" data-desc=\"Core - await option for ajax action commands\" class=\"coreTest\">{|checkAwaitAjaxHTML}</div>";
-}
-
 @component checkAwaitAjaxHTML private {
 	&:componentOpen {
 		div {
@@ -1585,10 +1587,6 @@ create-element-tag:connectedCallback {
 #checkAwaitAjax:test {
 }
 
-#content:draw {
-	render-before-end: "<div id=\"checkAwait\" data-desc=\"Core - await option for delayed action commands\" class=\"coreTest\">{|checkAwaitHTML}</div>";
-}
-
 @component checkAwaitHTML privateEvents {
 	&:componentOpen {
 		div {
@@ -1604,9 +1602,28 @@ create-element-tag:connectedCallback {
 #checkAwait:test {
 }
 
-#content:draw {
-	render-before-end: "<div id=\"continueAfterElementRemoval\" data-desc=\"Core - continue running action commands after element removal\" class=\"coreTest\">{|continueAfterElementRemovalHTML}</div>";
+/* Comment {= hi there =}
+*/
+@component /* comment */ commentsHTML {
+	html {
+		/* comment */ 
+		<div id="commentsDiv/*comment*/">\/* comment *\//*comment $&*;'@~*/</div>/* comment */
+		/* comment */
+	}
 }
+
+/***
+ * Another comment style.
+ *
+ // sdlkfjsdlkj
+ * This is a test.
+ * Syntax: {==}"1\"!"$&*;'@~
+*/
+
+#comments:test {
+	/* Do something.! // sdlkfjsdlkj */
+	func: comments /* lkjsdflkjsdf*/;/*sdjfh*/
+/*kjhwer*/}
 
 @component continueAfterElementRemovalHTML {
 	html {
@@ -1626,10 +1643,6 @@ create-element-tag:connectedCallback {
 	func: continueAfterElementRemovalFinal {continueAfterElementVar};
 }
 
-
-#content:draw {
-	render-before-end: "<div id=\"quoteCheckOnSetAttributeAndSetProperty\" data-desc=\"Core - check setting attributes and properties with double quotes\" class=\"coreTest\">{|quoteCheckOnSetAttributeAndSetPropertyHTML}</div>";
-}
 
 @component quoteCheckOnSetAttributeAndSetPropertyHTML {
 	&:componentOpen {
