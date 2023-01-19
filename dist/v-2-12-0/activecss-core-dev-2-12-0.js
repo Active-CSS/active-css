@@ -479,6 +479,9 @@ _a.ConsoleLog = o => {
 		case 'components':
 			console.log(typeDesc, components);
 			return;
+		case 'pages':
+			console.log(typeDesc, pageList);
+			return;
 		case 'trace':
 			console.trace();
 			return;
