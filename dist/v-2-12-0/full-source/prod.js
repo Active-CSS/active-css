@@ -2306,13 +2306,19 @@ const _checkScopeForEv = (evScope) => {
 
 const _cloneAttrs = (el, srcEl) => {
 	let attr, attrs = Array.prototype.slice.call(srcEl.attributes);
+	let isSelect = (el.tagName === 'SELECT');
+ 
 	for (attr of attrs) {
-		if (attr.nodeName == 'href') continue;	// skip the href - we've already got it, otherwise we wouldn't be here.
+		if (attr.nodeName == 'href' && !isSelect) continue;             // skip the href - we've already got it, otherwise we wouldn't be here.
 		// Overwrite what is there, but only if it doesn't exist already.
 		if (attr.nodeName == 'class') {
-			ActiveCSS._addClassObj(el, attr.nodeValue);
+			if (isSelect) {
+				el.className = attr.nodeValue;
+			} else {
+				ActiveCSS._addClassObj(el, attr.nodeValue);
+			}
 		} else {
-			if (!el.getAttribute(attr.nodeName)) el.setAttribute(attr.nodeName, attr.nodeValue);
+			if (!el.getAttribute(attr.nodeName) || isSelect) el.setAttribute(attr.nodeName, attr.nodeValue);
 		}
 	}
 	el.__acssNavSet = 1;
@@ -2830,13 +2836,14 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 
 const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 	// This can get called a lot of times in the same event stack, and we only need to do once per criteria, so process a queue.
-	if (!dom) dom = document;	// Don't move this into parameter default.
-
+	if (!dom) dom = document;          // Don't move this into parameter default.
+ 
 	// This can get called a lot of times, so process a queue and don't queue duplicate calls back into this function.
 	// _handleEvents, which is used in here, can generate more calls back into this function, which is necessary, but not if we already have the same
 	// thing already queued.
 	// The key to this is to remember that we do process this function if dom + justCustomSelectors is a unique entry for this queue.
 	// observeEventsQueue and observeEventsMid are objects so that states can be deleted cleanly when ended with minimal fuss.
+/*            comment out for the moment - seems to be a loop going on sometimes.
 	let ref, skipQueue;
 	if (dom.nodeType == 9) {
 		// This is the document.
@@ -2845,16 +2852,16 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		// This is a document fragment.
 		let domFirstChild = dom.firstChild;
 		if (domFirstChild) {
-			if (domFirstChild === Node.TEXT_NODE) return;	// If the document only has a text node then it's not a valid document for ACSS. Skip observe events.
+			if (domFirstChild === Node.TEXT_NODE) return; // If the document only has a text node then it's not a valid document for ACSS. Skip observe events.
 			ref = (domFirstChild._acssActiveID) ? dom.firstChild._acssActiveID : _getActiveID(dom.firstChild).substr(3);
 		} else {
 			// It shouldn't really get in here, but if it does due to an empty component, just skip the queueing and run.
 			skipQueue = true;
 		}
 	}
-
+ 
 	if (!skipQueue) {
-		if (observeEventsQueue[ref]) return;		// Already queued to the end of the event stack - skip.
+		if (observeEventsQueue[ref]) return;	       // Already queued to the end of the event stack - skip.
 		if (observeEventsMid[ref]) {
 			observeEventsQueue[ref] = true;
 			setTimeout(() => {
@@ -2864,11 +2871,12 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		}
 		observeEventsMid[ref] = true;
 	}
+*/
 
 	// Handle cross-element observing for all observe events.
 	let evType = 'observe', i, primSel, compSelCheckPos, testSel, compDetails;
 	if (!selectors[evType]) return;
-
+ 
 	// Loop observe events.
 	let selectorListLen = selectors[evType].length;
 	for (i = 0; i < selectorListLen; i++) {
@@ -2881,8 +2889,8 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 		} else if (!justCustomSelectors) {
 			let compDetails;
 			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
-
-			dom.querySelectorAll(sel).forEach(obj => {		// jshint ignore:line
+ 
+			dom.querySelectorAll(sel).forEach(obj => {	            // jshint ignore:line
 				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
 				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
 				if (obj === document.body) {
@@ -2894,8 +2902,8 @@ const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
 			});
 		}
 	}
-
-	if (!skipQueue) delete observeEventsMid[ref];
+ 
+//            if (!skipQueue) delete observeEventsMid[ref];
 };
 
 const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(null, shadowDOM);
@@ -3083,7 +3091,7 @@ const _handleVarsInJS = function(str, varScope) {
 };
 
 const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
-	if (e.target.id == 'cause-js-elements-ext') return;	// Internally triggered by extension to get bubble state. Don't run anything.
+	if (e.target.id == 'cause-js-elements-ext') return; // Internally triggered by extension to get bubble state. Don't run anything.
 	let el;
 	let bod = (e.target == self || e.target.body);
 	if (typ != 'click' && bod) {
@@ -3094,8 +3102,8 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 	} else if (e.primSel) {
 		el = e.secSelObj;
 	} else {
-		if (typ == 'click' && e.button !== 0) return;		// We only want the left button.
-		el = e.target;	// Take in the object if called direct, or the event.
+		if (typ == 'click' && e.button !== 0) return;	             // We only want the left button.
+		el = e.target;       // Take in the object if called direct, or the event.
 	}
 	if (typ == 'click' && e.primSel != 'bypass') {
 		// Check if there are any click-away events set.
@@ -3107,16 +3115,16 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			return false;
 		}
 	}
-
+ 
 	let composedPath;
 	composedPath = _composedPath(e);
-
+ 
 	// Each real event gets it's own counter as a pointer to a central real object event.
 	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
 	// It is empty at first and gets added to when referencing is needed.
 	mainEventCounter++;
 	maEv[mainEventCounter] = { };
-
+ 
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
 	// to get a bit creative with the handling. Event listeners occur in the order of registration, which will always give us a bubble down effect, so we have to
@@ -3131,10 +3139,8 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
 		let navSet = false;
-		let isMouseoverLink = (typ == 'mouseover' && !bod);
-		let isClick = (typ == 'click');
 		for (el of composedPath) {
-			if (isMouseoverLink) {
+			if (typ == 'mouseover' && !bod) {
 				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
 					// Set up any attributes needed for navigation from the routing declaration if this is being used.
 					_setUpNavAttrs(el, el.tagName);
@@ -3143,7 +3149,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			}
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (!navSet && isClick && (el.tagName == 'A' || el.tagName == 'OPTION') && el.__acssNavSet !== 1) {
+			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1 || typ == 'change' && el.tagName == 'SELECT') {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				_setUpNavAttrs(el, el.tagName);
 				navSet = true;
@@ -3151,11 +3157,11 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
 			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
-			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;		// el can be deleted during the handleEvent.
+			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 		}
 		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
-
+ 
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
 	setTimeout(function() { maEv = maEv.filter(function(_, i) { return i != mainEventCounter; }); }, 10000);
@@ -4659,7 +4665,7 @@ const _setUpForObserve = (useForObserveID, useForObservePrim, condClause) => {
 };
 
 const _setUpNavAttrs = (el, tag) => {
-	let hrf = (tag == 'OPTION') ? el.getAttribute('data-page') : el.getAttribute('href');
+	let hrf = (tag == 'SELECT') ? el.options[el.selectedIndex].getAttribute('data-page') : el.getAttribute('href');
 	if (hrf) {
 		let pageItem = _getPageFromList(hrf);
 		if (pageItem) {
