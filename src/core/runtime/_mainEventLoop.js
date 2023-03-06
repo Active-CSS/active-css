@@ -47,19 +47,21 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
 		let navSet = false;
+		let isMouseoverLink = (typ == 'mouseover' && !bod);
+		let isClick = (typ == 'click');
 		for (el of composedPath) {
-			if (typ == 'mouseover' && !bod) {
+			if (isMouseoverLink) {
 				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
 					// Set up any attributes needed for navigation from the routing declaration if this is being used.
-					_setUpNavAttrs(el);
+					_setUpNavAttrs(el, el.tagName);
 					navSet = true;
 				}
 			}
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
+			if (!navSet && isClick && (el.tagName == 'A' || el.tagName == 'OPTION') && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
-				_setUpNavAttrs(el);
+				_setUpNavAttrs(el, el.tagName);
 				navSet = true;
 			}
 			// Is this in the document root or a shadow DOM root?

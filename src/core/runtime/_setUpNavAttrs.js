@@ -1,5 +1,5 @@
-const _setUpNavAttrs = (el) => {
-	let hrf = el.getAttribute('href');
+const _setUpNavAttrs = (el, tag) => {
+	let hrf = (tag == 'OPTION') ? el.getAttribute('data-page') : el.getAttribute('href');
 	if (hrf) {
 		let pageItem = _getPageFromList(hrf);
 		if (pageItem) {

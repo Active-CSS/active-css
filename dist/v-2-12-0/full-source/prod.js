@@ -3131,19 +3131,21 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
 		let navSet = false;
+		let isMouseoverLink = (typ == 'mouseover' && !bod);
+		let isClick = (typ == 'click');
 		for (el of composedPath) {
-			if (typ == 'mouseover' && !bod) {
+			if (isMouseoverLink) {
 				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
 					// Set up any attributes needed for navigation from the routing declaration if this is being used.
-					_setUpNavAttrs(el);
+					_setUpNavAttrs(el, el.tagName);
 					navSet = true;
 				}
 			}
 			if (el.nodeType !== 1) continue;
 			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1) {
+			if (!navSet && isClick && (el.tagName == 'A' || el.tagName == 'OPTION') && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
-				_setUpNavAttrs(el);
+				_setUpNavAttrs(el, el.tagName);
 				navSet = true;
 			}
 			// Is this in the document root or a shadow DOM root?
@@ -4656,8 +4658,8 @@ const _setUpForObserve = (useForObserveID, useForObservePrim, condClause) => {
 	if (elObserveTrack[useForObserveID][useForObservePrim][condClause] === undefined) elObserveTrack[useForObserveID][useForObservePrim][condClause] = {};
 };
 
-const _setUpNavAttrs = (el) => {
-	let hrf = el.getAttribute('href');
+const _setUpNavAttrs = (el, tag) => {
+	let hrf = (tag == 'OPTION') ? el.getAttribute('data-page') : el.getAttribute('href');
 	if (hrf) {
 		let pageItem = _getPageFromList(hrf);
 		if (pageItem) {
@@ -11213,6 +11215,8 @@ const _getSelector = (o, sel, many=false) => {
 		}
 
 		let returnEls = [];
+		if (typeof mainObj[Symbol.iterator] !== 'function') mainObj = [ mainObj ];
+
 		for (const thisObj of mainObj) {
 			switch (typ) {
 				case 'closest':
@@ -11223,7 +11227,7 @@ const _getSelector = (o, sel, many=false) => {
 
 				case 'prevAdj':
 					if (mainObj) {
-						let prevSibl = thisObj.previousSibling;
+						let prevSibl = thisObj.previousElementSibling;
 						mainObj = (prevSibl && prevSibl.matches(firstSel)) ? prevSibl : null;
 						if (mainObj) mainObj = [ mainObj ];
 					}
@@ -11273,12 +11277,12 @@ const _getSelector = (o, sel, many=false) => {
 	function getPreviousSiblings(elem, filter) {
 		// https://stackoverflow.com/questions/4378784/how-to-find-all-siblings-of-the-currently-selected-dom-object
 		let sibs = [];
-		let prevEl = elem.previousSibling;
+		let prevEl = elem.previousElementSibling;
 		while (prevEl) {
 			if (prevEl.nodeType === Node.ELEMENT_NODE && prevEl.matches(filter)) {
 				sibs.push(prevEl);
 			}
-			prevEl = prevEl.previousSibling;
+			prevEl = prevEl.previousElementSibling;
 		}
 		return sibs;
 	}
