@@ -288,9 +288,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
 			// event in the mutation section would otherwise not get run.
 			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
-
-			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
-			_handleObserveEvents(null, shadow, true);
 		}
 	}, 0);
 

@@ -2,7 +2,7 @@
 ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideShadowDOM=false) {
 	if (mutations[0].type == 'attributes' && mutations[0].attributeName == 'data-activeid') return;
 
-	if (selectors.observe) _handleObserveEvents(mutations, dom);
+	if (selectors.observe) _handleObserveEvents(dom);
 
 	let changeNodeList = [];
 	mutations.forEach(mutation => {

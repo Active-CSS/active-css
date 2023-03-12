@@ -201,6 +201,7 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
+		observeMidDom = [],
 		pageList = [],
 		pageWildcards = [],
 		pageWildReg = [],

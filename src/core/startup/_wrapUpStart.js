@@ -50,9 +50,6 @@ const _wrapUpStart = (o) => {
 		// event in the mutation section would otherwise not get run.
 		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
 
-		// Iterate document level custom selectors that use the observe event and run any of those that pass the conditionals.
-		_handleObserveEvents(null, document, true);
-
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
 		if (!inIframe) {

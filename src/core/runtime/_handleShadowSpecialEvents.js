@@ -1,1 +1,1 @@
-const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(null, shadowDOM);
+const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(shadowDOM);

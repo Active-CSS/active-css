@@ -88,7 +88,7 @@ _a.CreateElement = o => {
 				// Handle shadow DOM observe event. Ie. Tell the inner DOM elements that something has changed outside. We only do this when there has
 				// been a change with the host attributes so we keep the isolation aspect of each shadow DOM. This way, the inner component can set
 				// an observe event on the host, which is outside of the actual shadow DOM.
-				'if (this.shadowRoot) _handleObserveEvents(null, this.shadowRoot);' +
+				'if (this.shadowRoot) _handleObserveEvents(this.shadowRoot);' +
 			'}';
 	}
 	createTagJS +=

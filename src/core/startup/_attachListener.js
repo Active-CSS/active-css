@@ -61,7 +61,7 @@ ActiveCSS._theEventFunction = e => {
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 			if (ev == 'change') {
 				// Simulate a mutation and go straight to the observe event handler.
-				_handleObserveEvents(null, compDoc);
+				_handleObserveEvents(compDoc);
 			} else {
 				if (ev.indexOf('fullscreenchange') !== -1) {
 					let fsDet = _fullscreenDetails();

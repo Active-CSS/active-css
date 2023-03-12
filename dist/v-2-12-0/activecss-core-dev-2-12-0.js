@@ -201,6 +201,7 @@
 		mediaQueriesOrig = [],
 		mimicClones = [],
 		nonPassiveEvents = [],
+		observeMidDom = [],
 		pageList = [],
 		pageWildcards = [],
 		pageWildReg = [],
@@ -700,7 +701,7 @@ _a.CreateElement = o => {
 				// Handle shadow DOM observe event. Ie. Tell the inner DOM elements that something has changed outside. We only do this when there has
 				// been a change with the host attributes so we keep the isolation aspect of each shadow DOM. This way, the inner component can set
 				// an observe event on the host, which is outside of the actual shadow DOM.
-				'if (this.shadowRoot) _handleObserveEvents(null, this.shadowRoot);' +
+				'if (this.shadowRoot) _handleObserveEvents(this.shadowRoot);' +
 			'}';
 	}
 	createTagJS +=
@@ -1566,7 +1567,7 @@ _a.SetCookie = o => {
 _a.SetProperty = o => {
 	if (!_isConnected(o.secSelObj)) return false;
 	_a.SetAttribute(o);
-	_handleObserveEvents(null, o.doc);
+	_handleObserveEvents(o.doc);
 };
 
 _a.StopEventPropagation = o => _stopEventPropagation(o);
@@ -2832,42 +2833,49 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	_nextFunc(o);
  };
 
-const _handleObserveEvents = (mutations, dom, justCustomSelectors=false) => {
-	// This can get called a lot of times in the same event stack, and we only need to do once per criteria, so process a queue.
-	if (!dom) dom = document;          // Don't move this into parameter default.
+const _handleObserveEvents = dom => {
+	// This could get called a number of times in the same event stack, and we only need to do once per criteria, so process a queue.
+	if (!_isDOMObj(dom)) dom = document;          // Don't move this into parameter default.
+
+	if (!observeMidDom.find(el => el.isSameNode(dom))) {
+		observeMidDom.push(dom);
+ 		setTimeout(() => {
+			// Handle cross-element observing for all observe events.
+			let evType = 'observe', i, primSel, compSelCheckPos, testSel, compDetails;
+			if (!selectors[evType]) return;
  
-	// Handle cross-element observing for all observe events.
-	let evType = 'observe', i, primSel, compSelCheckPos, testSel, compDetails;
-	if (!selectors[evType]) return;
- 
-	// Loop observe events.
-	let selectorListLen = selectors[evType].length;
-	for (i = 0; i < selectorListLen; i++) {
-		primSel = selectors[evType][i];
-		compSelCheckPos = primSel.indexOf(':');
-		testSel = primSel.substr(compSelCheckPos + 1);
-		if (testSel.substr(0, 1) == '~') {
-			// This is a custom selector.
-			_handleEvents({ obj: testSel, evType });
-		} else if (!justCustomSelectors) {
-			let compDetails;
-			let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
- 
-			dom.querySelectorAll(sel).forEach(obj => {	            // jshint ignore:line
-				// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
-				// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
-				if (obj === document.body) {
-					_handleEvents({ obj, evType });
+			// Loop observe events.
+			let selectorListLen = selectors[evType].length;
+			for (i = 0; i < selectorListLen; i++) {
+				primSel = selectors[evType][i];
+				compSelCheckPos = primSel.indexOf(':');
+				testSel = primSel.substr(compSelCheckPos + 1);
+				if (testSel.substr(0, 1) == '~') {
+					// This is a custom selector.
+					_handleEvents({ obj: testSel, evType });
 				} else {
-					compDetails = _componentDetails(obj);
-					_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+					let compDetails;
+					let sel = (primSel.substr(0, 1) == '|') ? testSel : primSel;
+ 
+					dom.querySelectorAll(sel).forEach(obj => {	            // jshint ignore:line
+						// There are elements that match. Now we can run _handleEvents on each one to check the conditionals, etc.
+						// We need to know the component details if there are any of this element for running the event so we stay in the context of the element.
+						if (obj === document.body) {
+							_handleEvents({ obj, evType });
+						} else {
+							compDetails = _componentDetails(obj);
+							_handleEvents({ obj, evType, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });
+						}
+					});
 				}
-			});
-		}
+			}
+			let ind = observeMidDom.findIndex(el => el.isSameNode(dom));
+			observeMidDom.splice(ind,1);
+		}, 0);
 	}
 };
 
-const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(null, shadowDOM);
+const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(shadowDOM);
 
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
@@ -3141,7 +3149,7 @@ const _nextFunc = o => {
 ActiveCSS._nodeMutations = function(mutations, observer, dom=document, insideShadowDOM=false) {
 	if (mutations[0].type == 'attributes' && mutations[0].attributeName == 'data-activeid') return;
 
-	if (selectors.observe) _handleObserveEvents(mutations, dom);
+	if (selectors.observe) _handleObserveEvents(dom);
 
 	let changeNodeList = [];
 	mutations.forEach(mutation => {
@@ -4230,9 +4238,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
 			// event in the mutation section would otherwise not get run.
 			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
-
-			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
-			_handleObserveEvents(null, shadow, true);
 		}
 	}, 0);
 
@@ -5792,7 +5797,7 @@ ActiveCSS._theEventFunction = e => {
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 			if (ev == 'change') {
 				// Simulate a mutation and go straight to the observe event handler.
-				_handleObserveEvents(null, compDoc);
+				_handleObserveEvents(compDoc);
 			} else {
 				if (ev.indexOf('fullscreenchange') !== -1) {
 					let fsDet = _fullscreenDetails();
@@ -6921,9 +6926,6 @@ const _wrapUpStart = (o) => {
 		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
 		// event in the mutation section would otherwise not get run.
 		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
-
-		// Iterate document level custom selectors that use the observe event and run any of those that pass the conditionals.
-		_handleObserveEvents(null, document, true);
 
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 
@@ -12067,6 +12069,10 @@ const _isCond = cond => typeof _c[cond] === 'function';
 
 const _isConnected = obj => {
 	return (obj.isConnected || obj === self || obj === document.body);
+};
+
+const _isDOMObj = node => {
+    return node instanceof Element || node instanceof HTMLDocument;  
 };
 
 const _isInlineLoaded = nod => {
