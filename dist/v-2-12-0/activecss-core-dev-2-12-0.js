@@ -8313,7 +8313,6 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	// For this to be totally safe, we escape the contents of the attribute before inserting.
 	if (!sel) return '';
 	if (sel.indexOf('{@') !== -1) {
-		sel = sel.replace(/__acssVAssigned\%\%/g, '');
 		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
 			let getProperty = false;
 			let realWot = wot;
@@ -8374,16 +8373,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					}
 				}
 			}
-			if (func == 'Var' && !wot.startsWith('host')) {
-
-//console.log('_replaceAttrs, realWot:', realWot);
-
-				// Assume it isn't ready to be evaluated. Useful for presetting on variable assignment. Encrypt a bit, but only to stop someone accidentally typing
-				// it in user content - there is no security risk with this, because any attribute referenced is on the page already.
-				return '{@__acssVAssigned%%' + realWot + '}';
-			} else {
-				return '';	// More useful to return an empty string. '{@' + wot + '>';
-			}
+			return '';
 		});
 	}
 	function checkAttrProp(el, wot, getProperty, func, varReplacementRef) {
