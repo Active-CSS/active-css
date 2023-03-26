@@ -23,6 +23,9 @@ const _wrapUpStart = (o) => {
 			subtree: true
 		});
 
+		// Component intersection observer.
+		compIO = new IntersectionObserver(_handleCompIO);
+
 		setupEnded = true;
 
 		// Handle any developer initialization events
@@ -46,9 +49,6 @@ const _wrapUpStart = (o) => {
 		// Note this needs to be here, because the document elements that are not components have already been drawn and so the observe
 		// event in the mutation section would otherwise not get run.
 		_runInnerEvent(null, '*:not(template *)', 'observe', document, true);
-
-		// Iterate document level custom selectors that use the observe event and run any of those that pass the conditionals.
-		_handleObserveEvents(null, document, true);
 
 		_handleEvents({ obj: 'body', evType: 'scroll' });	// Handle any immediate scroll actions on the body if any present. Necessary when refreshing a page.
 

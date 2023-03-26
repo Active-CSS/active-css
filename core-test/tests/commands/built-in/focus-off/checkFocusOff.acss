@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkFocusOff\" data-desc=\"Basic focus-off command\" class=\"coreTest\">{|checkFocusOffHTML}</div>";
-}
-
 @component checkFocusOffHTML {
 	html {
 		<input id="focusOffField" type="text" value="This text field will get focus after one second, and then will blur - or focus-off - two seconds after that.">

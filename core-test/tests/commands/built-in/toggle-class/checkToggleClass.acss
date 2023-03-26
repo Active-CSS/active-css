@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkToggleClass\" data-desc=\"Basic toggle-class command\" class=\"coreTest\">{|checkToggleClassHTML}</div>";
-}
-
 @component checkToggleClassHTML {
 	html {
 		<div id="toggleClassBox" class="exampleSquare"></div>

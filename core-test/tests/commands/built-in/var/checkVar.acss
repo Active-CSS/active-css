@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkVar\" data-desc=\"Basic var command\" class=\"coreTest\">{|checkVarHTML}</div>";
-}
-
 @component checkVarHTML {
 	&:componentOpen {
 		var: varTestArray [],

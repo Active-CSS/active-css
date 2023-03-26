@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkFunc\" data-desc=\"Basic func command\" class=\"coreTest\"></div>";
-}
-
 #checkFunc:test {
 	var: window.acSSGlobIt "some data";
 	var: myACSSVariable {myObj: true, myArray: [1, 2, 3, 4]};

@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkClickOnNextCycle\" data-desc=\"Basic click-on-next-cycle command\" class=\"coreTest\">{|checkClickOnNextCycleHTML}</div>";
-}
-
 @component checkClickOnNextCycleHTML {
 	html {
 		<div id="clickOnNextCycleDiv">

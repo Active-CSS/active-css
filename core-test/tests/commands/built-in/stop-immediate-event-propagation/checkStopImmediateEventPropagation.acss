@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkStopImmediateEventPropagation\" data-desc=\"Basic stop-immediate-event-propagation command\" class=\"coreTest\">{|checkStopImmediateEventPropagationHTML}</div>";
-}
-
 @component checkStopImmediateEventPropagationHTML {
 	&:beforeComponentOpen {
 		var: checkStopImmedEvPropFail false;

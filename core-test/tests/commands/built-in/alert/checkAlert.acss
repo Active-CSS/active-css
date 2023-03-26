@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkAlert\" data-desc=\"Basic alert command\" class=\"coreTest\"></div>";
-}
-
 #checkAlert:test {
 	alert: "checkAlert";
 }

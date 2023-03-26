@@ -1,6 +1,6 @@
-/* Dunno why this is suddenly failing in Karma - it works for real as of 25.12.20 - needs sorting out.
+/* Karma changed as of 25.12.20 and the URL remains /context... works fine in a real browser though.
 #content:draw {
-	render-before-end: "<div id=\"checkUrlChange\" data-desc=\"Basic url-change command\" class=\"coreTest\"></div>";
+	render-before-end: "<div id="checkUrlChange" data-desc="Basic url-change command" class="coreTest"></div>";
 }
 
 #checkUrlChange:test {

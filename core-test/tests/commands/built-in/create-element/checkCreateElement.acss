@@ -1,11 +1,10 @@
-#content:draw {
+body:init {
 	create-element: create-element-tag observe(cetaga cetagb);
 	var: ceStringTest "stringtest",
 		createElementConnectCallbackVar false,
 		createElementDisconnectedCallbackVar false,
 		createElementAttributeChangeVar false
 	;
-	render-before-end: "<div id=\"checkCreateElement\" data-desc=\"Basic create-element command\" class=\"coreTest\">{|checkCreateElementHTML}</div>";
 }
 
 @component checkCreateElementHTML {

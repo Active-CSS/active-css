@@ -1,0 +1,22 @@
+/* Comment {= hi there =}
+*/
+@component /* comment */ commentsHTML {
+	html {
+		/* comment */ 
+		<div id="commentsDiv/*comment*/">\/* comment *\//*comment $&*;'@~*/</div>/* comment */
+		/* comment */
+	}
+}
+
+/***
+ * Another comment style.
+ *
+ // sdlkfjsdlkj
+ * This is a test.
+ * Syntax: {==}"1\"!"$&*;'@~
+*/
+
+#comments:test {
+	/* Do something.! // sdlkfjsdlkj */
+	func: comments /* lkjsdflkjsdf*/;/*sdjfh*/
+/*kjhwer*/}

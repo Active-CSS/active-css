@@ -44,7 +44,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
 						// This is an html component. Stored like the conditional but in a different place.
-						let checkCompName = strTrimmed.split(' ')[1].trim();
+						let checkCompName = strTrimmed.replace(/\s+/g, ' ').split(' ')[1].trim();
 						let compName, elementName;
 						if (checkCompName.indexOf('-') !== -1) {
 							// This is an element. Generate the internal component name for tying into the element.
@@ -85,7 +85,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 								if (componentOpts.selector) components[compName].selector = componentOpts.selector;
 								checkStr = componentOpts.action;
 							}
-							checkStr += ' ';
+							checkStr += ' ';	// makes it possible to have a simple index check for values.
 							// Does this have shadow DOM creation instructions? ie. shadow open or shadow closed. Default to open.
 							if (checkStr.indexOf(' shadow ') !== -1) {
 								components[compName].shadow = true;
@@ -100,6 +100,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								components[compName].acceptVars = true;
 							}
+							components[compName].renderWhenVisible = (checkStr.indexOf(' render-when-visible ') !== -1);
 							if (checkStr.indexOf(' strictlyPrivateVars ') !== -1 || checkStr.indexOf(' strictlyPrivate ') !== -1) {
 								components[compName].strictVars = true;
 								components[compName].privVars = true;

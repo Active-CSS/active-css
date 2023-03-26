@@ -8,8 +8,9 @@ ActiveCSS.trigger = (sel, ev, varScope, compDoc, component, evScope, eve) => {
 	*/
 	// Subject to conditionals.
 	if (typeof sel == 'object') {
-		// This is an object that was passed.
-		_handleEvents({ obj: sel, evType: ev, varScope, evScope, compDoc, component, eve });
+		// This is an object that was passed. Get the correct component for this element.
+		let compDetails = (sel.hasAttribute('data-active-scoped')) ? _getComponentDetails(sel) : _componentDetails(sel);
+		_handleEvents({ obj: sel, evType: ev, varScope: compDetails.varScope, evScope: compDetails.evScope, compDoc: compDetails.compDoc, component: compDetails.component, eve });
 	} else {
 		_a.Trigger({ secSel: sel, actVal: ev, varScope, evScope, compDoc, component, eve });
 	}

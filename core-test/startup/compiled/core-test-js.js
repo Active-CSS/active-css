@@ -1331,7 +1331,7 @@ function checkLoadConfig(o) {
 	let checkLoadConfigEl = _initTest('checkLoadConfig');
 	if (!checkLoadConfigEl) return;
 
-	let el = _getObj('#checkLoadConfig div');
+	let el = _getObj('#loadConfigResults');
 	if (!el) {
 		_fail(checkLoadConfigEl, 'The test div was not drawn prior to the load-config command before run.');
 	} else if (el.innerHTML !== 'Here is some text.') {
@@ -2286,6 +2286,21 @@ function checkAwait(o) {
 
 	_addSuccessClass(checkAwaitEl);
 
+}
+
+function comments(o) {
+	let commentsEl = _initTest('comments');
+	if (!commentsEl) return;
+
+	let divEl = _getObj('#commentsDiv');
+	if (!divEl) {
+		_fail(commentsEl, 'Comment component test element #commentsDiv not found.');
+	}
+	if (divEl.innerHTML != '/* comment */') {
+		_fail(commentsEl, 'Escaped comment did not render in the test div, should be /* comment */, but was:', divEl.innerHTML);
+	}
+
+	_addSuccessClass(commentsEl);
 }
 
 function continueAfterElementRemoval_1(o) {

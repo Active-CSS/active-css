@@ -1,7 +1,3 @@
-#content:draw {
-	render-before-end: "<div id=\"checkAjax\" data-desc=\"Basic ajax command\" class=\"coreTest\">{|checkAjaxHTML}</div>";
-}
-
 @component checkAjaxHTML {
 	&:beforeComponentOpen {
 		ajax: "/base/core-test/tests/resource-files/ajax-test-1.txt";

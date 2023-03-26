@@ -233,6 +233,8 @@ const _getSelector = (o, sel, many=false) => {
 		}
 
 		let returnEls = [];
+		if (typeof mainObj[Symbol.iterator] !== 'function') mainObj = [ mainObj ];
+
 		for (const thisObj of mainObj) {
 			switch (typ) {
 				case 'closest':
@@ -243,7 +245,7 @@ const _getSelector = (o, sel, many=false) => {
 
 				case 'prevAdj':
 					if (mainObj) {
-						let prevSibl = thisObj.previousSibling;
+						let prevSibl = thisObj.previousElementSibling;
 						mainObj = (prevSibl && prevSibl.matches(firstSel)) ? prevSibl : null;
 						if (mainObj) mainObj = [ mainObj ];
 					}
@@ -293,12 +295,12 @@ const _getSelector = (o, sel, many=false) => {
 	function getPreviousSiblings(elem, filter) {
 		// https://stackoverflow.com/questions/4378784/how-to-find-all-siblings-of-the-currently-selected-dom-object
 		let sibs = [];
-		let prevEl = elem.previousSibling;
+		let prevEl = elem.previousElementSibling;
 		while (prevEl) {
 			if (prevEl.nodeType === Node.ELEMENT_NODE && prevEl.matches(filter)) {
 				sibs.push(prevEl);
 			}
-			prevEl = prevEl.previousSibling;
+			prevEl = prevEl.previousElementSibling;
 		}
 		return sibs;
 	}

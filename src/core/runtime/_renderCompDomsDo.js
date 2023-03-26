@@ -2,18 +2,44 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
 		shadPar, shadEv, strictVars, privVars, acceptVars;
 
-	shadowParent = obj.parentNode;
-	parentCompDetails = _componentDetails(shadowParent);
-	shadRef = obj.getAttribute('data-ref');
-
 	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
 	componentName = obj.getAttribute('data-name');
+	shadowParent = obj.parentNode;
+
+	if (components[componentName].renderWhenVisible) {
+		if ('IntersectionObserver' in window) {
+			// Come back in here when it is visible.
+			if (shadowParent._acssCompIO) {
+				// This has already been prepared, and is now ready to be rendered. Clean-up io props and skip the rest.
+				compIO.unobserve(shadowParent);
+				delete shadowParent._acssCompIO;
+			} else {
+				shadowParent._acssCompIO = {};
+				let props = shadowParent._acssCompIO;
+				props.o = o;
+				props.obj = obj;
+				props.childTree = childTree;
+				props.numTopNodesInRender = numTopNodesInRender;
+				props.numTopElementsInRender = numTopElementsInRender;
+				obj.setAttribute('data-pending-visible', '');
+				compIO.observe(shadowParent);
+				return;
+			}
+		} else {
+			// Show a warning that this isn't supported in this browser.
+			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.');
+		}
+	}
+
 	strictlyPrivateEvents = components[componentName].strictPrivEvs;
 	privateEvents = components[componentName].privEvs;
 	isShadow = components[componentName].shadow;
 	strictVars = components[componentName].strictVars;
 	privVars = components[componentName].privVars;
 	acceptVars = components[componentName].acceptVars;
+
+	parentCompDetails = _componentDetails(shadowParent);
+	shadRef = obj.getAttribute('data-ref');
 
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
@@ -247,13 +273,14 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 
 		shadow.querySelectorAll('*:not(template *)').forEach(function(obj) {
+			if (!_isConnected(obj)) return;
 			if (obj.tagName == 'DATA-ACSS-COMPONENT') {
 				// Handle any shadow DOMs now pending within this shadow DOM.
 				_renderCompDomsDo(o, obj);
 				return;
 			}
 			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			_handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			if (!obj._acssDrawn) _handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 		});
 
 		if (isShadow) {
@@ -261,9 +288,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
 			// event in the mutation section would otherwise not get run.
 			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
-
-			// Iterate custom selectors that use the observe event and run any of those that pass the conditionals.
-			_handleObserveEvents(null, shadow, true);
 		}
 	}, 0);
 
