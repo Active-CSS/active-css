@@ -1,6 +1,6 @@
 {
 	"name": "activecss",
-	"version": "2.12.0",
+	"version": "2.12.1",
 	"description": "Modern framework features integrated into CSS.",
 	"main": "index.js",
 	"repository": "https://github.com/Active-CSS/active-css",

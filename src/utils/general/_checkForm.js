@@ -25,7 +25,7 @@ const _checkForm = (frm, wot) => {
 				switch (n.type.toLowerCase()) {
 					case 'checkbox':
 						c = (n.checked != n.defaultChecked);
-						parStr += parAdd + n.getAttribute('name') + '=' + ((n.checked) ? 'on' : '');
+						parStr += parAdd + n.getAttribute('name') + '=' + ((n.checked) ? ((n.value) ? n.value : 'on') : '');
 						break;
 					case 'radio':
 						c = (n.checked != n.defaultChecked);
