@@ -9489,10 +9489,13 @@ const _addActValRaw = o => {
 		case 'json':
 			mime = 'application/json';
 			break;
+		case 'data':
+			mime = '';	// browser will set the multipart type automatically with a boundary.
+			break;
 		default:
 			mime = 'application/x-www-form-urlencoded';
 	}
-	r.setRequestHeader('Content-type', mime);
+	if (mime) r.setRequestHeader('Content-type', mime);
 	if (o) {
 		if (o.csrf) {
 			// Is there a meta tag with X-CSRF-TOKEN present?
@@ -9822,7 +9825,36 @@ const _ajaxDo = o => {
 			if (preGetting[o.finalURL]) return;	// Already in the process of getting - skip. Note: skip race condition handling - pre-get is a nicety.
 			preGetting[o.finalURL] = true;
 		}
-		_ajax(o.formMethod, o.dataType, url, o.pars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
+		let finalPars = o.pars;
+		let finalDataType = o.dataType;
+		if (o.formMethod == 'POST' && o.formSubmit) {
+			// Is there a file in the form? If so, we need to do something a bit different.
+			let formData = new FormData();
+			let fileFound = false;
+			let e = 0;
+			let el = o.secSelObj.elements.length;
+			let n;
+			for (e = 0, el; e < el; e++) {
+				n = o.secSelObj.elements[e];
+		 		if (!n.hasAttribute('name') || n.disabled) continue;
+				if (n.nodeName.toLowerCase() == 'input' && n.type.toLowerCase() == 'file' && n.value != '') {
+					fileFound = true;
+					// Add the file(s) to the FormData object.
+					Array.from(n.files).forEach(file => {	// jshint ignore:line
+						formData.append(n.name, file);
+					});
+				}
+			}
+			if (fileFound) {
+				// Convert o.pars to a FormData object to join any attached files.
+				new URLSearchParams(o.pars).forEach((val, key) => {
+					formData.append(key, val);
+				});
+				finalPars = formData;
+				finalDataType = 'data';
+			}
+		}
+		_ajax(o.formMethod, finalDataType, url, finalPars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
 	}
 };
 
@@ -10048,17 +10080,6 @@ const _checkForm = (frm, wot) => {
 		c = false;
  		if (!n.hasAttribute('name') || n.disabled) continue;
 		switch (n.nodeName.toLowerCase()) {
-			case 'select':
-				def = 0;
-				for (i = 0, ol = n.options.length; i < ol; i++) {
-					opt = n.options[i];
-					c = c || (opt.selected != n.defaultSelected);
-					if (opt.defaultSelected) def = i;
-				}
-				if (c && !n.multiple) c = (def != n.selectedIndex);
-				parStr += parAdd + n.getAttribute('name') + '=' + encodeURIComponent(n.options[n.selectedIndex].value);
-				break;
-			case 'textarea':
 			case 'input':
 				switch (n.type.toLowerCase()) {
 					case 'checkbox':
@@ -10077,6 +10098,19 @@ const _checkForm = (frm, wot) => {
 						break;
 				}
 				break;
+
+			case 'select':
+				def = 0;
+				for (i = 0, ol = n.options.length; i < ol; i++) {
+					opt = n.options[i];
+					c = c || (opt.selected != n.defaultSelected);
+					if (opt.defaultSelected) def = i;
+				}
+				if (c && !n.multiple) c = (def != n.selectedIndex);
+				parStr += parAdd + n.getAttribute('name') + '=' + encodeURIComponent(n.options[n.selectedIndex].value);
+				break;
+
+			case 'textarea':
 			default:
 				c = (n.value != n.defaultValue);
 				parStr += (pars) ? parAdd + n.getAttribute('name') + '=' + encodeURIComponent(n.value) : '';
@@ -10092,6 +10126,47 @@ const _checkForm = (frm, wot) => {
 		return '_ACSSFORMNAME=' + (frm.name ? frm.name : '') + parStr;
 	}
 };
+
+
+/*
+const _checkForm = frm => {
+	return Array.from(frm).some(el => {
+		switch (el.nodeName.toLowerCase()) {
+			case 'input':
+				switch (el.type.toLowerCase()) {
+					case 'checkbox':
+					case 'radio':
+						if (el.checked != el.defaultChecked) return true;
+						break;
+
+					default:
+						if (el.value != el.defaultValue) return true;
+						break;
+				}
+				break;
+
+			case 'select':
+				// Doesn't yet support multiple option selects.
+				let def = 0, i, ol, opt, c;
+				for (i = 0, ol = el.options.length; i < ol; i++) {
+					opt = el.options[i];
+					c = c || (opt.selected != el.defaultSelected);
+					if (opt.defaultSelected) def = i;
+				}
+				if (c && !el.multiple) {
+					if (def != el.selectedIndex) return true;
+				}
+				break;
+
+			case 'textarea':
+			default:
+				if (el.value != el.defaultValue) return true;
+				break;
+		}
+		return false;
+	});
+};
+*/
 
 const _checkMedia = mediaStr => {
 	let mq = window.matchMedia(mediaStr);

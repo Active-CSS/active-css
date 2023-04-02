@@ -74,6 +74,35 @@ const _ajaxDo = o => {
 			if (preGetting[o.finalURL]) return;	// Already in the process of getting - skip. Note: skip race condition handling - pre-get is a nicety.
 			preGetting[o.finalURL] = true;
 		}
-		_ajax(o.formMethod, o.dataType, url, o.pars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
+		let finalPars = o.pars;
+		let finalDataType = o.dataType;
+		if (o.formMethod == 'POST' && o.formSubmit) {
+			// Is there a file in the form? If so, we need to do something a bit different.
+			let formData = new FormData();
+			let fileFound = false;
+			let e = 0;
+			let el = o.secSelObj.elements.length;
+			let n;
+			for (e = 0, el; e < el; e++) {
+				n = o.secSelObj.elements[e];
+		 		if (!n.hasAttribute('name') || n.disabled) continue;
+				if (n.nodeName.toLowerCase() == 'input' && n.type.toLowerCase() == 'file' && n.value != '') {
+					fileFound = true;
+					// Add the file(s) to the FormData object.
+					Array.from(n.files).forEach(file => {	// jshint ignore:line
+						formData.append(n.name, file);
+					});
+				}
+			}
+			if (fileFound) {
+				// Convert o.pars to a FormData object to join any attached files.
+				new URLSearchParams(o.pars).forEach((val, key) => {
+					formData.append(key, val);
+				});
+				finalPars = formData;
+				finalDataType = 'data';
+			}
+		}
+		_ajax(o.formMethod, finalDataType, url, finalPars, _ajaxCallback.bind(this), _ajaxCallbackErr.bind(this), o);
 	}
 };
