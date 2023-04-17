@@ -86,7 +86,11 @@ const _handleEvents = evObj => {
 		}
    	}
    	if (runGlobalScopeEvents) {
-		componentRefs = initialComponentRefs;
+   		if (componentRefs === false || !componentRefs.compDoc) {
+	   		componentRefs = { compDoc: null, topVarScope: null, evScope: null, component: null, strictPrivateEvs: null, privateEvs: null };
+	   	} else {
+			componentRefs = initialComponentRefs;
+		}
 		for (i = 0; i < selectorListLen; i++) {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;

@@ -64,6 +64,7 @@
 			'draw',
 			'disconnectCallback',
 			'innerhtmlchange',
+			'intersect',
 			'observe'
 		],
 		DIGITREGEX = /^\d+$/,

@@ -265,8 +265,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						}
 
 						if (!removeState) {
-							config[sel] = (config[sel] === undefined) ? {} : config[sel];
-							config[sel][ev] = (config[sel][ev] === undefined) ? {} : config[sel][ev];
+							if (config[sel] === undefined) config[sel] = {};
+							if (config[sel][ev] === undefined) config[sel][ev] = {};
 						}
 
 						let conditionName;
@@ -279,13 +279,132 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 
 						if (!removeState) {
 							preSetupEvents.push({ ev, sel });
-							if (config[sel][ev][conditionName] === undefined) {
-								config[sel][ev][conditionName] = [];
-							}
-						}
-
-						if (!removeState) {
+							if (config[sel][ev][conditionName] === undefined) config[sel][ev][conditionName] = [];
 							config[sel][ev][conditionName].push(_iterateRules([], innerContent, sel, ev, conditionName, componentName));
+
+							// Is this an intersect event? If so, add a draw event that sets up the intersection observer.
+							if (ev == 'intersect') {
+								if ('IntersectionObserver' in window) {
+									// Put the setup at the beginning of any draw event that may be there.
+									if (config[sel].draw === undefined) config[sel].draw = {};
+									if (config[sel].draw[0] === undefined) config[sel].draw[0] = [];
+									let intersectEv = {
+										0: {
+											name: 'run',
+											value: '{=' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, 'console.log("set up the intersection observer");') + '=}',
+											type: 'attr',
+											line: innerContent[0].line,
+											file: innerContent[0].file,
+											intID: intIDCounter++
+										}
+									};
+									config[sel].draw[0].push(_iterateRules([], intersectEv, sel, 'draw', 0, componentName));
+									_setupEvent('draw', sel);
+									_setupEvent('intersect', sel);
+								} else {
+									// Could put a polyfill in which ties into scroll... but it's cleaner if we don't bother.
+									// For now let's keep it following CSS rules of ignoring if not supported.
+								}
+							}
+
+
+/*
+
+One of these should be an function that is called by the run command. The run command will therefore need to absorb that function.
+
+Maybe have a sel:intersectInit event for setting parameters later on? Do the basic implementation and then look at this.
+
+@if ("IntersectionObserver" in window) {
+		run: {=
+			window.animateObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, fade: false, animateClass: entry.target.getAttribute('data-animation'), triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') });
+						window.animateFadeObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.animateFadeObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, fade: true, animateClass: entry.target.getAttribute('data-animation'), triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') });
+						window.animateFadeObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, imgSrc: entry.target.getAttribute('data-lazy-load'), fade: false, triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') });
+						window.lazyImageObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.lazyImageFadeObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, imgSrc: entry.target.getAttribute('data-lazy-load-fade'), fade: true, triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') });
+						window.lazyImageFadeObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.lazyImageFadeAnimateObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, imgSrc: entry.target.getAttribute('data-lazy-load-fade-animate'), fade: true, animateClass: entry.target.getAttribute('data-lazy-animation'), triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') });
+						window.lazyImageFadeAnimateObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.lazyImageTriggerObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, imgSrc: entry.target.getAttribute('data-lazy-trigger'), fade: false, triggerEvent: entry.target.getAttribute('data-lazy-trigger-event') }); window.lazyImageTriggerObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.triggerObserver = new IntersectionObserver(function(entries, observer) {
+				entries.forEach(function(entry) {
+					if (entry.isIntersecting) {
+						window.loadFadeAnim({ el: entry.target, imgSrc: entry.target.getAttribute('data-lazy-trigger'), fade: false, triggerEvent: entry.target.getAttribute('data-trigger-event') }); window.lazyImageTriggerObserver.unobserve(entry.target);
+					}
+				});
+			});
+
+			window.loadFadeAnim = opts => {
+				let { imgSrc, fade, animateClass, el, triggerEvent } = opts;
+				el.removeAttribute('data-trigger-event');
+				setTimeout(() => {
+					el.removeAttribute('data-lazy-load-fade');
+				}, 1050);
+				let fadeLevel = el.hasAttribute('data-fade-level') ? el.getAttribute('data-fade-level') : 1;
+				if (imgSrc) {
+					let img = new Image();
+					el.onload = function() {
+						if (fade) el.style.opacity = fadeLevel;
+						if (animateClass) el.classList.add(animateClass);
+						if (triggerEvent) ActiveCSS.trigger(el, triggerEvent);
+					};
+					el.src = imgSrc;
+				} else {
+					if (fade) el.style.opacity = fadeLevel;
+					if (animateClass) el.classList.add(animateClass);
+					if (triggerEvent) ActiveCSS.trigger(el, triggerEvent);
+				}
+			};
+		=};
+
+*/
+
+
+
+
 						} else if (config[sel] !== undefined) {
 							// Find and remove items from config based on file value.
 							let i, len = config[sel][ev][conditionName].length;
