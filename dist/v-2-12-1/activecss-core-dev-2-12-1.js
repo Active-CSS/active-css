@@ -188,6 +188,7 @@
 		immediateStopCounter = -1,
 		imSt = [],
 		initInlineLoading = false,
+		initIntersectionObserver = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
@@ -4637,6 +4638,21 @@ const _setUpForObserve = (useForObserveID, useForObservePrim, condClause) => {
 	if (elObserveTrack[useForObserveID][useForObservePrim][condClause] === undefined) elObserveTrack[useForObserveID][useForObservePrim][condClause] = {};
 };
 
+const _setupIntersectionObserver = () => {
+	if (!initIntersectionObserver) {
+		// Set up the intersection observer function. Only do this once.
+		initIntersectionObserver = true;
+		window._acssIntersectionObserver = new IntersectionObserver(function(entries, observer) {
+			entries.forEach(function(entry) {
+				if (entry.isIntersecting) {
+					ActiveCSS.trigger(entry.target, 'intersect');
+					window._acssIntersectionObserver.unobserve(entry.target);
+				}
+			});
+		});
+	}
+};
+
 const _setUpNavAttrs = (el, tag) => {
 	let hrf = (tag == 'SELECT') ? el.options[el.selectedIndex].getAttribute('data-page') : el.getAttribute('href');
 	if (hrf) {
@@ -6378,7 +6394,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 									let intersectEv = {
 										0: {
 											name: 'run',
-											value: '{=' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, 'console.log("set up the intersection observer");') + '=}',
+											value: '{=' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, 'window._acssIntersectionObserver.observe(o.secSelObj);') + '=}',
 											type: 'attr',
 											line: innerContent[0].line,
 											file: innerContent[0].file,
@@ -6388,6 +6404,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 									config[sel].draw[0].push(_iterateRules([], intersectEv, sel, 'draw', 0, componentName));
 									_setupEvent('draw', sel);
 									_setupEvent('intersect', sel);
+									_setupIntersectionObserver();
 								} else {
 									// Could put a polyfill in which ties into scroll... but it's cleaner if we don't bother.
 									// For now let's keep it following CSS rules of ignoring if not supported.

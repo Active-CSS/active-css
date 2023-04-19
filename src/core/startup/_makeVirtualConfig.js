@@ -291,7 +291,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 									let intersectEv = {
 										0: {
 											name: 'run',
-											value: '{=' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, 'console.log("set up the intersection observer");') + '=}',
+											value: '{=' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, 'window._acssIntersectionObserver.observe(o.secSelObj);') + '=}',
 											type: 'attr',
 											line: innerContent[0].line,
 											file: innerContent[0].file,
@@ -301,6 +301,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 									config[sel].draw[0].push(_iterateRules([], intersectEv, sel, 'draw', 0, componentName));
 									_setupEvent('draw', sel);
 									_setupEvent('intersect', sel);
+									_setupIntersectionObserver();
 								} else {
 									// Could put a polyfill in which ties into scroll... but it's cleaner if we don't bother.
 									// For now let's keep it following CSS rules of ignoring if not supported.

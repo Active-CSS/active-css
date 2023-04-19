@@ -188,6 +188,7 @@
 		immediateStopCounter = -1,
 		imSt = [],
 		initInlineLoading = false,
+		initIntersectionObserver = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
