@@ -2886,7 +2886,7 @@ const _handleShadowSpecialEvents = shadowDOM => _handleObserveEvents(shadowDOM);
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
-	if (init|| !init && !e.state) {
+	if (init || !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
 		// this existing history object needs replacing.
 		manualChange = true;
@@ -2940,18 +2940,7 @@ const _handleSpaPop = (e, init) => {
 	}
 
 	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
-
-	if (thisHashStr != '') {
-		// Get the hash trigger if there is one.
-		let hashSplit = thisHashStr.split('#');
-		let hashSplitLen = hashSplit.length;
-		for (n = 0; n < hashSplitLen; n++) {
-			if (hashSplit[n] == '') continue;
-			// Store the hash for when the page has loaded. It could be an embedded reference so we can only get the event once the page has loaded.
-			hashEvents.push(hashSplit[n]);
-			hashEventTrigger = true;
-		}
-	}
+	_setHashEvent(thisHashStr);
 
 	let urlObj = { url };
 	if (pageItem) urlObj.attrs = pageItem.attrs;
@@ -3115,22 +3104,28 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		let compDetails;
 		let navSet = false;
 		for (el of composedPath) {
-			if (typ == 'mouseover' && !bod) {
-				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
-					// Set up any attributes needed for navigation from the routing declaration if this is being used.
+			if (el.nodeType !== 1) continue;
+
+			if (!navSet && el.__acssNavSet !== 1) {
+				// Set up any attributes needed for navigation from the routing declaration if this is being used.
+				if (typ == 'mouseover' && !bod && el.tagName == 'A' ||
+						// This could be an object that wasn't from a loop. Handle any ID or class events.
+						typ == 'click' && el.tagName == 'A' ||
+						typ == 'change' && el.tagName == 'SELECT'
+					) {
 					_setUpNavAttrs(el, el.tagName);
 					navSet = true;
 				}
 			}
-			if (el.nodeType !== 1) continue;
-			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1 || typ == 'change' && el.tagName == 'SELECT') {
-				// Set up any attributes needed for navigation from the routing declaration if this is being used.
-				_setUpNavAttrs(el, el.tagName);
-				navSet = true;
+
+			if (el.__acssNavHash && (typ == 'click' && el.tagName == 'A' || typ == 'change' && el.tagName == 'SELECT')) {
+				_setHashEvent(el.__acssNavHash);
+				el.__acssFromLink = true;
 			}
+
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
+
 			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 		}
@@ -4632,6 +4627,21 @@ const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
 	}
 };
 
+const _setHashEvent = thisHashStr => {
+	if (thisHashStr != '') {
+		// Get the hash trigger if there is one.
+		let hashSplit = thisHashStr.split('#');
+		let hashSplitLen = hashSplit.length;
+		let n;
+		for (n = 0; n < hashSplitLen; n++) {
+			if (hashSplit[n] == '') continue;
+			// Store the hash for when the page has loaded. It could be an embedded reference so we can only get the event once the page has loaded.
+			hashEvents.push(hashSplit[n]);
+			hashEventTrigger = true;
+		}
+	}
+};
+
 const _setUpForObserve = (useForObserveID, useForObservePrim, condClause) => {
 	if (elObserveTrack[useForObserveID] === undefined) elObserveTrack[useForObserveID] = [];
 	if (elObserveTrack[useForObserveID][useForObservePrim] === undefined) elObserveTrack[useForObserveID][useForObservePrim] = {};
@@ -4656,11 +4666,17 @@ const _setupIntersectionObserver = () => {
 const _setUpNavAttrs = (el, tag) => {
 	let hrf = (tag == 'SELECT') ? el.options[el.selectedIndex].getAttribute('data-page') : el.getAttribute('href');
 	if (hrf) {
-		let pageItem = _getPageFromList(hrf);
+		let hashPos = hrf.indexOf('#');
+		let pageHrf = (hashPos !== -1) ? hrf.substring(0, hashPos) : hrf;
+		let pageItem = _getPageFromList(pageHrf);
 		if (pageItem) {
 			let tmpDiv = document.createElement('div');
 			tmpDiv.insertAdjacentHTML('beforeend', '<a href="' + pageItem.url + '" ' + pageItem.attrs + '>');
 			_cloneAttrs(el, tmpDiv.firstChild);
+			if (hashPos !== -1) {
+				el.__acssNavHash = hrf.substring(hashPos);
+			}
+			el.__acssNavHrf = hrf;
 		}
 	}
 };
@@ -11974,7 +11990,7 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 
 		// If this is a new hash url, get the original page that called this rather than the hash link object so we get the correct underlying page change attributes.
 		if (typeof o.secSelObj == 'object') {
-			if (emptyPageClick || url.indexOf('#') !== -1) {
+			if (!o.secSelObj.__acssFromLink && (emptyPageClick || url.indexOf('#') !== -1)) {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
 				attrs = window.history.state.attrs || '';
 			} else {

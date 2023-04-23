@@ -48,22 +48,28 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		let compDetails;
 		let navSet = false;
 		for (el of composedPath) {
-			if (typ == 'mouseover' && !bod) {
-				if (!navSet && el.tagName == 'A' && el.__acssNavSet !== 1) {
-					// Set up any attributes needed for navigation from the routing declaration if this is being used.
+			if (el.nodeType !== 1) continue;
+
+			if (!navSet && el.__acssNavSet !== 1) {
+				// Set up any attributes needed for navigation from the routing declaration if this is being used.
+				if (typ == 'mouseover' && !bod && el.tagName == 'A' ||
+						// This could be an object that wasn't from a loop. Handle any ID or class events.
+						typ == 'click' && el.tagName == 'A' ||
+						typ == 'change' && el.tagName == 'SELECT'
+					) {
 					_setUpNavAttrs(el, el.tagName);
 					navSet = true;
 				}
 			}
-			if (el.nodeType !== 1) continue;
-			// This could be an object that wasn't from a loop. Handle any ID or class events.
-			if (!navSet && typ == 'click' && el.tagName == 'A' && el.__acssNavSet !== 1 || typ == 'change' && el.tagName == 'SELECT') {
-				// Set up any attributes needed for navigation from the routing declaration if this is being used.
-				_setUpNavAttrs(el, el.tagName);
-				navSet = true;
+
+			if (el.__acssNavHash && (typ == 'click' && el.tagName == 'A' || typ == 'change' && el.tagName == 'SELECT')) {
+				_setHashEvent(el.__acssNavHash);
+				el.__acssFromLink = true;
 			}
+
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
+
 			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 		}
