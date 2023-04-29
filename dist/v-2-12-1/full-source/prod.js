@@ -3106,6 +3106,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
 
+/*
 			if (!navSet && el.__acssNavSet !== 1) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
 				if (typ == 'mouseover' && !bod && el.tagName == 'A' ||
@@ -3113,6 +3114,19 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 						typ == 'click' && el.tagName == 'A' ||
 						typ == 'change' && el.tagName == 'SELECT'
 					) {
+					_setUpNavAttrs(el, el.tagName);
+					navSet = true;
+				}
+			}
+*/
+
+			if (!navSet) {
+				// Set up any attributes needed for navigation from the routing declaration if this is being used.
+				if (el.__acssNavSet !== 1 && typ == 'mouseover' && !bod && el.tagName == 'A' ||
+					// This could be an object that wasn't from a loop. Handle any ID or class events.
+					el.__acssNavSet !== 1 && typ == 'click' && el.tagName == 'A' ||
+					typ == 'change' && el.tagName == 'SELECT'
+				) {
 					_setUpNavAttrs(el, el.tagName);
 					navSet = true;
 				}
