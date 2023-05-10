@@ -1,4 +1,4 @@
-const _performEvent = (loopObj) => {
+const _performEvent = loopObj => {
 	let stopImEdProp = false;
 	let loopObjClone = _clone(loopObj);
 	loopObj = null;
@@ -11,12 +11,15 @@ const _performEvent = (loopObj) => {
 		immediateStopCounter++;
 		let thisStopCounter = immediateStopCounter;
 		imSt[thisStopCounter] = { };
-		// Set loop counter. This is used to manage continue and break. It is set to 0 before any loops get processed, increments for each nested loop
-		// and decrements when back in its outer loop.
-		let loopCo = 0;
 
+		loopObjClone._condCo = -1;
+		loopObjClone._targCo = -1;
+
+		let subSubEvCo = -1;
 		for (secSelLoops in loopObjClone.chilsObj) {
 			let loopObjTarg = _clone(loopObjClone);
+			subSubEvCo++;
+			loopObjTarg._subSubEvCo = subSubEvCo;
 			loopObjTarg.fullStatement = secSelLoops;
 			loopObjTarg.secSelLoops = secSelLoops;
 			loopObjTarg._imStCo = thisStopCounter;
@@ -29,6 +32,8 @@ const _performEvent = (loopObj) => {
 		}
 		delete imSt[thisStopCounter];
 		delete _break['i' + thisStopCounter];
+
+		_cleanUpAfterPause(loopObjClone._subEvCo);
 		_resetContinue(thisStopCounter);
 		_resetExitTarget(thisStopCounter);
 	}

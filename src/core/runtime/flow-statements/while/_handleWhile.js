@@ -1,5 +1,5 @@
-const _handleWhile = (loopObj) => {
-	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc } = loopObj;
+const _handleWhile = loopObj => {
+	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
 	while (true) {
 		// Done as a while to avoid getting into a memory leak.
@@ -25,7 +25,10 @@ const _handleWhile = (loopObj) => {
 				eve,
 				doc,
 				component,
-				compDoc
+				compDoc,
+				_subEvCo,
+				_subSubEvCo,
+				_targCo
 			};
 
 			if (loopWhat != 'action' || typeof passTargSel == 'string') {
@@ -34,7 +37,7 @@ const _handleWhile = (loopObj) => {
 			} else if (typeof passTargSel == 'object') {
 				thisIfObj.obj = passTargSel;
 			}
-			let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+			let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
 			if (res) {
 				// This is ok - run the inner contents.
 				let loopObj2 = _clone(loopObj);

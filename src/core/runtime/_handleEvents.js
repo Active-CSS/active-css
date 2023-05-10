@@ -171,7 +171,6 @@ const _handleEvents = evObj => {
 	}
 
 	clauseCo = 0;
-	subEventCounter++;
 
 	eventsLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
@@ -182,6 +181,7 @@ const _handleEvents = evObj => {
 				let useForObservePrim = 'i' + primSel;
 				for (clause in config[primSel][evType]) {
 					clauseCo++;
+					subEventCounter++;
 					passCond = '';
 					if (clause != '0') {	// A conditional is there.
 						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.

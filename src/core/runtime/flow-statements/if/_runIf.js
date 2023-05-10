@@ -1,6 +1,13 @@
-const _runIf = (parsedStatement, originalStatement, ifObj) => {
+const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	// Substitute any variables dynamically so they have the correct values at the point of evaluation and not earlier.
-	let { obj, otherObj, varScope } = ifObj;
+	let { obj, otherObj, varScope, _subEvCo, _subSubEvCo, _targCo } = ifObj;
+
+	let loopRef = loopObj.loopRef || '';
+	// Handle pause resumption.
+	if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+		let trackRes = condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
+		return trackRes;
+	}
 
 	// Attributes get evaluated first. This is so that we can evaluate things like $cheese{@data-num}, which is really useful.
 	let strObj = _handleVars([ 'attrs' ],
@@ -47,14 +54,22 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 
 	// Finally, remove any line breaks, otherwise things will barf when evaluated.
 	readyStatement = readyStatement.replace(/\r|\n/gm, '');
-              
+
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);                                // jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return !!(' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);                                // jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
 	}
+
+	if (!condTrack[_subEvCo]) {
+		condTrack[_subEvCo] = [];
+		condTrack[_subEvCo].condResArr = [];
+	}
+	condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
+
+	loopObj._condCo++;
 
 	return res;
 };

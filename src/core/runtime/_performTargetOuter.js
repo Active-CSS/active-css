@@ -1,5 +1,5 @@
 const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
-	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
 
 	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
 
@@ -36,6 +36,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
 	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
 	// We perform the selector parsing from the doc/compDoc location of the event selector.
+
+	loopObj._targCo++;
 
 	// First, establish if the target is the event selector. If so, there is no target selector to parse and we keep handling for it separate for speed.
 	if (MEMAP.includes(flowTargetSelector)) {
@@ -83,6 +85,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,
@@ -103,8 +108,22 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		// Handle variables that need to be evaluated before grabbing the targets.
 		flowTargetSelector = _sortOutTargSelectorVars(flowTargetSelector, obj, varScope, otherObj);
 
-		let res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+		// Get the applicable targets if we are resuming after a pause, otherwise get the target elements afresh.
+		let res;
+		if (elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+			res = elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo];
+		} else {
+			res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+
+			// Store the collection for resumption after pausing if needed.
+			if (!elTrack[_subEvCo]) {
+				elTrack[_subEvCo] = [];
+				elTrack[_subEvCo].resArr = [];
+			}
+			elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
+		}
 		if (!res.obj) return;
+
 		doc = res.doc;
 
 		passTargSel = flowTargetSelector;
@@ -128,6 +147,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,

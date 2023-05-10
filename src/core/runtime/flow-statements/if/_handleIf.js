@@ -1,5 +1,5 @@
 const _handleIf = (loopObj, ifType) => {
-	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj } = loopObj;
+	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let targetObj;
 
@@ -35,6 +35,9 @@ const _handleIf = (loopObj, ifType) => {
 			doc,
 			component,
 			compDoc,
+			_subEvCo,
+			_subSubEvCo,
+			_targCo
 		};
 
 		if (loopWhat != 'action' || typeof passTargSel == 'string') {
@@ -44,7 +47,7 @@ const _handleIf = (loopObj, ifType) => {
 			thisIfObj.obj = passTargSel;
 		}
 
-		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
 		if (res) {
 			// This is ok - run the inner contents.
 			_runSecSelOrAction(loopObj);

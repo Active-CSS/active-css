@@ -31,7 +31,8 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
 	// It is empty at first and gets added to when referencing is needed.
 	mainEventCounter++;
-	maEv[mainEventCounter] = { };
+	let thisMEV = mainEventCounter;
+	maEv[thisMEV] = { };
  
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
@@ -70,13 +71,13 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
 
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
-			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV });
+			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[thisMEV]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 		}
-		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
+		if (!maEv[thisMEV]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
- 
+
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() { maEv = maEv.filter(function(_, i) { return i != mainEventCounter; }); }, 10000);
+	setTimeout(function() { delete maEv[thisMEV]; }, 10000);
 };

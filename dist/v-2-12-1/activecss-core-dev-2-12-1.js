@@ -150,6 +150,7 @@
 		compPendingJSONCo = 0,
 		compParents = [],
 		compPrivEvs = [],
+		condTrack = {},			// Used in resuming after a pause to use remembered control flow states.
 		config = [],
 		configArr = [],
 		configBox = [],
@@ -174,6 +175,7 @@
 		doesPassive = false,
 		elementObserver,
 		elObserveTrack = [],
+		elTrack = {},			// Used in resuming after a pause to use remembered element states.
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
@@ -196,7 +198,7 @@
 		labelByIDs = [],
 		lazyConfig = '',
 		localStoreVars = [],
-		maEv = [],
+		maEv = {},
 		mainEventCounter = -1,
 		masterConfigCo = 0,
 		mediaQueries = [],
@@ -210,6 +212,7 @@
 		parsedConfig = {},
 		passiveEvents = true,
 		pauseTrack = {},
+		pauseCleanTimers = {},
 		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
@@ -237,7 +240,7 @@
 		subEventCounter = -1,
 		supportsShadow = true,
 		syncQueue = [],
-		taEv = [],
+		taEv = {},
 		targetEventCounter = -1,
 		targetCounter = -1,
 		userSetupStarted = false,
@@ -308,8 +311,17 @@ _a.Break = o => {
 
 _a.CancelPause = o => {
 	if (o.actVal == 'all') {
+		// Perform clean-up actions with timeouts.
+		let activeID, val, subEvCo, val2;
+		for ([activeID, val] of Object.entries(pauseTrack)) {
+			for ([subEvCo, val2] of Object.entries(val)) {
+				_cleanUpAfterPause(subEvCo);
+			}
+		}
+
 		// Reset pause tracker. Setting this to empty will stop all pauses from resuming.
 		pauseTrack = {};
+
 	} else {
 		_warn('cancel-pause currently only supports "all" as a parameter');
 	}
@@ -2305,6 +2317,14 @@ const _checkScopeForEv = (evScope) => {
 	return false;
 };
 
+const _cleanUpAfterPause = subEvCo => {
+	pauseCleanTimers[subEvCo] = setTimeout(() => {
+		delete pauseCleanTimers[subEvCo];
+		delete condTrack[subEvCo];
+		delete elTrack[subEvCo];
+	}, 5000);
+};
+
 const _cloneAttrs = (el, srcEl) => {
 	let attr, attrs = Array.prototype.slice.call(srcEl.attributes);
 	let isSelect = (el.tagName === 'SELECT');
@@ -2582,7 +2602,6 @@ const _handleEvents = evObj => {
 	}
 
 	clauseCo = 0;
-	subEventCounter++;
 
 	eventsLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
@@ -2593,6 +2612,7 @@ const _handleEvents = evObj => {
 				let useForObservePrim = 'i' + primSel;
 				for (clause in config[primSel][evType]) {
 					clauseCo++;
+					subEventCounter++;
 					passCond = '';
 					if (clause != '0') {	// A conditional is there.
 						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.
@@ -3087,7 +3107,8 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 	// This is currently used for the propagation state, but could be added to for anything else that comes up later.
 	// It is empty at first and gets added to when referencing is needed.
 	mainEventCounter++;
-	maEv[mainEventCounter] = { };
+	let thisMEV = mainEventCounter;
+	maEv[thisMEV] = { };
  
 	// Certain rules apply when handling events on the shadow DOM. This is important to grasp, as we need to reverse the order in which they happen so we get
 	// natural bubbling, as Active CSS by default uses "capture", which goes down and then we manually go up. This doesn't work when using shadow DOMs, so we have
@@ -3105,20 +3126,6 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		let navSet = false;
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
-
-/*
-			if (!navSet && el.__acssNavSet !== 1) {
-				// Set up any attributes needed for navigation from the routing declaration if this is being used.
-				if (typ == 'mouseover' && !bod && el.tagName == 'A' ||
-						// This could be an object that wasn't from a loop. Handle any ID or class events.
-						typ == 'click' && el.tagName == 'A' ||
-						typ == 'change' && el.tagName == 'SELECT'
-					) {
-					_setUpNavAttrs(el, el.tagName);
-					navSet = true;
-				}
-			}
-*/
 
 			if (!navSet) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
@@ -3140,15 +3147,15 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 			// Is this in the document root or a shadow DOM root?
 			compDetails = _componentDetails(el);
 
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: mainEventCounter });
-			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[mainEventCounter]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV });
+			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[thisMEV]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 		}
-		if (!maEv[mainEventCounter]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
+		if (!maEv[thisMEV]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
- 
+
 	// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 	// It just needs to happen at some point, so we'll say 10 seconds.
-	setTimeout(function() { maEv = maEv.filter(function(_, i) { return i != mainEventCounter; }); }, 10000);
+	setTimeout(function() { delete maEv[thisMEV]; }, 10000);
 };
 
 const _nextFunc = o => {
@@ -3502,7 +3509,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 	return true;
 };
 
-const _performEvent = (loopObj) => {
+const _performEvent = loopObj => {
 	let stopImEdProp = false;
 	let loopObjClone = _clone(loopObj);
 	loopObj = null;
@@ -3515,12 +3522,15 @@ const _performEvent = (loopObj) => {
 		immediateStopCounter++;
 		let thisStopCounter = immediateStopCounter;
 		imSt[thisStopCounter] = { };
-		// Set loop counter. This is used to manage continue and break. It is set to 0 before any loops get processed, increments for each nested loop
-		// and decrements when back in its outer loop.
-		let loopCo = 0;
 
+		loopObjClone._condCo = -1;
+		loopObjClone._targCo = -1;
+
+		let subSubEvCo = -1;
 		for (secSelLoops in loopObjClone.chilsObj) {
 			let loopObjTarg = _clone(loopObjClone);
+			subSubEvCo++;
+			loopObjTarg._subSubEvCo = subSubEvCo;
 			loopObjTarg.fullStatement = secSelLoops;
 			loopObjTarg.secSelLoops = secSelLoops;
 			loopObjTarg._imStCo = thisStopCounter;
@@ -3533,6 +3543,8 @@ const _performEvent = (loopObj) => {
 		}
 		delete imSt[thisStopCounter];
 		delete _break['i' + thisStopCounter];
+
+		_cleanUpAfterPause(loopObjClone._subEvCo);
 		_resetContinue(thisStopCounter);
 		_resetExitTarget(thisStopCounter);
 	}
@@ -3568,6 +3580,7 @@ const _performSecSel = (loopObj) => {
 const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter) => {
 	_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, 0);
 	secSelCounter++;
+	let thisTEV = targetEventCounter;
 	if (secSels[secSelCounter]) {
 		let res = _performSecSelDo(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter);
 	}
@@ -3575,12 +3588,12 @@ const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inherite
 		// Back to the top of the stack.
 		// Remove this event from the mainEvent object. It shouldn't be done straight away as there may be stuff being drawn in sub-DOMs.
 		// It just needs to happen at some point, so we'll say 10 seconds.
-		setTimeout(function() { taEv = taEv.filter(function(_, i) { return i != targetEventCounter; }); }, 10000);
+		setTimeout(function() { delete taEv[thisTEV]; }, 10000);
 	}
 };
 
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
@@ -3628,6 +3641,9 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo,
 			passCond: passCond,
@@ -3659,7 +3675,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 };
 
 const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
-	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
 
 	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
 
@@ -3696,6 +3712,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
 	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
 	// We perform the selector parsing from the doc/compDoc location of the event selector.
+
+	loopObj._targCo++;
 
 	// First, establish if the target is the event selector. If so, there is no target selector to parse and we keep handling for it separate for speed.
 	if (MEMAP.includes(flowTargetSelector)) {
@@ -3743,6 +3761,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,
@@ -3763,8 +3784,22 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		// Handle variables that need to be evaluated before grabbing the targets.
 		flowTargetSelector = _sortOutTargSelectorVars(flowTargetSelector, obj, varScope, otherObj);
 
-		let res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+		// Get the applicable targets if we are resuming after a pause, otherwise get the target elements afresh.
+		let res;
+		if (elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+			res = elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo];
+		} else {
+			res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+
+			// Store the collection for resumption after pausing if needed.
+			if (!elTrack[_subEvCo]) {
+				elTrack[_subEvCo] = [];
+				elTrack[_subEvCo].resArr = [];
+			}
+			elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
+		}
 		if (!res.obj) return;
+
 		doc = res.doc;
 
 		passTargSel = flowTargetSelector;
@@ -3788,6 +3823,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,
@@ -4863,6 +4901,7 @@ const _checkExitTarget = _imStCo => {
 const _checkRunLoop = (outerTargetObj, chils, statement, pointer, loopWhat) => {
 	if (!chils) return { atIf: false };
 	let atIfDetails = _getLoopCommand(statement);
+	outerTargetObj._condCo++;
 	if (atIfDetails !== false) {
 		let outerTargetObjClone = _clone(outerTargetObj);
 		let chilsClone = _clone(chils);
@@ -5284,7 +5323,7 @@ const _loopVarToNumber = (str, varScope) => {
 };
 
 const _handleIf = (loopObj, ifType) => {
-	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj } = loopObj;
+	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 	let targetObj;
 
@@ -5320,6 +5359,9 @@ const _handleIf = (loopObj, ifType) => {
 			doc,
 			component,
 			compDoc,
+			_subEvCo,
+			_subSubEvCo,
+			_targCo
 		};
 
 		if (loopWhat != 'action' || typeof passTargSel == 'string') {
@@ -5329,7 +5371,7 @@ const _handleIf = (loopObj, ifType) => {
 			thisIfObj.obj = passTargSel;
 		}
 
-		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
 		if (res) {
 			// This is ok - run the inner contents.
 			_runSecSelOrAction(loopObj);
@@ -5517,9 +5559,16 @@ const _runAtIfConds = (condName, ifObj, str) => {
 	return _passesConditional(condObj);
 };
 
-const _runIf = (parsedStatement, originalStatement, ifObj) => {
+const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	// Substitute any variables dynamically so they have the correct values at the point of evaluation and not earlier.
-	let { obj, otherObj, varScope } = ifObj;
+	let { obj, otherObj, varScope, _subEvCo, _subSubEvCo, _targCo } = ifObj;
+
+	let loopRef = loopObj.loopRef || '';
+	// Handle pause resumption.
+	if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+		let trackRes = condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
+		return trackRes;
+	}
 
 	// Attributes get evaluated first. This is so that we can evaluate things like $cheese{@data-num}, which is really useful.
 	let strObj = _handleVars([ 'attrs' ],
@@ -5566,20 +5615,28 @@ const _runIf = (parsedStatement, originalStatement, ifObj) => {
 
 	// Finally, remove any line breaks, otherwise things will barf when evaluated.
 	readyStatement = readyStatement.replace(/\r|\n/gm, '');
-              
+
 	let res;
 	try {
-		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);                                // jshint ignore:line
+		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar', '"use strict";return !!(' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar);                                // jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
 	}
 
+	if (!condTrack[_subEvCo]) {
+		condTrack[_subEvCo] = [];
+		condTrack[_subEvCo].condResArr = [];
+	}
+	condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
+
+	loopObj._condCo++;
+
 	return res;
 };
 
-const _handleWhile = (loopObj) => {
-	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc } = loopObj;
+const _handleWhile = loopObj => {
+	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
 	while (true) {
 		// Done as a while to avoid getting into a memory leak.
@@ -5605,7 +5662,10 @@ const _handleWhile = (loopObj) => {
 				eve,
 				doc,
 				component,
-				compDoc
+				compDoc,
+				_subEvCo,
+				_subSubEvCo,
+				_targCo
 			};
 
 			if (loopWhat != 'action' || typeof passTargSel == 'string') {
@@ -5614,7 +5674,7 @@ const _handleWhile = (loopObj) => {
 			} else if (typeof passTargSel == 'object') {
 				thisIfObj.obj = passTargSel;
 			}
-			let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+			let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
 			if (res) {
 				// This is ok - run the inner contents.
 				let loopObj2 = _clone(loopObj);
@@ -7351,7 +7411,7 @@ const _pause = (o, tim) => {
 	let restartObj = _clone(o);
 	let activeID = _getActiveID(restartObj.secSelObj);
 	let subEvCo = restartObj._subEvCo;
-	pauseTrack[activeID] = {};
+	if (!pauseTrack[activeID]) pauseTrack[activeID] = {};
 	pauseTrack[activeID][subEvCo] = true;
 	setTimeout(() => {
 		o = null;
@@ -7428,6 +7488,9 @@ const _syncRestart = (o, resumeID) => {
 
 		// Re-run the events. It needs a setTimeout in order to clear the memory stack on the way back up the event flow.
 		// It also serves a purpose in keeping simultaneous actions happening at roughly the same time.
+
+		clearTimeout(pauseCleanTimers[o._subEvCo]);
+
 		setTimeout(_performEvent(loopObjCopy), 0);
 	}
 };
