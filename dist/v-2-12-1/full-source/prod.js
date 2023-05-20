@@ -3679,6 +3679,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
 
+	loopObj._targCo++;
+
 	if (!secSels[secSelCounter]) return;
 	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
 
@@ -3712,8 +3714,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
 	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
 	// We perform the selector parsing from the doc/compDoc location of the event selector.
-
-	loopObj._targCo++;
 
 	// First, establish if the target is the event selector. If so, there is no target selector to parse and we keep handling for it separate for speed.
 	if (MEMAP.includes(flowTargetSelector)) {
@@ -4891,6 +4891,7 @@ const _checkBreakLoop = (_imStCo, innerType) => {
 		) {
 		return true;
 	}
+
 	return false;
 };
 
@@ -5324,8 +5325,6 @@ const _loopVarToNumber = (str, varScope) => {
 
 const _handleIf = (loopObj, ifType) => {
 	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj, _subEvCo, _subSubEvCo, _targCo } = loopObj;
-	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
-	let targetObj;
 
 	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
 	// etc.
@@ -5333,9 +5332,6 @@ const _handleIf = (loopObj, ifType) => {
 	// First, remove @if clause.
 	let statement = fullStatement;
 	statement = statement.substr(ifType.length).trim();
-
-	// Do any variable substituting, etc. before parsing string to get ready for evaluation.
-//	let prepExpr = _prepareDetachedExpr(statement, varScope);
 
 	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
 	let parsedStatement;
@@ -5349,7 +5345,6 @@ const _handleIf = (loopObj, ifType) => {
 	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
 
 	if (parsedStatement !== false) {
-
 		let thisIfObj = {
 			evType,
 			varScope,
@@ -5638,51 +5633,54 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 const _handleWhile = loopObj => {
 	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
-	while (true) {
-		// Done as a while to avoid getting into a memory leak.
-		if (_checkBreakLoop(_imStCo)) break;
+	// eg. @while display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
+	// etc.
 
-		// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
-		// etc.
+	// First, remove @if clause.
+	let statement = fullStatement;
+	statement = statement.substr(7).trim();
 
-		// First, remove @if clause.
-		let statement = fullStatement;
-		statement = statement.substr(7).trim();
+	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
+	let parsedStatement = _replaceConditionalsExpr(statement);
+	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
 
-		// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
-		let parsedStatement = _replaceConditionalsExpr(statement);
-		// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
+	if (parsedStatement !== false) {
+		let thisIfObj = {
+			evType,
+			varScope,
+			otherObj,
+			sel: primSel,
+			eve,
+			doc,
+			component,
+			compDoc,
+			_subEvCo,
+			_subSubEvCo,
+			_targCo
+		};
 
-		if (parsedStatement !== false) {
-			let thisIfObj = {
-				evType,
-				varScope,
-				otherObj,
-				sel: primSel,
-				eve,
-				doc,
-				component,
-				compDoc,
-				_subEvCo,
-				_subSubEvCo,
-				_targCo
-			};
+		if (loopWhat != 'action' || typeof passTargSel == 'string') {
+			// This is surrounding a target selector, so the reference object is the event receiver object.
+			thisIfObj.obj = obj;
+		} else if (typeof passTargSel == 'object') {
+			thisIfObj.obj = passTargSel;
+		}
 
-			if (loopWhat != 'action' || typeof passTargSel == 'string') {
-				// This is surrounding a target selector, so the reference object is the event receiver object.
-				thisIfObj.obj = obj;
-			} else if (typeof passTargSel == 'object') {
-				thisIfObj.obj = passTargSel;
+		let loopRef = loopObj.loopRef || '';
+
+		while (_runIf(parsedStatement, fullStatement, thisIfObj, loopObj)) {
+			if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+				delete condTrack[_subEvCo].condResArr[loopObj.loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
 			}
-			let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
-			if (res) {
-				// This is ok - run the inner contents.
-				let loopObj2 = _clone(loopObj);
-				_runSecSelOrAction(loopObj2);
-				loopObj = loopObj2;
-				// Clean up - this is proven to stop memory leak.
-				loopObj2 = null;
-			} else {
+
+			// This is ok - run the inner contents.
+			let loopObj2 = _clone(loopObj);
+			_runSecSelOrAction(loopObj2);
+			loopObj = loopObj2;
+			// Clean up.
+			loopObj2 = null;
+
+			if (_checkBreakLoop(_imStCo)) {
 				break;
 			}
 		}

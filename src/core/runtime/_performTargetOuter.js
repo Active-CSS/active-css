@@ -3,6 +3,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 
 	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
 
+	loopObj._targCo++;
+
 	if (!secSels[secSelCounter]) return;
 	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
 
@@ -36,8 +38,6 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	// For example, we may be grabbing all the iframes in a document, but each target is in its own component.
 	// We therefore have to get the component details of each target and pass these into the rest of the event flow.
 	// We perform the selector parsing from the doc/compDoc location of the event selector.
-
-	loopObj._targCo++;
 
 	// First, establish if the target is the event selector. If so, there is no target selector to parse and we keep handling for it separate for speed.
 	if (MEMAP.includes(flowTargetSelector)) {
