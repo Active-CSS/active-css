@@ -5014,7 +5014,8 @@ const _handleLoop = (loopObj) => {
 				break;
 
 			case '@while':
-				_handleWhile(loopObj);
+				_resetContinue(_imStCo);
+				_handleWhile(loopObj, scopePrefix);
 				break;
 		}
 	}
@@ -5275,7 +5276,7 @@ const _handleFor = (loopObj, scopePrefix) => {
 };
 
 const _handleForItem = (itemsObj, counterVal) => {
-	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2, newRef, objValVar;
+	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2;
 	let _imStCo = loopObj._imStCo;
 
 	if (_checkBreakLoop(_imStCo)) {
@@ -5286,6 +5287,7 @@ const _handleForItem = (itemsObj, counterVal) => {
 
 	let scopedVar = scopePrefix + counterVar;
 	_set(scopedProxy, scopedVar, counterVal);
+
 	loopObj2.loopRef = itemsObj.existingLoopRef + counterVar + '_0_' + counterVal;
 
 	_runSecSelOrAction(loopObj2);
@@ -5630,15 +5632,37 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	return res;
 };
 
-const _handleWhile = loopObj => {
-	let { fullStatement, _imStCo, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, _subEvCo, _subSubEvCo, _targCo } = loopObj;
+const _handleWhile = (loopObj, scopePrefix) => {
+	let { fullStatement, varScope } = loopObj;
+	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
 
-	// eg. @while display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
-	// etc.
-
-	// First, remove @if clause.
+	// First, remove @while clause.
 	let statement = fullStatement;
 	statement = statement.substr(7).trim();
+
+	// Now that the loop is set up, pass over the necessary variables into the recursive while function.
+	let itemsObj = {
+		loopObj,
+		fullStatement,
+		statement,
+		existingLoopRef,
+		scopePrefix,
+	};
+
+	_handleWhileItem(itemsObj, 0);
+};
+
+const _handleWhileItem = (itemsObj, counterVal) => {
+	let { loopObj, fullStatement, statement, scopePrefix } = itemsObj, loopObj2;
+	let { _imStCo, evType, varScope, otherObj, sel: primSel, eve, doc, component, compDoc, loopWhat, passTargSel, _subEvCo, _subSubEvCo, _targCo } = loopObj;
+
+	if (_checkBreakLoop(_imStCo)) {
+		return;
+	}
+
+	loopObj2 = _clone(loopObj);
+
+	loopObj2.loopRef = itemsObj.existingLoopRef + '_wh_' + counterVal;
 
 	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
 	let parsedStatement = _replaceConditionalsExpr(statement);
@@ -5666,23 +5690,16 @@ const _handleWhile = loopObj => {
 			thisIfObj.obj = passTargSel;
 		}
 
-		let loopRef = loopObj.loopRef || '';
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj2);
 
-		while (_runIf(parsedStatement, fullStatement, thisIfObj, loopObj)) {
-			if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
-				delete condTrack[_subEvCo].condResArr[loopObj.loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
-			}
-
-			// This is ok - run the inner contents.
-			let loopObj2 = _clone(loopObj);
+		// Run the commands if passing and run this function again if we are still in the loop.
+		if (res) {
 			_runSecSelOrAction(loopObj2);
-			loopObj = loopObj2;
-			// Clean up.
 			loopObj2 = null;
-
-			if (_checkBreakLoop(_imStCo)) {
-				break;
-			}
+			counterVal++;
+			_handleWhileItem(itemsObj, counterVal);
+		} else {
+			_resetContinue(_imStCo);
 		}
 	}
 };

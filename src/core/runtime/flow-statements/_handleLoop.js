@@ -42,7 +42,8 @@ const _handleLoop = (loopObj) => {
 				break;
 
 			case '@while':
-				_handleWhile(loopObj);
+				_resetContinue(_imStCo);
+				_handleWhile(loopObj, scopePrefix);
 				break;
 		}
 	}
