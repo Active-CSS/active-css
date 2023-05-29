@@ -54,6 +54,12 @@
 			'if-value',
 			'if-visible'
 		],
+		CONTROLCOMM = [
+			'break',
+			'continue',
+			'exit',
+			'exit-target',
+		],
 		CUSTOMEVENTS = [
 			'adoptedCallback',
 			'attributeChangedCallback',

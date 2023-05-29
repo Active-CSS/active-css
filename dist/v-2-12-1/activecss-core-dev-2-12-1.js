@@ -54,6 +54,12 @@
 			'if-value',
 			'if-visible'
 		],
+		CONTROLCOMM = [
+			'break',
+			'continue',
+			'exit',
+			'exit-target',
+		],
 		CUSTOMEVENTS = [
 			'adoptedCallback',
 			'attributeChangedCallback',
@@ -2675,12 +2681,18 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Set async flag if this is a true asynchronous command.
 	o.isAsync = ASYNCCOMMANDS.indexOf(o.func) !== -1;
 	o.isTimed = o.actVal.match(TIMEDREGEX);
+	let isControlComm = CONTROLCOMM.indexOf(o.func) !== -1;
 	runButElNotThere = o.elNotThere || runButElNotThere;
 
-	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
+	if (!isControlComm) {
+		// Control commands like break, continue, always get run if found in the flow and are not subject to skipping during pause resumption.
+		if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
 
-	// Check and set up sync commands.
-	_syncCheckAndSet(o, syncQueueSet);
+		// Check and set up sync commands.
+		_syncCheckAndSet(o, syncQueueSet);
+	}
+
+console.log('_handleFunc, o.func:', o.func);
 
 	// Handle the pause command, which uses a similar method as "await".
 	if (o.func == 'Pause') {
@@ -2851,7 +2863,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Restart the sync queue if await was used.
-	if (!o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
+	if (!isControlComm && !o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
 		_syncRestart(o, o._subEvCo);
 		return;
 	}
@@ -6755,7 +6767,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-
 	str = str.replace(/([\s\;\{])continue\;/g, '$1continue:1;');
 	str = str.replace(/([\s\;\{])break\;/g, '$1break:1;');
 	str = str.replace(/([\s\;\{])exit\;/g, '$1exit:1;');
@@ -6870,8 +6881,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	if (!Object.keys(obj).length) {
 		_err('There is a structural syntax error at initial parsing stage. Config that failed to parse: ' + str);
 	}
-
-console.log('_parseConfig, obj:', obj);
 
 	return obj;
 };

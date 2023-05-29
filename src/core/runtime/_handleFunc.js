@@ -5,12 +5,16 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	// Set async flag if this is a true asynchronous command.
 	o.isAsync = ASYNCCOMMANDS.indexOf(o.func) !== -1;
 	o.isTimed = o.actVal.match(TIMEDREGEX);
+	let isControlComm = CONTROLCOMM.indexOf(o.func) !== -1;
 	runButElNotThere = o.elNotThere || runButElNotThere;
 
-	if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
+	if (!isControlComm) {
+		// Control commands like break, continue, always get run if found in the flow and are not subject to skipping during pause resumption.
+		if (_syncStore(o, delayActiveID, syncQueueSet, runButElNotThere)) return;
 
-	// Check and set up sync commands.
-	_syncCheckAndSet(o, syncQueueSet);
+		// Check and set up sync commands.
+		_syncCheckAndSet(o, syncQueueSet);
+	}
 
 	// Handle the pause command, which uses a similar method as "await".
 	if (o.func == 'Pause') {
@@ -181,7 +185,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	}
 
 	// Restart the sync queue if await was used.
-	if (!o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
+	if (!isControlComm && !o.isAsync && o.isAwait && _isSyncQueueSet(o._subEvCo)) {
 		_syncRestart(o, o._subEvCo);
 		return;
 	}
