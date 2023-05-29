@@ -2692,8 +2692,6 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		_syncCheckAndSet(o, syncQueueSet);
 	}
 
-console.log('_handleFunc, o.func:', o.func);
-
 	// Handle the pause command, which uses a similar method as "await".
 	if (o.func == 'Pause') {
 		// Allow variables in the pause command.
