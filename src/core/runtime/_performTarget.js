@@ -20,6 +20,15 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	let targName = targ[m].name;
 
 	let resultOfLoopCheck = _checkRunLoop(outerTargetObj, targVal, targName, m, 'action');
+
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
+
 	if (!resultOfLoopCheck.atIf) {
 		// Wipe previousIfRes, as this is no longer looking for an "@else if" or "@else".
 		delete outerTargetObj.previousIfRes;

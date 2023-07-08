@@ -1,5 +1,15 @@
 const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter) => {
 	_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, 0);
+
+	let _imStCo = loopObj._imStCo;
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
+
 	secSelCounter++;
 	let thisTEV = targetEventCounter;
 	if (secSels[secSelCounter]) {

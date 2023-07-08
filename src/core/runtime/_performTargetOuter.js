@@ -18,7 +18,12 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
 	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
-	if (resultOfLoopCheck.atIf) {
+
+	if (resultOfLoopCheck.atIf ||
+			typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
 		return;
 	}
 

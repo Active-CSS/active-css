@@ -33,7 +33,7 @@ const _performEvent = loopObj => {
 		delete imSt[thisStopCounter];
 		delete _break['i' + thisStopCounter];
 
-		_cleanUpAfterPause(loopObjClone._subEvCo);
+		_cleanUpAfterPause(loopObjClone._subEvCo, loopObjClone.obj._acssActiveID);
 		_resetContinue(thisStopCounter);
 		_resetExitTarget(thisStopCounter);
 	}

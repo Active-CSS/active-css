@@ -3554,7 +3554,7 @@ const _performEvent = loopObj => {
 		delete imSt[thisStopCounter];
 		delete _break['i' + thisStopCounter];
 
-		_cleanUpAfterPause(loopObjClone._subEvCo);
+		_cleanUpAfterPause(loopObjClone._subEvCo, loopObjClone.obj._acssActiveID);
 		_resetContinue(thisStopCounter);
 		_resetExitTarget(thisStopCounter);
 	}
@@ -3589,6 +3589,16 @@ const _performSecSel = (loopObj) => {
 
 const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter) => {
 	_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, 0);
+
+	let _imStCo = loopObj._imStCo;
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
+
 	secSelCounter++;
 	let thisTEV = targetEventCounter;
 	if (secSels[secSelCounter]) {
@@ -3624,6 +3634,15 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	let targName = targ[m].name;
 
 	let resultOfLoopCheck = _checkRunLoop(outerTargetObj, targVal, targName, m, 'action');
+
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
+
 	if (!resultOfLoopCheck.atIf) {
 		// Wipe previousIfRes, as this is no longer looking for an "@else if" or "@else".
 		delete outerTargetObj.previousIfRes;
@@ -3704,7 +3723,12 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
 	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
-	if (resultOfLoopCheck.atIf) {
+
+	if (resultOfLoopCheck.atIf ||
+			typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
 		return;
 	}
 
@@ -4910,9 +4934,10 @@ const _checkExitTarget = _imStCo => {
 };
 
 const _checkRunLoop = (outerTargetObj, chils, statement, pointer, loopWhat) => {
-	if (!chils) return { atIf: false };
+	if (!chils || !statement.startsWith('@')) return { atIf: false };
 	let atIfDetails = _getLoopCommand(statement);
 	outerTargetObj._condCo++;
+
 	if (atIfDetails !== false) {
 		let outerTargetObjClone = _clone(outerTargetObj);
 		let chilsClone = _clone(chils);
@@ -4972,7 +4997,7 @@ const _getLoopCommand = str => {
 		let pos = str.indexOf(' ');
 		let wot = (pos !== -1) ? str.substr(0, pos) : str;
 		if (wot && STATEMENTS.indexOf(wot) !== -1) {
-			return { name: wot.trim(), type: ((wot == '@each' || wot == '@for') ? 'loop' : 'notloop') };
+			return { name: wot.trim(), type: ((wot == '@each' || wot == '@for' || wot == '@while') ? 'loop' : 'notloop') };
 		} else {
 			return false;
 		}
@@ -5571,10 +5596,16 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	let { obj, otherObj, varScope, _subEvCo, _subSubEvCo, _targCo } = ifObj;
 
 	let loopRef = loopObj.loopRef || '';
+
 	// Handle pause resumption.
-	if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
-		let trackRes = condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
-		return trackRes;
+	let runIndex = loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo;
+
+	if (condTrack[_subEvCo]) {
+		if (condTrack[_subEvCo].condResArr[runIndex] !== undefined) {		// This undefined is definitely needed to resume correctly.
+			let trackRes = condTrack[_subEvCo].condResArr[runIndex];
+			loopObj._condCo++;
+			return trackRes;
+		}
 	}
 
 	// Attributes get evaluated first. This is so that we can evaluate things like $cheese{@data-num}, which is really useful.
@@ -5635,8 +5666,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 		condTrack[_subEvCo] = [];
 		condTrack[_subEvCo].condResArr = [];
 	}
-	condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
-
+	condTrack[_subEvCo].condResArr[runIndex] = res;
 	loopObj._condCo++;
 
 	return res;
@@ -5666,13 +5696,11 @@ const _handleWhileItem = (itemsObj, counterVal) => {
 	let { loopObj, fullStatement, statement, scopePrefix } = itemsObj, loopObj2;
 	let { _imStCo, evType, varScope, otherObj, sel: primSel, eve, doc, component, compDoc, loopWhat, passTargSel, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
-	if (_checkBreakLoop(_imStCo)) {
-		return;
-	}
+	if (_checkBreakLoop(_imStCo)) return;
 
 	loopObj2 = _clone(loopObj);
 
-	loopObj2.loopRef = itemsObj.existingLoopRef + '_wh_' + counterVal;
+	loopObj2.loopRef = itemsObj.existingLoopRef + '_' + fullStatement + '_' + counterVal;
 
 	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
 	let parsedStatement = _replaceConditionalsExpr(statement);

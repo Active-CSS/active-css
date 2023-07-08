@@ -2,13 +2,11 @@ const _handleWhileItem = (itemsObj, counterVal) => {
 	let { loopObj, fullStatement, statement, scopePrefix } = itemsObj, loopObj2;
 	let { _imStCo, evType, varScope, otherObj, sel: primSel, eve, doc, component, compDoc, loopWhat, passTargSel, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
-	if (_checkBreakLoop(_imStCo)) {
-		return;
-	}
+	if (_checkBreakLoop(_imStCo)) return;
 
 	loopObj2 = _clone(loopObj);
 
-	loopObj2.loopRef = itemsObj.existingLoopRef + '_wh_' + counterVal;
+	loopObj2.loopRef = itemsObj.existingLoopRef + '_' + fullStatement + '_' + counterVal;
 
 	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
 	let parsedStatement = _replaceConditionalsExpr(statement);

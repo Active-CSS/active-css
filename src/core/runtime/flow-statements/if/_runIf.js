@@ -3,10 +3,16 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	let { obj, otherObj, varScope, _subEvCo, _subSubEvCo, _targCo } = ifObj;
 
 	let loopRef = loopObj.loopRef || '';
+
 	// Handle pause resumption.
-	if (condTrack[_subEvCo] && condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo]) {
-		let trackRes = condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo];
-		return trackRes;
+	let runIndex = loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo;
+
+	if (condTrack[_subEvCo]) {
+		if (condTrack[_subEvCo].condResArr[runIndex] !== undefined) {		// This undefined is definitely needed to resume correctly.
+			let trackRes = condTrack[_subEvCo].condResArr[runIndex];
+			loopObj._condCo++;
+			return trackRes;
+		}
 	}
 
 	// Attributes get evaluated first. This is so that we can evaluate things like $cheese{@data-num}, which is really useful.
@@ -67,8 +73,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 		condTrack[_subEvCo] = [];
 		condTrack[_subEvCo].condResArr = [];
 	}
-	condTrack[_subEvCo].condResArr[loopRef + loopObj._condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
-
+	condTrack[_subEvCo].condResArr[runIndex] = res;
 	loopObj._condCo++;
 
 	return res;
