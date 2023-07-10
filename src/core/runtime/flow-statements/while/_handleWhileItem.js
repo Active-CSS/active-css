@@ -1,6 +1,6 @@
 const _handleWhileItem = (itemsObj, counterVal) => {
 	let { loopObj, fullStatement, statement, scopePrefix } = itemsObj, loopObj2;
-	let { _imStCo, evType, varScope, otherObj, sel: primSel, eve, doc, component, compDoc, loopWhat, passTargSel, _subEvCo, _subSubEvCo, _targCo } = loopObj;
+	let { _imStCo, evType, varScope, otherObj, sel: primSel, eve, doc, component, compDoc, loopWhat, passTargSel, _subEvCo, _subSubEvCo, _targCo, obj } = loopObj;
 
 	if (_checkBreakLoop(_imStCo)) return;
 
