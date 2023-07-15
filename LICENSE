@@ -30,9 +30,10 @@ eg. Google, Mozilla, W3C:
 
 Any browser or W3C specification implementation in part of whole of this
 project, or a historical version of it (Active CSS or Action CSS) to be used
-in a browser, must have received express written permission from Riverzend
-Dynamics Ltd. That includes the ideas, functionality, specification or
-implied specification, code and documentation.
+as functionality in a distributed browser, commercial or otherwise, must have
+received express written permission from Riverzend Dynamics Ltd. That includes
+the ideas, functionality, specification or implied specification, code and
+documentation.
 
 Browser vendors or W3C spec writers do not have the permission to copy syntax,
 implementation techniques, or the original ideas of this project without the
