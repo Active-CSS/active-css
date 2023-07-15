@@ -1921,6 +1921,10 @@ _c.IfChecked = o => _selCompare(o, 'iC');
 
 _c.IfCompletelyVisible = o => { return ActiveCSS._ifVisible(o, true); };	// Used by extensions.
 
+_c.IfCompletelyVisibleX = o => { return ActiveCSS._ifVisible(o, true, 'x'); };
+
+_c.IfCompletelyVisibleY = o => { return ActiveCSS._ifVisible(o, true, 'y'); };
+
 _c.IfCookieEquals = o =>  {
 	let spl = o.actVal.split(' ');
 	if (!_cookieExists(spl[0])) return false;
@@ -12401,9 +12405,9 @@ const _ifFocus = (o, first=true) => {
 	}
 };
 
-ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is partially visible. Used by extensions.
+ActiveCSS._ifVisible = (o, tot, context) => {           // tot true is completely visible, false is partially visible. Used by extensions, hence global.
 	let el, elContainer, aV;
-	if (typeof aV === 'object') {	// Used by devtools highlighting.
+	if (typeof aV === 'object') {          // Used by devtools highlighting.
 		aV = o.actVal;
 	} else {
 		// The optional "scope" parameter determines which container holds the boundary information.
@@ -12426,7 +12430,23 @@ ActiveCSS._ifVisible = (o, tot) => {	// tot true is completely visible, false is
 	let rect = el.getBoundingClientRect();
 	let elTop = rect.top;
 	let elBot = rect.bottom;
-	return (tot) ? (elTop >= 0) && (elBot <= window.innerHeight) : elTop < window.innerHeight && elBot >= 0;
+	let elLeft = rect.left;
+	let elRight = rect.right;
+	if (context) {
+		// This is an X or Y check.
+		if (context == 'x') {
+			return (tot) ? elLeft >= 0 && elRight <= window.innerWidth : elLeft < window.innerWidth && elRight >= 0;
+		} else {
+			return (tot) ? elTop >= 0 && elBot <= window.innerHeight : elTop < window.innerHeight && elBot >= 0;
+		}
+	} else {
+		// This is a full check.
+		if (tot) {
+			return elLeft >= 0 && elRight <= window.innerWidth && elTop >= 0 && elBot <= window.innerHeight;
+		} else {
+			return elLeft < window.innerWidth && elRight >= 0 && elTop < window.innerHeight && elBot >= 0;
+		}
+	}
 };
 
 const _isACSSStyleTag = (nod) => {
