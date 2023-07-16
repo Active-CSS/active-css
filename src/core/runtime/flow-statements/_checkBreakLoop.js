@@ -7,5 +7,6 @@ const _checkBreakLoop = (_imStCo, innerType) => {
 		) {
 		return true;
 	}
+
 	return false;
 };

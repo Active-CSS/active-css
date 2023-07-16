@@ -1,6 +1,8 @@
 const _checkRunLoop = (outerTargetObj, chils, statement, pointer, loopWhat) => {
-	if (!chils) return { atIf: false };
+	if (!chils || !statement.startsWith('@')) return { atIf: false };
 	let atIfDetails = _getLoopCommand(statement);
+	outerTargetObj._condCo++;
+
 	if (atIfDetails !== false) {
 		let outerTargetObjClone = _clone(outerTargetObj);
 		let chilsClone = _clone(chils);

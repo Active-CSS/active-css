@@ -1,5 +1,5 @@
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
@@ -20,6 +20,15 @@ const _performTarget = (outerTargetObj, targCounter) => {
 	let targName = targ[m].name;
 
 	let resultOfLoopCheck = _checkRunLoop(outerTargetObj, targVal, targName, m, 'action');
+
+	if (typeof imSt[_imStCo] !== 'undefined' && imSt[_imStCo]._acssImmediateStop ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue') ||
+			_checkExitTarget(_imStCo)
+		) {
+		return;
+	}
+
 	if (!resultOfLoopCheck.atIf) {
 		// Wipe previousIfRes, as this is no longer looking for an "@else if" or "@else".
 		delete outerTargetObj.previousIfRes;
@@ -47,6 +56,9 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo,
 			passCond: passCond,

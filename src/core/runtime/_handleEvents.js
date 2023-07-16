@@ -86,7 +86,11 @@ const _handleEvents = evObj => {
 		}
    	}
    	if (runGlobalScopeEvents) {
-		componentRefs = initialComponentRefs;
+   		if (componentRefs === false || !componentRefs.compDoc) {
+	   		componentRefs = { compDoc: null, topVarScope: null, evScope: null, component: null, strictPrivateEvs: null, privateEvs: null };
+	   	} else {
+			componentRefs = initialComponentRefs;
+		}
 		for (i = 0; i < selectorListLen; i++) {
 			let primSel = selectors[evType][i];
 			if (primSel.substr(0, 1) == '|' || typeof obj !== 'string' && primSel.substr(0, 1) == '~') continue;
@@ -167,7 +171,6 @@ const _handleEvents = evObj => {
 	}
 
 	clauseCo = 0;
-	subEventCounter++;
 
 	eventsLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
@@ -178,6 +181,7 @@ const _handleEvents = evObj => {
 				let useForObservePrim = 'i' + primSel;
 				for (clause in config[primSel][evType]) {
 					clauseCo++;
+					subEventCounter++;
 					passCond = '';
 					if (clause != '0') {	// A conditional is there.
 						if (clauseArr[clauseCo] === undefined) continue;	// The conditional failed earlier.

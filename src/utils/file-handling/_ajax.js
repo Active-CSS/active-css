@@ -33,10 +33,13 @@
 		case 'json':
 			mime = 'application/json';
 			break;
+		case 'data':
+			mime = '';	// browser will set the multipart type automatically with a boundary.
+			break;
 		default:
 			mime = 'application/x-www-form-urlencoded';
 	}
-	r.setRequestHeader('Content-type', mime);
+	if (mime) r.setRequestHeader('Content-type', mime);
 	if (o) {
 		if (o.csrf) {
 			// Is there a meta tag with X-CSRF-TOKEN present?

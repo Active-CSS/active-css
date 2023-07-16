@@ -9,7 +9,7 @@ const _getLoopCommand = str => {
 		let pos = str.indexOf(' ');
 		let wot = (pos !== -1) ? str.substr(0, pos) : str;
 		if (wot && STATEMENTS.indexOf(wot) !== -1) {
-			return { name: wot.trim(), type: ((wot == '@each' || wot == '@for') ? 'loop' : 'notloop') };
+			return { name: wot.trim(), type: ((wot == '@each' || wot == '@for' || wot == '@while') ? 'loop' : 'notloop') };
 		} else {
 			return false;
 		}

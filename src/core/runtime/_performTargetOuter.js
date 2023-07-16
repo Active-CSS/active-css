@@ -1,7 +1,9 @@
 const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
-	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
+	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
 
 	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
+
+	loopObj._targCo++;
 
 	if (!secSels[secSelCounter]) return;
 	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
@@ -16,7 +18,12 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
 	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
-	if (resultOfLoopCheck.atIf) {
+
+	if (resultOfLoopCheck.atIf ||
+			typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
+			_decrBreakContinue(_imStCo, 'break') ||
+			_decrBreakContinue(_imStCo, 'continue')
+		) {
 		return;
 	}
 
@@ -83,6 +90,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,
@@ -103,8 +113,22 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		// Handle variables that need to be evaluated before grabbing the targets.
 		flowTargetSelector = _sortOutTargSelectorVars(flowTargetSelector, obj, varScope, otherObj);
 
-		let res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+		// Get the applicable targets if we are resuming after a pause, otherwise get the target elements afresh.
+		let res;
+		if (elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+			res = elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo];
+		} else {
+			res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+
+			// Store the collection for resumption after pausing if needed.
+			if (!elTrack[_subEvCo]) {
+				elTrack[_subEvCo] = [];
+				elTrack[_subEvCo].resArr = [];
+			}
+			elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
+		}
 		if (!res.obj) return;
+
 		doc = res.doc;
 
 		passTargSel = flowTargetSelector;
@@ -128,6 +152,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			inheritedScope,
 			_maEvCo,
 			_subEvCo,
+			_subSubEvCo,
+			_targCo,
+			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
 			loopRef,

@@ -1,7 +1,5 @@
 const _handleIf = (loopObj, ifType) => {
-	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj } = loopObj;
-	let existingLoopRef = (loopObj.loopRef) ? loopObj.loopRef : '';
-	let targetObj;
+	let { fullStatement, loopWhat, varScope, passTargSel, primSel, evType, obj, secSelObj, otherObj, eve, doc, component, compDoc, ifObj, _subEvCo, _subSubEvCo, _targCo } = loopObj;
 
 	// eg. @if display(#myDiv) && has-class(#myDiv .shadedGreen) || var({player} "X")
 	// etc.
@@ -9,9 +7,6 @@ const _handleIf = (loopObj, ifType) => {
 	// First, remove @if clause.
 	let statement = fullStatement;
 	statement = statement.substr(ifType.length).trim();
-
-	// Do any variable substituting, etc. before parsing string to get ready for evaluation.
-//	let prepExpr = _prepareDetachedExpr(statement, varScope);
 
 	// Parse remainder into a format that can potentially be evaluated and bring back a true or false value.
 	let parsedStatement;
@@ -25,7 +20,6 @@ const _handleIf = (loopObj, ifType) => {
 	// Note: This hasn't been evaluated yet. This is just a check to see if the statement can be evaluated.
 
 	if (parsedStatement !== false) {
-
 		let thisIfObj = {
 			evType,
 			varScope,
@@ -35,6 +29,9 @@ const _handleIf = (loopObj, ifType) => {
 			doc,
 			component,
 			compDoc,
+			_subEvCo,
+			_subSubEvCo,
+			_targCo
 		};
 
 		if (loopWhat != 'action' || typeof passTargSel == 'string') {
@@ -44,7 +41,7 @@ const _handleIf = (loopObj, ifType) => {
 			thisIfObj.obj = passTargSel;
 		}
 
-		let res = _runIf(parsedStatement, fullStatement, thisIfObj);
+		let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj);
 		if (res) {
 			// This is ok - run the inner contents.
 			_runSecSelOrAction(loopObj);

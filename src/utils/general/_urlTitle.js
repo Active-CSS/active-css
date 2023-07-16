@@ -63,7 +63,7 @@ const _urlTitle = (url, titl, o, alsoRemove='') => {
 
 		// If this is a new hash url, get the original page that called this rather than the hash link object so we get the correct underlying page change attributes.
 		if (typeof o.secSelObj == 'object') {
-			if (emptyPageClick || url.indexOf('#') !== -1) {
+			if (!o.secSelObj.__acssFromLink && (emptyPageClick || url.indexOf('#') !== -1)) {
 				// This has been triggered from this page, so we can simply get the current state attrs value which contains all we need.
 				attrs = window.history.state.attrs || '';
 			} else {

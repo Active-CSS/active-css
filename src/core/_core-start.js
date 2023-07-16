@@ -54,6 +54,12 @@
 			'if-value',
 			'if-visible'
 		],
+		CONTROLCOMM = [
+			'break',
+			'continue',
+			'exit',
+			'exit-target',
+		],
 		CUSTOMEVENTS = [
 			'adoptedCallback',
 			'attributeChangedCallback',
@@ -64,6 +70,7 @@
 			'draw',
 			'disconnectCallback',
 			'innerhtmlchange',
+			'intersect',
 			'observe'
 		],
 		DIGITREGEX = /^\d+$/,
@@ -149,6 +156,7 @@
 		compPendingJSONCo = 0,
 		compParents = [],
 		compPrivEvs = [],
+		condTrack = {},			// Used in resuming after a pause to use remembered control flow states.
 		config = [],
 		configArr = [],
 		configBox = [],
@@ -173,6 +181,7 @@
 		doesPassive = false,
 		elementObserver,
 		elObserveTrack = [],
+		elTrack = {},			// Used in resuming after a pause to use remembered element states.
 		evEditorExtID = null,
 		evEditorActive = false,
 		eventState = {},
@@ -187,6 +196,7 @@
 		immediateStopCounter = -1,
 		imSt = [],
 		initInlineLoading = false,
+		initIntersectionObserver = false,
 		inIframe = (window.location !== window.parent.location),
 		inlineIDArr = [],
 		intIDCounter = 0,
@@ -194,7 +204,7 @@
 		labelByIDs = [],
 		lazyConfig = '',
 		localStoreVars = [],
-		maEv = [],
+		maEv = {},
 		mainEventCounter = -1,
 		masterConfigCo = 0,
 		mediaQueries = [],
@@ -208,6 +218,7 @@
 		parsedConfig = {},
 		passiveEvents = true,
 		pauseTrack = {},
+		pauseCleanTimers = {},
 		preGetting = {},
 		preGetMax = 6,
 		preGetMid = 0,
@@ -235,7 +246,7 @@
 		subEventCounter = -1,
 		supportsShadow = true,
 		syncQueue = [],
-		taEv = [],
+		taEv = {},
 		targetEventCounter = -1,
 		targetCounter = -1,
 		userSetupStarted = false,

@@ -3,7 +3,7 @@ const _pause = (o, tim) => {
 	let restartObj = _clone(o);
 	let activeID = _getActiveID(restartObj.secSelObj);
 	let subEvCo = restartObj._subEvCo;
-	pauseTrack[activeID] = {};
+	if (!pauseTrack[activeID]) pauseTrack[activeID] = {};
 	pauseTrack[activeID][subEvCo] = true;
 	setTimeout(() => {
 		o = null;

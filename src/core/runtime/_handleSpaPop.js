@@ -1,7 +1,7 @@
 const _handleSpaPop = (e, init) => {
 	let loc, realUrl, url, pageItem, pageGetUrl, manualChange, n, triggerOfflinePopstate = false, thisHashStr = '', multipleOfflineHash = false;
 
-	if (init|| !init && !e.state) {
+	if (init || !init && !e.state) {
 		// This is a manual hash change. By this point, a history object has been created which has no internal state object. So that needs creating and
 		// this existing history object needs replacing.
 		manualChange = true;
@@ -55,18 +55,7 @@ const _handleSpaPop = (e, init) => {
 	}
 
 	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
-
-	if (thisHashStr != '') {
-		// Get the hash trigger if there is one.
-		let hashSplit = thisHashStr.split('#');
-		let hashSplitLen = hashSplit.length;
-		for (n = 0; n < hashSplitLen; n++) {
-			if (hashSplit[n] == '') continue;
-			// Store the hash for when the page has loaded. It could be an embedded reference so we can only get the event once the page has loaded.
-			hashEvents.push(hashSplit[n]);
-			hashEventTrigger = true;
-		}
-	}
+	_setHashEvent(thisHashStr);
 
 	let urlObj = { url };
 	if (pageItem) urlObj.attrs = pageItem.attrs;

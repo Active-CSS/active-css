@@ -1,5 +1,5 @@
 const _handleForItem = (itemsObj, counterVal) => {
-	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2, newRef, objValVar;
+	let { loopObj, counterVar, toVal, stepVal, stepValDP, scopePrefix } = itemsObj, loopObj2;
 	let _imStCo = loopObj._imStCo;
 
 	if (_checkBreakLoop(_imStCo)) {
@@ -10,6 +10,7 @@ const _handleForItem = (itemsObj, counterVal) => {
 
 	let scopedVar = scopePrefix + counterVar;
 	_set(scopedProxy, scopedVar, counterVal);
+
 	loopObj2.loopRef = itemsObj.existingLoopRef + counterVar + '_0_' + counterVal;
 
 	_runSecSelOrAction(loopObj2);
