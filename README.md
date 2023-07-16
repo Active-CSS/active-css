@@ -3,7 +3,7 @@
 
 # [Active CSS](https://activecss.org/)
 
-Boldly go where no CSS author has gone before...
+The smartest DOM tool in the world.
 
 Here's a taster:
 ```
@@ -14,7 +14,7 @@ Here's a taster:
 }
 ```
 
-Example of a component (because you love components):
+Example of a component:
 ```
 button:click {
     render-after-end: "<hello-world></hello-world>";
@@ -60,10 +60,8 @@ There are loads of examples [on the concept examples page](https://activecss.org
 
 Want to see it work? Go to [the website](https://activecss.org).
 
-It puts the fun back into functionality! Yeah, sorry about that.
-
 ### License
 
-Active CSS is [MIT licensed](./LICENSE).
+Active CSS has basically an MIT license for your average web developer, and a bit more for others trying to profit from it or steal the credit. [license](./LICENSE).
 
-Copyright (c) 2022, River Zend Dynamics Ltd.
+Copyright (c) 2023, River Zend Dynamics Ltd.
