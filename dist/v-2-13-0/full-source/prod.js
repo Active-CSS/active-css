@@ -10354,25 +10354,22 @@ const _checkBoundaries = (el, cont, tot) => {
 	let left = _absLeft(el),
 		right = left + el.offsetWidth,
 		top = _absTop(el),
-		bottom = top + el.offsetHeight;
-	let cleft = _absLeft(cont),
-		cright = cleft + cont.offsetWidth,
-		ctop = _absTop(cont),
-		cbottom = ctop + cont.offsetHeight;
+		bottom = top + el.offsetHeight,
+		cLeft = _absLeft(cont),
+		cRight = cLeft + cont.offsetWidth,
+		cTop = _absTop(cont),
+		cBottom = cTop + cont.offsetHeight;
 
-// Working code for counting all 4 corners. For now, we are just interested in supporting vertical.
-// More parameters need to be added - horizontal, vertical and both, with a default of vertical if no parameters added.
-//	if (tot) {
-//		return (left >= cleft && top >= ctop && right <= cright && bottom <= cbottom);
-//	} else {
-//		return (left >= cleft || right <= cright) && (top >= ctop || bottom <= cbottom);
-//	}
-
-	if (tot) {
-		return top >= ctop && bottom <= cbottom;
-	} else {
-		return top >= ctop && bottom <= cbottom || top >= ctop && top <= cbottom || bottom >= ctop && bottom <= cbottom;
-	}
+	return {
+		top,
+		right,
+		bottom,
+		left,
+		cTop,
+		cRight,
+		cBottom,
+		cLeft,
+	};
 };
 
 const _checkForm = (frm, wot) => {
@@ -11747,29 +11744,55 @@ ActiveCSS._ifVisible = (o, tot, context) => {           // tot true is completel
 	if (!el) return false;
 
 	// Check in a container if one is found.
-	if (elContainer) return _checkBoundaries(el, elContainer, tot);
+	let compObj;
+	if (elContainer) {
+		compObj = _checkBoundaries(el, elContainer, tot);
+	} else {
+		// Container not found. Use the document.
+		let rect = el.getBoundingClientRect();
+		compObj = {
+			top: rect.top,
+			right: rect.right,
+			bottom: rect.bottom,
+			left: rect.left,
+			cTop: 0,
+			cRight: window.innerWidth,
+			cBottom: window.innerHeight,
+			cLeft: 0,
+		};
+	}
 
-	// Container not found. Use the document.
-	let rect = el.getBoundingClientRect();
-	let elTop = rect.top;
-	let elBot = rect.bottom;
-	let elLeft = rect.left;
-	let elRight = rect.right;
+	let res;
 	if (context) {
 		// This is an X or Y check.
 		if (context == 'x') {
-			return (tot) ? elLeft >= 0 && elRight <= window.innerWidth : elLeft < window.innerWidth && elRight >= 0;
+			if (tot) {
+				res = compObj.left >= compObj.cLeft && compObj.right <= compObj.cRight;
+			} else {
+				res = compObj.left < compObj.cRight && compObj.right >= compObj.cLeft;
+			}
 		} else {
-			return (tot) ? elTop >= 0 && elBot <= window.innerHeight : elTop < window.innerHeight && elBot >= 0;
+			if (tot) {
+				res = compObj.top >= compObj.cTop && compObj.bottom <= compObj.cBottom;
+			} else {
+				res = compObj.top < compObj.cBottom && compObj.bottom >= compObj.cTop;
+			}
 		}
 	} else {
-		// This is a full check.
+		// This is a check on both axes.
 		if (tot) {
-			return elLeft >= 0 && elRight <= window.innerWidth && elTop >= 0 && elBot <= window.innerHeight;
+			res = compObj.left >= compObj.cLeft &&
+				compObj.right <= compObj.cRight &&
+				compObj.top >= compObj.cTop &&
+				compObj.bottom <= compObj.cBottom;
 		} else {
-			return elLeft < window.innerWidth && elRight >= 0 && elTop < window.innerHeight && elBot >= 0;
+			res = compObj.left < compObj.cRight &&
+				compObj.right >= compObj.cLeft &&
+				compObj.top < compObj.cBottom &&
+				compObj.bottom >= compObj.cTop;
 		}
 	}
+	return res;
 };
 
 const _isACSSStyleTag = (nod) => {
