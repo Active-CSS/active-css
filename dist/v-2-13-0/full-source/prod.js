@@ -10349,7 +10349,7 @@ ActiveCSS._addClassObj = (obj, str) => {
 	obj.classList.add(...arr);
 };
 
-const _checkBoundaries = (el, cont, tot) => {
+const _checkBoundaries = (el, cont) => {
 	// Returns true if the boundaries checks pass.
 	let left = _absLeft(el),
 		right = left + el.offsetWidth,
@@ -11746,7 +11746,7 @@ ActiveCSS._ifVisible = (o, tot, context) => {           // tot true is completel
 	// Check in a container if one is found.
 	let compObj;
 	if (elContainer) {
-		compObj = _checkBoundaries(el, elContainer, tot);
+		compObj = _checkBoundaries(el, elContainer);
 	} else {
 		// Container not found. Use the document.
 		let rect = el.getBoundingClientRect();

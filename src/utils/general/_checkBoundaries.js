@@ -1,4 +1,4 @@
-const _checkBoundaries = (el, cont, tot) => {
+const _checkBoundaries = (el, cont) => {
 	// Returns true if the boundaries checks pass.
 	let left = _absLeft(el),
 		right = left + el.offsetWidth,

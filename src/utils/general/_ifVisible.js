@@ -19,7 +19,7 @@ ActiveCSS._ifVisible = (o, tot, context) => {           // tot true is completel
 	// Check in a container if one is found.
 	let compObj;
 	if (elContainer) {
-		compObj = _checkBoundaries(el, elContainer, tot);
+		compObj = _checkBoundaries(el, elContainer);
 	} else {
 		// Container not found. Use the document.
 		let rect = el.getBoundingClientRect();
