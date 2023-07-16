@@ -62,6 +62,6 @@ Want to see it work? Go to [the website](https://activecss.org).
 
 ### License
 
-Active CSS has basically an MIT license for your average web developer, and a bit more for others trying to profit from it or steal the credit. [license](./LICENSE).
+Active CSS has a permissive license for web developers, but strict clauses if you want to profit from it or use its ideas. [license](./LICENSE).
 
 Copyright (c) 2023, River Zend Dynamics Ltd.
