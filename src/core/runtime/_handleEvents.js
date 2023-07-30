@@ -4,6 +4,7 @@ const _handleEvents = evObj => {
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
 	let component = (evObj.component) ? '|' + evObj.component : null;
+
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (evType === undefined) return false;
 	if (typeof obj !== 'string') {
@@ -125,7 +126,6 @@ const _handleEvents = evObj => {
 
 	let sel;
 	if (!useForObserveID) useForObserveID = obj;
-
 	selectorListLen = selectorList.length;
 	let actionName, ifrSplit, ifrObj, conds = [], cond, condSplit, passCond;
 	let clause, clauseCo = 0, clauseArr = [];
@@ -175,6 +175,7 @@ const _handleEvents = evObj => {
 	eventsLoop: {
 		for (sel = 0; sel < selectorListLen; sel++) {
 			let primSel = selectorList[sel].primSel;
+
 			let { compDoc, topVarScope, evScope, component } = selectorList[sel].componentRefs;
 			component = (component) ? component.substr(1) : null;	// we don't want to pass around the pipe | prefix.
 			if (config[primSel] && config[primSel][evType]) {

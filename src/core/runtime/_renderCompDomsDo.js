@@ -1,12 +1,30 @@
-const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender) => {
+const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElementsInRender, preRenderedSel) => {
 	let shadowParent, strictlyPrivateEvents, privateEvents, parentCompDetails, isShadow, shadRef, varScope, evScope, componentName, template, shadow,
 		shadPar, shadEv, strictVars, privVars, acceptVars;
 
-	// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
-	componentName = obj.getAttribute('data-name');
-	shadowParent = obj.parentNode;
+	if (preRenderedSel) {
+		componentName = preRenderedSel;
+		shadowParent = obj;
 
-	if (components[componentName].renderWhenVisible) {
+	} else {
+		// Determine if this is a shadow or a scoped component. We can tell if the mode is set or not.
+		componentName = obj.getAttribute('data-name');
+		shadowParent = obj.parentNode;
+		shadRef = obj.getAttribute('data-ref');
+	}
+
+	parentCompDetails = _componentDetails(shadowParent);
+
+	if (preRenderedSel) {
+		// Generate the "o" properties for this, because we didn't come in through an event flow command.
+		// The o object is gathered as a rendering event from the parent object so we can assign the correct scopes.
+		o = {
+			varScope: parentCompDetails.varScope,
+			doc: parentCompDetails.compDoc,
+		};
+	}
+
+	if (components[componentName].renderWhenVisible && !preRenderedSel) {
 		if ('IntersectionObserver' in window) {
 			// Come back in here when it is visible.
 			if (shadowParent._acssCompIO) {
@@ -38,9 +56,6 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	privVars = components[componentName].privVars;
 	acceptVars = components[componentName].acceptVars;
 
-	parentCompDetails = _componentDetails(shadowParent);
-	shadRef = obj.getAttribute('data-ref');
-
 	// We have a scenario for non-shadow DOM components:
 	// Now that we have the parent node, is it a dedicated parent with no other children? We need to assign a very specific scope for event and variable scoping.
 	// So check if it already has child nodes. If it does, then it cannot act as a host. Components must have dedicated hosts. So we will add one later.
@@ -68,7 +83,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	// For now, this is a work in progress and the events section in the components area of the docs now has the note regarding trs and li scoped components.
 	// This would be great to get eventually resolved. Another option is to allow host parents to hold multiple inner scopes, and that possibly may be
 	// simpler to implement, or it may not.
-	if (!isShadow && (
+	if (!preRenderedSel && !isShadow && (
 			privateEvents ||
 			strictlyPrivateEvents ||
 			privVars
@@ -81,13 +96,13 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 		shadowParent.replaceChild(scopeEl, obj);
 		// Switch the parent to the new scoping element.
 		shadowParent = scopeEl;
-	} else {
+	} else if (!preRenderedSel) {
 		obj.remove();	// Remove the shadow DOM reference tag.
 	}
 
 	if (isShadow && shadowParent.shadowRoot) {
 		// This is an additional shadow render covering the same area, but we already have this covered.
-		_renderCompDomsClean(shadRef);
+		if (!preRenderedSel) _renderCompDomsClean(shadRef);
 		return;
 	}
 
@@ -120,7 +135,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	strictCompPrivEvs[evScope] = strictlyPrivateEvents;
 	compPrivEvs[evScope] = privateEvents;
 
-	if (compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
+	if (!preRenderedSel && compPending[shadRef].indexOf('{$CHILDREN}') !== -1) {
 		compPending[shadRef] =  _renderRefElements(compPending[shadRef], childTree, 'CHILDREN');
 	}
 
@@ -136,52 +151,55 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	shadowParent._acssStrictVars = strictVars;
 	shadowParent._acssEvScope = evScope;
 
-	if (compPendingJSON[shadRef] !== undefined) {
-		// Convert JSON string to variables and get these declared in the correct component scope now that it has been established.
-		let compScope = privVarScopes[varScopeToPassIn] ? varScopeToPassIn : 'main';
-		for (const json in compPendingJSON[shadRef]) {
-			// Send the JSON string through the same code as it would do if it was coming straight from loading.
-			let res = JSON.parse(compPendingJSON[shadRef][json]);
-			_resolveAjaxVarsDecl({ res, obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo }, compScope);
+	if (!preRenderedSel) {
+		if (compPendingJSON[shadRef] !== undefined) {
+			// Convert JSON string to variables and get these declared in the correct component scope now that it has been established.
+			let compScope = privVarScopes[varScopeToPassIn] ? varScopeToPassIn : 'main';
+			for (const json in compPendingJSON[shadRef]) {
+				// Send the JSON string through the same code as it would do if it was coming straight from loading.
+				let res = JSON.parse(compPendingJSON[shadRef][json]);
+				_resolveAjaxVarsDecl({ res, obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo }, compScope);
+			}
+			// All tmp content has been replaced. Remove the placeholder reference from memory.
+			delete compPendingJSON[shadRef];
 		}
-		// All tmp content has been replaced. Remove the placeholder reference from memory.
-		delete compPendingJSON[shadRef];
+
 	}
 
 	// Run a beforeComponentOpen custom event before the shadow is created. This is run on the host object.
 	// This is useful for setting variables needed in the component itself. It solves the flicker issue that can occur when dynamically drawing components.
 	// The variables are pre-scoped to the shadow before the shadow is drawn.
 	// The scope reference is based on the Active ID of the host, so everything can be set up before the shadow is drawn.
+	// On a pre-rendered component, this event is still here for ease of code compartmentalization but basically does the same as componentOpen.
 	_handleEvents({ obj: shadowParent, evType: 'beforeComponentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo });
 
-	// Start mapping the variables - we're going to output them all at the same time to avoid progressive evaluation of variables within the substituted content itself.
-	let strObj;
-
-	if (acceptVars) {
-		compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
-	}
-
-	if (compPendingHTML[shadRef] !== undefined) {
-		// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
-		for (const tmpContent in compPendingHTML[shadRef]) {
-			// Output the variables for real from the map.
-			let newStr = _resolveComponentAcceptedVars(compPendingHTML[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
-			compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
+	if (!preRenderedSel) {
+		if (acceptVars) {
+			compPending[shadRef] = _resolveComponentAcceptedVars(compPending[shadRef], o, varScopeToPassIn, shadowParent);
 		}
-		// All tmp content has been replaced. Remove the placeholder reference from memory.
-		delete compPendingHTML[shadRef];
+
+		if (compPendingHTML[shadRef] !== undefined) {
+			// Replace the placeholders for content loaded from files that need variable substitution with variable-populated content.
+			for (const tmpContent in compPendingHTML[shadRef]) {
+				// Output the variables for real from the map.
+				let newStr = _resolveComponentAcceptedVars(compPendingHTML[shadRef][tmpContent], o, varScopeToPassIn, shadowParent);
+				compPending[shadRef] = compPending[shadRef].replace('_acssIntCompVarRepl' + tmpContent + '_', newStr);
+			}
+			// All tmp content has been replaced. Remove the placeholder reference from memory.
+			delete compPendingHTML[shadRef];
+		}
+
+		compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
+
+		// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
+		compPending[shadRef] = _unEscNoVars(compPending[shadRef]);
+
+		template = document.createElement('template');
+		template.innerHTML = compPending[shadRef];
+
+		// Remove the pending shadow DOM instruction from the array as it is about to be drawn, and some other clean-up.
+		_renderCompDomsClean(shadRef);
 	}
-
-	compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
-
-	// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.
-	compPending[shadRef] = _unEscNoVars(compPending[shadRef]);
-
-	template = document.createElement('template');
-	template.innerHTML = compPending[shadRef];
-
-	// Remove the pending shadow DOM instruction from the array as it is about to be drawn, and some other clean-up.
-	_renderCompDomsClean(shadRef);
 
 	if (isShadow) {
 		try {
@@ -232,43 +250,47 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 	// Get the actual DOM, like document or shadow DOM root, that may not actually be shadow now that we have scoped components.
 	actualDoms[varScope] = (isShadow) ? shadow : shadow.getRootNode();
 
-	// Attach the shadow or the insides.
-	if (!isShadow && o.origActVal.indexOf('|_acss-host_') === -1 && !privateEvents && !strictlyPrivateEvents && !privVars && o.renderPos) {
-		switch (o.renderPos) {
-			case 'beforebegin':
-				shadow.before(template.content);
-				break;
+	if (!preRenderedSel) {
+		// Attach the shadow or the insides.
+		if (!isShadow && o.origActVal.indexOf('|_acss-host_') === -1 && !privateEvents && !strictlyPrivateEvents && !privVars && o.renderPos) {
+			switch (o.renderPos) {
+				case 'beforebegin':
+					shadow.before(template.content);
+					break;
 
-			case 'beforeend':
-				shadow.append(template.content);
-				break;
+				case 'beforeend':
+					shadow.append(template.content);
+					break;
 
-			case 'afterbegin':
-				shadow.prepend(template.content);
-				break;
+				case 'afterbegin':
+					shadow.prepend(template.content);
+					break;
 
-			case 'afterend':
-				shadow.after(template.content);
-				break;
+				case 'afterend':
+					shadow.after(template.content);
+					break;
 
-			default:
-				_warn(o.func + ' not supported for component - contact support');
-				return;
+				default:
+					_warn(o.func + ' not supported for component - contact support');
+					return;
+			}
+		} else {
+			shadow.replaceChildren(template.content);
 		}
-	} else {
-		shadow.replaceChildren(template.content);
-	}
 
-	shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
-		_replaceTempActiveID(obj);
-	});
+		shadow.querySelectorAll('[data-activeid]').forEach(function(obj) {
+			_replaceTempActiveID(obj);
+		});
+	}
 
 	let docToPass = (isShadow || strictlyPrivateEvents || privateEvents) ? shadow : o.doc;
 
 	// Run a componentOpen custom event, and any other custom event after the shadow is attached with content. This is run on the host object.
 	setTimeout(function() {
-		// Remove the variable placeholders.
-		_removeVarPlaceholders(shadow);
+		if (!preRenderedSel) {
+			// Remove the variable placeholders.
+			_removeVarPlaceholders(shadow);
+		}
 
 		_handleEvents({ obj: shadowParent, evType: 'componentOpen', eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
 
@@ -279,15 +301,19 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 				_renderCompDomsDo(o, obj);
 				return;
 			}
-			// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
-			if (!obj._acssDrawn) _handleEvents({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			if (!preRenderedSel) {
+				// Run draw events on all new elements in this shadow. This needs to occur after componentOpen.
+				if (!obj._acssDrawn) _handleDrawScope({ obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: varScopeToPassIn, evScope, compDoc: docToPass, component: componentName, _maEvCo: o._maEvCo });
+			}
 		});
 
-		if (isShadow) {
-			// Iterate elements in this shadow DOM component and do any observe events.
-			// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
-			// event in the mutation section would otherwise not get run.
-			_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
+		if (!preRenderedSel) {
+			if (isShadow) {
+				// Iterate elements in this shadow DOM component and do any observe events.
+				// Note this needs to be here, because the elements here that are not components have already been drawn and so the observe
+				// event in the mutation section would otherwise not get run.
+				_runInnerEvent(null, '*:not(template *)', 'observe', shadow, true);
+			}
 		}
 	}, 0);
 

@@ -19,7 +19,8 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 			// First check if this is a part of a comma-delimited list of conditionals, then do other stuff to set up for the switch statement.
 			// It could look like '?cheese, ?trevor' or '?cheese, trevor', and they would all be conditionals, so these next lines cater for a missing ?.
 			let noQuestionMark;
-			strTrimCheck = (isConditional && (noQuestionMark = strTrimmed.indexOf('?') === -1)) ? '?' : (!isComponent || isComponent && str[i].indexOf(':') === -1) ? strTrimmed.slice(0, 1) : '';
+			strTrimCheck = (isConditional && (noQuestionMark = strTrimmed.indexOf('?') === -1)) ? '?' : strTrimmed.slice(0, 1);
+
 			switch (strTrimCheck) {
 				case '?':
 					// This is a conditional. This puts the conditional in memory for later use.
@@ -43,19 +44,41 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 						// This is a page list declaration. Append it to any others previously found.
 						_iteratePageList(innerContent, removeState);
 					} else if (isComponent) {
-						// This is an html component. Stored like the conditional but in a different place.
-						let checkCompName = strTrimmed.replace(/\s+/g, ' ').split(' ')[1].trim();
 						let compName, elementName;
-						if (checkCompName.indexOf('-') !== -1) {
-							// This is an element. Generate the internal component name for tying into the element.
-							elementName = checkCompName;
-							compName = _ucFirst(checkCompName._ACSSConvFunc());
-						} else {
-							compName = checkCompName;
-						}
+						let componentOpts = {};
 
+						// Is this using pre-rendered HTML (with scope option), or loading up HTML?
+						let scopePos = strTrimmed.indexOf(' scope(');
+						if (scopePos !== -1) {
+							// This is using pre-rendered HTML. The compName can be the scope. They must be unique.
+							let scopeOpt = _extractBracketPars(strTrimmed, [ 'scope' ]);
+							compName = 'c' + scopeOpt.scope.replace(':', '%%');	// Cannot use a : in a component name.
+							let compPreRenderPos = compPreRendered.indexOf(compName);
+							if (!removeState) {
+								if (compPreRenderPos !== -1) {
+									_warn(compName + ' already exists as a scope for a component.');
+									continue;
+								}
+								compPreRendered.push(compName);
+							} else {
+								compPreRendered.splice(compPreRenderPos);
+							}
+						} else {
+							// This is an component that dynamically renders HTML. Stored like the conditional but in a different place.
+							let checkCompName = strTrimmed.replace(/\s+/g, ' ').split(' ')[1].trim();
+							if (checkCompName.indexOf('-') !== -1) {
+								// This is an element. Generate the internal component name for tying into the element.
+								elementName = checkCompName;
+								compName = _ucFirst(checkCompName._ACSSConvFunc());
+							} else {
+								compName = checkCompName;
+							}
+						}
 						if (!removeState) {
 							if (!components[compName]) components[compName] = {};
+							if (scopePos !== -1) {
+								components[compName].prerender = true;
+							}
 							components[compName].mode = null;
 							components[compName].shadow = false;
 							components[compName].scoped = false;
@@ -73,7 +96,6 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							let cssTemplPos = checkStr.indexOf(' css-template(');
 							let observePos = checkStr.indexOf(' observe(');
 							let templatePos = checkStr.indexOf(' selector(');
-							let componentOpts = {};
 							if (htmlPos !== -1 || cssPos !== -1 || jsonPos !== -1 || observePos !== -1 || templatePos !== -1 || htmlTemplPos !== -1 || cssTemplPos !== -1) {
 								componentOpts = _extractBracketPars(checkStr, [ 'html', 'css', 'json', 'html-template', 'css-template', 'observe', 'template' ]);
 								if (componentOpts.html) components[compName].htmlFile = componentOpts.html;
@@ -261,6 +283,7 @@ const _makeVirtualConfig = (subConfig='', statement='', componentName=null, remo
 							} else {
 								delete shadowSels[componentName];
 								delete components[componentName];
+								compPreRendered.splice(compPreRendered.indexOf(componentName));
 							}
 						}
 

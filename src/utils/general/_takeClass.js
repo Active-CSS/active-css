@@ -4,6 +4,6 @@ const _takeClass = (o, toggle) => {
 	let aVRes = _extractBracketPars(o.actVal, [ 'scope' ], o);
 	let theClass = aVRes.action.substr(1);
 	let addClass = (!toggle || toggle && !o.secSelObj.classList.contains(theClass));
-	_eachRemoveClass(theClass, theClass, o.doc, aVRes.scope);
+	_eachRemoveClass(o, theClass, aVRes.scope);
 	if (addClass) _a.AddClass({ secSelObj: o.secSelObj, actVal: theClass });
 };
