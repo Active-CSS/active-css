@@ -2864,9 +2864,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		if (o.func.startsWith('--')) {
 			_setCSSVariable(o);
 		} else {
-			if (_isConnected(o.secSelObj)) {
-				o.secSelObj.style[o.actName] = o.actVal;
-			}
+			_setCSSProperty(o)
 		}
 	}
 
@@ -9499,6 +9497,19 @@ const _setACSSVariable = o => {
 	// Watch there are no timers in var assignment flow or this next bit will break things. There shouldn't ever be anyway, for speed reasons.
 	o.func = oldFunc;
 	o.actValSing = oldActValSing;
+};
+
+const _setCSSProperty = o => {
+	if (!_isConnected(o.secSelObj)) return;
+
+	let prop = o.actVal;
+	let importantPos = prop.indexOf('!important');
+	let priority;
+	if (importantPos !== -1) {
+		priority = 'important';
+		prop = prop.substring(0, importantPos);
+	}
+	o.secSelObj.style.setProperty(o.actName, prop, priority);
 };
 
 const _setCSSVariable = o => {

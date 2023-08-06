@@ -167,9 +167,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		if (o.func.startsWith('--')) {
 			_setCSSVariable(o);
 		} else {
-			if (_isConnected(o.secSelObj)) {
-				o.secSelObj.style[o.actName] = o.actVal;
-			}
+			_setCSSProperty(o)
 		}
 	}
 
