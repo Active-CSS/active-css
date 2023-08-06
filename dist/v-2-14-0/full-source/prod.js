@@ -1594,6 +1594,10 @@ _a.SetProperty = o => {
 	_handleObserveEvents(o.doc);
 };
 
+_a.SlideDown = o => _slide(o, 'down');
+
+_a.SlideUp = o => _slide(o, 'up');
+
 _a.StopEventPropagation = o => _stopEventPropagation(o);
 
 const _stopEventPropagation = o => {
@@ -12142,6 +12146,29 @@ const _setsrcObj = (obj, inSrc) => {
 
 const _setUnderPage = () => {
 	currUnderPage = window.location.pathname + window.location.search;
+};
+
+const _slide = (o, opt) => {
+	let sels = _getSels(o, o.actVal);
+	if (sels) {
+		let optMin = (opt == 'up');
+		sels.forEach(function (el, index) {
+			let nowHeight = el.offsetHeight + 'px';
+			if (optMin) {
+				el.style.setProperty('height', nowHeight);
+				setTimeout(() => {
+					el.style.removeProperty('height');
+				}, 0);
+			} else {
+				el.style.setProperty('height', 'auto');
+				let newHeight = el.offsetHeight + 'px';
+				el.style.setProperty('height', nowHeight);
+				setTimeout(() => {
+					el.style.setProperty('height', newHeight);
+				}, 0);
+			}
+		});
+	}
 };
 
 const _takeClass = (o, toggle) => {
