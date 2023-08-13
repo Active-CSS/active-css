@@ -7,7 +7,7 @@ The smartest DOM tool in the world.
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
 
-Just that alone would be a major game-changer for web development. That was version 1 of Active CSS released at the start of 2020.
+Just that alone would be a major game-changer for simplifying web development. That was version 1 of Active CSS released at the start of 2020.
 
 The language is in continual development, but work tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
 
