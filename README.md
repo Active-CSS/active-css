@@ -7,17 +7,6 @@ The smartest DOM tool in the world.
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
 
-What if you could attach elements to a whole class, without having to add a hundred event listeners?
-What if you could access a closest() element with & < div?
-What if event listeners could work like CSS and just work if elements are there, in embedded style tags or loaded from a file, without having to manage them?
-What if you could dynamically set CSS from events based on user action just as easily as you can by writing regular CSS?
-What if you could also use variables similar to SASS, and do SPA page transition using ajax, and give you near-instant load time?
-What if manual DOM manipulation could give you more control and makes complex things easier to do, with less code?
-What if all this could run dynamically like CSS, with no pre-processing setups required?
-What if there was a simpler way to do UI that aligns with the browser?
-
-Active CSS requires you to know the DOM and know your CSS. You need to be able to code to use it well.
-
 ACSS is all about manual coding and taking back control with a method that is scalable for complex websites.
 
 If you try to read regular CSS, it can look confusing. It's the same with ACSS - use a good comment structure to label events.
