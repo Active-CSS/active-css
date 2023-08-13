@@ -7,7 +7,7 @@ The smartest DOM tool in the world.
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
 
-Just that alone would be a majot game-changer for web development. That was version 1 of Active CSS.
+Just that alone would be a major game-changer for web development. That was version 1 of Active CSS.
 
 ACSS is all about manual coding and taking back control with a method that is scalable for complex websites.
 
