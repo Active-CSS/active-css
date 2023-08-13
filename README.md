@@ -5,16 +5,43 @@
 
 The smartest DOM tool in the world.
 
-Here's a taster:
+What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
+What if you could attach elements to a whole class, without having to add a hundred event listeners?
+What if you could access a closest() element with & < div?
+What if event listeners could work like CSS and just work if elements are there, in embedded style tags or loaded from a file, without having to manage them?
+What if you could dynamically set CSS from events based on user action just as easily as you can by writing regular CSS?
+What if you could also use variables similar to SASS, and do SPA page transition using ajax, and give you near-instant load time?
+What if manual DOM manipulation could give you more control and makes complex things easier to do, with less code?
+What if all this could run dynamically like CSS, with no pre-processing setups required?
+What if there was a simpler way to do UI that aligns with the browser?
+
+Active CSS requires you to know the DOM and know your CSS. You need to be able to code to use it well.
+ACSS is all about manual coding and taking back control with a method that is scalable for complex websites.
+
+If you try to read regular CSS, it can look confusing. It's the same with ACSS - use a good comment structure to label events.
+
+Here's are a couple of tasters:
 ```
-#clickMe:click {
+/***************
+ * When the day theme button is clicked, add a "dayTheme" class to the body tag that can be used to set the CSS for the whole page.
+**/
+#dayTheme:click {
     body {
-        add-class: .hello;
+        add-class: .dayTheme;
     }
 }
 ```
 
-Example of a component:
+```
+/***************
+ * Expand or contract a card when it is clicked.
+**/
+.card:click {
+    toggle-class: .expand;
+}
+```
+
+Example of a privately scoped component:
 ```
 button:click {
     render-after-end: "<hello-world></hello-world>";
