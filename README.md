@@ -9,7 +9,7 @@ What if CSS could not only do :hover, but also all the DOM events like :click, :
 
 Just that alone would be a major game-changer for web development. That was version 1 of Active CSS.
 
-ACSS is all about manual coding and taking back control with a method that is scalable for complex websites.
+ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites.
 
 If you try to read regular CSS, it can look confusing. It's the same with ACSS - use a good comment structure to label events.
 
