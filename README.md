@@ -13,6 +13,8 @@ The language is in continual development, but work tends to stay offline until i
 
 ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites.
 
+There is no fixed way to do code in ACSS. It's like that with CSS too - people take different approaches. A language, by its nature, is more flexible than a framework.
+
 If you try to read regular CSS, it can look confusing. It's the same with ACSS - use a good comment structure to label events.
 
 Here's are a couple of tasters:
