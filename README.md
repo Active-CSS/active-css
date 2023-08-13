@@ -9,7 +9,7 @@ What if CSS could not only do :hover, but also all the DOM events like :click, :
 
 Just that alone would be a major game-changer for simplifying web development. That was version 1 of Active CSS released at the start of 2020.
 
-The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
+The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6. You don't have to wait several years before it is safe to use new commands.
 
 ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time.
 
