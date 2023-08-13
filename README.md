@@ -15,7 +15,7 @@ Here's are a couple of tasters:
 ```
 /***************
  * When the day theme button is clicked, add a "day" property to the "data-theme"
-   attribute to the body tag that can be used to set the CSS for the whole page.
+   attribute on the body tag that can be used to set the CSS for the whole page.
 **/
 #dayTheme:click {
     body {
