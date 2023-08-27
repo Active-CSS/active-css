@@ -2864,7 +2864,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 		if (o.func.startsWith('--')) {
 			_setCSSVariable(o);
 		} else {
-			_setCSSProperty(o)
+			_setCSSProperty(o);
 		}
 	}
 
@@ -12164,6 +12164,8 @@ const _slide = (o, opt) => {
 	if (sels) {
 		let optMin = (opt == 'up');
 		sels.forEach(function (el, index) {
+			let activeID = _getActiveID(el);
+			el.removeEventListener('transitionend', window['__acssSlideHeight' + activeID]);
 			let nowHeight = el.offsetHeight + 'px';
 			if (optMin) {
 				el.style.setProperty('height', nowHeight);
@@ -12177,6 +12179,10 @@ const _slide = (o, opt) => {
 				setTimeout(() => {
 					el.style.setProperty('height', newHeight);
 				}, 0);
+				window['__acssSlideHeight' + activeID] = (e) => {
+					e.target.style.setProperty('height', 'auto');
+				};
+				el.addEventListener('transitionend', window['__acssSlideHeight' + activeID]);
 			}
 		});
 	}
