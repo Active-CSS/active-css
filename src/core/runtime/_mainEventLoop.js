@@ -48,8 +48,18 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		// created a new event, but that may have led us into different problems - like unwanted effects outside of the Active CSS flow.
 		let compDetails;
 		let navSet = false;
+		let strictBubbleScope = false;
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
+
+			// Is this in the document root or a shadow DOM root?
+			compDetails = _componentDetails(el);
+
+			if (strictBubbleScope && compDetails.evScope != strictBubbleScope) {
+				// We have reached the limit of the strictlyPrivate component. Break out of the bubbling.
+				maEv[thisMEV]._acssStopEventProp = true;
+				break;
+			}
 
 			if (!navSet) {
 				// Set up any attributes needed for navigation from the routing declaration if this is being used.
@@ -68,11 +78,12 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 				el.__acssFromLink = true;
 			}
 
-			// Is this in the document root or a shadow DOM root?
-			compDetails = _componentDetails(el);
-
 			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[thisMEV]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
+			if (compDetails.strictPrivateEvs) {
+				// This is a strictlyPrivateEvents component. Set a flag. If the component changes on a future iteration, stop bubbling and break out.
+				strictBubbleScope = compDetails.evScope;
+			}
 		}
 		if (!maEv[thisMEV]._acssStopEventProp && document.parentNode) _handleEvents({ obj: window.frameElement, evType: typ, eve: e });
 	}
