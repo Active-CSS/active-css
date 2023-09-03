@@ -76,7 +76,7 @@ const _handleEvents = evObj => {
 					}
 				}
 			}
-			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1 && !evType.startsWith('__midComponentOpen')) {
 				componentRefs = _checkScopeForEv(componentRefs.evScope);
 				if (componentRefs !== false) continue;
 			} else {

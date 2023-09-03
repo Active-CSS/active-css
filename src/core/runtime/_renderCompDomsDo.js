@@ -189,6 +189,11 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			delete compPendingHTML[shadRef];
 		}
 
+		if (compPending[shadRef].indexOf('__acssInnerHTMLEv_') !== -1) {
+			// Handle any inner component events. Anything asynchronous in the event flow is not currently supported.
+			compPending[shadRef] = _handleCompInnerHTMLEvents(compPending[shadRef], { obj: shadowParent, eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo });
+		}
+
 		compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
 
 		// Unescape any escaped curlies, like from $HTML_NOVARS or variables referenced within string variables now that rendering is occurring and iframe content is removed.

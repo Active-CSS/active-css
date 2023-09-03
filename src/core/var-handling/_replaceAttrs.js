@@ -27,7 +27,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					let elRef = wot.substr(0, colon), el;
 					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
 					if (elRef == 'host') {
-						let oEvIsCompOpen = (o && (compOpenArr.indexOf(o.event) !== -1 || o.origO && compOpenArr.indexOf(o.origO.event) !== -1));
+						let oEvIsCompOpen = (o && o.event && (compOpenArr.indexOf(o.event) !== -1 || o.event.startsWith('__midComponentOpen') || o.origO && o.origO.event && (compOpenArr.indexOf(o.origO.event) !== -1 || o.origO.event.startsWith('__midComponentOpen'))));
 						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
 							// o.origO handles coming from a trigger event from these component opening events.

@@ -149,6 +149,9 @@
 		compCount = 0,
 		compIO,
 		components = [],
+		compInnerEvCo = 0,
+		compInnerEvMap = {},
+		compInnerEvResMap = {},
 		compPreRendered = [],
 		compPreRenderedCo = 0,
 		compPreRenderedMap = {},
@@ -1316,6 +1319,18 @@ _a.Render = o => {
 	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
 	content = _replaceComponents(o, content);
 
+	if (o.event.startsWith('__midComponentOpen_') && o.origSecSel === '&') {
+		if (o.renderPos) {
+			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.');
+		}
+		// Get the mid component reference number.
+		let refNum = o.event.substring(o.event.lastIndexOf('_') + 1);
+		// If this is a string that is being rendered as part of a mid component html block cycle, store the results for use when the component itself is rendered.
+		compInnerEvResMap['res_' + refNum] = (compInnerEvResMap['res_' + refNum] || '') + content;
+		// Don't go any further, the string with get handled properly when the component gets rendered.
+		return;
+	}
+
 	_renderIt(o, content, childTree, selfTree);
 };
 
@@ -2429,6 +2444,25 @@ const _handleClickOutside = (el, e) => {
 	return true;
 };
 
+const _handleCompInnerHTMLEvents = (html, eventObj) => {
+	// Look for any inner event flow placeholders in the HTML block - we want to know which mid component event to run.
+	let str = html.replace(/__acssInnerHTMLEv_([\d]+)__/gi, function(_, evRefNum) {
+		// Handle this mid comonponent event.
+		eventObj.evType = '__midComponentOpen_' + evRefNum;
+		_handleEvents(eventObj);
+
+		// If there are now any results to render for this placeholder, return them, otherwise render an empty string.
+		let res = '';
+		if (compInnerEvResMap['res_' + evRefNum]) {
+			res = compInnerEvResMap['res_' + evRefNum];
+			delete compInnerEvResMap['res_' + evRefNum];
+		}
+		return res;
+	});
+
+	return str;
+};
+
 // Renders the now visible component when render-when-visible option is on component.
 const _handleCompIO = entries => {
 	entries.forEach(entry => {
@@ -2533,7 +2567,7 @@ const _handleEvents = evObj => {
 					}
 				}
 			}
-			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1) {
+			if (!componentRefs.strictPrivateEvs && ['beforeComponentOpen', 'componentOpen'].indexOf(evType) === -1 && !evType.startsWith('__midComponentOpen')) {
 				componentRefs = _checkScopeForEv(componentRefs.evScope);
 				if (componentRefs !== false) continue;
 			} else {
@@ -4256,6 +4290,11 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			}
 			// All tmp content has been replaced. Remove the placeholder reference from memory.
 			delete compPendingHTML[shadRef];
+		}
+
+		if (compPending[shadRef].indexOf('__acssInnerHTMLEv_') !== -1) {
+			// Handle any inner component events. Anything asynchronous in the event flow is not currently supported.
+			compPending[shadRef] = _handleCompInnerHTMLEvents(compPending[shadRef], { obj: shadowParent, eve: o.e, varScope: varScopeToPassIn, evScope, compDoc: undefined, component: componentName, _maEvCo: o._maEvCo });
 		}
 
 		compPending[shadRef] = _replaceComponents(o, compPending[shadRef]);
@@ -5982,6 +6021,24 @@ const _assignRule = (compConfig, sel, ev, condition, secsel, ruleName, ruleValue
 };
 */
 
+const _attachCompInnerHTMLEvs = reducedCompHTMLblock => {
+	let eventsToAdd = '';
+	// Look for any inner event flow placeholders in the HTML block - we want to know which event flow number it is in compInnerEvMap.
+	let str = reducedCompHTMLblock.replace(/__acssInnerHTMLEv_([\d]+)__/gi, function(_, evRefNum) {
+		// Add the string containing this event flow to the inside of the component, which will get placed after the HTML block at the bottom of this script.
+		eventsToAdd += compInnerEvMap['ev_' + evRefNum];
+		// Cleanup the inner event flow map by removing the event flow that has just been handled.
+		delete compInnerEvMap['ev_' + evRefNum];
+		// Return the original found result, as that hasn't been changed.
+		return _;
+	});
+
+	// Put the new event flows at the end of the HTML block so the syntax can continue to be prepared in the remainder of _parseConfig.
+	// This is the last set up for inner component event flows.
+	return str + eventsToAdd;
+
+};
+
 const _attachListener = (obj, ev, reGenEvent=false, isShadow=false) => {
 	let opts = { capture: true };
 	if (doesPassive) {
@@ -6145,6 +6202,26 @@ const _convConfig = (cssString, totOpenCurlies, co, inlineActiveID) => {
 		}
 	}
 	return node;
+};
+
+const _extractCompInnerHTMLEvs = compHTMLBlock => {
+	// Extract out any inner event flows inside this component HTML block, replace with a placeholder that will be replaced with anything rendered when the
+	// events are run, or replace with nothing if there is nothing new to render.
+	// There may be more than one event flow block in this HTML block, and each will have its own event flow run sequentially between beforeComponentOpen and
+	// componentOpen.
+	// The variable compInnerEvMap stores the event flows via a reference to the placeholder.
+	// When found in _parseConfig when handling the HTML block, any events after placed directly after the html block, so they inherit the component scoping.
+	// When the component is later rendered, internal &:__midComponentOpen events are run, and anything rendered is placed into the HTML placeholder.
+	// No asynchronous elements are currently supported in the __midComponentOpen events.
+
+	let str = compHTMLBlock.replace(/({\:)([\s\S]*?)\:}/gi, function(_, startBit, innards) {
+		compInnerEvCo++;
+		compInnerEvMap['ev_' + compInnerEvCo] = '&:__midComponentOpen_' + compInnerEvCo + ' {' + innards + '}';
+		return '__acssInnerHTMLEv_' + compInnerEvCo + '__';
+	});
+
+	// Put the new events at the end of the str so they can continue to be prepared in the remainder of _parseConfig.
+	return str;
 };
 
 const _getInline = (inlineConfigTags) => {
@@ -6900,6 +6977,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
+
+	// First, replace all escaped curlies with something else.
+	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
+	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
+
+	// Replace all inner HTML component events with something else.
+	if (str.indexOf('{:') !== -1 && str.indexOf(':}') !== -1) {
+		// Extract all content between {: and :} and replace with a placeholder for any rendering that may happen when the component is rendered.
+		str = _extractCompInnerHTMLEvs(str);
+	}
+
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
 	str = str.replace(/\{\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
@@ -6935,9 +7023,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
-	// First, replace all escaped curlies with something else.
-	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
-	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
 
 	// Now we can match the component accurately. The regex below should match all components.
 	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
@@ -6948,8 +7033,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Escape all tabs, as after this we're going to remove all tabs from everywhere else in the config and change to spaces, but not in here.
 		innards = innards.replace(/\t/g, '_ACSS_tab');
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
-		return startBit + '{component: "' + innards + '";}';
+		let retStr = startBit + '{component: "' + innards + '";}';
+		if (innards.indexOf('__acssInnerHTMLEv_') !== -1) {
+			// Now add any inner events for this HTML block, and place them after the current retStr so they are inside the component when it is set up.
+			retStr = _attachCompInnerHTMLEvs(retStr);
+		}
+		return retStr;
 	});
+
+	// Put the component event characters back in as they were.
+	str = str.replace(/_ACSS_comp_evbrace_start/g, '{:');
+	str = str.replace(/_ACSS_comp_evbrace_end/g, ':}');
 
 	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
 	str = str.replace(/\t+/g, ' ');
@@ -8727,7 +8821,7 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 					let elRef = wot.substr(0, colon), el;
 					let compOpenArr = ['beforeComponentOpen', 'componentOpen'];
 					if (elRef == 'host') {
-						let oEvIsCompOpen = (o && (compOpenArr.indexOf(o.event) !== -1 || o.origO && compOpenArr.indexOf(o.origO.event) !== -1));
+						let oEvIsCompOpen = (o && o.event && (compOpenArr.indexOf(o.event) !== -1 || o.event.startsWith('__midComponentOpen') || o.origO && o.origO.event && (compOpenArr.indexOf(o.origO.event) !== -1 || o.origO.event.startsWith('__midComponentOpen'))));
 						if (compOpenArr.indexOf(evType) !== -1 || oEvIsCompOpen) {
 							// This has come in from beforeComponentOpen or componentOpen in passesConditional and so obj is the host before render.
 							// o.origO handles coming from a trigger event from these component opening events.
@@ -12073,7 +12167,7 @@ const _getRealEvent = ev => {
 	} else if (ev == 'fullscreenEnter' || ev == 'fullscreenExit') {		// Active CSS only events.
 		ev = _fullscreenDetails()[1] + 'fullscreenchange';		// Active CSS only events.
 	} else {
-		if (CUSTOMEVENTS.includes(ev)) return false;	// custom Active CSS events.
+		if (CUSTOMEVENTS.includes(ev) || ev.startsWith('__midComponentOpen')) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
 	}
 	return ev;
@@ -12233,7 +12327,7 @@ const _getSelector = (o, sel, many=false) => {
 			case 'host':		// Special ACSS selector
 			case ':host':
 				compDetails = _getComponentDetails(o.compDoc);
-				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
+				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1 || o.event.startsWith('__midComponentOpen')) {
 					// The host is already being used as the target selector with these events.
 				} else {
 					let rootNode = _getRootNode(mainObj.length == 1 ? mainObj[0] : mainObj);

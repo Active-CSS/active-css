@@ -92,6 +92,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/<style>([\s\S]*?)<\/style>/gi, function(_, innards) {
 		return '<style>' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '</style>';
 	});
+
+	// First, replace all escaped curlies with something else.
+	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
+	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
+
+	// Replace all inner HTML component events with something else.
+	if (str.indexOf('{:') !== -1 && str.indexOf(':}') !== -1) {
+		// Extract all content between {: and :} and replace with a placeholder for any rendering that may happen when the component is rendered.
+		str = _extractCompInnerHTMLEvs(str);
+	}
+
 	// Replace variable substitutations, ie. {$myVariableName}, etc.
 	str = str.replace(/\{\{\$([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)\}\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');	// for speed rather than using a map.
@@ -127,9 +138,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '_ACSS_subst_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	// Sort out component escaping.
-	// First, replace all escaped curlies with something else.
-	str = str.replace(/\\{/g, '_ACSS_later_escbrace_start');
-	str = str.replace(/\\}/g, '_ACSS_later_escbrace_end');
 
 	// Now we can match the component accurately. The regex below should match all components.
 	str = str.replace(/([^\u00BF-\u1FFF\u2C00-\uD7FF\w\-]html[\s]*{)([\s\S]*?)}/gi, function(_, startBit, innards) {
@@ -140,8 +148,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		// Escape all tabs, as after this we're going to remove all tabs from everywhere else in the config and change to spaces, but not in here.
 		innards = innards.replace(/\t/g, '_ACSS_tab');
 		// Now format the contents of the component so that it will be found when we do a css-type object creation later.
-		return startBit + '{component: "' + innards + '";}';
+		let retStr = startBit + '{component: "' + innards + '";}';
+		if (innards.indexOf('__acssInnerHTMLEv_') !== -1) {
+			// Now add any inner events for this HTML block, and place them after the current retStr so they are inside the component when it is set up.
+			retStr = _attachCompInnerHTMLEvs(retStr);
+		}
+		return retStr;
 	});
+
+	// Put the component event characters back in as they were.
+	str = str.replace(/_ACSS_comp_evbrace_start/g, '{:');
+	str = str.replace(/_ACSS_comp_evbrace_end/g, ':}');
 
 	// Convert tabs to spaces in the config so that multi-line breaks will work as expected.
 	str = str.replace(/\t+/g, ' ');

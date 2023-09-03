@@ -133,7 +133,7 @@ const _getSelector = (o, sel, many=false) => {
 			case 'host':		// Special ACSS selector
 			case ':host':
 				compDetails = _getComponentDetails(o.compDoc);
-				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1) {
+				if (['beforeComponentOpen', 'componentOpen'].indexOf(o.event) !== -1 || o.event.startsWith('__midComponentOpen')) {
 					// The host is already being used as the target selector with these events.
 				} else {
 					let rootNode = _getRootNode(mainObj.length == 1 ? mainObj[0] : mainObj);
