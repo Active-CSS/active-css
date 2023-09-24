@@ -15,9 +15,7 @@ Please, if you see a bug, do report it so it gets fixed. Don't just sit on it.
 
 ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time.
 
-There is no fixed way to do code in ACSS. It's like that with CSS too - people take different approaches. A language, by its nature, is more flexible than a framework.
-
-If you try to read regular CSS, it can look confusing. It's the same with ACSS - use a good comment structure to label events.
+This is event-driven programming, so like any programming language use a good comment structure to label your code.
 
 Here's are a couple of tasters:
 ```
