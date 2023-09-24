@@ -34,6 +34,8 @@ const _handleWhileItem = (itemsObj, counterVal) => {
 			thisIfObj.obj = passTargSel;
 		}
 
+		let laterRefCheck = loopObj2.loopRef + loopObj2._condCo + '_' + _subSubEvCo + '_' + _targCo;
+
 		let res = _runIf(parsedStatement, fullStatement, thisIfObj, loopObj2);
 
 		// Run the commands if passing and run this function again if we are still in the loop.
@@ -41,7 +43,16 @@ const _handleWhileItem = (itemsObj, counterVal) => {
 			_runSecSelOrAction(loopObj2);
 			loopObj2 = null;
 			counterVal++;
+
 			_handleWhileItem(itemsObj, counterVal);
+
+			// If syncQueue[_subEvCo] is set, then we have broken out because of a pause.
+			// A natural break, ie. not a pause, requires that the last while condition run equates to false so we don't go beyond it if this is a nested loop.
+			// Set the remembered loop reference to false.
+			if (syncQueue[_subEvCo] === undefined) {
+				condTrack[_subEvCo].condResArr[laterRefCheck] = false;
+			}
+
 		} else {
 			_resetContinue(_imStCo);
 		}

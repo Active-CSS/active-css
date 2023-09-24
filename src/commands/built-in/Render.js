@@ -34,5 +34,17 @@ _a.Render = o => {
 	// It doesn't need progressive variable substitution protection - it contains this in the function itself.
 	content = _replaceComponents(o, content);
 
+	if (o.event.startsWith('__midComponentOpen_') && o.origSecSel === '&') {
+		if (o.renderPos) {
+			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.');
+		}
+		// Get the mid component reference number.
+		let refNum = o.event.substring(o.event.lastIndexOf('_') + 1);
+		// If this is a string that is being rendered as part of a mid component html block cycle, store the results for use when the component itself is rendered.
+		compInnerEvResMap['res_' + refNum] = (compInnerEvResMap['res_' + refNum] || '') + content;
+		// Don't go any further, the string with get handled properly when the component gets rendered.
+		return;
+	}
+
 	_renderIt(o, content, childTree, selfTree);
 };

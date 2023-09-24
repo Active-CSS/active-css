@@ -3,11 +3,23 @@ const _runInnerEvent = (o, sel, ev, doc=document, initialization=false) => {
 	o = o || {};
 	if (typeof sel == 'string') {
 		doc.querySelectorAll(sel).forEach(function(obj) {
-			if (!obj._acssDrawn || !noDrawTwiceCheck) _handleEvents({ obj: obj, evType: ev, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+			let evObj = { obj: obj, evType: ev, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo };
+			if (ev == 'draw') {
+				if (!obj._acssDrawn || !noDrawTwiceCheck) {
+					_handleDrawScope(evObj);
+				}
+			} else {
+				_handleEvents(evObj);
+			}
 		});
 	} else {
-		// This is a draw trigger on an element, which should include its contents.
-		_handleEvents({ obj: o.secSelObj, evType: ev, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+		// This is a trigger on an element, which should include its contents.
+		let evObj = { obj: o.secSelObj, evType: ev, primSel: o.primSel, origO: o, otherObj: o.ajaxObj, eve: o.e, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo };
+		if (ev == 'draw' && (!o.secSelObj._acssDrawn || !noDrawTwiceCheck)) {	// don't handle scope again if it's already been drawn.
+			_handleDrawScope(evObj);
+		} else {
+			_handleEvents(evObj);
+		}
 		_runInnerEvent(o, '*:not(template *)', ev, o.secSelObj);
 	}
 };
