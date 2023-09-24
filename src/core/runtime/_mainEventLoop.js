@@ -49,6 +49,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		let compDetails;
 		let navSet = false;
 		let strictBubbleScope = false;
+		let compInCompArr = [];
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
 
@@ -78,7 +79,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 				el.__acssFromLink = true;
 			}
 
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV });
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV, compInCompArr });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[thisMEV]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 			if (compDetails.strictPrivateEvs) {
 				// This is a strictlyPrivateEvents component. Set a flag. If the component changes on a future iteration, stop bubbling and break out.

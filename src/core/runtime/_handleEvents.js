@@ -1,9 +1,10 @@
 const _handleEvents = evObj => {
-	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo, compInCompArr } = evObj;
 	let varScope, thisDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
 	let component = (evObj.component) ? '|' + evObj.component : null;
+	compInCompArr = compInCompArr || [];
 
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (evType === undefined) return false;
@@ -48,10 +49,13 @@ const _handleEvents = evObj => {
 			for (i = 0; i < selectorListLen; i++) {
 				let primSel = selectors[evType][i];
 				compSelCheckPos = primSel.indexOf(':');
-				if (primSel.substr(0, compSelCheckPos) !== componentRefs.component) continue;
+
+				if (primSel.substr(0, compSelCheckPos) !== componentRefs.component && compInCompArr.indexOf(primSel.substr(0, compSelCheckPos)) === -1) continue;
 				testSel = primSel.substr(compSelCheckPos + 1);
+
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
+
 				if (afterEv && origObj) testSel = _replaceEventVars(testSel, origObj);
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
@@ -62,6 +66,7 @@ const _handleEvents = evObj => {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
 						    	} else {
+						    		compInCompArr.push(componentRefs.component);
 									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
 									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}

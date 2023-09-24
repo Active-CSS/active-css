@@ -2490,11 +2490,12 @@ const _handleDrawScope = evObj => {
 };
 
 const _handleEvents = evObj => {
-	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo } = evObj;
+	let { obj, evType, onlyCheck, otherObj, eve, afterEv, origObj, origO, runButElNotThere, evScope, compDoc, _maEvCo, compInCompArr } = evObj;
 	let varScope, thisDoc;
 	thisDoc = (compDoc) ? compDoc : document;
 	let topVarScope = evObj.varScope;
 	let component = (evObj.component) ? '|' + evObj.component : null;
+	compInCompArr = compInCompArr || [];
 
 	// Note: obj can be a string if this is a trigger, or an object if it is responding to an event.
 	if (evType === undefined) return false;
@@ -2539,10 +2540,13 @@ const _handleEvents = evObj => {
 			for (i = 0; i < selectorListLen; i++) {
 				let primSel = selectors[evType][i];
 				compSelCheckPos = primSel.indexOf(':');
-				if (primSel.substr(0, compSelCheckPos) !== componentRefs.component) continue;
+
+				if (primSel.substr(0, compSelCheckPos) !== componentRefs.component && compInCompArr.indexOf(primSel.substr(0, compSelCheckPos)) === -1) continue;
 				testSel = primSel.substr(compSelCheckPos + 1);
+
 				if (typeof obj !== 'string' && testSel.substr(0, 1) == '~') continue;
 				// Replace any attributes, etc. into the primary selector if this is an "after" callback event.
+
 				if (afterEv && origObj) testSel = _replaceEventVars(testSel, origObj);
 				if (testSel.indexOf('<') === -1 && !selectorList.includes(primSel)) {
 				    if (testSel == '&') {
@@ -2553,6 +2557,7 @@ const _handleEvents = evObj => {
 								if (obj.matches(testSel)) {
 									selectorList.push({ primSel, componentRefs });
 						    	} else {
+						    		compInCompArr.push(componentRefs.component);
 									_setUpForObserve(useForObserveID, 'i' + primSel, 0);
 									elObserveTrack[useForObserveID]['i' + primSel][0].ran = false;
 						    	}
@@ -3188,6 +3193,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 		let compDetails;
 		let navSet = false;
 		let strictBubbleScope = false;
+		let compInCompArr = [];
 		for (el of composedPath) {
 			if (el.nodeType !== 1) continue;
 
@@ -3217,7 +3223,7 @@ const _mainEventLoop = (typ, e, component, compDoc, varScope) => {
 				el.__acssFromLink = true;
 			}
 
-			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV });
+			_handleEvents({ obj: el, evType: typ, eve: e, component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, _maEvCo: thisMEV, compInCompArr });
 			if (!el || !e.bubbles || el.tagName == 'BODY' || maEv[thisMEV]._acssStopEventProp) break;	    // el can be deleted during the handleEvent.
 			if (compDetails.strictPrivateEvs) {
 				// This is a strictlyPrivateEvents component. Set a flag. If the component changes on a future iteration, stop bubbling and break out.
@@ -12019,7 +12025,14 @@ const _getComponentDetails = rootNode => {
 
 const _getComponentRoot = (obj) => {
 	// This gets the root of the component - either a scoped host or a shadow DOM rootNode.
-	let scopedHost = (obj.parentElement && (!supportsShadow || supportsShadow && !(obj.parentNode instanceof ShadowRoot))) ? obj.parentElement.closest('[data-active-scoped]') : false;
+	let scopedHost;
+	if (obj.children.length == 0 && obj.hasAttribute('data-active-scoped')) {
+		scopedHost =  obj;
+	} else if (obj.parentElement && (!supportsShadow || supportsShadow && !(obj.parentNode instanceof ShadowRoot))) {
+		scopedHost =  obj.parentElement.closest('[data-active-scoped]');
+	} else {
+		scopedHost = false;
+	}
 	let rootNode = obj.getRootNode();
 	if (!scopedHost && rootNode.isSameNode(document)) {
 		// There is no component that contains this element.
