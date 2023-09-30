@@ -1082,7 +1082,9 @@ _a.LoadStyle = o => { _a.LoadScript(o, 'style'); };
 
 _a.Location = o => {
 	let page = o.actVal._ACSSRepQuo();
-	if (o.doc.contentWindow) {
+	if (page == 'reload') {
+		location.reload();
+	} else if (o.doc.contentWindow) {
 		o.doc.contentWindow.document.location.href = page;
 	} else {
 		document.location.href = page;
