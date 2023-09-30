@@ -7,7 +7,7 @@ A CSS / JavaScript hybrid language.
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
 
-Quick to code in, low maintenance event handling, dynamic CSS, easy DOM manipulation and lots more features.
+Quick to code in, low maintenance event handling, dynamic CSS, easy DOM manipulation and lots more.
 
 
 The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
