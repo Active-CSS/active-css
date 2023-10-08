@@ -14,7 +14,7 @@ The language is in continual development, but work now tends to stay offline unt
 
 Please, if you see a bug, do report it so it gets fixed. All bugs are fixed as rapidly as possible.
 
-ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time.
+ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time, due to minimal JavaScript compilation in the browser itself.
 
 This is event-driven programming, so like any programming language use a good comment structure to label your code.
 

@@ -336,7 +336,7 @@ _a.CancelPause = o => {
 		pauseTrack = {};
 
 	} else {
-		_warn('cancel-pause currently only supports "all" as a parameter');
+		_warn('cancel-pause currently only supports "all" as a parameter', o);
 	}
 };
 
@@ -737,6 +737,10 @@ _a.CreateElement = o => {
 	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar);	// jshint ignore:line
 };
 
+_a.DialogClose = o => _dialog(o, 'close');
+
+_a.DialogShow = o => _dialog(o, 'show');
+
 _a.DocumentTitle = o => {
 	_setDocTitle(o.actVal._ACSSRepQuo());
 };
@@ -987,7 +991,7 @@ _a.Func = o => {
 
 	let parArr = _extractVarsFromPars(parsStr, o);
 
-	if (!window[func] || typeof window[func] !== 'function') _err('Function ' + func + ' does not exist, is not a function, or is not in the window scope.');
+	if (!window[func] || typeof window[func] !== 'function') _err('Function ' + func + ' does not exist, is not a function, or is not in the window scope.', o);
 	window[func](o, parArr);
 };
 
@@ -1218,10 +1222,10 @@ _a.Print = o => {
 			if (iframeSel.tagName == 'IFRAME') {
 				iframeSel.contentWindow.print();
 			} else {
-				_err('Printing cannot occur because element is not an iframe: ' + o.actVal);
+				_err('Printing cannot occur because element is not an iframe: ' + o.actVal, o);
 			}
 		} else {
-			_err('Printing cannot occur if iframe does not exist: ' + o.actVal);
+			_err('Printing cannot occur if iframe does not exist: ' + o.actVal, o);
 		}
 	}
 };
@@ -1323,7 +1327,7 @@ _a.Render = o => {
 
 	if (o.event.startsWith('__midComponentOpen_') && o.origSecSel === '&') {
 		if (o.renderPos) {
-			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.');
+			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.', o);
 		}
 		// Get the mid component reference number.
 		let refNum = o.event.substring(o.event.lastIndexOf('_') + 1);
@@ -1806,7 +1810,7 @@ _a.Var = o => {
 		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
 		let scoped = _getScopedVar(varName, o.varScope);
 		if (!_isArray(scoped.val)) {
-			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"');
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"', o);
 		} else {
 			let newLength = scoped.val.length;
 			_set(scopedProxy, scoped.name + '[' + newLength + ']', expr);
@@ -4058,7 +4062,7 @@ const _renderCompDoms = (o, compDoc=o.doc, childTree='', numTopNodesInRender=0, 
 					let str = templNode.innerHTML;
 					_insertResForComponents(obj, typ, str);
 				} else {
-					_warn('Could not find template ' + obj.getAttribute(typ) + ' in this scope. If the template tag is in the document scope, prefix with "document ->".');
+					_warn('Could not find template ' + obj.getAttribute(typ) + ' in this scope. If the template tag is in the document scope, prefix with "document ->".', o);
 				}
 			} else {
 				let elClass = typ + 'Pending';
@@ -4156,7 +4160,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			}
 		} else {
 			// Show a warning that this isn't supported in this browser.
-			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.');
+			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.', o);
 		}
 	}
 
@@ -4387,7 +4391,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 					break;
 
 				default:
-					_warn(o.func + ' not supported for component - contact support');
+					_warn(o.func + ' not supported for component - contact support', o);
 					return;
 			}
 		} else {
@@ -9008,7 +9012,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		try {
 			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 		} catch (err) {
-			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot);
+			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot, o);
 			try {
 				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 			} catch (err) {
@@ -10736,7 +10740,7 @@ const _addActValRaw = o => {
 		if (errcallback) {
 			errcallback('Network error', 0, o);
 		} else {
-			_err('Tried to get file: ' + filepath + ', but failed due to a network error.');
+			_err('Tried to get file: ' + filepath + ', but failed due to a network error.', o);
 		}
 	};
 	if (getMethod == 'POST' && pars !== null) {
@@ -11228,10 +11232,20 @@ const _absTop = el => {
 	return y;
 };
 
-const _actValSelItem = o => {
-	let arr = o.actVal.split(' ');
+const _actValSelItem = (o, txt) => {
+	let str = o.actVal;
+	if (txt) {
+		// Replace spaces inside any quotes.
+		str = o.actVal.replace(INQUOTES, function(_, innards) {
+			return innards.replace(/ /g, '_ACSS_avsi_sp');
+		});
+	}
+	// Split the remainder by space and parse out.
+	let arr = str.split(' ');
+	// Get the last word and on return put back any spaces that were escaped earlier.
 	let last = arr.splice(-1);
-	return [ _getSel(o, arr.join(' ')), last[0] ];
+	let joinedSel = arr.join(' ');
+	return txt ? [ joinedSel, last[0].replace(/_ACSS_avsi_sp/g, ' ') ] : [ _getSel(o, joinedSel), last[0] ];
 };
 
 ActiveCSS._addClassObj = (obj, str) => {
@@ -11425,6 +11439,27 @@ ActiveCSS._decodeHTML = str => {
 	// This is use in the mimic command to work with updating the title. It's not the same as _escapeItem().
 	let doc = new DOMParser().parseFromString(str, 'text/html');
 	return doc.documentElement.textContent;
+};
+
+const _dialog = (o, opt) => {
+	let arr = _actValSelItem(o, true);	// true = get text in [0] instead of the element.
+	let modal = (arr[1].toLowerCase() == 'modal');
+	let closingVal = (opt == 'close' && arr[1].indexOf('"') !== -1) ? arr[1]._ACSSRepQuo() : undefined;
+	let sel = (modal || opt == 'close' && closingVal) ? arr[0] : o.actVal;
+	let sels = _getSels(o, sel);
+	if (sels) {
+		sels.forEach(function (el, index) {
+			if (el.tagName !== 'DIALOG') _err('Element is not a valid dialog, element:', o, el);
+			switch (opt) {
+				case 'close':
+					el.close(closingVal);
+					break;
+				case 'show':
+					el[(modal ? 'showModal' : 'show')]();
+					break;
+			}
+		});
+	}
 };
 
 const _doDebug = (typ, primSel) => {

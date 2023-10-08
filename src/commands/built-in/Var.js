@@ -58,7 +58,7 @@ _a.Var = o => {
 		// scopedProxy will not trigger an update if run from a dynamic function using .push, so we need to do a _set.
 		let scoped = _getScopedVar(varName, o.varScope);
 		if (!_isArray(scoped.val)) {
-			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"');
+			_err('Cannot push value to ' + varName + ' as it is not an array. typeof ' + varName + ' = "' + typeof scoped.val + '"', o);
 		} else {
 			let newLength = scoped.val.length;
 			_set(scopedProxy, scoped.name + '[' + newLength + ']', expr);

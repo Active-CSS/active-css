@@ -12,6 +12,6 @@ _a.CancelPause = o => {
 		pauseTrack = {};
 
 	} else {
-		_warn('cancel-pause currently only supports "all" as a parameter');
+		_warn('cancel-pause currently only supports "all" as a parameter', o);
 	}
 };

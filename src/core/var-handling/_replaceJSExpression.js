@@ -24,7 +24,7 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		try {
 			res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return (' + wot + ');')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 		} catch (err) {
-			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot);
+			_warn('JavaScript expression error (' + err + '). Actual expression evaluated: ' + wot, o);
 			try {
 				res = Function('scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar', '"use strict";return ("' + wot.replace(/"/gm, '\\"') + '");')(scopedProxy, o, scopedOrig, escapeHTML, unEscapeHTML, getVar);		// jshint ignore:line
 			} catch (err) {
