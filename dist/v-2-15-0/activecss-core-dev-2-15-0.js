@@ -83,6 +83,7 @@
 			'"': '_ACSS_later_double_quote'
 		},
 		INQUOTES = /("([^"]|"")*")/gm,
+		INSINGQUOTES = /('([^']|'')*')/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\$\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
@@ -5771,7 +5772,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	readyStatement = _resolveVars(strObj.str, strObj.ref);
 
 	// Finally, remove any line breaks, otherwise things will barf when evaluated.
-	readyStatement = readyStatement.replace(/\r|\n/gm, '');
+	readyStatement = ActiveCSS._sortOutFlowEscapeChars(readyStatement.replace(/\r|\n/gm, ''));
 
 	let res;
 	try {
@@ -6927,6 +6928,10 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/_ACSSOPCO/gm, '/*');
 	str = str.replace(/_ACSSOPCL/gm, '*/');
 
+	// Escape escaped quotes to evaluate at runtime.
+	str = str.replace(/\\'/gm, '_ACSS_later_escsingle_quote');
+	str = str.replace(/\\"/gm, '_ACSS_later_escdouble_quote');
+
 	// Convert the single quotes into double-quotes where applicable and do the necessary escaping.
 	// https://regex101.com/?regex=%28%5B%5C%27%22%5D%29%28%28%5C%5C%5C1%7C.%29%2A%3F%29%5C1&options=gm&text=defined+%28+%27WP_DEBUG%27+%29+||+define%28+%27%5CWP_DEBUG%27%2C+true+%29%3B%0Aecho+%27class%3D%22input-text+card-number%22+type%3D%22text%22+maxlength%3D%2220%22%27%3B%0Aecho+%27How+are+you%3F+I%5C%27m+fine%2C+thank+you%27%3B
 	str = str.replace(/(['"])((\\\1|.)*?)\1/gm, function(_, quot, innards) {
@@ -6970,14 +6975,14 @@ const _parseConfig = (str, inlineActiveID=null) => {
 
 	// Handle continue; and break; so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
 	// Put these into a general non-colon command array.
-	str = str.replace(/("(.*?)")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		innards = innards.replace(/continue\;/g, '_ACSS_continue');
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-	str = str.replace(/('(.*?)')/g, function(_, innards) {
+	str = str.replace(INSINGQUOTES, function(_, innards) {
 		innards = innards.replace(/continue\;/g, '_ACSS_continue');
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
@@ -7086,7 +7091,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		'@': '_ACSS_at',
 	};
 
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
 
@@ -9676,7 +9681,9 @@ ActiveCSS._sortOutFlowEscapeChars = str => {
 		'_ACSS_later_brace_end': '}',
 		'_ACSS_later_semi_colon': ';',
 		'_ACSS_later_colon': ':',
-		'_ACSS_later_double_quote': '"'
+		'_ACSS_later_double_quote': '"',
+		'_ACSS_later_escsingle_quote': "\\'",
+		'_ACSS_later_escdouble_quote': '\\"',
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };
@@ -11570,6 +11577,8 @@ const _escapeQuo = (str, func) => {
 
 function _escCommaBrack(str, o) {
 	/**
+	 * This function is used in splitting up the action value by comma. It escapes the real split commas to _ACSSComma which is then handled in _performActionDo.
+	 *
 	 * "o" is used for reporting on any failing line in the config.
 	 * There is no recursive facility like there is in PCRE for doing the inner bracket recursion count, so doing it manually as the string should be relatively
 	 * small in pretty much all cases.
@@ -11591,13 +11600,14 @@ com[__ACSScom]__ACSScom'
 	 * 9. Do any final replacements for the looping of the o.actVal.
 	 * 10. Return the new string.
 	*/
+
 	// Replace escaped double quotes.
 	str = str.replace(/\\\"/g, '_ACSS_i_dq');
 	// Replace escaped single quotes.
 	str = str.replace(/\\'/g, '_ACSS_i_sq');
 	// Ok to this point.
 	let mapObj = {
-		'\\,': '__ACSS_int_com',
+		'\\,': '__ACSS_int_com',	// Escaping is needed so the items work in the regex as search items and not regex operators.
 		'\\(': '_ACSS_i_bo',
 		'\\)': '_ACSS_i_bc',
 		'\\{': '_ACSS_i_co',
@@ -11614,10 +11624,10 @@ com[__ACSScom]__ACSScom'
 		'[': '_ACSS_i_so',
 		']': '_ACSS_i_sc'
 	};
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards, mapObj2);
 	});
-	str = str.replace(/('([^']|'')*')/g, function(_, innards) {
+	str = str.replace(INSINGQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards, mapObj2);
 	});
 	let strArr = str.split(','), balanceCount = 0, newStr = '', item;
@@ -11629,7 +11639,7 @@ com[__ACSScom]__ACSScom'
 	}
 	if (balanceCount !== 0) {
 		// Syntax error - unbalanced expression.
-		newStr = _escCommaBrackClean(newStr, mapObj2);
+		newStr = _escCommaBrackClean(newStr);
 		newStr = newStr.replace(/__ACSS_int_com/g, ',');
 		_err('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr, o);
 		return newStr;
@@ -11641,10 +11651,11 @@ com[__ACSScom]__ACSScom'
 
 	}
 	newStr = _escCommaBrackClean(newStr);
+
 	return newStr;
 }
 
-function _escCommaBrackClean(str, mapObj2) {
+function _escCommaBrackClean(str) {
 	// A simple reverse of the object won't give use the regex options we want, so just do a new replace object.
 	let mapObj = {
 		'_ACSS_i_dq': '\\"',
@@ -11658,13 +11669,9 @@ function _escCommaBrackClean(str, mapObj2) {
 		'_ACSS_i_sc': ']'
 	};
 
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
-		return ActiveCSS._mapRegexReturn(mapObj, innards);
-	});
-	str = str.replace(/('([^']|'')*')/g, function(_, innards) {
-		return ActiveCSS._mapRegexReturn(mapObj, innards);
-	});
-	return str;
+	let newStr = ActiveCSS._mapRegexReturn(mapObj, str);
+
+	return newStr;
 }
 
 // Not the same as the lodash one, but similar.
@@ -11675,8 +11682,8 @@ const _escForRegex = str => {
 const _escInQuo = (str, chrRaw, chrRepl) => {
 	let chrReg = _escForRegex(chrRaw);
 	let replReg = new RegExp(chrReg, 'g');
-	str = str.replace(/"(.+?)"/g, function(_, innards) {
-		innards = '"' + innards.replace(replReg, chrRepl) + '"';
+	str = str.replace(INQUOTES, function(_, innards) {
+		innards = innards.replace(replReg, chrRepl);
 		return innards;
 	});
 	return str;

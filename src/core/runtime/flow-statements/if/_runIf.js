@@ -59,7 +59,7 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	readyStatement = _resolveVars(strObj.str, strObj.ref);
 
 	// Finally, remove any line breaks, otherwise things will barf when evaluated.
-	readyStatement = readyStatement.replace(/\r|\n/gm, '');
+	readyStatement = ActiveCSS._sortOutFlowEscapeChars(readyStatement.replace(/\r|\n/gm, ''));
 
 	let res;
 	try {
