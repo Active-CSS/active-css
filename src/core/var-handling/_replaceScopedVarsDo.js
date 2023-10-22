@@ -47,7 +47,8 @@ const _replaceScopedVarsDoRep = (str, obj=null, func='', o=null, walker=false, s
 
 				realWot = scoped.name;
 			}
-			if (isBound && (func == 'asRender' || func.startsWith('Render'))) {
+			let renderLike = (func == 'asRender' || func.startsWith('Render'));
+			if (isBound && renderLike) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
 				_addScopedCID(realWot, obj, varScope);
@@ -76,7 +77,7 @@ const _replaceScopedVarsDoRep = (str, obj=null, func='', o=null, walker=false, s
 					}
 				}
 
-				if (escapeDoubleQuotes) {
+				if (escapeDoubleQuotes && !renderLike) {
 					res = res.replace(/\"/gm, '\\"');
 				}
 
