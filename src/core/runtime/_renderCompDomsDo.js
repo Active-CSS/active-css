@@ -45,7 +45,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 			}
 		} else {
 			// Show a warning that this isn't supported in this browser.
-			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.');
+			_warn('Browser does not support intersection observer. "render-when-visible" option is being skipped.', o);
 		}
 	}
 
@@ -276,7 +276,7 @@ const _renderCompDomsDo = (o, obj, childTree, numTopNodesInRender, numTopElement
 					break;
 
 				default:
-					_warn(o.func + ' not supported for component - contact support');
+					_warn(o.func + ' not supported for component - contact support', o);
 					return;
 			}
 		} else {

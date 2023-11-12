@@ -15,7 +15,8 @@ const _sortOutEscapeChars = (str) => {
 		_ACSS_subst_pipe_brace_start: '{|',
 		_ACSS_subst_hash_brace_start: '{#',
 		_ACSS_subst_brace_end: '}',
-		_ACSS_dot: '.'
+		_ACSS_dot: '.',
+		_ACSS_escaped_double_slash: '//',
 	};
 	return ActiveCSS._mapRegexReturn(mapObj, str);
 };

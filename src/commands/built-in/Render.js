@@ -36,7 +36,7 @@ _a.Render = o => {
 
 	if (o.event.startsWith('__midComponentOpen_') && o.origSecSel === '&') {
 		if (o.renderPos) {
-			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.');
+			_err('"render" is the only render command that is allowed in a component\'s HTML block event flow.', o);
 		}
 		// Get the mid component reference number.
 		let refNum = o.event.substring(o.event.lastIndexOf('_') + 1);

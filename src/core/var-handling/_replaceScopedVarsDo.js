@@ -1,5 +1,15 @@
 // This function must only be called when inserting textContent into elements - never any other time. All variables get escaped so no HTML tags are allowed.
 const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false) => {
+	// Handle vars inside double quotes first.
+	str = str.replace(INQUOTES, function(_, innards) {
+		return _replaceScopedVarsDoRep(innards, obj, func, o, walker, shadHost, varScope, varReplacementRef, noHTMLEscape, true);	// true = escapeDoubleQuotes
+	});
+
+	// Do the rest.
+	return _replaceScopedVarsDoRep(str, obj, func, o, walker, shadHost, varScope, varReplacementRef, noHTMLEscape);
+};
+
+const _replaceScopedVarsDoRep = (str, obj=null, func='', o=null, walker=false, shadHost=null, varScope=null, varReplacementRef=-1, noHTMLEscape=false, escapeDoubleQuotes=false) => {
 	let originalStr = str;
 
 	if (str.indexOf('{') !== -1) {
@@ -37,7 +47,8 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 
 				realWot = scoped.name;
 			}
-			if (isBound && (func == 'asRender' || func.startsWith('Render'))) {
+			let renderLike = (func == 'asRender' || func.startsWith('Render'));
+			if (isBound && renderLike) {
 				// We only need comment nodes in content output via render - ie. visible stuff. Any other substitution is dynamically rendered from
 				// original, untouched config.
 				_addScopedCID(realWot, obj, varScope);
@@ -64,6 +75,10 @@ const _replaceScopedVarsDo = (str, obj=null, func='', o=null, walker=false, shad
 							res = _escapeItem(res);
 						}
 					}
+				}
+
+				if (escapeDoubleQuotes && !renderLike) {
+					res = res.replace(/\"/gm, '\\"');
 				}
 
 				// Send the regular scoped variable back, in a placeholder if appropriate.

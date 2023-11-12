@@ -1,5 +1,7 @@
 function _escCommaBrack(str, o) {
 	/**
+	 * This function is used in splitting up the action value by comma. It escapes the real split commas to _ACSSComma which is then handled in _performActionDo.
+	 *
 	 * "o" is used for reporting on any failing line in the config.
 	 * There is no recursive facility like there is in PCRE for doing the inner bracket recursion count, so doing it manually as the string should be relatively
 	 * small in pretty much all cases.
@@ -21,13 +23,14 @@ com[__ACSScom]__ACSScom'
 	 * 9. Do any final replacements for the looping of the o.actVal.
 	 * 10. Return the new string.
 	*/
+
 	// Replace escaped double quotes.
 	str = str.replace(/\\\"/g, '_ACSS_i_dq');
 	// Replace escaped single quotes.
 	str = str.replace(/\\'/g, '_ACSS_i_sq');
 	// Ok to this point.
 	let mapObj = {
-		'\\,': '__ACSS_int_com',
+		'\\,': '__ACSS_int_com',	// Escaping is needed so the items work in the regex as search items and not regex operators.
 		'\\(': '_ACSS_i_bo',
 		'\\)': '_ACSS_i_bc',
 		'\\{': '_ACSS_i_co',
@@ -44,10 +47,10 @@ com[__ACSScom]__ACSScom'
 		'[': '_ACSS_i_so',
 		']': '_ACSS_i_sc'
 	};
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards, mapObj2);
 	});
-	str = str.replace(/('([^']|'')*')/g, function(_, innards) {
+	str = str.replace(INSINGQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards, mapObj2);
 	});
 	let strArr = str.split(','), balanceCount = 0, newStr = '', item;
@@ -59,7 +62,7 @@ com[__ACSScom]__ACSScom'
 	}
 	if (balanceCount !== 0) {
 		// Syntax error - unbalanced expression.
-		newStr = _escCommaBrackClean(newStr, mapObj2);
+		newStr = _escCommaBrackClean(newStr);
 		newStr = newStr.replace(/__ACSS_int_com/g, ',');
 		_err('Unbalanced JavaScript equation in var command - too many brackets, curlies or parentheses, or there could be incorrectly escaped characters: ' + newStr, o);
 		return newStr;
@@ -71,10 +74,11 @@ com[__ACSScom]__ACSScom'
 
 	}
 	newStr = _escCommaBrackClean(newStr);
+
 	return newStr;
 }
 
-function _escCommaBrackClean(str, mapObj2) {
+function _escCommaBrackClean(str) {
 	// A simple reverse of the object won't give use the regex options we want, so just do a new replace object.
 	let mapObj = {
 		'_ACSS_i_dq': '\\"',
@@ -88,11 +92,7 @@ function _escCommaBrackClean(str, mapObj2) {
 		'_ACSS_i_sc': ']'
 	};
 
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
-		return ActiveCSS._mapRegexReturn(mapObj, innards);
-	});
-	str = str.replace(/('([^']|'')*')/g, function(_, innards) {
-		return ActiveCSS._mapRegexReturn(mapObj, innards);
-	});
-	return str;
+	let newStr = ActiveCSS._mapRegexReturn(mapObj, str);
+
+	return newStr;
 }

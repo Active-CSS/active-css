@@ -19,9 +19,14 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	str = str.replace(/_ACSSOPCO/gm, '/*');
 	str = str.replace(/_ACSSOPCL/gm, '*/');
 
+	// Escape escaped quotes to evaluate at runtime.
+	str = str.replace(/\\'/gm, '_ACSS_later_escsingle_quote');
+	str = str.replace(/\\"/gm, '_ACSS_later_escdouble_quote');
+
 	// Convert the single quotes into double-quotes where applicable and do the necessary escaping.
 	// https://regex101.com/?regex=%28%5B%5C%27%22%5D%29%28%28%5C%5C%5C1%7C.%29%2A%3F%29%5C1&options=gm&text=defined+%28+%27WP_DEBUG%27+%29+||+define%28+%27%5CWP_DEBUG%27%2C+true+%29%3B%0Aecho+%27class%3D%22input-text+card-number%22+type%3D%22text%22+maxlength%3D%2220%22%27%3B%0Aecho+%27How+are+you%3F+I%5C%27m+fine%2C+thank+you%27%3B
 	str = str.replace(/(['"])((\\\1|.)*?)\1/gm, function(_, quot, innards) {
+		innards = innards.replace(/\/\//g, '_ACSS_escaped_double_slash');
 		if (quot == '"') {
 			innards = innards.replace(/\\"/g, '_ACSS_escaped_quote');
 		} else {
@@ -62,14 +67,14 @@ const _parseConfig = (str, inlineActiveID=null) => {
 
 	// Handle continue; and break; so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
 	// Put these into a general non-colon command array.
-	str = str.replace(/("(.*?)")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		innards = innards.replace(/continue\;/g, '_ACSS_continue');
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
 		return innards;
 	});
-	str = str.replace(/('(.*?)')/g, function(_, innards) {
+	str = str.replace(INSINGQUOTES, function(_, innards) {
 		innards = innards.replace(/continue\;/g, '_ACSS_continue');
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
@@ -178,7 +183,7 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		'@': '_ACSS_at',
 	};
 
-	str = str.replace(/("([^"]|"")*")/g, function(_, innards) {
+	str = str.replace(INQUOTES, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
 	});
 

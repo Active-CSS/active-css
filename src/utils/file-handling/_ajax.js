@@ -82,7 +82,7 @@
 		if (errcallback) {
 			errcallback('Network error', 0, o);
 		} else {
-			_err('Tried to get file: ' + filepath + ', but failed due to a network error.');
+			_err('Tried to get file: ' + filepath + ', but failed due to a network error.', o);
 		}
 	};
 	if (getMethod == 'POST' && pars !== null) {

@@ -10,10 +10,10 @@ _a.Print = o => {
 			if (iframeSel.tagName == 'IFRAME') {
 				iframeSel.contentWindow.print();
 			} else {
-				_err('Printing cannot occur because element is not an iframe: ' + o.actVal);
+				_err('Printing cannot occur because element is not an iframe: ' + o.actVal, o);
 			}
 		} else {
-			_err('Printing cannot occur if iframe does not exist: ' + o.actVal);
+			_err('Printing cannot occur if iframe does not exist: ' + o.actVal, o);
 		}
 	}
 };

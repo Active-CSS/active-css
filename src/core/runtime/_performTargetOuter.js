@@ -118,7 +118,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		if (elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
 			res = elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo];
 		} else {
-			res = _getSelector({ obj, component, primSel, origO, compDoc }, flowTargetSelector, true);
+			res = _getSelector({ obj, component, primSel, origO, compDoc, event: evType }, flowTargetSelector, true);
 
 			// Store the collection for resumption after pausing if needed.
 			if (!elTrack[_subEvCo]) {

@@ -3,17 +3,18 @@
 
 # [Active CSS](https://activecss.org/)
 
-The smartest DOM tool in the world.
+A CSS / JavaScript hybrid language.
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
 
-Just that alone would be a major game-changer for simplifying web development. That was version 1 of Active CSS released at the start of 2020.
+Quick to code, low maintenance event handling, dynamic CSS, easy DOM manipulation and lots more.
+
 
 The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
 
 Please, if you see a bug, do report it so it gets fixed. All bugs are fixed as rapidly as possible.
 
-ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time.
+ACSS is all about manual coding and taking back control of UI with a method that is scalable for complex websites. It has a near instant load-time, due to minimal JavaScript compilation in the browser itself.
 
 This is event-driven programming, so like any programming language use a good comment structure to label your code.
 
@@ -68,10 +69,10 @@ The Active CSS installation instructions are [on the website](https://activecss.
 If you are looking for the core script to download, check out the [dist](https://github.com/Active-CSS/active-css/tree/master/dist) folder and then find the version(s) you need.
 
 The production (live) version will look like this:<br>
-activecss-2-14-0.min.js
+activecss-2-15-0.min.js
 
 The development (offline) version will look like this:<br>
-activecss-dev-2-14-0.min.js
+activecss-dev-2-15-0.min.js
 
 There are also npm versions - links on the website.
 
