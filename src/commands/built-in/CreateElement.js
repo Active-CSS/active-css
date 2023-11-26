@@ -60,20 +60,14 @@ _a.CreateElement = o => {
 				'return [' + attrs.slice(0, -1) + '];' +	// trim off trailing comma from attrs.
 			'}';
 	}
-
-	// Note: connectedCallback, etc. are not working as expected in components, so this below is undocumented code and needs to be fixed to get working.
-	// The code is left here in case people are using it. But it does needs proper address at some point. At some point in time it would have done something.
-
 	createTagJS +=
 			'constructor() {' +
 				'super();' +
 			'}' +
-			'connectedCallback() {' +
-				'let compDetails = _componentDetails(this);' +
-				'_handleEvents({ obj: this, evType: \'connectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
-			'}' +
+//			'connectedCallback() is a pseudonym for beforeComponentOpen, and user events are converted to beforeComponentOpen at config parsing.
+//			'The component scope details are not available at connectedCallback, and it's more useful to have them at beforeComponentOpen - which is still prior to full render.
 			'disconnectedCallback() {' +
-				'let compDetails = _componentDetails(this);' +
+				'let compDetails = _getComponentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'disconnectedCallback\', component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope, runButElNotThere: true });' +	// true = run when not there.
 			'}';
 	if (attrs) {
@@ -83,7 +77,7 @@ _a.CreateElement = o => {
 				'this.setAttribute(name + \'-old\', oldVal); ' +
 				'let ref = this._acssActiveID.replace(\'d-\', \'\') + \'HOST\' + name;' +
 				'ActiveCSS._varUpdateDom([{currentPath: ref, previousValue: oldVal, newValue: newVal, type: \'update\'}]);' +
-				'let compDetails = _componentDetails(this);' +
+				'let compDetails = _getComponentDetails(this);' +
 				'_handleEvents({ obj: this, evType: \'attrChange\' + name._ACSSConvFunc(), component: compDetails.component, compDoc: compDetails.compDoc, varScope: compDetails.varScope, evScope: compDetails.evScope });' +
 				// Handle shadow DOM observe event. Ie. Tell the inner DOM elements that something has changed outside. We only do this when there has
 				// been a change with the host attributes so we keep the isolation aspect of each shadow DOM. This way, the inner component can set
@@ -94,5 +88,5 @@ _a.CreateElement = o => {
 	createTagJS +=
 		'};' +
 		'customElements.define(\'' + tag + '\', ActiveCSS.customHTMLElements.' + customTagClass + ');';
-	Function('_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar', '"use strict";' + createTagJS)(_handleEvents, _componentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar);	// jshint ignore:line
+	Function('_handleEvents, _getComponentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar', '"use strict";' + createTagJS)(_handleEvents, _getComponentDetails, _handleObserveEvents, escapeHTML, unEscapeHTML, getVar);	// jshint ignore:line
 };

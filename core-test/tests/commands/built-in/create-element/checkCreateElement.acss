@@ -1,3 +1,4 @@
+/* Needs rewriting for @component syntax.
 body:init {
 	create-element: create-element-tag observe(cetaga cetagb);
 	var: ceStringTest "stringtest",
@@ -45,3 +46,4 @@ create-element-tag:connectedCallback {
 
 #checkCreateElement:test {
 }
+*/

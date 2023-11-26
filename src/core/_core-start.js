@@ -69,9 +69,11 @@
 			'connectedCallback',
 			'draw',
 			'disconnectCallback',
+			'init',
 			'innerhtmlchange',
 			'intersect',
-			'observe'
+			'observe',
+			'preInit',
 		],
 		DIGITREGEX = /^\d+$/,
 		DYNAMICCHARS = {

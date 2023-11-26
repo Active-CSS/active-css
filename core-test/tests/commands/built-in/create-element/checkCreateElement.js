@@ -1,3 +1,4 @@
+/* Needs rewriting for @component syntax.
 function checkCreateElement(o, pars) {
 	let checkCreateElementEl = _initTest('checkCreateElement');
 	if (!checkCreateElementEl) return;
@@ -34,3 +35,4 @@ function checkCreateElement(o, pars) {
 
 	_addSuccessClass(checkCreateElementEl);
 }
+*/

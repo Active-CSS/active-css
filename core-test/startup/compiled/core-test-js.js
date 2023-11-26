@@ -724,6 +724,7 @@ function checkCreateConditionalFinal(o) {
 	_addSuccessClass(checkCreateConditionalEl);
 }
 
+/* Needs rewriting for @component syntax.
 function checkCreateElement(o, pars) {
 	let checkCreateElementEl = _initTest('checkCreateElement');
 	if (!checkCreateElementEl) return;
@@ -760,7 +761,7 @@ function checkCreateElement(o, pars) {
 
 	_addSuccessClass(checkCreateElementEl);
 }
-
+*/
 function checkEval(o) {
 	let checkEvalEl = _initTest('checkEval');
 	if (!checkEvalEl) return;

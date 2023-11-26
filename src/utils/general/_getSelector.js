@@ -1,6 +1,5 @@
 const _getSelector = (o, sel, many=false) => {
 	// This is a consolidated selector grabber which should be used everywhere in the core that needs ACSS special selector references.
-	// It is not a full solution. It allows drilling through one multi-result after a special selector, but no further than that currently.
 	let newDoc;
 	if (o.compDoc) {
 		// Use the default shadow doc. This could be a componentOpen, and unless there's a split selector involved, we need to default to the shadow doc provided.

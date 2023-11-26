@@ -48,7 +48,8 @@ body:init {
 			<div id="checkClickoutsideEvent" data-desc="Basic clickoutside-event command" class="coreTest">{|checkClickoutsideEventHTML}</div>
 			<div id="checkCreateCommand" data-desc="Basic create-command command" class="coreTest">{|checkCreateCommandHTML}</div>
 			<div id="checkCreateConditional" data-desc="Basic create-conditional command" class="coreTest">{|checkCreateConditionalHTML}</div>
-			<div id="checkCreateElement" data-desc="Basic create-element command" class="coreTest">{|checkCreateElementHTML}</div>
+			<!-- create-element test removed as superceded by @component events - new test needs to be written -->
+<!--			<div id="checkCreateElement" data-desc="Basic create-element command" class="coreTest">{|checkCreateElementHTML}</div>-->
 			<div id="checkEval" data-desc="Basic eval command" class="coreTest"></div>
 			<div id="checkFocusOff" data-desc="Basic focus-off command" class="coreTest">{|checkFocusOffHTML}</div>	
 			<div id="checkFocusOnFirst" data-desc="Basic focus-on-first command" class="coreTest">{|checkFocusOnFirstHTML}</div>

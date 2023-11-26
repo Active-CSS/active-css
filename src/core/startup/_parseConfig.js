@@ -65,13 +65,14 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return '_ACSS_subst_equal_brace_start' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + '_ACSS_subst_equal_brace_end';
 	});
 
-	// Handle continue; and break; so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
+	// Handle continue; and break;, etc. so they parse later on. This can be optimised, and also made to work with whitespace before the semi-colon as it doesn't here.
 	// Put these into a general non-colon command array.
 	str = str.replace(INQUOTES, function(_, innards) {
 		innards = innards.replace(/continue\;/g, '_ACSS_continue');
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		innards = innards.replace(/&\:connectedCallback\;/g, '_ACSS_connCall');
 		return innards;
 	});
 	str = str.replace(INSINGQUOTES, function(_, innards) {
@@ -79,17 +80,20 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/break\;/g, '_ACSS_break');
 		innards = innards.replace(/exit\;/g, '_ACSS_exit');
 		innards = innards.replace(/exit\-target\;/g, '_ACSS_exittarg');
+		innards = innards.replace(/&\:connectedCallback\;/g, '_ACSS_connCall');
 		return innards;
 	});
 	str = str.replace(/([\s\;\{])continue\;/g, '$1continue:1;');
 	str = str.replace(/([\s\;\{])break\;/g, '$1break:1;');
 	str = str.replace(/([\s\;\{])exit\;/g, '$1exit:1;');
 	str = str.replace(/([\s\;\{])exit\-target\;/g, '$1exit\-target:1;');
+	str = str.replace(/&\:connectedCallback/g, '&:beforeComponentOpen');
 		
 	str = str.replace(/_ACSS_continue/g, 'continue;');
 	str = str.replace(/_ACSS_break/g, 'break;');
 	str = str.replace(/_ACSS_exit/g, 'exit;');
 	str = str.replace(/_ACSS_exittarg/g, 'exit-target;');
+	str = str.replace(/_ACSS_connCall/g, '&:connectedCallback');
 
 	// Handle any embedded Active CSS style tags and convert to regular style tags.
 	str = str.replace(/acss\-style/gi, 'style');
