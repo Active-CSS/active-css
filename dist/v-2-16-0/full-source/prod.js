@@ -1939,7 +1939,7 @@ ActiveCSS.triggerReal = (obj, ev, varScope, compDoc, component) => {
 
 _c.IfChecked = o => _selCompare(o, 'iC');
 
-_c.IfCompletelyVisible = o => { return ActiveCSS._ifVisible(o, true); };	// Used by extensions.
+_c.IfCompletelyVisible = o => { return ActiveCSS._ifVisible(o, true); };
 
 _c.IfCompletelyVisibleX = o => { return ActiveCSS._ifVisible(o, true, 'x'); };
 
@@ -2118,7 +2118,11 @@ _c.IfVarTrue = o => {
 	return _c.IfVar(o);
 };
 
-_c.IfVisible = o => { return ActiveCSS._ifVisible(o); };	// Used by extensions.
+_c.IfVisible = o => { return ActiveCSS._ifVisible(o); };
+
+_c.IfVisibleX = o => { return ActiveCSS._ifVisible(o, false, 'x'); };
+
+_c.IfVisibleY = o => { return ActiveCSS._ifVisible(o, false, 'y'); };
 
 /* Internal conditional command only */
 _c.MqlTrue = o => {
@@ -10563,24 +10567,6 @@ const _isPendingAjaxForComponents = obj => {
 	return obj.classList.contains('htmlPending') || obj.classList.contains('cssPending') || obj.classList.contains('jsonPending');
 };
 
-const _absLeft = el => {
-	// Position of left edge relative to frame left courtesy of http://www.quirksmode.org/js/findpos.html
-	var x = 0;
-	for (; el; el = el.offsetParent) {
-		x += el.offsetLeft;
-	}
-	return x;
-};
-
-const _absTop = el => {
-	// Position of top edge relative to top of frame courtesy of http://www.quirksmode.org/js/findpos.html
-	var y = 0;
-	for (; el; el = el.offsetParent) {
-		y += el.offsetTop;
-	}
-	return y;
-};
-
 const _actValSelItem = (o, txt) => {
 	let str = o.actVal;
 	if (txt) {
@@ -10601,29 +10587,6 @@ ActiveCSS._addClassObj = (obj, str) => {
 	if (!obj || !obj.classList) return; // element is no longer there.
 	let arr = str.replace('.', '').split(' ');
 	obj.classList.add(...arr);
-};
-
-const _checkBoundaries = (el, cont) => {
-	// Returns true if the boundaries checks pass.
-	let left = _absLeft(el),
-		right = left + el.offsetWidth,
-		top = _absTop(el),
-		bottom = top + el.offsetHeight,
-		cLeft = _absLeft(cont),
-		cRight = cLeft + cont.offsetWidth,
-		cTop = _absTop(cont),
-		cBottom = cTop + cont.offsetHeight;
-
-	return {
-		top,
-		right,
-		bottom,
-		left,
-		cTop,
-		cRight,
-		cBottom,
-		cLeft,
-	};
 };
 
 const _checkForm = (frm, wot) => {
@@ -12032,7 +11995,19 @@ ActiveCSS._ifVisible = (o, tot, context) => {           // tot true is completel
 	// Check in a container if one is found.
 	let compObj;
 	if (elContainer) {
-		compObj = _checkBoundaries(el, elContainer);
+		let rects = el.getClientRects();
+		let rectsOuter = elContainer.getClientRects();
+		compObj = {
+			top: rects[0].top,
+			right: rects[0].right,
+			bottom: rects[0].bottom,
+			left: rects[0].left,
+			cTop: rectsOuter[0].top,
+			cRight: rectsOuter[0].right,
+			cBottom: rectsOuter[0].bottom,
+			cLeft: rectsOuter[0].left,
+		};
+
 	} else {
 		// Container not found. Use the document.
 		let rect = el.getBoundingClientRect();
