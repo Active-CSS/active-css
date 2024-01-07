@@ -4,13 +4,13 @@ const _pause = (o, tim) => {
 	let activeID = _getActiveID(restartObj.secSelObj);
 	let subEvCo = restartObj._subEvCo;
 	if (!pauseTrack[activeID]) pauseTrack[activeID] = {};
-	pauseTrack[activeID][subEvCo] = true;
+	pauseTrack[activeID][subEvCo] = _clone(syncQueue[subEvCo]);
+	pauseTrack[activeID][subEvCo].targCondTrack = _clone(condTrack[o._subEvCo]);
 	setTimeout(() => {
 		o = null;
 		// If pause has not been cancelled, restart the event queue.
 		if (pauseTrack[activeID] && pauseTrack[activeID][subEvCo]) {
-			delete pauseTrack[activeID][subEvCo];
-			_syncRestart(restartObj, subEvCo);
+			_syncRestart(restartObj, subEvCo, activeID);
 		}
 		restartObj = null;
 		return;

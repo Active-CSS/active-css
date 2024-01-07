@@ -10,7 +10,9 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			// Recurse and set up each loop.
 			secSelCounter++;
 			compConfig[secSelCounter] = [];
-			compConfig[secSelCounter][nam] = _iterateRules([], val, sel, ev, condition, componentName);
+			let arr = [];
+			arr.intID = intIDCounter++;
+			compConfig[secSelCounter][nam] = _iterateRules(arr, val, sel, ev, condition, componentName);
 			return;
 		}
 		// Sort out actions addressed to the event selector, on the top-level with no secondary selector.
@@ -24,6 +26,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			if (nam == 'prevent-default') _checkPassiveState(componentName, ev);
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter]['&'] = [];
+			compConfig[secSelCounter]['&'].intID = intIDCounter++;
 			compConfig[secSelCounter]['&'].push({ name: nam, value: val, file: rules[key2].file, line: rules[key2].line, intID: rules[key2].intID });
 			return;
 		}
@@ -38,6 +41,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			secSelCounter++;
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter][secsel] = [];
+			compConfig[secSelCounter][secsel].intID = intIDCounter++;
 			for (thisAct in val) {
 				if (val[thisAct].type === undefined) continue;
 				if (secsel == '&' && val[thisAct].name == 'prevent-default') _checkPassiveState(componentName, ev);

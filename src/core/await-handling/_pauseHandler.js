@@ -5,10 +5,9 @@ const _pauseHandler = (o) => {
 		return;
 	} else {
 		let convTime = _convertToMS(o.actVal, 'Invalid delay number format: ' + o.actVal);
-		// This is a hack due to the way the event stack works. The first pause is completed on all target selectors in a set before they all finish.
-		// This effectively multiplies the pause times by the number of elements in the target selector set.
-		// Dividing by the number of elements in the target selector set gives us the valid time to pause for. It's cheeky and should probably be
-		// worked out a different way, but it works.
+		// The first pause is completed on all target selectors in a set before they all finish.
+		// This effectively multiplies the pause time by the number of elements in the target selector set.
+		// Dividing by the number of elements in the target selector set gives us the valid time to pause for.
 		let newConvTime = (o._elsTotal) ? convTime / o._elsTotal : convTime;
 		if (convTime) {
 			_immediateStop(o);

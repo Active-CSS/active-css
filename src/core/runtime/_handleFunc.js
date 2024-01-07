@@ -83,6 +83,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
 		// Leave command intact. No variable subsitution other than the use of vars.
 		o.actVal = _unEscNoVars(o.actValSing);
+
 	} else {
 		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{

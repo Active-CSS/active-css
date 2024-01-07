@@ -25,6 +25,7 @@ _a.CreateElement = o => {
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
+		secSel['&'].intID = intIDCounter++;
 		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render-before-end', value: '"{|_acss-host_' + component + '}" after stack' };
 
 		// Don't add it if it's already there.

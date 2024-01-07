@@ -103,7 +103,7 @@
 		STYLEREGEX = /\/\*active\-var\-([\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\: \[\]]+)\*\/(((?!\/\*).)*)\/\*\/active\-var\*\//g,
 		SUPPORT_ED = !!((window.CSS && window.CSS.supports) || window.supportsCSS || false),
 		TABLEREGEX = /^\s*<t(r|d|body)/m,
-		TIMEDREGEX = /(^|\s)(after|every) (0|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
+		TIMEDREGEX = /(^|\s)(after|every) (0s|0ms|stack|\{\=[\s\S]*?\=\}|[\{\@\u00BF-\u1FFF\u2C00-\uD7FF\w\$\-\.\:\[\]]+(\})?(s|ms)?)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)/gm,
 		UNIQUEREF = Math.floor(Math.random() * 10000000);
 	const STATEMENTS = [ ...INNERSTATEMENTS, ...WRAPSTATEMENTS ];
 	const ATRULES = [ ...STATEMENTS, '@pages' ],		// @media and @support have a different handling to regular CSS at-rules.
@@ -668,6 +668,7 @@ _a.CreateElement = o => {
 		// Note: Below, "_acss-host_" is used to specify that the component definitely has a host so it should be scoped when rendering.
 		// Components by default do not necessarily need to be scoped for performance reasons, but in this case we need to easily cover different possibilities
 		// related to needing a host element. This was brought about by the need to nail down the handling for reference to {@host:...} variables.
+		secSel['&'].intID = intIDCounter++;
 		secSel['&'][0] = { file: '', line: '', intID: intIDCounter++, name: 'render-before-end', value: '"{|_acss-host_' + component + '}" after stack' };
 
 		// Don't add it if it's already there.
@@ -2151,7 +2152,7 @@ const _delaySplit = (str, typ, o) => {
 	// Return an array containing an "after" or "every" timing, and any label (label not implemented yet).
 	// Ignore entries in double quotes. Wipe out the after or every entries after handling.
 	let regex, convTime, theLabel;
-	regex = new RegExp('(?:^| )(' + typ + ' (0|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
+	regex = new RegExp('(?:^| )(' + typ + ' (0s|0ms|stack|(\\{\\=[\\s\\S]*?\\=\\}|[\\{\\@\\u00BF-\\u1FFF\\u2C00-\\uD7FF\\w\\=\\$\\-\\.\\:\\[\\]]+[\\}]?)(s|ms)?))(?=([^"\\\\]*(\\\\.|"([^"\\\\]*\\\\.)*[^"\\\\]*"))*[^"]*$)', 'gm');
 	str = str.replace(regex, function(_, wot, wot2, delayValue, delayType) {
 		if (delayValue && delayValue.indexOf('{') !== -1) {
 			convTime = _basicOVarEval(delayValue, o, o.func) + (delayType || '');
@@ -2826,6 +2827,7 @@ const _handleFunc = function(o, delayActiveID=null, runButElNotThere=false) {
 	} else if (['Run', 'Eval'].indexOf(o.func) !== -1) {
 		// Leave command intact. No variable subsitution other than the use of vars.
 		o.actVal = _unEscNoVars(o.actValSing);
+
 	} else {
 		let strObj = _handleVars([ 'rand', ((!['CreateCommand', 'CreateConditional'].includes(o.func)) ? 'expr' : null), 'attrs', 'strings', 'scoped' ],
 			{
@@ -3059,44 +3061,84 @@ const _handleSpaPop = (e, init) => {
 
 };
 
-const _handleTimer = (typ, o, delayRef, runButElNotThere) => {
+const _handleTimer = (commandType, o, delayRef, runButElNotThere) => {
 	let o2 = _clone(o), delLoop = ['after', 'every'], aftEv;
-	let splitArr, tid, scope, commandProp, commandSing, origCommandSing;
-	if (typ == 'func') {
+	let splitArr, tid, scope, commandProp, commandSing, origCommandSing, commandPos;
+	if (commandType == 'func') {
+		// This is an action command delay.
 		commandProp = 'actVal';
 		commandSing = 'actValSing';
 		origCommandSing = 'origActValSing';
+		commandPos = 'actPos';
+	} else {
+		// This is a target selector delay.
+		commandProp = 'target';
+		commandSing = 'targetSing';
+		origCommandSing = 'origTargetSing';
+		commandPos = 'targetPos';
 	}
 	for (aftEv of delLoop) {
 		splitArr = _delaySplit(o2[commandProp], aftEv, o);
 		scope = (o.evScope) ? o.evScope : 'main';
 		if (splitArr.lab) splitArr.lab = scope + splitArr.lab;
 		if (typeof splitArr.tim == 'number' && splitArr.tim >= 0) {
+			if (aftEv == 'every' && splitArr.tim == 0) _err('Cannot have a zero time value with "every".', o);
+
 			o2[commandProp] = splitArr.str;
 			o2[commandSing] = o2[commandProp];
 			delayArr[delayRef] = (delayArr[delayRef] !== undefined) ? delayArr[delayRef] : [];
-			delayArr[delayRef][o2.func] = (delayArr[delayRef][o2.func] !== undefined) ? delayArr[delayRef][o2.func] : [];
-			delayArr[delayRef][o2.func][o2.actPos] = (delayArr[delayRef][o2.func][o2.actPos] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos] : [];
-			delayArr[delayRef][o2.func][o2.actPos][o2.intID] = (delayArr[delayRef][o2.func][o2.actPos][o2.intID] !== undefined) ? delayArr[delayRef][o2.func][o2.actPos][o2.intID] : [];
-			if (delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]) {
-//				console.log('Clear timeout before setting new one for ' + o2.func + ', ' + o2.actPos + ', ' + o2.intPos + ', ' + o2.loopRef);
-				_clearTimeouts(delayArr[delayRef][o2.func][o2.actPos][o2.intID][o2.loopRef]);
-				_removeCancel(delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef);
+			delayArr[delayRef][o2[commandType]] = (delayArr[delayRef][o2[commandType]] !== undefined) ? delayArr[delayRef][o2[commandType]] : [];
+			delayArr[delayRef][o2[commandType]][o2[commandPos]] = (delayArr[delayRef][o2[commandType]][o2[commandPos]] !== undefined) ? delayArr[delayRef][o2[commandType]][o2[commandPos]] : [];
+			delayArr[delayRef][o2[commandType]][o2[commandPos]][o2.intID] = (delayArr[delayRef][o2[commandType]][o2[commandPos]][o2.intID] !== undefined) ? delayArr[delayRef][o2[commandType]][o2[commandPos]][o2.intID] : [];
+			if (delayArr[delayRef][o2[commandType]][o2[commandPos]][o2.intID][o2.loopRef]) {
+//				console.log('Clear timeout before setting new one for ' + o2[commandType] + ', ' + o2[commandPos] + ', ' + o2.intPos + ', ' + o2.loopRef);
+				_clearTimeouts(delayArr[delayRef][o2[commandType]][o2[commandPos]][o2.intID][o2.loopRef]);
+				_removeCancel(delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef);
 			}
 			o2.delayed = true;
 			if (aftEv == 'after') {
-				_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, o._subEvCo, setTimeout(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
-				if (typ == 'func') {
+				if (commandType == 'func') {
+					_setupLabelData(splitArr.lab, delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef, o._subEvCo,
+						setTimeout(		// jshint ignore:line
+							// Remove the delay vars at the same time. The return value is not used in _handleFunc.
+							_handleFunc.bind(this, o2, delayRef, runButElNotThere, _removeCancel(delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef)), splitArr.tim)
+					);
 					_nextFunc(o);
+		 		} else {
+					// Use the target selector without any delays as the secSelObj to resume from in _performTargetOuter.
+					// Only remove the after label - don't remove if every is here, as that should keep the label
+					let timerObj = { _subEvCo: o2._subEvCo, intID: o2.intID, secSelObj: splitArr.str, loopRef: o2.loopRef, origLoopObj: o2.origLoopObj };
+					_setupLabelData(splitArr.lab, delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef, o._subEvCo,
+						setTimeout(() => {	// jshint ignore:line
+							_removeCancel(delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef);
+							let setAfterEvery = (splitArr.str.indexOf(' every ') !== -1) ? true : false;
+							_setResumeObj(timerObj, setAfterEvery);
+							_syncRestart(timerObj, timerObj._subEvCo);
+						}, splitArr.tim)
+					);
 		 		}
 		 		return true;
 			}
 			o2.interval = true;
 			o2[origCommandSing] = o2[commandSing];
-			_setupLabelData(splitArr.lab, delayRef, o2.func, o2.actPos, o2.intID, o2.loopRef, o._subEvCo, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
+			if (commandType == 'func') {
+				_setupLabelData(splitArr.lab, delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef, o._subEvCo, setInterval(_handleFunc.bind(this, o2, delayRef, runButElNotThere), splitArr.tim));
+			} else {
+				let timerObj = { _subEvCo: o2._subEvCo, intID: o2.intID, secSelObj: splitArr.str, loopRef: o2.loopRef, origLoopObj: o2.origLoopObj };
+				_setupLabelData(splitArr.lab, delayRef, o2[commandType], o2[commandPos], o2.intID, o2.loopRef, o._subEvCo,
+					setInterval(() => {	// jshint ignore:line
+						_setResumeObj(timerObj);
+						_syncRestart(timerObj, timerObj._subEvCo);
+					}, splitArr.tim)
+				);
+			}
 			// Carry on down and perform the first action. The interval has been set.
 			o.interval = true;
 			o[commandSing] = splitArr.str;
+			if (commandType != 'func') {
+				// Target selector "every".
+				return o;
+			}
 		}
 	}
 
@@ -3644,7 +3686,7 @@ const _performEvent = loopObj => {
 		delete imSt[thisStopCounter];
 		delete _break['i' + thisStopCounter];
 
-		_cleanUpAfterPause(loopObjClone._subEvCo, loopObjClone.obj._acssActiveID);
+		_cleanUpAfterPause(loopObjClone._subEvCo);
 		_resetContinue(thisStopCounter);
 		_resetExitTarget(thisStopCounter);
 	}
@@ -3703,7 +3745,7 @@ const _performSecSelDo = (secSels, loopObj, compDoc, loopRef, varScope, inherite
 };
 
 const _performTarget = (outerTargetObj, targCounter) => {
-	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj } = outerTargetObj;
+	let { targ, obj, compDoc, evType, varScope, evScope, evObj, otherObj, origO, passCond, component, primSel, secSelEls, eve, inheritedScope, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, _taEvCo, loopRef, runButElNotThere, passTargSel, activeTrackObj, targetSelector, doc, chilsObj, origLoopObj, ifObj, targEvIntID } = outerTargetObj;
 	let act, outerFill, tmpSecondaryFunc, actionValue;
 
 	if (!targ ||
@@ -3765,6 +3807,7 @@ const _performTarget = (outerTargetObj, targCounter) => {
 			_condCo,
 			_imStCo,
 			_taEvCo,
+			targEvIntID,
 			passCond: passCond,
 			file: targ[m].file,
 			line: targ[m].line,
@@ -3796,12 +3839,13 @@ const _performTarget = (outerTargetObj, targCounter) => {
 const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter) => {
 	let {chilsObj, secSelLoops, obj, evType, evScope, evObj, otherObj, origO, sel, passCond, component, primSel, eve, _maEvCo, _subEvCo, _subSubEvCo, _targCo, _condCo, _imStCo, runButElNotThere, origLoopObj } = loopObj;
 
-	let targetSelector, targs, doc, passTargSel, activeTrackObj = '', n;
+	let targetSelector, origTargetSelector, targs, doc, passTargSel, activeTrackObj = '', n, runNextTarget = true, outerTargetObj;
 
 	loopObj._targCo++;
 
 	if (!secSels[secSelCounter]) return;
-	targetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
+	origTargetSelector = Object.keys(secSels[secSelCounter])[outerTargCounter];
+	targetSelector = origTargetSelector;
 
 	// Loop target selectors in sequence.
 	if (typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
@@ -3810,9 +3854,10 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		) {
 		return;
 	}
+
 	if (targetSelector == 'conds') return;	// skip the conditions.
 
-	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][targetSelector], targetSelector, targetEventCounter);
+	let resultOfLoopCheck = _checkRunLoop(loopObj, secSels[secSelCounter][origTargetSelector], targetSelector, targetEventCounter);
 
 	if (resultOfLoopCheck.atIf ||
 			typeof taEv[targetEventCounter] !== 'undefined' && taEv[targetEventCounter]._acssStopImmedEvProp ||
@@ -3820,6 +3865,69 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			_decrBreakContinue(_imStCo, 'continue')
 		) {
 		return;
+	}
+
+	// Set a delay object for potential use later on after the target object has been retrieved and the delay reference is obtained.
+	let targEvIntID, startedEveryInterval;
+
+	if (targetSelector.match(TIMEDREGEX)) {
+		if (!origLoopObj.resume ||
+				origLoopObj.resumeProps && origLoopObj.resumeProps.targEvery && secSels[secSelCounter][origTargetSelector].intID == origLoopObj.resumeProps.intID
+			) {	// afterEvery is true if this is specifically a target every resumption - may have come after an "after" on the target.
+			if (origLoopObj.resumeProps && origLoopObj.resumeProps.targEvery && secSels[secSelCounter][origTargetSelector].intID == origLoopObj.resumeProps.intID) {
+				// This is an "every" after an "after" Use the target str that doesn't have the after delay string.
+				targetSelector = origLoopObj.resumeProps.secSelObj;
+			}
+			let delayObj = {
+				target: targetSelector,
+				targetSing: targetSelector,
+				origTargetSing: targetSelector,
+				targetPos: 0,    // Split targets have unique intIDs, so no further differentiation is necessary.
+				intID: secSels[secSelCounter][origTargetSelector].intID,
+				loopRef,
+				origLoopObj,
+				evScope,
+				_subEvCo,
+			};
+
+			// Check for any delay for the target's events. The intID of the delay object set above can act as the unique ref.
+			let delayRet = _handleTimer('target', delayObj, 'targ_' + delayObj.intID, true);
+			if (delayRet === true) {
+				// The events in this target have been delayed.
+				return true;
+			} else if (delayRet) {
+				// An "every" interval has started.
+				startedEveryInterval = true;
+				targetSelector = delayRet.targetSing;
+				// Empty the syncQueue so the functions run.
+				delete syncQueue[_subEvCo];
+			}
+
+		} else {
+			if ([ origLoopObj.resumeProps.intID, origLoopObj.resumeProps.targEvIntID ].includes(secSels[secSelCounter][origTargetSelector].intID)) {
+				// Delete the resumption object and empty the sync queue.
+				if (secSels[secSelCounter][origTargetSelector].intID == origLoopObj.resumeProps.intID) {
+					targEvIntID = origLoopObj.resumeProps.intID;
+					targetSelector = origLoopObj.resumeProps.secSelObj;
+					_syncEmpty(origLoopObj._subEvCo);
+
+					// Reset any conditional tracking, but not if it is during a pause resumption.
+					delete condTrack[origLoopObj._subEvCo];
+				} else {
+					targEvIntID = origLoopObj.resumeProps.targEvIntID;
+					// The condTrack variable may have changed or no longer be there.
+					// Use the one from resumeObj, as that will have the correct state data required.
+					condTrack[origLoopObj._subEvCo] = origLoopObj.resumeProps.targCondTrack;
+				}
+				runNextTarget = false;
+
+			} else {
+				outerTargCounter++;
+				if (secSels[secSelCounter][outerTargCounter]) {
+					_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter);
+				}
+			}
+		}
 	}
 
 	let flowTargetSelector = targetSelector, parallelFlow;
@@ -3866,8 +3974,8 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		// Get the correct document/iframe/shadow for this target. Resolve the document level to be the root host/document.
 		doc = compDoc;
 
-		let outerTargetObj = {
-			targ: secSels[secSelCounter][targetSelector],
+		outerTargetObj = {
+			targ: secSels[secSelCounter][origTargetSelector],
 			targetSelector,
 			secSelEls: [ flowTargetSelector ],
 			obj,
@@ -3890,6 +3998,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
+			targEvIntID,
 			loopRef,
 			runButElNotThere,
 			passTargSel: flowTargetSelector,
@@ -3904,14 +4013,14 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		_resetExitTarget(_imStCo);
 
 	} else {
-
 		// Handle variables that need to be evaluated before grabbing the targets.
 		flowTargetSelector = _sortOutTargSelectorVars(flowTargetSelector, obj, varScope, otherObj);
 
 		// Get the applicable targets if we are resuming after a pause, otherwise get the target elements afresh.
 		let res;
-		if (elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
+		if (!startedEveryInterval && elTrack[_subEvCo] && elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo]) {
 			res = elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo];
+
 		} else {
 			res = _getSelector({ obj, component, primSel, origO, compDoc, event: evType }, flowTargetSelector, true);
 
@@ -3922,14 +4031,15 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			}
 			elTrack[_subEvCo].resArr[loopRef + _condCo + '_' + _subSubEvCo + '_' + _targCo] = res;
 		}
+
 		if (!res.obj) return;
 
 		doc = res.doc;
 
 		passTargSel = flowTargetSelector;
 
-		let outerTargetObj = {
-			targ: secSels[secSelCounter][targetSelector],
+		outerTargetObj = {
+			targ: secSels[secSelCounter][origTargetSelector],
 			targetSelector,
 			secSelEls: res.obj,
 			obj,
@@ -3952,6 +4062,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			_condCo,
 			_imStCo,
 			_taEvCo: targetEventCounter,
+			targEvIntID,
 			loopRef,
 			runButElNotThere,
 			passTargSel,
@@ -3987,9 +4098,13 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		}
 	}
 
-	outerTargCounter++;
-	if (secSels[secSelCounter][outerTargCounter]) {
-		_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter);
+	if (!runNextTarget) {
+		_immediateStop(outerTargetObj);
+	} else {
+		outerTargCounter++;
+		if (secSels[secSelCounter][outerTargCounter]) {
+			_performTargetOuter(secSels, loopObj, compDoc, loopRef, varScope, inheritedScope, targetEventCounter, secSelCounter, outerTargCounter);
+		}
 	}
 };
 
@@ -6389,7 +6504,9 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			// Recurse and set up each loop.
 			secSelCounter++;
 			compConfig[secSelCounter] = [];
-			compConfig[secSelCounter][nam] = _iterateRules([], val, sel, ev, condition, componentName);
+			let arr = [];
+			arr.intID = intIDCounter++;
+			compConfig[secSelCounter][nam] = _iterateRules(arr, val, sel, ev, condition, componentName);
 			return;
 		}
 		// Sort out actions addressed to the event selector, on the top-level with no secondary selector.
@@ -6403,6 +6520,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			if (nam == 'prevent-default') _checkPassiveState(componentName, ev);
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter]['&'] = [];
+			compConfig[secSelCounter]['&'].intID = intIDCounter++;
 			compConfig[secSelCounter]['&'].push({ name: nam, value: val, file: rules[key2].file, line: rules[key2].line, intID: rules[key2].intID });
 			return;
 		}
@@ -6417,6 +6535,7 @@ const _iterateRules = (compConfig, rules, sel, ev, condition, componentName=null
 			secSelCounter++;
 			compConfig[secSelCounter] = [];
 			compConfig[secSelCounter][secsel] = [];
+			compConfig[secSelCounter][secsel].intID = intIDCounter++;
 			for (thisAct in val) {
 				if (val[thisAct].type === undefined) continue;
 				if (secsel == '&' && val[thisAct].name == 'prevent-default') _checkPassiveState(componentName, ev);
@@ -7699,13 +7818,13 @@ const _pause = (o, tim) => {
 	let activeID = _getActiveID(restartObj.secSelObj);
 	let subEvCo = restartObj._subEvCo;
 	if (!pauseTrack[activeID]) pauseTrack[activeID] = {};
-	pauseTrack[activeID][subEvCo] = true;
+	pauseTrack[activeID][subEvCo] = _clone(syncQueue[subEvCo]);
+	pauseTrack[activeID][subEvCo].targCondTrack = _clone(condTrack[o._subEvCo]);
 	setTimeout(() => {
 		o = null;
 		// If pause has not been cancelled, restart the event queue.
 		if (pauseTrack[activeID] && pauseTrack[activeID][subEvCo]) {
-			delete pauseTrack[activeID][subEvCo];
-			_syncRestart(restartObj, subEvCo);
+			_syncRestart(restartObj, subEvCo, activeID);
 		}
 		restartObj = null;
 		return;
@@ -7719,10 +7838,9 @@ const _pauseHandler = (o) => {
 		return;
 	} else {
 		let convTime = _convertToMS(o.actVal, 'Invalid delay number format: ' + o.actVal);
-		// This is a hack due to the way the event stack works. The first pause is completed on all target selectors in a set before they all finish.
-		// This effectively multiplies the pause times by the number of elements in the target selector set.
-		// Dividing by the number of elements in the target selector set gives us the valid time to pause for. It's cheeky and should probably be
-		// worked out a different way, but it works.
+		// The first pause is completed on all target selectors in a set before they all finish.
+		// This effectively multiplies the pause time by the number of elements in the target selector set.
+		// Dividing by the number of elements in the target selector set gives us the valid time to pause for.
 		let newConvTime = (o._elsTotal) ? convTime / o._elsTotal : convTime;
 		if (convTime) {
 			_immediateStop(o);
@@ -7731,12 +7849,14 @@ const _pauseHandler = (o) => {
 	}
 };
 
-const _setResumeObj = o => {
+const _setResumeObj = (o, targEvery) => {
 	syncQueue[o._subEvCo] = {
 		ref_subEvCo: o._subEvCo,
 		intID: o.intID,
 		secSelObj: o.secSelObj,
-		loopRef: o.loopRef
+		loopRef: o.loopRef,
+		targEvIntID: o.targEvIntID,
+		targEvery,
 	};
 };
 
@@ -7765,7 +7885,16 @@ const _syncEmpty = val => {
 	delete syncQueue[val];
 };
 
-const _syncRestart = (o, resumeID) => {
+const _syncRestart = (o, resumeID, activeID) => {
+	let restartAfterPause;
+
+	if (activeID && pauseTrack[activeID] && pauseTrack[activeID][o._subEvCo]) {
+		// Set up the SyncQueue object afresh. This is required if having multiple asynchronous pauses on the same event queue alongside delayed target selectors.
+		syncQueue[o._subEvCo] = pauseTrack[activeID][o._subEvCo];
+		// Clean-up.
+		delete pauseTrack[activeID][o._subEvCo];
+	}
+
 	if (_isSyncQueueSet(resumeID)) {
 		let loopObjCopy = _clone(o.origLoopObj);
 		let thisQueue = _clone(syncQueue[o._subEvCo]);
@@ -7775,9 +7904,7 @@ const _syncRestart = (o, resumeID) => {
 
 		// Re-run the events. It needs a setTimeout in order to clear the memory stack on the way back up the event flow.
 		// It also serves a purpose in keeping simultaneous actions happening at roughly the same time.
-
 		clearTimeout(pauseCleanTimers[o._subEvCo]);
-
 		setTimeout(_performEvent(loopObjCopy), 0);
 	}
 };
@@ -10829,6 +10956,10 @@ const _err = (str, o, ...args) => {	// jshint ignore:line
 	// Throw involved error messages when using the development edition, otherwise for security reasons throw a more vague error which can be debugged by
 	// using the development edition. If converting for the browser, this would get a special command like "debug-show-messages: true;" or something like
 	// that. It is unnecessary to require that for the JavaScript version of the core, as we differentiate between development and production versions.
+
+	// Cancel all timed actions.
+	_unloadAllCancelTimer();
+	// Display error.
 	if (DEVCORE) {
 		_errDisplayLine('Active CSS breaking error', str, [ 'color: red' ], o, args);	// jshint ignore:line
 		throw 'error, internal stack trace -->';
