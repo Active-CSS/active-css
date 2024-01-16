@@ -12371,8 +12371,7 @@ const _getRealEvent = ev => {
 	} else {
 		if (CUSTOMEVENTS.includes(ev) || ev.startsWith('__midComponentOpen')) return false;	// custom Active CSS events.
 		if (ev.substr(0, 10) == 'attrChange') return false;	// custom Active CSS event attrChange(Attrname). We need to do this to avoid clash with custom event names by user.
-		// Final check to see if the event can have an eventlistener. This will weed out valid developer custom events which should not have real listeners.
-		if (!('on' + ev in window)) return false;
+		// Do not do any further checks, to allow custom events and any other events.
 	}
 	return ev;
 };
