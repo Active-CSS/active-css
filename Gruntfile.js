@@ -1,5 +1,5 @@
 // Active CSS core generator.
-// Concatenate, lint-check, minify, then unit test.
+// Concatenate, lint-check, minify, then integration test.
 (function () {
    'use strict';
 
@@ -98,21 +98,6 @@
 				}
 			},
 
-			// Comment out for no babel.
-/*
-			babel: {
-				options: {
-					presets: ['env']
-				},
-				dist: {
-					files: {
-						'dist/v-<%= fileVersion %>/full-source/activecss-babel-<%= fileVersion %>.js': 'dist/v-<%= fileVersion %>/full-source/prod.js',
-						'dist/v-<%= fileVersion %>/full-source/activecss-babel-dev-<%= fileVersion %>.js': 'dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js'
-					}
-				},
-			},
-*/
-
 			// Terse the different versions after lint-check and put them into the version directory.
 			terser: {
 				regular: {
@@ -125,21 +110,6 @@
 						'dist/v-<%= fileVersion %>/activecss-dev-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/activecss-core-dev-<%= fileVersion %>.js']
 					}
 				},
-
-				// Comment out for no babel.
-/*
-				babel: {
-					options: {
-//						ie8: true,
-						keep_classnames: true,
-						safari10: true
-					},
-					files: {
-						'dist/v-<%= fileVersion %>/activecss-babel-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/full-source/activecss-babel-<%= fileVersion %>.js'],
-						'dist/v-<%= fileVersion %>/activecss-babel-dev-<%= fileVersion %>.min.js': ['dist/v-<%= fileVersion %>/full-source/activecss-babel-dev-<%= fileVersion %>.js']
-					}
-				}
-*/
 			},
 
 			// Run the tests with jasmine via karma.
@@ -155,11 +125,6 @@
 		grunt.loadNpmTasks('grunt-contrib-jshint');
 		grunt.loadNpmTasks('grunt-terser');
 		grunt.loadNpmTasks('grunt-karma');
-		// Comment out for no babel.
-//		grunt.loadNpmTasks('grunt-babel');
-
-		// Comment out for no babel.
-//		grunt.registerTask('default', ['concat', 'jshint', 'babel', 'terser', 'karma' ]);
 
 		// Comment out if you don't want Karma testing in order to speed up dev process. Always put it back before a final commit and ensure all tests work.
 		// Ensure karma.conf.js is using the correct core to test! ie. const activeCSSVersion = '2-4-3';
