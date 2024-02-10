@@ -3041,6 +3041,7 @@ const _handleSpaPop = (e, init) => {
 		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
+		templ.firstChild.classList.add('___acssRouteObj');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
 
 		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
@@ -3603,6 +3604,9 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		// Loop this action command over each of the target selectors before going onto the next action command.
 		if (els !== false) {
 			els.forEach((obj) => {
+				// If there is more than one object, skip if this is the SPA routing object.
+				if (elsTotal > 1 && _isRouteObj(secSelObj)) return;
+
 				// Loop over each target selector object and handle all the action commands for each one.
 				co++;
 				checkThere = true;
@@ -4082,6 +4086,9 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			// Default target selector event flow. Parallel event flow is handled in _performActionDo().
 			// Loop this action command over each of the target selectors before going onto the next action command.
 			els.forEach(secSelObj => {
+				// If there is more than one object, skip if this is the SPA routing object.
+				if (elsTotal > 1 && _isRouteObj(secSelObj)) return;
+
 				// Loop over each target selector object and handle all the action commands for each one.
 				co++;
 				outerTargetObj.passTargSel = secSelObj;
@@ -12912,6 +12919,10 @@ const _isPositive = str => {
 
 const _isPositiveFloat = str => {
 	return /^[\d\.]+$/.test(str);
+};
+
+const _isRouteObj = obj => {
+	return obj.classList.contains('___acssRouteObj');
 };
 
 const _isTextField = el => {

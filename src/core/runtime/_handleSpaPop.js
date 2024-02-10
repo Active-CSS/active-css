@@ -90,6 +90,7 @@ const _handleSpaPop = (e, init) => {
 		) {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
+		templ.firstChild.classList.add('___acssRouteObj');
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
 
 		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
