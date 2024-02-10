@@ -1214,7 +1214,7 @@ _a.Open = o => {
 		openObj.push(newStr);
 		return '';
 	});
-	window.open(openObj[0], openObj[1], openObj[2]);
+	window.open(openObj[0], openObj[1] || '', openObj[2] || '');
 };
 
 // _a.Pause = o => {};	// timings are handled in the core itself. This is here for documentation purposes only.

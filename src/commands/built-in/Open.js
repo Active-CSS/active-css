@@ -10,5 +10,5 @@ _a.Open = o => {
 		openObj.push(newStr);
 		return '';
 	});
-	window.open(openObj[0], openObj[1], openObj[2]);
+	window.open(openObj[0], openObj[1] || '', openObj[2] || '');
 };
