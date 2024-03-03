@@ -3620,7 +3620,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (els !== false) {
 			els.forEach((obj) => {
 				// If there is more than one object, skip if this is the SPA routing object.
-				if (elsTotal > 1 && _isRouteObj(secSelObj)) return;
+				if (elsTotal > 1 && _isRouteObj(obj)) return;
 
 				// Loop over each target selector object and handle all the action commands for each one.
 				co++;
@@ -8123,7 +8123,7 @@ const _handleVars = (arr, opts, varReplacementRef=null) => {
 
 			case 'expr':
 				// Includes progressive variable substitution protection.
-				str = _replaceJSExpression(str, null, null, varScope, varReplacementRef);
+				str = _replaceJSExpression(str, null, null, varScope, varReplacementRef, o);
 				break;
 
 			case 'html':
@@ -9173,6 +9173,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
 		// Replace references to the proxy, as there may be properties only available in the original.
 		wot = wot.replace(/(scopedProxy|scopedOrig)(\.__getTarget)?/g, 'scopedOrig');
+		// Replace any attributes.
+		if (o) wot = _replaceAttrs(o.obj, wot, o.secSelObj, o, o.func, varScope);
 
 		let q = '';
 		if (quoteIfString) {

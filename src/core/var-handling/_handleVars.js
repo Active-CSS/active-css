@@ -11,7 +11,7 @@ const _handleVars = (arr, opts, varReplacementRef=null) => {
 
 			case 'expr':
 				// Includes progressive variable substitution protection.
-				str = _replaceJSExpression(str, null, null, varScope, varReplacementRef);
+				str = _replaceJSExpression(str, null, null, varScope, varReplacementRef, o);
 				break;
 
 			case 'html':

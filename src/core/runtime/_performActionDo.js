@@ -60,7 +60,7 @@ const _performActionDo = (o, loopI=null, runButElNotThere=false) => {
 		if (els !== false) {
 			els.forEach((obj) => {
 				// If there is more than one object, skip if this is the SPA routing object.
-				if (elsTotal > 1 && _isRouteObj(secSelObj)) return;
+				if (elsTotal > 1 && _isRouteObj(obj)) return;
 
 				// Loop over each target selector object and handle all the action commands for each one.
 				co++;

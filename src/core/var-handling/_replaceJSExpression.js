@@ -10,6 +10,8 @@ const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=
 		if (!noConvertVar) wot = _replaceScopedVarsExpr(wot, varScope);
 		// Replace references to the proxy, as there may be properties only available in the original.
 		wot = wot.replace(/(scopedProxy|scopedOrig)(\.__getTarget)?/g, 'scopedOrig');
+		// Replace any attributes.
+		if (o) wot = _replaceAttrs(o.obj, wot, o.secSelObj, o, o.func, varScope);
 
 		let q = '';
 		if (quoteIfString) {
