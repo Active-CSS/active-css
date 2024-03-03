@@ -51,7 +51,7 @@ const _handleVarsInJS = function(str, varScope) {
 		str = str.replace(/(["|'][\s\S]*?["|'])/gim, function(_, innards) {
 			return innards.replace(/scopedProxy\.[\u00BF-\u1FFF\u2C00-\uD7FF\w\$]+\./g, '');
 		});
-		str = str.replace(/cjs_tmp\-dq"/g, '\\"');
+		str = str.replace(/cjs_tmp\-dq/g, '\\"');
 		str = str.replace(/cjs_tmp\-sq/g, "\\'");
 	}
 	return str;
