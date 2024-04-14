@@ -9,7 +9,6 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	if (sel.indexOf('{@') !== -1) {
 		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
 			let getProperty = false;
-			let realWot = wot;
 			if (wot.startsWith('@')) {
 				getProperty = true;
 				wot = wot.substr(1);
@@ -78,5 +77,8 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 		}
 		return false;
 	}
+
+	sel = _replaceCSSStyle(sel, secSelObj);
+
 	return sel;
 };

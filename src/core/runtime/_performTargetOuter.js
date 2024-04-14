@@ -169,6 +169,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			doc,
 			chilsObj,
 			origLoopObj,
+			e: eve,
 		};
 
 		_performTarget(outerTargetObj, 0);
@@ -233,6 +234,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			chilsObj,
 			doc,
 			origLoopObj,
+			e: eve,
 		};
 
 		if (!parallelFlow && typeof passTargSel == 'string' && !['~', '|'].includes(passTargSel.substr(0, 1))) {

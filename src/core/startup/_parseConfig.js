@@ -129,13 +129,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_brace_start_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\@\:]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
+	});
+	str = str.replace(/\{\:([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\:\}]+)\}/gi, function(_, innards) {
+		innards = innards.replace(/\./g, '_ACSS_dot');
+		return '_ACSS_subst_style_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');

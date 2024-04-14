@@ -13,6 +13,7 @@ const _sortOutEscapeChars = (str) => {
 		_ACSS_subst_brace_start: '{',
 		_ACSS_subst_at_brace_start: '{@',
 		_ACSS_subst_pipe_brace_start: '{|',
+		_ACSS_subst_style_brace_start: '{:',
 		_ACSS_subst_hash_brace_start: '{#',
 		_ACSS_subst_brace_end: '}',
 		_ACSS_dot: '.',

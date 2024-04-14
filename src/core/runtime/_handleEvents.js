@@ -228,7 +228,8 @@ const _handleEvents = evObj => {
 						eve,
 						_maEvCo,
 						_subEvCo: 'i' + subEventCounter,
-						runButElNotThere
+						runButElNotThere,
+						e: eve,
 					};
 					// Now add a copy of this original loop construct, within itself, for use by await & pause for resuming an identical loop.
 					let loopObjCopy = _clone(loopObj);

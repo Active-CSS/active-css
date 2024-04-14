@@ -2742,7 +2742,8 @@ const _handleEvents = evObj => {
 						eve,
 						_maEvCo,
 						_subEvCo: 'i' + subEventCounter,
-						runButElNotThere
+						runButElNotThere,
+						e: eve,
 					};
 					// Now add a copy of this original loop construct, within itself, for use by await & pause for resuming an identical loop.
 					let loopObjCopy = _clone(loopObj);
@@ -4026,6 +4027,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			doc,
 			chilsObj,
 			origLoopObj,
+			e: eve,
 		};
 
 		_performTarget(outerTargetObj, 0);
@@ -4090,6 +4092,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 			chilsObj,
 			doc,
 			origLoopObj,
+			e: eve,
 		};
 
 		if (!parallelFlow && typeof passTargSel == 'string' && !['~', '|'].includes(passTargSel.substr(0, 1))) {
@@ -7194,13 +7197,17 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_brace_start_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end_ACSS_subst_brace_end';
 	});
-	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\:]+)\}/gi, function(_, innards) {
+	str = str.replace(/\{\@([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\{\$\|\#\@\:]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_at_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\|([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
 		return '_ACSS_subst_pipe_brace_start' + innards + '_ACSS_subst_brace_end';
+	});
+	str = str.replace(/\{\:([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\'\{\$\|\@\:\}]+)\}/gi, function(_, innards) {
+		innards = innards.replace(/\./g, '_ACSS_dot');
+		return '_ACSS_subst_style_brace_start' + innards + '_ACSS_subst_brace_end';
 	});
 	str = str.replace(/\{\#([\u00BF-\u1FFF\u2C00-\uD7FF\w\-\.\:\{\$\|\@\}]+)\}/gi, function(_, innards) {
 		innards = innards.replace(/\./g, '_ACSS_dot');
@@ -7495,6 +7502,7 @@ const _sortOutEscapeChars = (str) => {
 		_ACSS_subst_brace_start: '{',
 		_ACSS_subst_at_brace_start: '{@',
 		_ACSS_subst_pipe_brace_start: '{|',
+		_ACSS_subst_style_brace_start: '{:',
 		_ACSS_subst_hash_brace_start: '{#',
 		_ACSS_subst_brace_end: '}',
 		_ACSS_dot: '.',
@@ -9001,7 +9009,6 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 	if (sel.indexOf('{@') !== -1) {
 		sel = sel.replace(/\{\@(\@?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
 			let getProperty = false;
-			let realWot = wot;
 			if (wot.startsWith('@')) {
 				getProperty = true;
 				wot = wot.substr(1);
@@ -9070,6 +9077,9 @@ const _replaceAttrs = (obj, sel, secSelObj=null, o=null, func='', varScope=null,
 		}
 		return false;
 	}
+
+	sel = _replaceCSSStyle(sel, secSelObj);
+
 	return sel;
 };
 
@@ -9159,6 +9169,32 @@ const _replaceComponents = (o, str) => {
 	}
 	if (co == 50) _err('Recursion detected during component rendering. Exited after 50 attempts', o);
 	return str;
+};
+
+const _replaceCSSStyle = (sel, secSelObj) => {
+	// Replace {:...} with inline style or {::...} with getComputedStyle.
+	if (sel.indexOf('{:') !== -1 && secSelObj) {
+		sel = sel.replace(/\{\:(\:?[^\t\n\f \/>"'=(?!\{)]+)\}/gi, function(_, wot) {
+			let getRealProperty = false;
+			if (wot.startsWith(':')) {
+				getRealProperty = true;
+				wot = wot.substr(1);
+			}
+			let res;
+			let camelProp = _hypenToCamel(wot);
+			if (getRealProperty) {
+				// Get the computed style.
+				let styl = getComputedStyle(secSelObj);
+				res = styl[camelProp];
+			} else {
+				// Get the inline style.
+				res = secSelObj.style[camelProp];
+			}
+			return res || '';
+		});
+	}
+
+	return sel;
 };
 
 const _replaceJSExpression = (sel, realVal=false, quoteIfString=false, varScope=null, varReplacementRef=-1, o=null, noConvertVar=false) => {
@@ -12814,6 +12850,12 @@ const _htmlToElement = html => {
 	html = html.trim();
 	template.innerHTML = html;
 	return template.content.firstChild;
+};
+
+const _hypenToCamel = str => {
+	return str.replace(/-([a-z])/g, wot => {
+		return wot[1].toUpperCase();
+	});
 };
 
 const _ifFocus = (o, first=true) => {
