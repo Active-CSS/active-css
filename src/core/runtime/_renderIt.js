@@ -1,4 +1,4 @@
-const _renderIt = (o, content, childTree, selfTree) => {
+const _renderIt = (o, content, childTree, selfTree, allowScripts) => {
 	// All render functions end up here.
 	// Convert the string into a node tree. Shadow DOMs and scoped components are handled later on. Every render command goes through here, even ones from render
 	// events that get drawn in _renderCompDoms. It's potentially recursive. We need to handle the draw event for any non-shadow renders. Using a mutation observer
@@ -53,6 +53,19 @@ const _renderIt = (o, content, childTree, selfTree) => {
 	content = _escapeInnerQuotes(content);
 
 	container.innerHTML = content;
+
+	let scriptArr = [];
+	if (allowScripts) {
+		// Fetch the script tags in the render area.
+		let scriptCounter = 0;
+	    container.querySelectorAll('script').forEach(scriptEl => {
+	    	// Add a tracking attribute for use later on.
+	    	scriptCounter++;
+	    	scriptEl.setAttribute('data-__acss-add-script', scriptCounter);
+	    	// Grab the contents of the script for adding back later on.
+	    	scriptArr.push( { scriptNo: scriptCounter, script: scriptEl.innerHTML } );
+	    });
+	}
 
 	// Get the number of child elements and nodes. Remember that rendering doesn't have to include child elements.
 	// This is used for core scope options later on in _renderCompDomsDo.
@@ -125,7 +138,8 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			o.secSelObj.insertAdjacentHTML(o.renderPos, content);
 		}
 	} else {
-		o.secSelObj.innerHTML = content;
+		o.secSelObj.innerHTML = '';
+		o.secSelObj.insertAdjacentHTML('afterbegin', content);
 	}
 
 	// Create any iframes that are needed from the temporary iframe array.
@@ -167,6 +181,17 @@ const _renderIt = (o, content, childTree, selfTree) => {
 			// So we mark the element as drawn and don't run it twice. It gets marked as drawn in _handleEvents.
 			if (obj._acssDrawn || ['DATA-ACSS-COMPONENT', 'IFRAME'].indexOf(obj.tagName) !== -1) return;		// Skip pending data-acss-component tags. Note that node may have changed.
 			_handleDrawScope({ obj: obj, evType: 'draw', eve: o.e, otherObj: o.ajaxObj, varScope: o.varScope, evScope: o.evScope, compDoc: o.compDoc, component: o.component, _maEvCo: o._maEvCo });
+		});
+	}
+
+	if (allowScripts && scriptArr.length > 0) {
+		scriptArr.forEach(scriptItem => {
+		    let scriptEl = o.secSelObj.parentNode.querySelector('script[data-__acss-add-script="' + scriptItem.scriptNo + '"]');
+		    if (scriptEl) {
+	            let newScript = document.createElement('script');
+	            newScript.textContent = scriptItem.script;
+	            scriptEl.parentNode.replaceChild(newScript, scriptEl);
+		    }
 		});
 	}
 

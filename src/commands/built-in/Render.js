@@ -1,8 +1,21 @@
 // Note: beforebegin = as previous sibling, afterbegin = as first-child, beforeend = as last-child, afterend = as next sibling.
 _a.Render = o => {
 	if (!_isConnected(o.secSelObj)) return false;
+
+	let allowScripts;
+	let content = o.actVal;
+	if (content.indexOf('allow-scripts') !== -1) {
+		content = content.replace(INQUOTES, function(_, innards) {
+			return innards.replace(/allow\-scripts/g, '_acssAlloWScripts');
+		});
+		if (content.indexOf('allow-scripts') !== -1) {
+			allowScripts = true;
+		}
+		content = content.replace(/allow\-scripts/g, '').replace(/_acssAlloWScripts/g, 'allow-scripts').trim();
+	}
+
 	// Handle quotes.
-	let content = _handleQuoAjax(o, o.actVal);	// Rejoin the string.
+	content = _handleQuoAjax(o, content);
 
 	// Make a copy of the target selector.
 	// The child nodes of the target element can be referenced and output in inner components by referencing {$CHILDREN}.
@@ -46,5 +59,5 @@ _a.Render = o => {
 		return;
 	}
 
-	_renderIt(o, content, childTree, selfTree);
+	_renderIt(o, content, childTree, selfTree, allowScripts);
 };

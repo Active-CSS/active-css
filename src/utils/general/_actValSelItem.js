@@ -10,6 +10,6 @@ const _actValSelItem = (o, txt) => {
 	let arr = str.split(' ');
 	// Get the last word and on return put back any spaces that were escaped earlier.
 	let last = arr.splice(-1);
-	let joinedSel = arr.join(' ');
+	let joinedSel = arr.join(' ').replace(/_ACSS_avsi_sp/g, ' ');
 	return txt ? [ joinedSel, last[0].replace(/_ACSS_avsi_sp/g, ' ') ] : [ _getSel(o, joinedSel), last[0] ];
 };
