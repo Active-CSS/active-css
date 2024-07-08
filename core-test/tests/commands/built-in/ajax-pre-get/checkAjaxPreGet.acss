@@ -12,8 +12,8 @@
 		func: checkAjaxPreGetFinal after 1s;	/* give component time to draw before checking */
 	}
 	html {
-		<h2 id="checkAjaxPreGetTestTitle">{{checkAjaxPreGetTitle}}</h2>
-		<p id="checkAjaxPreGetTestAddress">{{checkAjaxPreGetAddress}}</p>
+		<h2 id="checkAjaxPreGetTestTitle">{{$checkAjaxPreGetTitle}}</h2>
+		<p id="checkAjaxPreGetTestAddress">{{$checkAjaxPreGetAddress}}</p>
 	}
 }
 

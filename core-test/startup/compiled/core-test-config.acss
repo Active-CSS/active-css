@@ -161,8 +161,8 @@ body:init {
 		func: checkAjaxPreGetFinal after 1s;	/* give component time to draw before checking */
 	}
 	html {
-		<h2 id="checkAjaxPreGetTestTitle">{{checkAjaxPreGetTitle}}</h2>
-		<p id="checkAjaxPreGetTestAddress">{{checkAjaxPreGetAddress}}</p>
+		<h2 id="checkAjaxPreGetTestTitle">{{$checkAjaxPreGetTitle}}</h2>
+		<p id="checkAjaxPreGetTestAddress">{{$checkAjaxPreGetAddress}}</p>
 	}
 }
 
@@ -178,8 +178,8 @@ body:init {
 		func: checkAjax after 1s;	/* give component time to draw before checking */
 	}
 	html {
-		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
-		<p id="checkAjaxTestAddress">{{checkAjaxAddress}}</p>
+		<h2 id="checkAjaxTestTitle">{{$checkAjaxTitle}}</h2>
+		<p id="checkAjaxTestAddress">{{$checkAjaxAddress}}</p>
 	}
 }
 
@@ -1575,8 +1575,8 @@ create-element-tag:connectedCallback {
 		div {
 			ajax: "/base/core-test/tests/resource-files/ajax-test-1.txt" JSON await;
 			render: "
-				<h2 id="checkAwaitAjaxTestTitle">{checkAjaxTitle}</h2>
-				<p id="checkAwaitAjaxTestAddress">{checkAjaxAddress}</p>
+				<h2 id="checkAwaitAjaxTestTitle">{$checkAjaxTitle}</h2>
+				<p id="checkAwaitAjaxTestAddress">{$checkAjaxAddress}</p>
 			";
 		}
 		func: checkAwaitAjax;

@@ -6,8 +6,8 @@
 		func: checkAjax after 1s;	/* give component time to draw before checking */
 	}
 	html {
-		<h2 id="checkAjaxTestTitle">{{checkAjaxTitle}}</h2>
-		<p id="checkAjaxTestAddress">{{checkAjaxAddress}}</p>
+		<h2 id="checkAjaxTestTitle">{{$checkAjaxTitle}}</h2>
+		<p id="checkAjaxTestAddress">{{$checkAjaxAddress}}</p>
 	}
 }
 

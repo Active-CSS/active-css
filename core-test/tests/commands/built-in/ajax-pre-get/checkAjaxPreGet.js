@@ -5,11 +5,13 @@ function checkAjaxPreGetA(o, pars) {
 		return;
 	}
 
+console.log(o.ajaxObj.res);
+
 	if (o.ajaxObj.res.checkAjaxPreGetTitle != 'Rod' || o.ajaxObj.res.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
 		_fail(checkAjaxPreGetEl, 'Ajax-pre-get command not getting the values from the file in o.res.');
 	}
 
-	if (o.vars.checkAjaxPreGetTitle == 'Rod' || o.vars.checkAjaxPreGetAddress == '27 Madeup Road, Blithering, Ploushershire.') {
+	if (o.vars.$checkAjaxPreGetTitle == 'Rod' || o.vars.$checkAjaxPreGetAddress == '27 Madeup Road, Blithering, Ploushershire.') {
 		_fail(checkAjaxPreGetEl, 'Variables are getting set as scoped variables prior to ajax command and they shouldn\'t be.');
 	}
 
@@ -28,7 +30,7 @@ function checkAjaxPreGetFinal(o, pars) {
 		return;
 	}
 
-	if (o.vars.checkAjaxPreGetTitle != 'Rod' || o.vars.checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
+	if (o.vars.$checkAjaxPreGetTitle != 'Rod' || o.vars.$checkAjaxPreGetAddress != '27 Madeup Road, Blithering, Ploushershire.') {
 		_fail(checkAjaxPreGetEl, 'Variables are not getting set as scoped variables after the ajax command and they should be.');
 	}
 

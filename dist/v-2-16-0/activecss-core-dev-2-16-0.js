@@ -1318,8 +1318,6 @@ _a.Render = o => {
 		content = content.replace(/allow\-scripts/g, '').replace(/_acssAlloWScripts/g, 'allow-scripts').trim();
 	}
 
-console.log('_a.Render, allowScripts:', allowScripts);
-
 	// Handle quotes.
 	content = _handleQuoAjax(o, content);
 
@@ -9617,6 +9615,7 @@ const _resolveAjaxVarsDecl = (o, compScope) => {
 	for (v in o.res) {
 		// If vars allowed in JSON string values, substitute these in at this point.
 		let adjustedVal = substVars ? _resolveAcceptedVars(o.res[v], o, compScope) : o.res[v];
+		if (!v.startsWith('$')) v = '$' + v;
 		_set(scopedProxy, compScope + '.' + v, adjustedVal);
 	}
 };
