@@ -126,7 +126,7 @@ const _performTargetOuter = (secSels, loopObj, compDoc, loopRef, varScope, inher
 		} else {
 			activeTrackObj = _getActiveID(obj);
 			if (activeTrackObj) {
-				flowTargetSelector = idMap[activeTrackObj];
+				flowTargetSelector = idMap[activeTrackObj] || obj;
 			} else {
 				// It might not be an element, so a data-activeid wasn't assigned.
 				flowTargetSelector = obj;
