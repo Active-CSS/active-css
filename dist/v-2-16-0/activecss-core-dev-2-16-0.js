@@ -12536,8 +12536,6 @@ const _getSelector = (o, sel, many=false) => {
 	let obj = o.secSelObj || o.obj;
 	let addedAttrs = [];
 
-	if (obj == 'body') obj = document.body;
-
 	if ((
 			newSel.indexOf('&') !== -1 ||
 			/\bself\b/.test(newSel) ||
@@ -12550,10 +12548,6 @@ const _getSelector = (o, sel, many=false) => {
 
 		// Add the data-activeid attribute so we can search with it. We're going to remove it after. It keeps it all quicker than manual DOM traversal.
 		let repStr = '[data-activeid=' + attrActiveID + ']';
-		if (obj == document.body && newSel.startsWith('&')) {
-			// Slightly different handling if & is at the beginning of the string. For this to work as expected, it needs the >. Weird, but that's how it is.
-			repStr = '>' + repStr;
-		}
 		if (newSel.indexOf('&') !== -1) newSel = newSel.replace(/&/g, repStr);
 		if (newSel.indexOf('self') !== -1) newSel = newSel.replace(/\bself\b/g, repStr);
 		if (newSel.indexOf('me') !== -1) newSel = newSel.replace(/\bme\b/g, repStr);
