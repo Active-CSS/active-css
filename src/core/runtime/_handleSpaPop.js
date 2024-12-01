@@ -57,7 +57,7 @@ const _handleSpaPop = (e, init) => {
 	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
 	_setHashEvent(thisHashStr);
 
-	let urlObj = { url };
+	let urlObj = { url, attrs: '' };
 	if (pageItem) urlObj.attrs = pageItem.attrs;
 
 	if (manualChange) {
@@ -66,11 +66,13 @@ const _handleSpaPop = (e, init) => {
 		_setUnderPage();
 	}
 
-	if (triggerOfflinePopstate) {
-		// If this is an offline SPA and the first page has a hash, trigger the popstate action (not the event) so that we get the correct initial events firing.
-		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
+	if (urlObj.attrs.indexOf(' href=') === -1) {
+		// Add a real URL to an href attribute if there is no href attribute.
+		// Could be that it was a wildcard url, or an offline SPA that has a hash on the first page,
+		// and if so trigger the popstate action (not the event) so that we get the correct initial events firing.
+		// Without this, we can end up with no URL to call at all in an event, resulting in an error.
+		urlObj.attrs += ' href="' + (pageGetUrl ? pageGetUrl : url) + '"';
 	}
-
 
 	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
 		// Page should be drawn and config loaded, so just trigger the hash event immediately if it isn't delayed.

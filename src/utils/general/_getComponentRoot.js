@@ -1,7 +1,7 @@
 const _getComponentRoot = (obj) => {
 	// This gets the root of the component - either a scoped host or a shadow DOM rootNode.
 	let scopedHost;
-	if (obj.children.length == 0 && obj.hasAttribute('data-active-scoped')) {
+	if (obj.children && obj.children.length == 0 && obj.hasAttribute('data-active-scoped')) {
 		scopedHost =  obj;
 	} else if (obj.parentElement && (!supportsShadow || supportsShadow && !(obj.parentNode instanceof ShadowRoot))) {
 		scopedHost =  obj.parentElement.closest('[data-active-scoped]');

@@ -1,4 +1,6 @@
-_a.MimicInto = o => {
+_a.MimicIntoHtml = o => { _a.MimicInto(o, true); };
+
+_a.MimicInto = (o, useHTML=false) => {
 	if (!_isConnected(o.secSelObj)) return false;
 	let el, mType, val, valRef, targEl;
 	el = o.secSelObj;
@@ -57,13 +59,21 @@ _a.MimicInto = o => {
 
 	// Mimic the value.
 	var insVal;
-	insVal = o.secSelObj[valRef];
+	if (useHTML) {
+		insVal = o.secSelObj.innerHTML;
+	} else {
+		insVal = o.secSelObj[valRef];
+	}
 	switch (mType) {
 		case 'input':
 			targEl.value = insVal;
 			break;
 		case 'text':
-			targEl.innerText = insVal;
+			if (useHTML) {
+				targEl.innerHTML = insVal;
+			} else {
+				targEl.innerText = insVal;
+			}
 			break;
 		case 'title':
 			_setDocTitle(insVal);

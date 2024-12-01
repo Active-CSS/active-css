@@ -13,6 +13,15 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Handle escaped \/* and *\/ so they don't match. These are the way to output these when used in double quotes.
 	str = str.replace(/\\\/\*/gm, '_ACSSOPCO');
 	str = str.replace(/\*\\\//gm, '_ACSSOPCL');
+	// Ensure wildcards in @pages don't get removed.
+	str = str.replace(INPAGES, function(_, innards) {
+		innards = innards.replace(INQUOTES, function(_, innards) {
+			innards = innards.replace(/\/\*/gm, '_ACSSOPCO');
+			innards = innards.replace(/\*\//gm, '_ACSSOPCL');
+			return innards;
+		});
+		return innards;
+	});
 	// Now wipe the rest.
 	str = str.replace(/\/\*[\s\S]*?\*\//gm, '');
 	// Put the escaped ones back.

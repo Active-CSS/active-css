@@ -86,6 +86,7 @@
 		},
 		INQUOTES = /("([^"]|"")*")/gm,
 		INSINGQUOTES = /('([^']|'')*')/gm,
+		INPAGES = /(@pages([\s\S]+)\})/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\$\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,

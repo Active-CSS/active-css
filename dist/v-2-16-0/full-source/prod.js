@@ -86,6 +86,7 @@
 		},
 		INQUOTES = /("([^"]|"")*")/gm,
 		INSINGQUOTES = /('([^']|'')*')/gm,
+		INPAGES = /(@pages([\s\S]+)\})/gm,
 		LABELREGEX = /(label [\u00BF-\u1FFF\u2C00-\uD7FF\w\$\{\@\}\-]+)(?=(?:[^"]|"[^"]*")*)/gm,
 		MEMAP = [ '&', 'self', 'this', 'me', 'D7460N' ],
 		PARSEATTR = 3,
@@ -1130,7 +1131,9 @@ _a.MediaControl = o => {
 	}
 };
 
-_a.MimicInto = o => {
+_a.MimicIntoHtml = o => { _a.MimicInto(o, true); };
+
+_a.MimicInto = (o, useHTML=false) => {
 	if (!_isConnected(o.secSelObj)) return false;
 	let el, mType, val, valRef, targEl;
 	el = o.secSelObj;
@@ -1189,13 +1192,21 @@ _a.MimicInto = o => {
 
 	// Mimic the value.
 	var insVal;
-	insVal = o.secSelObj[valRef];
+	if (useHTML) {
+		insVal = o.secSelObj.innerHTML;
+	} else {
+		insVal = o.secSelObj[valRef];
+	}
 	switch (mType) {
 		case 'input':
 			targEl.value = insVal;
 			break;
 		case 'text':
-			targEl.innerText = insVal;
+			if (useHTML) {
+				targEl.innerHTML = insVal;
+			} else {
+				targEl.innerText = insVal;
+			}
 			break;
 		case 'title':
 			_setDocTitle(insVal);
@@ -3037,7 +3048,7 @@ const _handleSpaPop = (e, init) => {
 	// Break up any hashes into an array for triggering in _trigHashState when prompted (either immediately or after ajax events).
 	_setHashEvent(thisHashStr);
 
-	let urlObj = { url };
+	let urlObj = { url, attrs: '' };
 	if (pageItem) urlObj.attrs = pageItem.attrs;
 
 	if (manualChange) {
@@ -3046,11 +3057,13 @@ const _handleSpaPop = (e, init) => {
 		_setUnderPage();
 	}
 
-	if (triggerOfflinePopstate) {
-		// If this is an offline SPA and the first page has a hash, trigger the popstate action (not the event) so that we get the correct initial events firing.
-		urlObj.attrs += ' href="' + pageGetUrl + '"';	// the href attr will otherwise be empty and not available in config if that's need for an event.
+	if (urlObj.attrs.indexOf(' href=') === -1) {
+		// Add a real URL to an href attribute if there is no href attribute.
+		// Could be that it was a wildcard url, or an offline SPA that has a hash on the first page,
+		// and if so trigger the popstate action (not the event) so that we get the correct initial events firing.
+		// Without this, we can end up with no URL to call at all in an event, resulting in an error.
+		urlObj.attrs += ' href="' + (pageGetUrl ? pageGetUrl : url) + '"';
 	}
-
 
 	if (manualChange && hashEventTrigger && !multipleOfflineHash) {
 		// Page should be drawn and config loaded, so just trigger the hash event immediately if it isn't delayed.
@@ -7119,6 +7132,15 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Handle escaped \/* and *\/ so they don't match. These are the way to output these when used in double quotes.
 	str = str.replace(/\\\/\*/gm, '_ACSSOPCO');
 	str = str.replace(/\*\\\//gm, '_ACSSOPCL');
+	// Ensure wildcards in @pages don't get removed.
+	str = str.replace(INPAGES, function(_, innards) {
+		innards = innards.replace(INQUOTES, function(_, innards) {
+			innards = innards.replace(/\/\*/gm, '_ACSSOPCO');
+			innards = innards.replace(/\*\//gm, '_ACSSOPCL');
+			return innards;
+		});
+		return innards;
+	});
 	// Now wipe the rest.
 	str = str.replace(/\/\*[\s\S]*?\*\//gm, '');
 	// Put the escaped ones back.
@@ -9909,10 +9931,26 @@ const _setCSSProperty = o => {
 };
 
 const _setCSSVariable = o => {
+	let cssVarName = o.func;
+
+	if (o.func.indexOf('{') !== -1) {
+		let strObj = _handleVars([ 'expr', 'attrs', 'strings', 'scoped' ],
+			{
+				str: o.func,
+				func: '_setCSSVariable',
+				o,
+				obj: o.obj,
+				secSelObj: o.secSelObj,
+				varScope: o.varScope
+			}
+		);
+		cssVarName = _resolveVars(strObj.str, strObj.ref, o.func);
+	}
+
 	if (o.origSecSel == ':root') {
-		o.secSelObj.documentElement.style.setProperty(o.func, o.actVal);
+		o.secSelObj.documentElement.style.setProperty(cssVarName, o.actVal);
 	} else {
-		o.secSelObj.style.setProperty(o.func, o.actVal);
+		o.secSelObj.style.setProperty(cssVarName, o.actVal);
 	}
 };
 
@@ -11625,7 +11663,7 @@ const _getComponentDetails = rootNode => {
 const _getComponentRoot = (obj) => {
 	// This gets the root of the component - either a scoped host or a shadow DOM rootNode.
 	let scopedHost;
-	if (obj.children.length == 0 && obj.hasAttribute('data-active-scoped')) {
+	if (obj.children && obj.children.length == 0 && obj.hasAttribute('data-active-scoped')) {
 		scopedHost =  obj;
 	} else if (obj.parentElement && (!supportsShadow || supportsShadow && !(obj.parentNode instanceof ShadowRoot))) {
 		scopedHost =  obj.parentElement.closest('[data-active-scoped]');
