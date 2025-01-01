@@ -9,7 +9,7 @@ What if CSS could not only do :hover, but also all the DOM events like :click, :
 
 JavaScript and frameworks are too wordy, and performance heavy, for lots of direct DOM manipulation (ie. UI), because DOM manipulation is not a part of the syntax *itself*. This is an important thing to grasp. Making it easier to reference DOM objects, the elements on the page, is the primary reasoning behind the core CSS syntax. It therefore follows that augmenting CSS with functions to manipulate the DOM is not a naive suggestion, but actually a pretty logical and smart suggestion.
 
-This language is quick to code in, has a simple event handling method, dynamic CSS, easy DOM manipulation and lots more. It is being used in production. The core is stable.
+This language is quick to code in, has a simple event handling method, dynamic CSS, easy DOM manipulation and lots more. It is being used in production and the core is stable.
 
 The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
 
