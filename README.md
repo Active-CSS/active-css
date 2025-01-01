@@ -5,12 +5,13 @@
 
 A CSS / JavaScript hybrid language.
 
-What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.?
+What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.? That really does come up as a question by many free-thinking devs, and this repo provides a comprehensive and workable answer to that. Yes, it is easier to manipulate the DOM using CSS syntax than it is using JavaScript, and there is certainly a lot less typing.
 
-Quick to code, low maintenance event handling, dynamic CSS, easy DOM manipulation and lots more.
+JavaScript and frameworks are too wordy, and performance heavy, for lots of direct DOM manipulation (ie. UI), because DOM manipulation is not a part of the syntax *itself*. This is an important thing to grasp, and also explains why attempts to add functionality onto HTML itself is one step removed from the ideal. Making it easier to reference or handle DOM objects, the elements on the page, is the primary reasoning behind the core CSS syntax, and is also the primary vehicle to do UI. It therefore follows that augmenting CSS with functions to manipulate the DOM is not a naive suggestion, but actually a pretty logical and smart suggestion.
 
+This language is quick to code in, has a simple event handling method, dynamic CSS, easy DOM manipulation and lots more. It is being used in production and the core is stable.
 
-The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
+The language is in development and work on it tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
 
 Please, if you see a bug, do report it so it gets fixed. All bugs are fixed as rapidly as possible.
 
