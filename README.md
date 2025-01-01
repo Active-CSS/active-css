@@ -11,7 +11,7 @@ JavaScript and frameworks are too wordy, and performance heavy, for lots of dire
 
 This language is quick to code in, has a simple event handling method, dynamic CSS, easy DOM manipulation and lots more. It is being used in production and the core is stable.
 
-The language is in continual development, but work now tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
+The language is in development and work on it tends to stay offline until in a stable condition to be put on the latest branch. Then it gets tested on a wider scale until it seems stable enough for release. It's cross-browser, so will work on all modern browsers back to ES6.
 
 Please, if you see a bug, do report it so it gets fixed. All bugs are fixed as rapidly as possible.
 
