@@ -3,7 +3,7 @@
 
 # [Active CSS](https://activecss.org/)
 
-A CSS / JavaScript hybrid language.
+CSS UI Events Expansion Pack
 
 What if CSS could not only do :hover, but also all the DOM events like :click, :mouseover, etc.? That really does come up as a question by many free-thinking devs, and this repo provides a comprehensive and workable answer to that. Yes, it is easier to manipulate the DOM using CSS syntax than it is using JavaScript, and there is certainly a lot less typing.
 
