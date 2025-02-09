@@ -785,14 +785,18 @@ _a.FocusOff = o => {
 _a.FocusOn = o => { _focusOn(o); };
 
 const _focusOn = (o, wot, justObj=false) => {
-	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl, endOfField = false;
+	let el, nodes, arr, useI, doClick = false, moveNum = 1, n, targEl, endOfField = false, textSelect = false;
 	// For previousCycle and nextCycle, as well as a selector, it also takes in the following parameters:
 	// 2, 3 - this says how far to go forward or back.
 	// click - clicks on the item
 	let val = o.actVal;
 	if (val.indexOf(' end-of-field') !== -1) {
 		endOfField = true;
-		val = val.replace(/ end-of-field/, '');
+		val = val.replace(' end-of-field', '');
+	}
+	if (val.indexOf(' text-select') !== -1) {
+		textSelect = true;
+		val = val.replace(' text-select', '');
 	}
 	let startingFrom = _getParVal(val, 'starting-from');	// Need to write a better function for getting values like this at some point, should return the remaining actVal string with properties in object form.
 	if (startingFrom !== '') val = val.substr(0, val.indexOf('starting-from')).trim();
@@ -857,34 +861,49 @@ const _focusOn = (o, wot, justObj=false) => {
 			}
 			el = nodes[useI + 1];
 			break;
+
 		case 'l':
 			el = nodes[nodes.length - 1];
 			break;
+
 		default:
 			el = _getSel(o, val);
+
 	}
 	if (!el) return;
+
 	targEl = (el.tagName == 'FORM') ? el.elements[0] : el;
+
 	if (doClick && (wot == 'pcc' || wot == 'ncc') || !justObj && o.func.substr(0, 5) == 'Click') {
 		ActiveCSS.trigger(targEl, 'click');
 		setTimeout(function () {	// Needed for everything not to get highlighted when used in combination with select text area.
-			if (endOfField && _isTextField(el)) {
-				// Position cursor at end of line.
-				_placeCaretAtEnd(el);
-			} else {
-				targEl.focus();
-			}
+			_focusOnDo(el, endOfField, textSelect);
 		}, 0);
+
 	} else if (!justObj) {
-		if (endOfField && _isTextField(el)) {
-			// Position cursor at end of line.
-			_placeCaretAtEnd(el);
-		} else {
-			el.focus();
-		}
+		_focusOnDo(el, endOfField, textSelect);
+
 	}
 
 	return targEl;
+};
+
+
+const _focusOnDo = (el, endOfField, textSelect) => {
+	if (textSelect && _isTextField(el)) {
+		el.focus();
+		setTimeout(function () {
+			el.select();
+		}, 0);
+
+	} else if (endOfField && _isTextField(el)) {
+		// Position cursor at end of line.
+		_placeCaretAtEnd(el);
+
+	} else {
+		el.focus();
+
+	}
 };
 
 _a.FocusOnFirst = o => { _focusOn(o); };				//	First selector in list
