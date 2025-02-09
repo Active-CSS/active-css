@@ -43,6 +43,7 @@
 			'if-empty-trimmed',
 			'if-exists',
 			'if-form-changed',
+			'if-has-attribute',
 			'if-inner-html',
 			'if-inner-text',
 			'if-max-height',

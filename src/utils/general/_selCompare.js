@@ -90,6 +90,9 @@ const _selCompare = (o, opt) => {
 		case 'iH':
 			// _cIfInnerHTML
 			return (el && compareVal == el.innerHTML);
+		case 'hA':
+			// _cIfHasAttribute
+			return (el && el.hasAttribute(compareVal));
 		case 'iV':
 			// _cIfValue
 			return (el && compareVal == el.value);

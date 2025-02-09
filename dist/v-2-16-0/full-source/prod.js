@@ -43,6 +43,7 @@
 			'if-empty-trimmed',
 			'if-exists',
 			'if-form-changed',
+			'if-has-attribute',
 			'if-inner-html',
 			'if-inner-text',
 			'if-max-height',
@@ -2068,6 +2069,8 @@ _c.IfHas = o => {
 
 	return scope.querySelector(aVRes.action) ? true : false;
 };
+
+_c.IfHasAttribute = o => _selCompare(o, 'hA');
 
 _c.IfHasClass = o => {
 	let arr = _actValSelItem(o);
@@ -12616,6 +12619,9 @@ const _selCompare = (o, opt) => {
 		case 'iH':
 			// _cIfInnerHTML
 			return (el && compareVal == el.innerHTML);
+		case 'hA':
+			// _cIfHasAttribute
+			return (el && el.hasAttribute(compareVal));
 		case 'iV':
 			// _cIfValue
 			return (el && compareVal == el.value);
