@@ -23,6 +23,8 @@
 			'LoadScript',
 			'LoadStyle'
 		],
+		CHAR0 = '0'.charCodeAt(),
+		CHAR9 = '9'.charCodeAt(),
 		CHILDRENREGEX = /\{\$CHILDREN\}/g,
 		// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 		// Don't forget that double backslashes are needed with quoted regexes.
@@ -6346,6 +6348,8 @@ ActiveCSS._theEventFunction = e => {
 				case '?': funcKey = 'Question'; shiftCheck = ''; break;
 				case '!': funcKey = 'Exclamation'; shiftCheck = ''; break;
 			}
+			let keyChar = e.key.charCodeAt();
+			if (keyChar >= CHAR0 && keyChar <= CHAR9 && !e.shiftKey && !e.ctrlKey && !e.metaKey) funcKey = 'Digit';
 			_mainEventLoop(ev + metaCheck + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, varScope);
 			_mainEventLoop(ev, e, component, compDoc, varScope);
 			break;

@@ -23,6 +23,8 @@
 			'LoadScript',
 			'LoadStyle'
 		],
+		CHAR0 = '0'.charCodeAt(),
+		CHAR9 = '9'.charCodeAt(),
 		CHILDRENREGEX = /\{\$CHILDREN\}/g,
 		// Note: COLONSELS should be kept up-to-date with any new selector conditions/functions.
 		// Don't forget that double backslashes are needed with quoted regexes.
