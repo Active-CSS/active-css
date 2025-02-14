@@ -6348,6 +6348,10 @@ ActiveCSS._theEventFunction = e => {
 				case '?': funcKey = 'Question'; shiftCheck = ''; break;
 				case '!': funcKey = 'Exclamation'; shiftCheck = ''; break;
 			}
+			if ([ 'Delete', 'Backspace', 'Enter' ].indexOf(e.key) !== -1) {
+				funcKey = e.key;
+				shiftCheck = '';
+			}
 			let keyChar = e.key.charCodeAt();
 			if (keyChar >= CHAR0 && keyChar <= CHAR9 && !e.shiftKey && !e.ctrlKey && !e.metaKey) funcKey = 'Digit';
 			_mainEventLoop(ev + metaCheck + ctrlCheck + shiftCheck + funcKey, e, component, compDoc, varScope);
