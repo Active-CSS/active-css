@@ -6002,11 +6002,14 @@ const _runIf = (parsedStatement, originalStatement, ifObj, loopObj) => {
 	// Finally, remove any line breaks, otherwise things will barf when evaluated.
 	readyStatement = ActiveCSS._sortOutFlowEscapeChars(readyStatement.replace(/\r|\n/gm, ''));
 
+	// Replace references to the proxy, as there may be properties only available in the original.
+	readyStatement = readyStatement.replace(/(scopedProxy|scopedOrig)(\.__getTarget)?/g, 'scopedOrig');
+
 	let res;
 	try {
 		let o = loopObj;
 		o.secSelObj = (typeof o.passTargSel == 'string') ? o.obj : o.passTargSel;
-		res = Function('scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar, o', '"use strict";return !!(' + readyStatement + ');')(scopedProxy, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar, o);                                // jshint ignore:line
+		res = Function('scopedOrig, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar, o', '"use strict";return !!(' + readyStatement + ');')(scopedOrig, ifObj, _runAtIfConds, escapeHTML, unEscapeHTML, getVar, o);                                // jshint ignore:line
 	} catch (err) {
 		console.log('Active CSS error: Error in evaluating @if statement, "' + originalStatement + '", check syntax.');
 		console.log('Internal expression evaluated: ' + readyStatement, 'error:', err);
