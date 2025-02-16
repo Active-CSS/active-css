@@ -7359,6 +7359,11 @@ const _parseConfig = (str, inlineActiveID=null) => {
 	// Convert @conditional into ?, so we don't have to bother with handling that in the parser.
 	str = str.replace(/@conditional[\s]+/g, '?');
 
+	// Do a similar thing for JS regex expressions.
+	str = str.replace(/\/([\s\S]*)\/\./g, function(_, innards) {
+		return '/' + ActiveCSS._mapRegexReturn(mapObj, innards) + '/.';
+	});
+
 	// Do a similar thing for parentheses. Handles pars({#formID}&mypar=y) syntax.
 	str = str.replace(/([\(]([^\(\)]|\(\))*[\)])/g, function(_, innards) {
 		return ActiveCSS._mapRegexReturn(mapObj, innards);
@@ -7371,12 +7376,6 @@ const _parseConfig = (str, inlineActiveID=null) => {
 
 	str = str.replace(/[\s]*(\$[\u00BF-\u1FFF\u2C00-\uD7FF\w\-\'\"\[\] \.\$\|\@]+)[\s]*\:([\s\S]*?)\;/gim, function(_, varname, innards) {
 		return varname + ': ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
-	});
-
-	// Escape brackets in regexes.
-	str = str.replace(/\/([\s\S]*)\/\./g, function(_, innards) {
-		innards = innards.replace(/\{/g, '_ACSS_later_brace_start');
-		return '/' + innards.replace(/\}/g, '_ACSS_later_brace_end') + '/.';
 	});
 
 	// Infinite loop failsafe variable. Without this, unbalanced curlies may call an infinite loop later.
