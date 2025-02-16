@@ -7373,6 +7373,12 @@ const _parseConfig = (str, inlineActiveID=null) => {
 		return varname + ': ' + ActiveCSS._mapRegexReturn(DYNAMICCHARS, innards) + ';';
 	});
 
+	// Escape brackets in regexes.
+	str = str.replace(/\/([\s\S]*)\/\./g, function(_, innards) {
+		innards = innards.replace(/\{/g, '_ACSS_later_brace_start');
+		return '/' + innards.replace(/\}/g, '_ACSS_later_brace_end') + '/.';
+	});
+
 	// Infinite loop failsafe variable. Without this, unbalanced curlies may call an infinite loop later.
 	let totOpenCurlies = str.split('{').length;
 
