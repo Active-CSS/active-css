@@ -3096,6 +3096,7 @@ const _handleSpaPop = (e, init) => {
 
 	// Trigger the underlying page switch.
 	let templ = document.querySelector('#data-acss-route');
+
 	if ((!init ||
 			init &&
 			(hashEventTrigger || triggerOfflinePopstate) &&
@@ -3108,6 +3109,7 @@ const _handleSpaPop = (e, init) => {
 		templ.removeChild(templ.firstChild);
 		templ.insertAdjacentHTML('beforeend', '<a ' + urlObj.attrs + '>');
 		templ.firstChild.classList.add('___acssRouteObj');
+
 		ActiveCSS.trigger(templ.firstChild, 'click', null, null, null, null, e);
 
 		// We've hit the end of this event. Run any hash events if any are set if they haven't been delayed by an ajax call.
@@ -5221,13 +5223,14 @@ const _sortOutDynamicIframes = str => {
 
 const _trigHashState = (e) => {
 	// Either there isn't anything to run yet or it's not ready to run now.
-	if (hashEventAjaxDelay || !hashEventTrigger) return;
+	if (hashEvents.length == 0 || hashEventAjaxDelay || !hashEventTrigger) return;
 
 	hashEventTrigger = false;
 
 	let n, el, eventsLen = hashEvents.length, runEvents = [], thisHashRef, thisHashEvent;
 	for (n = 0; n < eventsLen; n++) {
 		thisHashRef = _getPageFromList('#' + hashEvents[n]);
+
 		if (thisHashRef) {
 			thisHashEvent = thisHashRef.attrs;
 
@@ -5242,7 +5245,7 @@ const _trigHashState = (e) => {
 		}
 	}
 
-	// Wipe any outstanding global hash events.
+	// Wipe any outstanding global hash events so they don't run twice.
 	hashEvents = [];
 
 	// Iterate the stored triggers. The runEvents array is locally immutable here so won't be affected by actions happening during any triggers.
@@ -6164,6 +6167,11 @@ const _addConfig = (str, o) => {
 
 		// Restart the sync queue if await was used.
 		_syncRestart(o, o._subEvCo);
+
+		// Trigger any @pages events that may now be able to be run.
+		setTimeout(() => {
+			_trigHashState(o.e);
+		}, 0);
 	}
 };
 
@@ -6571,7 +6579,6 @@ const _iteratePageList = (pages, removeState=false) => {
 
 		// Check if this is a wildcard URL, as it goes into a different place for speed checking when working out realtime pagenav.
 		let isWild = (page.indexOf('*') !== -1);
-
 		if (removeState) {
 			// Will be faster to run one filter at the end and just store the values to remove in an array here, rather than a filter for each iteration.
 			if (isWild) {
@@ -6581,9 +6588,13 @@ const _iteratePageList = (pages, removeState=false) => {
 			}
 		} else {
 			obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
+
 			if (isWild) {
 				// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
-				regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
+				regex = page.replace(/[-/\\^$+.()|[${}]/g, '\\$&');
+				// Replace all asterisks with (.*?) to allow multiple segments
+				regex = regex.replace(/\*/g, '(.*?)');
+				regex = new RegExp('^' + regex + '$');
 				obj.regex = regex;
 				pageWildcards.push(obj);
 			} else {
@@ -11291,13 +11302,15 @@ const _addActValRaw = o => {
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;
 	}
+
+	// Restart the sync queue if await was used.
+	_syncRestart(o, o._subEvCo);
+
 	if (hashEventAjaxDelay) {
-		// Run any delayed hash on the URL events that need running after an ajax call has loaded or is ready for the display.
+		// Run any delayed hash on the URL events that are present right now that need running after an ajax call has loaded or is ready for the display.
 		hashEventAjaxDelay = false;
 		_trigHashState(o.e);
 	}
-	// Restart the sync queue if await was used.
-	_syncRestart(o, o._subEvCo);
 };
 
 const _ajaxDo = o => {
@@ -12467,27 +12480,10 @@ const _getPageFromList = hrf => {
 			wild = pageWildcards[n];
 			// Get the page to check, run it through the wildcard regex, and replace each wildcard match with *.
 			// If the resultant string is totally empty, we have a match.
-			mapArr = [];
-			checkHrf = hrf;
-			checkHrf = checkHrf.replace(wild.regex, function(_, innards) {	// jshint ignore:line
-				// This the wildcard inner * match. Push the replacement for * into variables so they can substituted into {$1}, {$2}, etc. right after this.
-				mapArr.push(innards);
-				return '';
-			});
-			if (checkHrf !== '') continue;	// wasn't a match - check the next one.
-
-			// And as if by magic, we now have an array of variables we can replace in the attributes.
-			// Replace any variables mentioned in the attrs string from @pages.
-			let targetAttrs = wild.attrs, mapArrLen = mapArr.length, varMatch, i;
-			for (i = 0; i < mapArrLen; i++) {
-				if (pageWildReg[i] === undefined) {
-					// For speed, only create the var match regex when it is needed. We don't know how many we might need, but no point it twice.
-					pageWildReg[i] = new RegExp('\\{\\$' + (i + 1) + '\\}', 'g');
-				}
-				targetAttrs = targetAttrs.replace(pageWildReg[i], mapArr[i]);
+			if (wild.regex.test(hrf)) {
+				pageItem = { url: hrf, attrs: wild.attrs };
+				break;
 			}
-			pageItem = { url: hrf, attrs: targetAttrs };
-			break;
 		}
 	}
 
@@ -14062,9 +14058,11 @@ if (window.NodeList && !NodeList.prototype.forEach) {
 			// User setup should have started by this point. If not, initialise Active CSS anyway.
 			// If there is a user setup initialized, then embedded acss is handled there and not here.
 			// This is so that _readSiteMap happens at the end of config accumulation and we can fire all the initalization events at once.
-			if (!userSetupStarted) {
-				autoStartInit = true;
-				ActiveCSS.init();
+			if (typeof jasmine != 'object' || typeof jasmine.____ACSSTESTRUNNING != 'boolean') { // When used in chromium headless for the core build and test process, DOMContentLoaded is called before all the scripts are loaded which we don't want.
+				if (!userSetupStarted) {
+					autoStartInit = true;
+					ActiveCSS.init();
+				}
 			}
 		}, 0);
 	});

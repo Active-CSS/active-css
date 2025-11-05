@@ -14,7 +14,6 @@ const _iteratePageList = (pages, removeState=false) => {
 
 		// Check if this is a wildcard URL, as it goes into a different place for speed checking when working out realtime pagenav.
 		let isWild = (page.indexOf('*') !== -1);
-
 		if (removeState) {
 			// Will be faster to run one filter at the end and just store the values to remove in an array here, rather than a filter for each iteration.
 			if (isWild) {
@@ -24,9 +23,13 @@ const _iteratePageList = (pages, removeState=false) => {
 			}
 		} else {
 			obj = { url: page, attrs: _unEscNoVars(_replaceRand(pages[key].value)) };
+
 			if (isWild) {
 				// This is the wildcard string converted into a regex for matching later. The latter regex is anything not a dot or a back/forward slash.
-				regex = new RegExp(_escForRegex(page).replace(/\\\*/g, '((?!\\/|\\/|\\.).)*'), 'g');
+				regex = page.replace(/[-/\\^$+.()|[${}]/g, '\\$&');
+				// Replace all asterisks with (.*?) to allow multiple segments
+				regex = regex.replace(/\*/g, '(.*?)');
+				regex = new RegExp('^' + regex + '$');
 				obj.regex = regex;
 				pageWildcards.push(obj);
 			} else {

@@ -10,9 +10,11 @@
 			// User setup should have started by this point. If not, initialise Active CSS anyway.
 			// If there is a user setup initialized, then embedded acss is handled there and not here.
 			// This is so that _readSiteMap happens at the end of config accumulation and we can fire all the initalization events at once.
-			if (!userSetupStarted) {
-				autoStartInit = true;
-				ActiveCSS.init();
+			if (typeof jasmine != 'object' || typeof jasmine.____ACSSTESTRUNNING != 'boolean') { // When used in chromium headless for the core build and test process, DOMContentLoaded is called before all the scripts are loaded which we don't want.
+				if (!userSetupStarted) {
+					autoStartInit = true;
+					ActiveCSS.init();
+				}
 			}
 		}, 0);
 	});

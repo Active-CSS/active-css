@@ -21,6 +21,5 @@
 		"karma-jasmine": "^4.0.1",
 		"karma-jasmine-dom": "^1.0.1",
 		"karma-viewport": "^1.0.9"
-	},
-	"dependencies": {}
+	}
 }

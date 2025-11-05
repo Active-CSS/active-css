@@ -4,6 +4,7 @@
 	1) Ensure firefox and chrome are installed in your actual OS, so not via npm. Forking the core isn't enough - you need to apt install firefox, etc.
 	2) The following need to be set, wherever they are installed (use find / -name "firefox*" or whatever to find the right dir - you're looking for "bin" probably):
 		export CHROME_BIN=/usr/bin/chromium-browser
+		or export CHROME_BIN=/snap/bin/chromium
 		export FIREFOX_BIN=/usr/bin/firefox
 		Store these permanently in ~/.profile or however you do it.
 		Install karma globally, so "karma start" can just run the tests on their own (npm install -g karma-cli).
@@ -65,6 +66,7 @@ module.exports = function(config) {
 		// test results reporter to use
 		// possible values: 'dots', 'progress'
 		// available reporters: https://npmjs.org/browse/keyword/karma-reporter
+//		reporters: ['progress'],
 		reporters: ['progress'],
 
 		// web server port
@@ -87,18 +89,24 @@ module.exports = function(config) {
 		// Firefox and Chrome are different browsers, so both of these are worth doing.
 //		browsers: ['ChromeHeadless', 'FirefoxHeadless'],
 		// Before ready to commit, unless you have a fast server it might be worth just using this one and commenting the other browsers out.
-//		browsers: ['ChromeHeadless'],	// Weird errors due to ACSS being loaded more than once on ChromeHeadless. Switching to Firefox solves the problem.
-		browsers: ['FirefoxHeadless'],
+		browsers: ['ChromeHeadless'],
+//		browsers: ['FirefoxHeadless'],
 
 		browserNoActivityTimeout: 15000,
 
 		customLaunchers: {
-			'FirefoxHeadless': {
-				base: 'Firefox',
+//			FirefoxHeadless: {
+//				base: 'Firefox',
+//				flags: [
+//					'--headless',
+//				],
+//			},
+			ChromeHeadless: {
+				base: 'Chromium',
 				flags: [
-					'-headless',
-				]
-			}
+					'--headless',
+				],
+			},
 		},
 
 		// Concurrency level

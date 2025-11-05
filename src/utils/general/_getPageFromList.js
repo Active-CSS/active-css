@@ -12,27 +12,10 @@ const _getPageFromList = hrf => {
 			wild = pageWildcards[n];
 			// Get the page to check, run it through the wildcard regex, and replace each wildcard match with *.
 			// If the resultant string is totally empty, we have a match.
-			mapArr = [];
-			checkHrf = hrf;
-			checkHrf = checkHrf.replace(wild.regex, function(_, innards) {	// jshint ignore:line
-				// This the wildcard inner * match. Push the replacement for * into variables so they can substituted into {$1}, {$2}, etc. right after this.
-				mapArr.push(innards);
-				return '';
-			});
-			if (checkHrf !== '') continue;	// wasn't a match - check the next one.
-
-			// And as if by magic, we now have an array of variables we can replace in the attributes.
-			// Replace any variables mentioned in the attrs string from @pages.
-			let targetAttrs = wild.attrs, mapArrLen = mapArr.length, varMatch, i;
-			for (i = 0; i < mapArrLen; i++) {
-				if (pageWildReg[i] === undefined) {
-					// For speed, only create the var match regex when it is needed. We don't know how many we might need, but no point it twice.
-					pageWildReg[i] = new RegExp('\\{\\$' + (i + 1) + '\\}', 'g');
-				}
-				targetAttrs = targetAttrs.replace(pageWildReg[i], mapArr[i]);
+			if (wild.regex.test(hrf)) {
+				pageItem = { url: hrf, attrs: wild.attrs };
+				break;
 			}
-			pageItem = { url: hrf, attrs: targetAttrs };
-			break;
 		}
 	}
 

@@ -1,12 +1,13 @@
 const _trigHashState = (e) => {
 	// Either there isn't anything to run yet or it's not ready to run now.
-	if (hashEventAjaxDelay || !hashEventTrigger) return;
+	if (hashEvents.length == 0 || hashEventAjaxDelay || !hashEventTrigger) return;
 
 	hashEventTrigger = false;
 
 	let n, el, eventsLen = hashEvents.length, runEvents = [], thisHashRef, thisHashEvent;
 	for (n = 0; n < eventsLen; n++) {
 		thisHashRef = _getPageFromList('#' + hashEvents[n]);
+
 		if (thisHashRef) {
 			thisHashEvent = thisHashRef.attrs;
 
@@ -21,7 +22,7 @@ const _trigHashState = (e) => {
 		}
 	}
 
-	// Wipe any outstanding global hash events.
+	// Wipe any outstanding global hash events so they don't run twice.
 	hashEvents = [];
 
 	// Iterate the stored triggers. The runEvents array is locally immutable here so won't be affected by actions happening during any triggers.

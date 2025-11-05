@@ -39,5 +39,10 @@ const _addConfig = (str, o) => {
 
 		// Restart the sync queue if await was used.
 		_syncRestart(o, o._subEvCo);
+
+		// Trigger any @pages events that may now be able to be run.
+		setTimeout(() => {
+			_trigHashState(o.e);
+		}, 0);
 	}
 };

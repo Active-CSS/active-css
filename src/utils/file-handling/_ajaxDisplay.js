@@ -23,11 +23,13 @@
 		document.location.hash = '';	// Needed as Chrome doesn't work without it.
 		document.location.hash = o.hash;
 	}
+
+	// Restart the sync queue if await was used.
+	_syncRestart(o, o._subEvCo);
+
 	if (hashEventAjaxDelay) {
-		// Run any delayed hash on the URL events that need running after an ajax call has loaded or is ready for the display.
+		// Run any delayed hash on the URL events that are present right now that need running after an ajax call has loaded or is ready for the display.
 		hashEventAjaxDelay = false;
 		_trigHashState(o.e);
 	}
-	// Restart the sync queue if await was used.
-	_syncRestart(o, o._subEvCo);
 };

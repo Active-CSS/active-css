@@ -9,6 +9,8 @@
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = (timeToRunTestsInSeconds + browserSetupInSeconds + generalServerSlownessInSeconds + 1) * 1000;
 
+jasmine.____ACSSTESTRUNNING = true;	// This var is referenced in the core - it stops the DOMContentLoaded embedded ACSS handler from kicking in - it's looks like a weirdness with chromium and karma.
+
 describe('Set up core to test', function() {
 	beforeAll(async function() {
 		// Set the viewport size before initializing Active CSS.
