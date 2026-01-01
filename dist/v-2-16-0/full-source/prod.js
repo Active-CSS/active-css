@@ -11952,14 +11952,16 @@ const _getSelector = (o, sel, many=false) => {
 		addedAttrs.push(elToUse);
 	}
 
-	// The string selector should now be fully iterable if we split by " -> ", "<", " - " and " -~ ".
-	let selSplit = newSel.split(/( \-> |<| \- | \-~ )/);
+	// The string selector should now be fully iterable if we split by " -> ", " < ", " - " and " -~ ".
+	let selSplit = newSel.split(/( \-> | < | \- | \-~ | ~> | ~< )/);
 
 	let mainObj = obj;
 	let selSplitLen = selSplit.length;
 	let selectWithClosest = false;
 	let selectWithAdjPrev = false;
 	let selectWithAdjPrevAll = false;
+	let selectWithClosestNextSibling = false;
+	let selectWithClosestPrevSibling = false;
 	let justFoundIframe = false;
 	let singleResult = false;
 	let multiResult = false;
@@ -12047,8 +12049,16 @@ const _getSelector = (o, sel, many=false) => {
 				selectWithAdjPrevAll = true;
 				continue;
 
+			case '~>':
+				selectWithClosestNextSibling = true;
+				continue;
+
+			case '~<':
+				selectWithClosestPrevSibling = true;
+				continue;
+
 			default:
-				if (selectWithAdjPrev || selectWithClosest || selectWithAdjPrevAll) {
+				if (selectWithAdjPrev || selectWithClosest || selectWithAdjPrevAll || selectWithClosestNextSibling || selectWithClosestPrevSibling) {
 					let typ;
 					if (selectWithAdjPrev) {
 						typ = 'prevAdj';
@@ -12056,11 +12066,17 @@ const _getSelector = (o, sel, many=false) => {
 						typ = 'closest';
 					} else if (selectWithAdjPrevAll) {
 						typ = 'prevAdjAll';
+					} else if (selectWithClosestNextSibling) {
+						typ = 'nextAdjClosest';
+					} else if (selectWithClosestPrevSibling) {
+						typ = 'prevAdjClosest';
 					}
 					// Reset flags so they only happen the once.
 					selectWithClosest = false;
 					selectWithAdjPrev = false;
 					selectWithAdjPrevAll = false;
+					selectWithClosestNextSibling = false;
+					selectWithClosestPrevSibling = false;
 					let checkRes = _handleCombinator(typ, selItem, mainObj, newDoc, addedAttrs);
 					selItem = checkRes.selItem;
 					mainObj = checkRes.mainObj;
@@ -12146,6 +12162,15 @@ const _getSelector = (o, sel, many=false) => {
 					// Note, elements get any attributes handled as part of the grabbing function and don't need converting back.
 					mainObj = getPreviousSiblings(thisObj, firstSel);
 					break;
+
+				case 'nextAdjClosest':
+					mainObj = getClosestSibling(thisObj, firstSel, 'next');
+					break;
+
+				case 'prevAdjClosest':
+					mainObj = getClosestSibling(thisObj, firstSel, 'previous');
+					break;
+
 			}
 			if (mainObj && mainObj.length > 0) {
 				returnEls = returnEls.concat(mainObj);
@@ -12193,6 +12218,18 @@ const _getSelector = (o, sel, many=false) => {
 			prevEl = prevEl.previousElementSibling;
 		}
 		return sibs;
+	}
+
+	function getClosestSibling(el, sel, dir) {
+		let sib = el[dir + 'ElementSibling'];
+		while (sib) {
+			if (sib.matches(sel)) {
+				return sib;
+			}
+			sib = sib[dir + 'ElementSibling'];
+		}
+
+		return null;
 	}
 
 	function unescForSel(sel) {
